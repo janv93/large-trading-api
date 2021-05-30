@@ -1,9 +1,14 @@
-const express = require('express');
-const config = require('config');
+import express from 'express';
+import config from 'config';
+import Database from './data/db';
+
 const app = express();
 
+
 app.get('/', (req, res) => {
-  res.send('test');
+  const db = new Database();
+  db.insert('test', 'testobj');
+  res.send('inserted');
 });
 
 app.listen(config.port, () => {
