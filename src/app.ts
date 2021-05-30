@@ -7,7 +7,10 @@ const app = express();
 
 app.get('/', (req, res) => {
   const db = new Database();
-  db.insert('test', 'testobj');
+  db.insert({ test: 'test123' });
+  db.findAll().then(res => {
+    console.log(res);
+  });
   res.send('inserted');
 });
 
