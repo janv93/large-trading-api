@@ -4,7 +4,7 @@ const axios = require('axios');
 export default class BinanceController {
   public klines = [];
 
-  public getKlines(symbol: string, endTime?: string): Promise<any> {
+  public getKlines(symbol: string, endTime?: number): Promise<any> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
     const query = {
@@ -13,7 +13,7 @@ export default class BinanceController {
       symbol: symbol
     };
 
-    if (endTime) {
+    if (endTime && endTime > 0) {
       query['endTime'] = endTime;
     }
 
@@ -23,13 +23,13 @@ export default class BinanceController {
     return axios.get(klineUrl);
   }
 
-  public getKlinesMultiple(symbol, times): Promise<any> {
+  public getKlinesMultiple(symbol, times: number): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.getKlinesRecursive(symbol, null, times, resolve, reject);
+      this.getKlinesRecursive(symbol, -1, times, resolve, reject);
     });
   }
 
-  public getKlinesRecursive(symbol, endTime, times, resolve, reject) {
+  public getKlinesRecursive(symbol: string, endTime: number, times: number, resolve: Function, reject: Function) {
     this.getKlines(symbol, endTime).then(res => {
       this.klines = res.data.concat(this.klines);
       const start = res.data[0][0];
@@ -39,11 +39,13 @@ export default class BinanceController {
       if (times > 0) {
         this.getKlinesRecursive(symbol, end, times, resolve, reject);
       } else {
+        console.log();
         console.log('Received total of ' + this.klines.length + ' klines');
         const firstDate = new Date(this.klines[0][0]);
         console.log('First date: ' + firstDate);
         const lastDate = new Date(this.klines[this.klines.length - 1][0]);
         console.log('Last date: ' + lastDate);
+        console.log();
         resolve(this.klines);
       }
 
@@ -54,7 +56,7 @@ export default class BinanceController {
   }
 
 
-  private createUrl(baseUrl, queryObj): string {
+  private createUrl(baseUrl: string, queryObj: any): string {
     let url = baseUrl;  
     let firstParam = true;
   
@@ -68,7 +70,7 @@ export default class BinanceController {
     return url;
   }
 
-  private handleError(err) {
+  private handleError(err: any) {
     if (err.response && err.response.data) {
       console.log(err.response.data);
     } else {
