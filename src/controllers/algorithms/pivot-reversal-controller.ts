@@ -12,11 +12,11 @@ export default class PivotReversalController {
         const isHighPivot = this.determinePivot(klinesCloses, index, leftBars, rightBars, 'high');
 
         if (isLowPivot) {
-          kline.push(pivot);
+          kline.push('BUY');
           pivot = 'high';
           return kline;
         } else if (isHighPivot) {
-          kline.push(pivot)
+          kline.push('SELL')
           pivot = 'low';
           return kline;
         }
@@ -24,7 +24,7 @@ export default class PivotReversalController {
         const isPivot = this.determinePivot(klinesCloses, index, leftBars, rightBars, 'low');
 
         if (isPivot) {
-          kline.push(pivot);
+          kline.push('BUY');
           pivot = 'high';
           return kline;
         }
@@ -32,7 +32,7 @@ export default class PivotReversalController {
         const isPivot = this.determinePivot(klinesCloses, index, leftBars, rightBars, 'high');
 
         if (isPivot) {
-          kline.push(pivot)
+          kline.push('SELL')
           pivot = 'low';
           return kline;
         }

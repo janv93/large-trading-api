@@ -1,20 +1,22 @@
 import BinanceController from './binance-controller';
 import PivotReversalController from './algorithms/pivot-reversal-controller';
-
+import BacktestController from './algorithms/backtest-controller';
 
 export default class RoutesController {
   private binanceController: BinanceController;
   private pivotReversalController: PivotReversalController;
+  private backtestController: BacktestController;
 
   constructor() {
     this.binanceController = new BinanceController();
     this.pivotReversalController = new PivotReversalController();
+    this.backtestController = new BacktestController();
   }
 
   /**
    * get list of klines / candlesticks from binance
    */
-  public getKlines(req, res) {
+  public getKlines(req, res): void {
     this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times)
       .then((response: any) => {
         res.send(response);
@@ -27,7 +29,7 @@ export default class RoutesController {
    * algorithm is delivered through query parameter 'algorithm'
    * depending on algorithm, additional query params may be necessary
    */
-  public getKlinesWithAlgorithm(req, res) {
+  public getKlinesWithAlgorithm(req, res): void {
     this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times)
       .then((response: any) => {
         let enrichedKlines: Array<any> = [];
@@ -43,5 +45,10 @@ export default class RoutesController {
           res.send('Algorithm' + req.query.algorithm + 'does not exist');
         }
       });
+  }
+
+  public postBacktestData(req, res): void {
+    const performance = this.backtestController.calcBacktestPerformance(req.body, req.query.commission);
+    res.send(performance);
   }
 }
