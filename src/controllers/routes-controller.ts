@@ -11,14 +11,22 @@ export default class RoutesController {
     this.pivotReversalController = new PivotReversalController();
   }
 
-  getKlines(req, res) {
+  /**
+   * get list of klines / candlesticks from binance
+   */
+  public getKlines(req, res) {
     this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times)
       .then((response: any) => {
         res.send(response);
       });
   }
 
-  getKlinesWithAlgorithm(req, res) {
+  /**
+   * get list of klines / candlesticks from binance and add buy and sell signals
+   * algorithm is delivered through query parameter 'algorithm'
+   * depending on algorithm, additional query params may be necessary
+   */
+  public getKlinesWithAlgorithm(req, res) {
     this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times)
       .then((response: any) => {
         let enrichedKlines: Array<any> = [];
