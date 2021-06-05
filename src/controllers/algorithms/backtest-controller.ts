@@ -6,22 +6,19 @@ export default class BacktestController {
     const mappedKlines = this.mapKlines(klines);
 
     let percentProfit = 0.0;
-    let lastPrice = mappedKlines[0].close;
-    let lastSignal: string;
-    const firstPrice = lastPrice;
+    let lastKline: any;
 
     mappedKlines.forEach(kline => {
       if (kline.signal) {
-        const diff = kline.close - lastPrice;
-        const percentage = diff / firstPrice * 100;
+        if (lastKline) {
+          const diff = kline.close - lastKline.close;
+          const percentage = diff / lastKline.close * 100;
 
-        if (lastSignal) {
           // if buy->sell, add percentage, and vice versa
-          percentProfit += lastSignal === 'BUY' ? percentage : -percentage;
-          lastPrice = kline.close;
+          percentProfit += lastKline.signal === 'BUY' ? percentage : -percentage;
         }
 
-        lastSignal = kline.signal;
+        lastKline = kline;
       }
 
       kline['percentage'] = percentProfit;
