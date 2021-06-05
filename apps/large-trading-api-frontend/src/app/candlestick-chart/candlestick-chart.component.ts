@@ -56,6 +56,9 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
       chart: {
         height: 350,
         type: 'candlestick',
+        animations: {
+          enabled: false
+        }
       },
       title: {
         text: 'CandleStick Chart',
@@ -97,6 +100,7 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
     this.http.get(url).subscribe(res => {
       const klines = this.mapKlines(res);
       this.options.series[0].data = klines;
+      console.log(klines);
       this.renderChart();
     });
   }
