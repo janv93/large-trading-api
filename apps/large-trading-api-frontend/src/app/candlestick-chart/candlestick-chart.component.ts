@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
+import deepmerge from 'deepmerge';
 
 @Component({
   selector: 'candlestick-chart',
@@ -10,7 +11,7 @@ import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 export class CandlestickChartComponent implements AfterViewInit, OnInit {
   @ViewChild('apexChart')
   public apexChart: ElementRef;
-  
+
   private options: any;
   private baseUrl = 'http://127.0.0.1:3000';
 
@@ -23,31 +24,12 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
   ngAfterViewInit(): void {
     this.initChart();
 
-    this.getKlines('BTCUSDT', 1);
+    this.getKlines('MATICUSDT', 1);
   }
 
   initChart() {
     this.options = {
       series: [
-        /*{
-          name: 'line',
-          type: 'line',
-          data: [
-            {
-              x: new Date(1538778600000),
-              y: 6604
-            }, {
-              x: new Date(1538782200000),
-              y: 6602
-            }, {
-              x: new Date(1538814600000),
-              y: 6607
-            }, {
-              x: new Date(1538884800000),
-              y: 6620
-            }
-          ]
-        },*/
         {
           name: 'candle',
           type: 'candlestick',
@@ -69,17 +51,22 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
       },
       tooltip: {
         shared: true,
-        custom: [function ({ seriesIndex, dataPointIndex, w }) {
-          return w.globals.series[seriesIndex][dataPointIndex]
-        }, function ({ seriesIndex, dataPointIndex, w }) {
-          var o = w.globals.seriesCandleO[seriesIndex][dataPointIndex]
-          var h = w.globals.seriesCandleH[seriesIndex][dataPointIndex]
-          var l = w.globals.seriesCandleL[seriesIndex][dataPointIndex]
-          var c = w.globals.seriesCandleC[seriesIndex][dataPointIndex]
-          return (
-            ''
-          )
-        }]
+        custom: [
+          function ({ seriesIndex, dataPointIndex, w }) {
+            var o = w.globals.seriesCandleO[seriesIndex][dataPointIndex]
+            var h = w.globals.seriesCandleH[seriesIndex][dataPointIndex]
+            var l = w.globals.seriesCandleL[seriesIndex][dataPointIndex]
+            var c = w.globals.seriesCandleC[seriesIndex][dataPointIndex]
+            return (
+              '<div class="d-flex flex-column">' +
+              '<span>Open: ' + o + '</span>' +
+              '<span>High: ' + h + '</span>' +
+              '<span>Low: ' + l + '</span>' +
+              '<span>Close: ' + c + '</span>' +
+              '</div>'
+            )
+          }
+        ]
       },
       xaxis: {
         type: 'datetime'
@@ -90,17 +77,19 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
   private getKlines(symbol, times) {
     const query = {
       symbol: symbol,
-      times: times
+      times: times,
+      algorithm: 'pivotReversal',
+      leftBars: 4,
+      rightBars: 1
     };
 
-    const baseUrl = this.baseUrl + '/klines';
-
+    const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
     const url = this.createUrl(baseUrl, query);
 
-    this.http.get(url).subscribe(res => {
+    this.http.get(url).subscribe((res: any) => {
+      this.setPivots(res);
       const klines = this.mapKlines(res);
       this.options.series[0].data = klines;
-      console.log(klines);
       this.renderChart();
     });
   }
@@ -115,9 +104,9 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
   }
 
   private createUrl(baseUrl: string, queryObj: any): string {
-    let url = baseUrl;  
+    let url = baseUrl;
     let firstParam = true;
-  
+
     Object.keys(queryObj).forEach(param => {
       const query = param + '=' + queryObj[param];
       firstParam ? url += '?' : url += '&';
@@ -126,6 +115,61 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
     });
 
     return url;
+  }
+
+  private setPivots(klines: Array<any>): void {
+    const buyTemplate = {
+      borderColor: '#00E396',
+      label: {
+        borderColor: '#00E396',
+        style: {
+          fontSize: '12px',
+          color: '#fff',
+          background: '#00E396'
+        },
+        orientation: 'horizontal',
+        offsetY: 7,
+        text: 'BUY'
+      }
+    };
+
+    const sellTemplate = {
+      borderColor: '#FF0000',
+      label: {
+        borderColor: '#FF0000',
+        style: {
+          fontSize: '12px',
+          color: '#fff',
+          background: '#FF0000'
+        },
+        orientation: 'horizontal',
+        offsetY: 260,
+        text: 'SELL'
+      }
+    };
+
+    const pivotKlines = klines.filter(kline => {
+      return kline[12] ? true : false;
+    });
+
+    const xaxis: Array<any> = [];
+
+    pivotKlines.forEach(kline => {
+      const openTime = kline[0];
+      const pivot = kline[12];
+
+      if (pivot === 'BUY') {
+        buyTemplate['x'] = Number(openTime);
+        xaxis.push(deepmerge({}, buyTemplate));
+      } else if (pivot === 'SELL') {
+        sellTemplate['x'] = Number(openTime);
+        xaxis.push(deepmerge({}, sellTemplate));
+      }
+    });
+
+    this.options.annotations = {
+      xaxis: xaxis
+    };
   }
 
   private renderChart() {
