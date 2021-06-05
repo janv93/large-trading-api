@@ -24,6 +24,7 @@ export default class BinanceController {
   }
 
   public getKlinesMultiple(symbol, times: number): Promise<any> {
+    this.klines = [];
     return new Promise((resolve, reject) => {
       this.getKlinesRecursive(symbol, -1, times, resolve, reject);
     });
@@ -54,7 +55,6 @@ export default class BinanceController {
       reject(err);
     });
   }
-
 
   private createUrl(baseUrl: string, queryObj: any): string {
     let url = baseUrl;  
