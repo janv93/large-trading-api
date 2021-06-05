@@ -23,6 +23,7 @@ export default class RoutesController {
 
   /**
    * get list of klines / candlesticks from binance and add buy and sell signals
+   * 
    * algorithm is delivered through query parameter 'algorithm'
    * depending on algorithm, additional query params may be necessary
    */
