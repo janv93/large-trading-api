@@ -17,7 +17,7 @@ export default class BacktestController {
 
         if (lastSignal) {
           // if buy->sell, add percentage, and vice versa
-          percentProfit += lastSignal === 'BUY' ? -percentage : percentage;
+          percentProfit += lastSignal === 'BUY' ? percentage : -percentage;
           lastPrice = kline.close;
         }
 
