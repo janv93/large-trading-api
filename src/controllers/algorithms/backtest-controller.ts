@@ -16,6 +16,7 @@ export default class BacktestController {
 
           // if buy->sell, add percentage, and vice versa
           percentProfit += lastKline.signal === 'BUY' ? percentage : -percentage;
+          percentProfit -= commission;
         }
 
         lastKline = kline;
