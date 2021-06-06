@@ -32,7 +32,7 @@ export class ProfitChartComponent implements AfterViewInit {
   private initChart(): void {
     this.options = {
       series: [{
-        name: "Desktops",
+        name: 'Profit',
         data: []
       }],
       chart: {
