@@ -74,7 +74,7 @@ export class ProfitChartComponent implements AfterViewInit {
 
       this.options.series[0].data = mappedPercentages;
       this.renderChart();
-      this.calcStats(mappedPercentages);
+      this.calcStats(res, mappedPercentages);
     });
   }
 
@@ -97,13 +97,15 @@ export class ProfitChartComponent implements AfterViewInit {
     chart.render();
   }
 
-  private calcStats(klines: Array<any>): void {
+  private calcStats(klines: Array<any>, percentages: Array<any>): void {
+    const tradesCount = klines.filter(kline => kline.signal !== undefined).length;
+
     this.stats = {
-      trades: klines.length,
-      profit: (klines[klines.length - 1].y) + '%',
-      ppt: (klines[klines.length - 1].y / klines.length).toFixed(3) + '%',
-      maxDrawback: this.calcMaxDrawback(klines).toFixed(2) + '%'
-    }
+      trades: tradesCount,
+      profit: (percentages[percentages.length - 1].y) + '%',
+      ppt: (percentages[percentages.length - 1].y / tradesCount).toFixed(3) + '%',
+      maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%'
+    };
   }
 
   private calcMaxDrawback(klines: Array<any>): number {
