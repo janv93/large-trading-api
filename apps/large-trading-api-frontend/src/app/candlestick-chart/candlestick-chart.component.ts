@@ -102,7 +102,7 @@ export class CandlestickChartComponent implements AfterViewInit {
   }
 
   private round(value: string, digits: number): number {
-    return Number(Number(value).toFixed(2));
+    return Number(Number(value).toFixed(4));
   }
 
   private createUrl(baseUrl: string, queryObj: any): string {
