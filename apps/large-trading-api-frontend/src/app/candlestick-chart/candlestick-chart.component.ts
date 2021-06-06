@@ -96,9 +96,13 @@ export class CandlestickChartComponent implements AfterViewInit {
     return klines.map(kline => {
       return {
         x: new Date(kline[0]),
-        y: [Number(kline[1]), Number(kline[2]), Number(kline[3]), Number(kline[4])]
+        y: [this.round(kline[1], 2), this.round(kline[2], 2), this.round(kline[3], 2), this.round(kline[4], 2)]
       }
     });
+  }
+
+  private round(value: string, digits: number): number {
+    return Number(Number(value).toFixed(2));
   }
 
   private createUrl(baseUrl: string, queryObj: any): string {

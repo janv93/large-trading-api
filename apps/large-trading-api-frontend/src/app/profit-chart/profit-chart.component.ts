@@ -12,6 +12,7 @@ export class ProfitChartComponent implements AfterViewInit {
   @ViewChild('apexChart')
   public apexChart: ElementRef;
 
+  public stats: any;
   private options: any;
   private baseUrl = 'http://127.0.0.1:3000';
 
@@ -57,6 +58,7 @@ export class ProfitChartComponent implements AfterViewInit {
 
   private postBacktest(klines: Array<any>): void {
     const query = {
+      commission: 0.036
     };
 
     const baseUrl = this.baseUrl + '/backtest';
@@ -72,6 +74,7 @@ export class ProfitChartComponent implements AfterViewInit {
 
       this.options.series[0].data = mappedPercentages;
       this.renderChart();
+      this.calcStats(mappedPercentages);
     });
   }
 
@@ -92,6 +95,34 @@ export class ProfitChartComponent implements AfterViewInit {
   private renderChart() {
     const chart = new ApexCharts(this.apexChart.nativeElement, this.options);
     chart.render();
+  }
+
+  private calcStats(klines: Array<any>): void {
+    this.stats = {
+      trades: klines.length,
+      profit: (klines[klines.length - 1].y) + '%',
+      ppt: (klines[klines.length - 1].y / klines.length).toFixed(3) + '%',
+      maxDrawback: this.calcMaxDrawback(klines).toFixed(2) + '%'
+    }
+
+    console.log(this.stats);
+  }
+
+  private calcMaxDrawback(klines: Array<any>): number {
+    let high = 0;
+    let maxDrawback = 0;
+
+    klines.forEach(kline => {
+      if (kline.y < high) {
+        if (high - kline.y > maxDrawback) {
+          maxDrawback = high - kline.y;
+        }
+      } else {
+        high = kline.y;
+      }
+    });
+
+    return maxDrawback;
   }
 
 }
