@@ -1,33 +1,34 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import deepmerge from 'deepmerge';
+import { ChartService } from '../chart.service';
 
 @Component({
   selector: 'candlestick-chart',
   templateUrl: './candlestick-chart.component.html',
   styleUrls: ['./candlestick-chart.component.scss']
 })
-export class CandlestickChartComponent implements AfterViewInit, OnInit {
+export class CandlestickChartComponent implements AfterViewInit {
   @ViewChild('apexChart')
   public apexChart: ElementRef;
 
   private options: any;
   private baseUrl = 'http://127.0.0.1:3000';
 
-  constructor(private http: HttpClient) {
-  }
-
-  ngOnInit(): void {
+  constructor(
+    private http: HttpClient,
+    private chartService: ChartService
+  ) {
   }
 
   ngAfterViewInit(): void {
-    this.initChart();
-
-    this.getKlines('MATICUSDT', 1);
+    const symbol = 'MATICUSDT';
+    this.initChart(symbol);
+    this.getKlines(symbol, 1);
   }
 
-  initChart() {
+  initChart(symbol) {
     this.options = {
       series: [
         {
@@ -43,14 +44,10 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
         }
       },
       title: {
-        text: 'CandleStick Chart',
+        text: symbol,
         align: 'left'
       },
-      stroke: {
-        width: [3, 1]
-      },
       tooltip: {
-        shared: true,
         custom: [
           function ({ seriesIndex, dataPointIndex, w }) {
             var o = w.globals.seriesCandleO[seriesIndex][dataPointIndex]
@@ -91,6 +88,7 @@ export class CandlestickChartComponent implements AfterViewInit, OnInit {
       const klines = this.mapKlines(res);
       this.options.series[0].data = klines;
       this.renderChart();
+      this.chartService.klinesSubject.next(res);
     });
   }
 
