@@ -104,8 +104,6 @@ export class ProfitChartComponent implements AfterViewInit {
       ppt: (klines[klines.length - 1].y / klines.length).toFixed(3) + '%',
       maxDrawback: this.calcMaxDrawback(klines).toFixed(2) + '%'
     }
-
-    console.log(this.stats);
   }
 
   private calcMaxDrawback(klines: Array<any>): number {
