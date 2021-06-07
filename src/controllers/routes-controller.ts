@@ -55,7 +55,7 @@ export default class RoutesController {
   }
 
   public postBacktestData(req, res): void {
-    const performance = this.backtestController.calcBacktestPerformance(req.body, req.query.commission);
+    const performance = this.backtestController.calcBacktestPerformance(req.body, req.query.commission, req.query.type);
     res.send(performance);
   }
 }

@@ -9,6 +9,8 @@ export default class PivotReversalController extends Utilities {
     const colors = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;
+    let lastEntrySignal: string;
+    let lastEntryIndex: number;
 
     klines.forEach((kline: any, index: number) => {
       if (!positionOpen) {
@@ -17,6 +19,15 @@ export default class PivotReversalController extends Utilities {
         if (entry) {
           kline.push(entry);
           positionOpen = true;
+          lastEntrySignal = entry;
+          lastEntryIndex = index;
+        }
+      } else {
+        const close = this.isClose(klines, colors, index, streak, lastEntrySignal, lastEntryIndex);
+
+        if (close) {
+          kline.push('CLOSE');
+          positionOpen = false;
         }
       }
     });
@@ -36,11 +47,25 @@ export default class PivotReversalController extends Utilities {
     return rangeGreen ? 'BUY' : rangeRed ? 'SELL' : '';
   }
 
-  private isClose(klines: Array<any>, index: number, streak: number) {
-    // condition 1: close price did not increase in <streak> number of klines
+  private isClose(klines: Array<any>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
+    const range = klines.slice(lastEntryIndex + 1, index + 1);
+    const closePriceAtLastEntry = klines[lastEntryIndex][4];
+
+    // condition 1: opposite signal occurs since last signal, trend reversal
+    let conditionOppositeTrend = false;
+
+    if (range.length >= streak) {
+      const isOppositeEntry = this.isEntry(colors, index, streak);
+
+      conditionOppositeTrend = isOppositeEntry ? (isOppositeEntry !== lastEntrySignal ? true : false) : false;
+    }
+    
 
     // condition 2: close price dropped certain percentage below highest close since streak
 
     // vice versa for SELL signal
+
+
+    return conditionOppositeTrend;
   }
 }
