@@ -25,7 +25,8 @@ export class CandlestickChartComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const symbol = 'MATICUSDT';
     this.initChart(symbol);
-    this.getKlines(symbol, 1);
+    this.getKlines(symbol, 1, 'momentum');
+    this.chartService.strategyType = 'close';
   }
 
   initChart(symbol) {
@@ -71,14 +72,8 @@ export class CandlestickChartComponent implements AfterViewInit {
     };
   }
 
-  private getKlines(symbol, times) {
-    const query = {
-      symbol: symbol,
-      times: times,
-      algorithm: 'pivotReversal',
-      leftBars: 4,
-      rightBars: 1
-    };
+  private getKlines(symbol, times, strategy) {
+    const query = this.getStrategyQuery(strategy, symbol, times);
 
     const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
     const url = this.createUrl(baseUrl, query);
@@ -90,6 +85,26 @@ export class CandlestickChartComponent implements AfterViewInit {
       this.renderChart();
       this.chartService.klinesSubject.next(res);
     });
+  }
+
+  private getStrategyQuery(strategy, symbol, times): any {
+    switch (strategy) {
+      case 'pivotReversal':
+        return {
+          symbol: symbol,
+          times: times,
+          algorithm: 'pivotReversal',
+          leftBars: 4,
+          rightBars: 1
+        };
+      case 'momentum':
+        return {
+          symbol: symbol,
+          times: times,
+          algorithm: 'momentum',
+          streak: 2
+        };
+    }
   }
 
   private mapKlines(klines) {
@@ -150,6 +165,21 @@ export class CandlestickChartComponent implements AfterViewInit {
       }
     };
 
+    const closeTemplate = {
+      borderColor: '#000000',
+      label: {
+        borderColor: '#000000',
+        style: {
+          fontSize: '12px',
+          color: '#fff',
+          background: '#000000'
+        },
+        orientation: 'horizontal',
+        offsetY: 130,
+        text: 'CLOSE'
+      }
+    };
+
     const pivotKlines = klines.filter(kline => {
       return kline[12] ? true : false;
     });
@@ -166,6 +196,9 @@ export class CandlestickChartComponent implements AfterViewInit {
       } else if (pivot === 'SELL') {
         sellTemplate['x'] = Number(openTime);
         xaxis.push(deepmerge({}, sellTemplate));
+      } else if (pivot === 'CLOSE') {
+        closeTemplate['x'] = Number(openTime);
+        xaxis.push(deepmerge({}, closeTemplate));
       }
     });
 

@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 })
 export class ChartService {
   public klinesSubject = new Subject();
+  public strategyType: string;
 
   constructor() { }
 }

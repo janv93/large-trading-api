@@ -58,7 +58,8 @@ export class ProfitChartComponent implements AfterViewInit {
 
   private postBacktest(klines: Array<any>): void {
     const query = {
-      commission: 0.036
+      commission: 0.036,
+      type: this.chartService.strategyType
     };
 
     const baseUrl = this.baseUrl + '/backtest';
