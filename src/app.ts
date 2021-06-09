@@ -27,6 +27,10 @@ app.post('/backtest', (req, res) => {
   routesController.postBacktestData(req, res);
 });
 
+app.post('/indicators', (req, res) => {
+  routesController.postTechnicalIndicator(req, res);
+});
+
 app.listen(config.port, () => {
   console.log('Server is listening on port ' + config.port);
 });
