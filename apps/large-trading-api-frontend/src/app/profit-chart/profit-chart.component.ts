@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import { ChartService } from '../chart.service';
@@ -14,7 +14,6 @@ export class ProfitChartComponent implements AfterViewInit {
 
   public stats: any;
   private options: any;
-  private baseUrl = 'http://127.0.0.1:3000';
 
   constructor(
     private http: HttpClient,
@@ -47,7 +46,7 @@ export class ProfitChartComponent implements AfterViewInit {
         curve: 'straight'
       },
       title: {
-        text: 'Profit Chart',
+        text: 'Profit',
         align: 'left'
       },
       xaxis: {
@@ -62,8 +61,8 @@ export class ProfitChartComponent implements AfterViewInit {
       type: this.chartService.strategyType
     };
 
-    const baseUrl = this.baseUrl + '/backtest';
-    const url = this.createUrl(baseUrl, query);
+    const baseUrl = this.chartService.baseUrl + '/backtest';
+    const url = this.chartService.createUrl(baseUrl, query);
 
     this.http.post(url, klines).subscribe((res: any) => {
       const mappedPercentages = res.map(kline => {
@@ -77,20 +76,6 @@ export class ProfitChartComponent implements AfterViewInit {
       this.renderChart();
       this.calcStats(res, mappedPercentages);
     });
-  }
-
-  private createUrl(baseUrl: string, queryObj: any): string {
-    let url = baseUrl;
-    let firstParam = true;
-
-    Object.keys(queryObj).forEach(param => {
-      const query = param + '=' + queryObj[param];
-      firstParam ? url += '?' : url += '&';
-      url += query;
-      firstParam = false;
-    });
-
-    return url;
   }
 
   private renderChart() {

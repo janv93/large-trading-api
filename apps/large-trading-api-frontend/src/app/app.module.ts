@@ -4,6 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppComponent } from './app.component';
 import { CandlestickChartModule } from './candlestick-chart/candlestick-chart.module';
 import { ProfitChartModule } from './profit-chart/profit-chart.module';
+import { IndicatorChartModule } from './indicator-chart/indicator-chart.module';
 
 @NgModule({
   declarations: [
@@ -12,7 +13,8 @@ import { ProfitChartModule } from './profit-chart/profit-chart.module';
   imports: [
     BrowserModule,
     CandlestickChartModule,
-    ProfitChartModule
+    ProfitChartModule,
+    IndicatorChartModule
   ],
   providers: [],
   bootstrap: [AppComponent]

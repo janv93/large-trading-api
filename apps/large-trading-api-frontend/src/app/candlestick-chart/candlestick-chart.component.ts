@@ -29,7 +29,7 @@ export class CandlestickChartComponent implements AfterViewInit {
     this.chartService.strategyType = 'close';
   }
 
-  initChart(symbol) {
+  private initChart(symbol): void {
     this.options = {
       series: [
         {
@@ -76,7 +76,7 @@ export class CandlestickChartComponent implements AfterViewInit {
     const query = this.getStrategyQuery(strategy, symbol, times);
 
     const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
-    const url = this.createUrl(baseUrl, query);
+    const url = this.chartService.createUrl(baseUrl, query);
 
     this.http.get(url).subscribe((res: any) => {
       this.setPivots(res);
@@ -111,27 +111,13 @@ export class CandlestickChartComponent implements AfterViewInit {
     return klines.map(kline => {
       return {
         x: new Date(kline[0]),
-        y: [this.round(kline[1], 2), this.round(kline[2], 2), this.round(kline[3], 2), this.round(kline[4], 2)]
+        y: [this.round(kline[1], 4), this.round(kline[2], 4), this.round(kline[3], 4), this.round(kline[4], 4)]
       }
     });
   }
 
   private round(value: string, digits: number): number {
-    return Number(Number(value).toFixed(4));
-  }
-
-  private createUrl(baseUrl: string, queryObj: any): string {
-    let url = baseUrl;
-    let firstParam = true;
-
-    Object.keys(queryObj).forEach(param => {
-      const query = param + '=' + queryObj[param];
-      firstParam ? url += '?' : url += '&';
-      url += query;
-      firstParam = false;
-    });
-
-    return url;
+    return Number(Number(value).toFixed(digits));
   }
 
   private setPivots(klines: Array<any>): void {
