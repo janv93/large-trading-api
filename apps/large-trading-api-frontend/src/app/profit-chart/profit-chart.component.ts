@@ -36,8 +36,11 @@ export class ProfitChartComponent implements AfterViewInit {
         data: []
       }],
       chart: {
-        height: 350,
-        type: 'line'
+        height: 250,
+        type: 'line',
+        animations: {
+          enabled: false
+        }
       },
       dataLabels: {
         enabled: false
@@ -51,6 +54,13 @@ export class ProfitChartComponent implements AfterViewInit {
       },
       xaxis: {
         type: 'datetime'
+      },
+      yaxis: {
+        labels: {
+          formatter: (y) => {
+            return y.toFixed(0) + '%';
+          }
+        }
       }
     };
   }
@@ -68,7 +78,7 @@ export class ProfitChartComponent implements AfterViewInit {
       const mappedPercentages = res.map(kline => {
         return {
           x: kline.time,
-          y: Number(kline.percentage.toFixed(2))
+          y: Number(kline.percentage)
         };
       });
 

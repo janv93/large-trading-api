@@ -68,6 +68,14 @@ export class CandlestickChartComponent implements AfterViewInit {
       },
       xaxis: {
         type: 'datetime'
+      },
+      yaxis: {
+        tickAmount: 5,
+        labels: {
+          formatter: (y) => {
+            return y.toFixed(3) + '$';
+          }
+        }
       }
     };
   }
@@ -111,24 +119,20 @@ export class CandlestickChartComponent implements AfterViewInit {
     return klines.map(kline => {
       return {
         x: new Date(kline[0]),
-        y: [this.round(kline[1], 4), this.round(kline[2], 4), this.round(kline[3], 4), this.round(kline[4], 4)]
+        y: [Number(kline[1]), Number(kline[2]), Number(kline[3]), Number(kline[4])]
       }
     });
   }
 
-  private round(value: string, digits: number): number {
-    return Number(Number(value).toFixed(digits));
-  }
-
   private setPivots(klines: Array<any>): void {
     const buyTemplate = {
-      borderColor: '#00E396',
+      borderColor: '#00b746',
       label: {
-        borderColor: '#00E396',
+        borderColor: '#00b746',
         style: {
           fontSize: '12px',
           color: '#fff',
-          background: '#00E396'
+          background: '#00b746'
         },
         orientation: 'horizontal',
         offsetY: 7,

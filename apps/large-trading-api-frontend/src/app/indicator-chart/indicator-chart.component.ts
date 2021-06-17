@@ -26,12 +26,14 @@ export class IndicatorChartComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     switch (this.chart) {
-      case 'rsi': this.initChartRSI();
+      case 'rsi': this.initChartRSI(); break;
+      case 'macd': this.initChartMacd(); break;
     }
 
     this.chartService.klinesSubject.subscribe((res: any) => {
       switch (this.chart) {
         case 'rsi': this.postRSI(res); break;
+        case 'macd': this.postMACD(res); break;
       }
     });
   }
@@ -44,7 +46,10 @@ export class IndicatorChartComponent implements AfterViewInit {
       }],
       chart: {
         height: 200,
-        type: 'line'
+        type: 'line',
+        animations: {
+          enabled: false
+        }
       },
       dataLabels: {
         enabled: false
@@ -58,6 +63,69 @@ export class IndicatorChartComponent implements AfterViewInit {
       },
       xaxis: {
         type: 'datetime'
+      },
+      yaxis: {
+        labels: {
+          formatter: (y) => {
+            return y.toFixed(0);
+          }
+        }
+      }
+    };
+  }
+
+  private initChartMacd(): void {
+    this.options = {
+      series: [{
+        name: 'MACD',
+        data: []
+      }],
+      chart: {
+        height: 200,
+        type: 'bar',
+        animations: {
+          enabled: false
+        }
+      },
+      plotOptions: {
+        bar: {
+          colors: {
+            ranges: [{
+              from: 0,
+              to: 1,
+              color: '#00b746'
+            }, {
+              from: -1,
+              to: 0,
+              color: '#ef403c'
+            }]
+          },
+          columnWidth: '80%',
+        }
+      },
+      dataLabels: {
+        enabled: false
+      },
+      stroke: {
+        curve: 'straight'
+      },
+      title: {
+        text: 'MACD',
+        align: 'left'
+      },
+      xaxis: {
+        type: 'datetime',
+        labels: {
+          rotate: -90
+        }
+      },
+      yaxis: {
+        tickAmount: 2,
+        labels: {
+          formatter: (y) => {
+            return (y * 1000).toFixed(2) + ' e-3';
+          }
+        }
       }
     };
   }
@@ -74,7 +142,30 @@ export class IndicatorChartComponent implements AfterViewInit {
       const mappedValues = res.map(val => {
         return {
           x: val.time,
-          y: Number(val.rsi.toFixed(2))
+          y: Number(val.rsi)
+        };
+      });
+
+      this.options.series[0].data = mappedValues;
+      this.renderChart();
+    });
+  }
+
+  private postMACD(klines: Array<any>) {
+    const query = {
+      indicator: 'macd',
+      fast: 12,
+      slow: 26,
+      signal: 9
+    };
+
+    const url = this.chartService.createUrl(this.baseUrl, query);
+
+    this.http.post(url, klines).subscribe((res: any) => {
+      const mappedValues = res.map(val => {
+        return {
+          x: val.time,
+          y: Number(val.histogram)
         };
       });
 
