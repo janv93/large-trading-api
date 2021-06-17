@@ -69,7 +69,8 @@ export default class RoutesController {
     let indicatorChart: Array<any> = [];
 
     switch (query.indicator) {
-      case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, query.length);
+      case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, query.length); break;
+      case 'macd': indicatorChart = this.indicatorsController.macd(req.body, query.fast, query.slow, query.signal); break;
     }
 
     if (indicatorChart.length > 0) {
