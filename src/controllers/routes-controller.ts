@@ -26,7 +26,7 @@ export default class RoutesController {
    * get list of klines / candlesticks from binance
    */
   public getKlines(req, res): void {
-    this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times)
+    this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
       .then((response: any) => {
         res.send(response);
       });
@@ -41,7 +41,7 @@ export default class RoutesController {
   public getKlinesWithAlgorithm(req, res): void {
     const query = req.query;
 
-    this.binanceController.getKlinesMultiple(query.symbol, query.times)
+    this.binanceController.getKlinesMultiple(query.symbol, query.times, query.timeframe)
       .then((response: any) => {
         let klinesWithSignals: Array<any> = [];
 

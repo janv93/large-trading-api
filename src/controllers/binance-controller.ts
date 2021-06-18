@@ -4,12 +4,12 @@ const axios = require('axios');
 export default class BinanceController {
   public klines = [];
 
-  public getKlines(symbol: string, endTime?: number): Promise<any> {
+  public getKlines(symbol: string, timeframe: string, endTime?: number): Promise<any> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
     const query = {
       limit: '1000',
-      interval: '1m',
+      interval: timeframe ? timeframe : '1m',
       symbol: symbol
     };
 
@@ -23,22 +23,22 @@ export default class BinanceController {
     return axios.get(klineUrl);
   }
 
-  public getKlinesMultiple(symbol, times: number): Promise<any> {
+  public getKlinesMultiple(symbol, times: number, timeframe: string): Promise<any> {
     this.klines = [];
     return new Promise((resolve, reject) => {
-      this.getKlinesRecursive(symbol, -1, times, resolve, reject);
+      this.getKlinesRecursive(symbol, -1, times, timeframe, resolve, reject);
     });
   }
 
-  public getKlinesRecursive(symbol: string, endTime: number, times: number, resolve: Function, reject: Function) {
-    this.getKlines(symbol, endTime).then(res => {
+  public getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string, resolve: Function, reject: Function) {
+    this.getKlines(symbol, timeframe, endTime).then(res => {
       this.klines = res.data.concat(this.klines);
       const start = res.data[0][0];
       const end = start - 60000;
       times--;
 
       if (times > 0) {
-        this.getKlinesRecursive(symbol, end, times, resolve, reject);
+        this.getKlinesRecursive(symbol, end, times, timeframe, resolve, reject);
       } else {
         console.log();
         console.log('Received total of ' + this.klines.length + ' klines');
