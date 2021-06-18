@@ -53,6 +53,9 @@ export class ProfitChartComponent implements AfterViewInit {
         align: 'left'
       },
       xaxis: {
+        labels: {
+          datetimeUTC: false
+        },
         type: 'datetime'
       },
       yaxis: {

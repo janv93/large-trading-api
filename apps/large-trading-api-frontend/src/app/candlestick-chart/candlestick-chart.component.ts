@@ -25,8 +25,8 @@ export class CandlestickChartComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const symbol = 'MATICUSDT';
     this.initChart(symbol);
-    this.getKlines(symbol, 1, 'momentum');
-    this.chartService.strategyType = 'close';
+    this.getKlines(symbol, 1, 'macd');
+    this.chartService.strategyType = 'noClose'; // close or noClose
   }
 
   private initChart(symbol): void {
@@ -50,11 +50,12 @@ export class CandlestickChartComponent implements AfterViewInit {
       },
       tooltip: {
         custom: [
-          function ({ seriesIndex, dataPointIndex, w }) {
-            var o = w.globals.seriesCandleO[seriesIndex][dataPointIndex]
-            var h = w.globals.seriesCandleH[seriesIndex][dataPointIndex]
-            var l = w.globals.seriesCandleL[seriesIndex][dataPointIndex]
-            var c = w.globals.seriesCandleC[seriesIndex][dataPointIndex]
+          ({ series, seriesIndex, dataPointIndex, w }) => {
+            var o = w.globals.seriesCandleO[seriesIndex][dataPointIndex];
+            var h = w.globals.seriesCandleH[seriesIndex][dataPointIndex];
+            var l = w.globals.seriesCandleL[seriesIndex][dataPointIndex];
+            var c = w.globals.seriesCandleC[seriesIndex][dataPointIndex];
+
             return (
               '<div class="d-flex flex-column">' +
               '<span>Open: ' + o + '</span>' +
@@ -64,9 +65,18 @@ export class CandlestickChartComponent implements AfterViewInit {
               '</div>'
             )
           }
-        ]
+        ],
+        x: {
+          formatter: (val) => {
+            const d = new Date(val);
+            return d.toLocaleTimeString();
+          }
+        }
       },
       xaxis: {
+        labels: {
+          datetimeUTC: false
+        },
         type: 'datetime'
       },
       yaxis: {
@@ -112,6 +122,15 @@ export class CandlestickChartComponent implements AfterViewInit {
           algorithm: 'momentum',
           streak: 2
         };
+      case 'macd':
+        return {
+          symbol: symbol,
+          times: times,
+          algorithm: 'macd',
+          fast: 12,
+          slow: 26,
+          signal: 9
+        }
     }
   }
 

@@ -51,6 +51,14 @@ export class IndicatorChartComponent implements AfterViewInit {
           enabled: false
         }
       },
+      tooltip: {
+        x: {
+          formatter: (val) => {
+            const d = new Date(val);
+            return d.toLocaleTimeString();
+          }
+        }
+      },
       dataLabels: {
         enabled: false
       },
@@ -62,6 +70,9 @@ export class IndicatorChartComponent implements AfterViewInit {
         align: 'left'
       },
       xaxis: {
+        labels: {
+          datetimeUTC: false
+        },
         type: 'datetime'
       },
       yaxis: {
@@ -116,7 +127,8 @@ export class IndicatorChartComponent implements AfterViewInit {
       xaxis: {
         type: 'datetime',
         labels: {
-          rotate: -90
+          rotate: -90,
+          datetimeUTC: false
         }
       },
       yaxis: {
