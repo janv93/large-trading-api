@@ -52,6 +52,14 @@ export class ProfitChartComponent implements AfterViewInit {
         text: 'Profit',
         align: 'left'
       },
+      tooltip: {
+        x: {
+          formatter: (val) => {
+            const d = new Date(val);
+            return d.toLocaleTimeString();
+          }
+        }
+      },
       xaxis: {
         labels: {
           datetimeUTC: false

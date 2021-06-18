@@ -25,7 +25,7 @@ export class CandlestickChartComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const symbol = 'MATICUSDT';
     this.initChart(symbol);
-    this.getKlines(symbol, 1, 'macd');
+    this.getKlines(symbol, 1, 'macd', '1h');
     this.chartService.strategyType = 'noClose'; // close or noClose
   }
 
@@ -90,8 +90,8 @@ export class CandlestickChartComponent implements AfterViewInit {
     };
   }
 
-  private getKlines(symbol, times, strategy) {
-    const query = this.getStrategyQuery(strategy, symbol, times);
+  private getKlines(symbol, times, strategy, timeframe) {
+    const query = this.getStrategyQuery(strategy, symbol, times, timeframe);
 
     const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
     const url = this.chartService.createUrl(baseUrl, query);
@@ -105,12 +105,13 @@ export class CandlestickChartComponent implements AfterViewInit {
     });
   }
 
-  private getStrategyQuery(strategy, symbol, times): any {
+  private getStrategyQuery(strategy, symbol, times, timeframe): any {
     switch (strategy) {
       case 'pivotReversal':
         return {
           symbol: symbol,
           times: times,
+          timeframe,
           algorithm: 'pivotReversal',
           leftBars: 4,
           rightBars: 1
@@ -119,6 +120,7 @@ export class CandlestickChartComponent implements AfterViewInit {
         return {
           symbol: symbol,
           times: times,
+          timeframe,
           algorithm: 'momentum',
           streak: 2
         };
@@ -126,6 +128,7 @@ export class CandlestickChartComponent implements AfterViewInit {
         return {
           symbol: symbol,
           times: times,
+          timeframe,
           algorithm: 'macd',
           fast: 12,
           slow: 26,
