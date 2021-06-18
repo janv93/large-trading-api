@@ -1,6 +1,6 @@
-import Utilities from '../../utilities/utilities';
+import BaseController from '../base-controller';
 
-export default class PivotReversalController extends Utilities {
+export default class PivotReversalController extends BaseController {
   constructor() {
     super();
   }

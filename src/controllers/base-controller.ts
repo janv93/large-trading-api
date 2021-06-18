@@ -1,4 +1,4 @@
-export default class Utilities {
+export default class BaseController {
   /**
    * 1 = green, -1 = red, 0 = steady
    */

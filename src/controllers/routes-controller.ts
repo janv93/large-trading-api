@@ -3,6 +3,7 @@ import PivotReversalController from './algorithms/pivot-reversal-controller';
 import MomentumController from './algorithms/momentum-controller';
 import BacktestController from './algorithms/backtest-controller';
 import IndicatorsController from './technical-analysis/indicators-controller';
+import MacdController from './algorithms/macd-controller';
 
 export default class RoutesController {
   private binanceController: BinanceController;
@@ -10,6 +11,7 @@ export default class RoutesController {
   private momentumController: MomentumController;
   private backtestController: BacktestController;
   private indicatorsController: IndicatorsController;
+  private macdController: MacdController;
 
   constructor() {
     this.binanceController = new BinanceController();
@@ -17,6 +19,7 @@ export default class RoutesController {
     this.momentumController = new MomentumController();
     this.backtestController = new BacktestController();
     this.indicatorsController = new IndicatorsController();
+    this.macdController = new MacdController();
   }
 
   /**
@@ -48,6 +51,9 @@ export default class RoutesController {
             break;
           case 'momentum':
             klinesWithSignals = this.momentumController.setSignals(response, query.streak);
+            break;
+          case 'macd':
+            klinesWithSignals = this.macdController.setSignals(response, query.fast, query.slow, query.signal);
             break;
         }
         
