@@ -25,8 +25,8 @@ export class CandlestickChartComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const symbol = 'MATICUSDT';
     this.initChart(symbol);
-    this.getKlines(symbol, 1, 'macd', '1d');
-    this.chartService.strategyType = 'noClose'; // close or noClose, if strategy has close or only buy + sell
+    this.getKlines(symbol, 1, 'macd', '1m');
+    this.chartService.strategyType = 'close'; // close or noClose, if strategy has close or only buy + sell
   }
 
   private initChart(symbol): void {
