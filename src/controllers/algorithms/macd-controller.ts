@@ -111,9 +111,7 @@ export default class MacdController {
       if (momentumSwitch && move === 'up') {
         if (price5Steps) {
           const priceDiff = price5Steps - currentPrice;
-          console.log(priceDiff);
           sumDiffs += priceDiff;
-          console.log(numberDiffs)
           numberDiffs++;
         }
       }
