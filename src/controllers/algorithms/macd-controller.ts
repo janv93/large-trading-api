@@ -10,6 +10,7 @@ export default class MacdController {
   public setSignals(klines: Array<any>, fast: string, slow: string, signal: string): Array<any> {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(klines.length - histogram.length, klines.length);
+    this.findOptimalEntry(klinesWithHistogram, histogram);
 
     let lastHistogram: number;
     let lastMove: string;
@@ -78,5 +79,49 @@ export default class MacdController {
 
     return klines;
   }
+
+  /**
+   * test different macd h. strategies
+   */
+  private findOptimalEntry(klines: Array<any>, histogram: Array<any>) {
+    let lastHistogram: number;
+    let lastMove: string;
+    let sumDiffs = 0.0;
+    let numberDiffs = 0.0;
+
+    klines.forEach((kline, index) => {
+      const h = histogram[index].histogram;
+      const currentPrice = Number(kline[4]);
+
+      if (!lastHistogram) {
+        lastHistogram = h;
+        return;
+      }
+
+      if (!lastMove) {
+        lastMove = h - lastHistogram > 0 ? 'up' : 'down';
+      }
+
+      const move = h - lastHistogram > 0 ? 'up' : 'down';
+      const momentumSwitch = move !== lastMove;
+
+      const kline5Steps = klines[index + 20];
+      const price5Steps = kline5Steps ? Number(kline5Steps[4]) : null;
+
+      if (momentumSwitch && move === 'up') {
+        if (price5Steps) {
+          const priceDiff = price5Steps - currentPrice;
+          console.log(priceDiff);
+          sumDiffs += priceDiff;
+          console.log(numberDiffs)
+          numberDiffs++;
+        }
+      }
+    });
+
+    const averageDiff = sumDiffs / numberDiffs;
+    console.log(averageDiff);
+  }
+
 
 }
