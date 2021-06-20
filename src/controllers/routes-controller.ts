@@ -4,22 +4,18 @@ import MomentumController from './algorithms/momentum-controller';
 import BacktestController from './algorithms/backtest-controller';
 import IndicatorsController from './technical-analysis/indicators-controller';
 import MacdController from './algorithms/macd-controller';
+import RsiController from './algorithms/rsi-controller';
 
 export default class RoutesController {
-  private binanceController: BinanceController;
-  private pivotReversalController: PivotReversalController;
-  private momentumController: MomentumController;
-  private backtestController: BacktestController;
-  private indicatorsController: IndicatorsController;
-  private macdController: MacdController;
+  private binanceController = new BinanceController();
+  private pivotReversalController = new PivotReversalController();
+  private momentumController = new MomentumController();
+  private backtestController = new BacktestController();
+  private indicatorsController = new IndicatorsController();
+  private macdController = new MacdController();
+  private rsiController = new RsiController();
 
   constructor() {
-    this.binanceController = new BinanceController();
-    this.pivotReversalController = new PivotReversalController();
-    this.momentumController = new MomentumController();
-    this.backtestController = new BacktestController();
-    this.indicatorsController = new IndicatorsController();
-    this.macdController = new MacdController();
   }
 
   /**
@@ -55,6 +51,9 @@ export default class RoutesController {
           case 'macd':
             klinesWithSignals = this.macdController.setSignals(response, query.fast, query.slow, query.signal);
             break;
+          case 'rsi':
+            klinesWithSignals = this.rsiController.setSignals(response, Number(query.length));
+            break;
         }
         
         if (klinesWithSignals.length > 0) {
@@ -75,7 +74,7 @@ export default class RoutesController {
     let indicatorChart: Array<any> = [];
 
     switch (query.indicator) {
-      case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, query.length); break;
+      case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, Number(query.length)); break;
       case 'macd': indicatorChart = this.indicatorsController.macd(req.body, query.fast, query.slow, query.signal); break;
     }
 

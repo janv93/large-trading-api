@@ -9,7 +9,7 @@ export default class MacdController {
 
   public setSignals(klines: Array<any>, fast: string, slow: string, signal: string): Array<any> {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
-    const klinesWithHistogram = klines.slice(klines.length - histogram.length, klines.length);
+    const klinesWithHistogram = klines.slice(-histogram.length);
     this.findOptimalEntry(klinesWithHistogram, histogram);
 
     let lastHistogram: number;
@@ -75,7 +75,6 @@ export default class MacdController {
       lastHistogram = h;
       lastMove = move;
     });
-
 
     return klines;
   }

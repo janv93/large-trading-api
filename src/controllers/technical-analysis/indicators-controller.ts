@@ -21,7 +21,7 @@ export default class IndicatorsController {
 
     const valuesWithRsi = rsiValues.map((value: any, index: number) => {
       return {
-        time: mappedKlines[index + 14].time,
+        time: mappedKlines[index + length].time,
         rsi: value
       }
     });
