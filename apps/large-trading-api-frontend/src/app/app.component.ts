@@ -6,5 +6,6 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'chart-visualizer';
+  public commission = 0.036;
+  public noCommission = 0.0;
 }

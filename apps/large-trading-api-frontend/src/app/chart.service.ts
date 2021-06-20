@@ -7,6 +7,7 @@ import { Subject } from 'rxjs';
 export class ChartService {
   public klinesSubject = new Subject();
   public strategyType: string;
+  public rsiLength = 7;
   public baseUrl = 'http://127.0.0.1:3000';
 
   constructor() {

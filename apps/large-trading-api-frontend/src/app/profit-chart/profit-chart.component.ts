@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild, Input } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import { ChartService } from '../chart.service';
@@ -11,6 +11,12 @@ import { ChartService } from '../chart.service';
 export class ProfitChartComponent implements AfterViewInit {
   @ViewChild('apexChart')
   public apexChart: ElementRef;
+
+  @Input()
+  public commission: number;
+
+  @Input()
+  public title: string;
 
   public stats: any;
   private options: any;
@@ -32,7 +38,7 @@ export class ProfitChartComponent implements AfterViewInit {
   private initChart(): void {
     this.options = {
       series: [{
-        name: 'Profit',
+        name: this.title,
         data: []
       }],
       chart: {
@@ -49,7 +55,7 @@ export class ProfitChartComponent implements AfterViewInit {
         curve: 'straight'
       },
       title: {
-        text: 'Profit',
+        text: this.title,
         align: 'left'
       },
       tooltip: {
@@ -78,7 +84,7 @@ export class ProfitChartComponent implements AfterViewInit {
 
   private postBacktest(klines: Array<any>): void {
     const query = {
-      commission: 0.036,
+      commission: this.commission,
       type: this.chartService.strategyType
     };
 
@@ -109,7 +115,7 @@ export class ProfitChartComponent implements AfterViewInit {
 
     this.stats = {
       trades: tradesCount,
-      profit: (percentages[percentages.length - 1].y) + '%',
+      profit: (percentages[percentages.length - 1].y).toFixed(2) + '%',
       ppt: (percentages[percentages.length - 1].y / tradesCount).toFixed(3) + '%',
       maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%'
     };

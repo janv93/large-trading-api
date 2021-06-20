@@ -145,7 +145,7 @@ export class IndicatorChartComponent implements AfterViewInit {
   private postRSI(klines: Array<any>) {
     const query = {
       indicator: 'rsi',
-      length: 14
+      length: this.chartService.rsiLength
     };
 
     const url = this.chartService.createUrl(this.baseUrl, query);
