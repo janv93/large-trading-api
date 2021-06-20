@@ -52,7 +52,8 @@ export class IndicatorChartComponent implements AfterViewInit {
         }
       },
       grid: {
-        borderColor: '#000'
+        borderColor: '#000',
+        position: 'front'
       },
       tooltip: {
         x: {
