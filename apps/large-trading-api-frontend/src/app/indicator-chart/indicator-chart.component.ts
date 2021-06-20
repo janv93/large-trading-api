@@ -51,6 +51,9 @@ export class IndicatorChartComponent implements AfterViewInit {
           enabled: false
         }
       },
+      grid: {
+        borderColor: '#000'
+      },
       tooltip: {
         x: {
           formatter: (val) => {
@@ -76,6 +79,9 @@ export class IndicatorChartComponent implements AfterViewInit {
         type: 'datetime'
       },
       yaxis: {
+        min: 0,
+        max: 100,
+        tickAmount: 2,
         labels: {
           formatter: (y) => {
             return y.toFixed(0);
