@@ -1,5 +1,4 @@
 import BinanceController from './binance-controller';
-import PivotReversalController from './algorithms/pivot-reversal-controller';
 import MomentumController from './algorithms/momentum-controller';
 import BacktestController from './algorithms/backtest-controller';
 import IndicatorsController from './technical-analysis/indicators-controller';
@@ -8,7 +7,6 @@ import RsiController from './algorithms/rsi-controller';
 
 export default class RoutesController {
   private binanceController = new BinanceController();
-  private pivotReversalController = new PivotReversalController();
   private momentumController = new MomentumController();
   private backtestController = new BacktestController();
   private indicatorsController = new IndicatorsController();
@@ -42,9 +40,6 @@ export default class RoutesController {
         let klinesWithSignals: Array<any> = [];
 
         switch(query.algorithm) {
-          case 'pivotReversal':
-            klinesWithSignals = this.pivotReversalController.setSignals(response, Number(query.leftBars), Number(query.rightBars));
-            break;
           case 'momentum':
             klinesWithSignals = this.momentumController.setSignals(response, query.streak);
             break;

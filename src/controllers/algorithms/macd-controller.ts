@@ -1,13 +1,16 @@
 import IndicatorsController from '../technical-analysis/indicators-controller';
+import { BinanceKline } from '../../interfaces';
+import BaseController from '../base-controller';
 
-export default class MacdController {
+export default class MacdController extends BaseController {
   private indicatorsController: IndicatorsController;
 
   constructor() {
+    super();
     this.indicatorsController = new IndicatorsController();
   }
 
-  public setSignals(klines: Array<any>, fast: string, slow: string, signal: string): Array<any> {
+  public setSignals(klines: Array<BinanceKline>, fast: string, slow: string, signal: string): Array<BinanceKline> {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
     this.findOptimalEntry(klinesWithHistogram, histogram);
@@ -48,9 +51,9 @@ export default class MacdController {
             const averageHigh = sumHighs / numberHighs;
 
             if (h > (averageHigh + peakHigh) / 2) {
-              kline.push('SELL');
+              kline.signal = this.sellSignal;
               positionOpen = true;
-              positionOpenType = 'SELL';
+              positionOpenType = this.sellSignal;
             }
           } else if (move === 'up' && h < 0) {
             sumLows += h;
@@ -59,14 +62,14 @@ export default class MacdController {
             const averageLow = sumLows / numberLows;
 
             if (h < (averageLow + peakLow) / 2) {
-              kline.push('BUY');
+              kline.signal = this.buySignal;
               positionOpen = true;
-              positionOpenType = 'BUY';
+              positionOpenType = this.buySignal;
             }
           }
         } else {
-          if ((positionOpenType === 'SELL' && h < 0) || (positionOpenType === 'BUY' && h > 0)) {
-            kline.push('CLOSE');
+          if ((positionOpenType === this.sellSignal && h < 0) || (positionOpenType === this.buySignal && h > 0)) {
+            kline.signal = this.closeSignal;
             positionOpen = false;
           }
         }
@@ -82,7 +85,7 @@ export default class MacdController {
   /**
    * test different macd h. strategies
    */
-  private findOptimalEntry(klines: Array<any>, histogram: Array<any>) {
+  private findOptimalEntry(klines: Array<BinanceKline>, histogram: Array<any>) {
     let lastHistogram: number;
     let lastMove: string;
     let sumDiffs = 0.0;
@@ -90,7 +93,7 @@ export default class MacdController {
 
     klines.forEach((kline, index) => {
       const h = histogram[index].histogram;
-      const currentPrice = Number(kline[4]);
+      const currentPrice = Number(kline.prices.close);
 
       if (!lastHistogram) {
         lastHistogram = h;
@@ -105,7 +108,7 @@ export default class MacdController {
       const momentumSwitch = move !== lastMove;
 
       const kline5Steps = klines[index + 20];
-      const price5Steps = kline5Steps ? Number(kline5Steps[4]) : null;
+      const price5Steps = kline5Steps ? Number(kline5Steps.prices.close) : null;
 
       if (momentumSwitch && move === 'up') {
         if (price5Steps) {

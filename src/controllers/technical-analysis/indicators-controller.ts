@@ -1,5 +1,6 @@
 import * as TA from 'technicalindicators';
 import * as TACopy from '../../utilities/technicalindicators-copy/index';
+import { BinanceKline } from '../../interfaces';
 
 export default class IndicatorsController {
   constructor() {
@@ -8,9 +9,8 @@ export default class IndicatorsController {
   /**
    * calculate rsi for each object in Array, starting at position length
    */
-  public rsi(klines: Array<any>, length: number): Array<any> {
-    const mappedKlines = this.mapKlines(klines);
-    const values = mappedKlines.map(kline => kline.close);
+  public rsi(klines: Array<BinanceKline>, length: number): Array<any> {
+    const values = klines.map(kline => kline.prices.close);
 
     const inputRsi = {
       values: values,
@@ -21,7 +21,7 @@ export default class IndicatorsController {
 
     const valuesWithRsi = rsiValues.map((value: any, index: number) => {
       return {
-        time: mappedKlines[index + length].time,
+        time: klines[index + length].times.open,
         rsi: value
       }
     });
@@ -29,9 +29,8 @@ export default class IndicatorsController {
     return valuesWithRsi;
   }
 
-  public macd(klines: Array<any>, fast, slow, signal): Array<any> {
-    const mappedKlines = this.mapKlines(klines);
-    const values = mappedKlines.map(kline => kline.close);
+  public macd(klines: Array<BinanceKline>, fast, slow, signal): Array<any> {
+    const values = klines.map(kline => kline.prices.close);
     const smoothing = (Number(fast) + Number(slow)) / 2;
 
     const inputMacd = {
@@ -47,25 +46,11 @@ export default class IndicatorsController {
 
     const valuesWithMacd = macdValuesWithHistogram.map((value: any, index: number) => {
       return {
-        time: mappedKlines[values.length - macdValuesWithHistogram.length + index].time,
+        time: klines[values.length - macdValuesWithHistogram.length + index].times.open,
         histogram: value.histogram
       }
     });
 
     return valuesWithMacd;
-  }
-
-  /**
-   * map to more readable format: time, close
-   */
-   private mapKlines(klines: Array<any>): Array<any> {
-    return klines.map(kline => {
-      const mappedKline = {
-        time: kline[0],
-        close: Number(kline[4]),
-      };
-
-      return mappedKline;
-    });
   }
 }

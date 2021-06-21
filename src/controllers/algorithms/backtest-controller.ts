@@ -1,13 +1,15 @@
-export default class BacktestController {
+import { BinanceKline } from '../../interfaces';
+import BaseController from '../base-controller';
+
+export default class BacktestController extends BaseController {
   constructor() {
+    super();
   }
 
-  public calcBacktestPerformance(klines: Array<any>, commission: number, type: string): Array<any> {
-    const mappedKlines = this.mapKlines(klines);
-
+  public calcBacktestPerformance(klines: Array<BinanceKline>, commission: number, type: string): Array<BinanceKline> {
     switch (type) {
-      case 'noClose': return this.calcPerformanceStrategyNoClose(mappedKlines, commission);
-      case 'close': return this.calcPerformanceStrategyClose(mappedKlines, commission);
+      case 'noClose': return this.calcPerformanceStrategyNoClose(klines, commission);
+      case 'close': return this.calcPerformanceStrategyClose(klines, commission);
       default: return [];
     }
   }
@@ -15,25 +17,25 @@ export default class BacktestController {
   /**
    * calculate performance with no close strategy (strategy only containing buy and sell signals, revert strategy)
    */
-  private calcPerformanceStrategyNoClose(klines: Array<any>, commission: number): Array<any> {
+  private calcPerformanceStrategyNoClose(klines: Array<BinanceKline>, commission: number): Array<BinanceKline> {
     let percentProfit = 0.0;
-    let lastSignalKline: any;
+    let lastSignalKline: BinanceKline;
 
     klines.forEach(kline => {
       if (kline.signal) {
         if (lastSignalKline) {
-          const diff = kline.close - lastSignalKline.close;
-          const percentage = diff / lastSignalKline.close * 100;
+          const diff = kline.prices.close - lastSignalKline.prices.close;
+          const percentage = diff / lastSignalKline.prices.close * 100;
 
           // if buy->sell, add percentage, and vice versa
-          percentProfit += lastSignalKline.signal === 'BUY' ? percentage : -percentage;
+          percentProfit += lastSignalKline.signal === this.buySignal ? percentage : -percentage;
           percentProfit -= commission;
         }
 
         lastSignalKline = kline;
       }
 
-      kline['percentage'] = percentProfit;
+      kline.percentProfit = percentProfit;
     });
 
     return klines;
@@ -42,45 +44,27 @@ export default class BacktestController {
   /**
    * calculate performance with close strategy (strategy containing buy, sell and close signals)
    */
-  private calcPerformanceStrategyClose(klines: Array<any>, commission: number): Array<any> {
+  private calcPerformanceStrategyClose(klines: Array<BinanceKline>, commission: number): Array<BinanceKline> {
     let percentProfit = 0.0;
-    let lastSignalKline: any;
+    let lastSignalKline: BinanceKline;
 
     klines.forEach(kline => {
       if (kline.signal) {
-        if (lastSignalKline && lastSignalKline.signal !== 'CLOSE') {
-          const diff = kline.close - lastSignalKline.close;
-          const percentage = diff / lastSignalKline.close * 100;
+        if (lastSignalKline && lastSignalKline.signal !== this.closeSignal) {
+          const diff = kline.prices.close - lastSignalKline.prices.close;
+          const percentage = diff / lastSignalKline.prices.close * 100;
 
           // if buy->sell, add percentage, and vice versa
-          percentProfit += lastSignalKline.signal === 'BUY' ? percentage : -percentage;
+          percentProfit += lastSignalKline.signal === this.buySignal ? percentage : -percentage;
           percentProfit -= commission;
         }
 
         lastSignalKline = kline;
       }
 
-      kline['percentage'] = percentProfit;
+      kline.percentProfit = percentProfit;
     });
 
     return klines;
-  }
-
-  /**
-   * map to more readable format: time, close, signal
-   */
-  private mapKlines(klines: Array<any>): Array<any> {
-    return klines.map(kline => {
-      const mappedKline = {
-        time: kline[0],
-        close: Number(kline[4]),
-      };
-
-      if (kline[12]) {
-        mappedKline['signal'] = kline[12]
-      }
-
-      return mappedKline;
-    });
   }
 }

@@ -1,3 +1,4 @@
+import { BinanceKline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class PivotReversalController extends BaseController {
@@ -5,8 +6,8 @@ export default class PivotReversalController extends BaseController {
     super();
   }
 
-  public setSignals(klines: Array<any>, streak: number): Array<any> {
-    const colors = klines.map(kline => this.getKlineColor(kline));
+  public setSignals(klines: Array<BinanceKline>, streak: number): Array<BinanceKline> {
+    const colors: Array<number> = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;
     let lastEntrySignal: string;
@@ -17,7 +18,7 @@ export default class PivotReversalController extends BaseController {
         const entry = this.isEntry(colors, index, streak);
 
         if (entry) {
-          kline.push(entry);
+          kline.signal = entry;
           positionOpen = true;
           lastEntrySignal = entry;
           lastEntryIndex = index;
@@ -26,7 +27,7 @@ export default class PivotReversalController extends BaseController {
         const close = this.isClose(klines, colors, index, streak, lastEntrySignal, lastEntryIndex);
 
         if (close) {
-          kline.push('CLOSE');
+          kline.signal = this.closeSignal;
           positionOpen = false;
         }
       }
@@ -35,7 +36,7 @@ export default class PivotReversalController extends BaseController {
     return klines;
   }
 
-  private isEntry(colors: Array<any>, index: number, streak: number): string {
+  private isEntry(colors: Array<number>, index: number, streak: number): string {
     if (streak > index) {
       return '';
     }
@@ -44,12 +45,12 @@ export default class PivotReversalController extends BaseController {
     const rangeGreen = range.every(kline => kline >= 0);
     const rangeRed = range.every(kline => kline <= 0);
 
-    return rangeGreen ? 'BUY' : rangeRed ? 'SELL' : '';
+    return rangeGreen ? this.buySignal : rangeRed ? this.sellSignal : '';
   }
 
-  private isClose(klines: Array<any>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
+  private isClose(klines: Array<BinanceKline>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
     const range = klines.slice(lastEntryIndex + 1, index + 1);
-    const closePriceAtLastEntry = klines[lastEntryIndex][4];
+    const closePriceAtLastEntry = klines[lastEntryIndex].prices.close;
 
     // condition 1: opposite signal occurs since last signal, trend reversal
     let conditionOppositeTrend = false;

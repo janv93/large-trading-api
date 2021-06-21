@@ -1,5 +1,5 @@
-const axios = require('axios');
-
+import axios from 'axios';
+import { BinanceKline } from '../interfaces';
 
 export default class BinanceController {
   public klines = [];
@@ -47,12 +47,32 @@ export default class BinanceController {
         const lastDate = new Date(this.klines[this.klines.length - 1][0]);
         console.log('Last date: ' + lastDate);
         console.log();
-        resolve(this.klines);
+        const binanceKlines = this.mapResult();
+        resolve(binanceKlines);
       }
 
     }).catch(err => {
       this.handleError(err);
       reject(err);
+    });
+  }
+
+  private mapResult(): Array<BinanceKline> {
+    return this.klines.map(k => {
+      return {
+        times: {
+          open: k[0],
+          close: k[6]
+        },
+        prices: {
+          open: Number(k[1]),
+          high: Number(k[2]),
+          low: Number(k[3]),
+          close: Number(k[4])
+        },
+        volume: Number(k[5]),
+        numberOfTrades: k[8]
+      };
     });
   }
 
