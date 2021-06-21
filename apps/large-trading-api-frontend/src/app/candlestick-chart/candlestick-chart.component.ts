@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import deepmerge from 'deepmerge';
 import { ChartService } from '../chart.service';
+import { BinanceKline } from '../interfaces';
 
 @Component({
   selector: 'candlestick-chart',
@@ -25,7 +26,7 @@ export class CandlestickChartComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const symbol = 'MATICUSDT';
     this.initChart(symbol);
-    this.getKlines(symbol, 10, 'rsi', '1m');
+    this.getKlines(symbol, 1, 'rsi', '1m');
     this.chartService.strategyType = 'noClose'; // close or noClose, if strategy has close or only buy + sell
   }
 
@@ -97,7 +98,7 @@ export class CandlestickChartComponent implements AfterViewInit {
     const url = this.chartService.createUrl(baseUrl, query);
 
     this.http.get(url).subscribe((res: any) => {
-      this.setPivots(res);
+      this.setSignals(res);
       const klines = this.mapKlines(res);
       this.options.series[0].data = klines;
       this.renderChart();
@@ -145,16 +146,16 @@ export class CandlestickChartComponent implements AfterViewInit {
     }
   }
 
-  private mapKlines(klines) {
+  private mapKlines(klines: Array<BinanceKline>) {
     return klines.map(kline => {
       return {
-        x: new Date(kline[0]),
-        y: [Number(kline[1]), Number(kline[2]), Number(kline[3]), Number(kline[4])]
+        x: new Date(kline.times.open),
+        y: [kline.prices.open, kline.prices.high, kline.prices.low, kline.prices.close]
       }
     });
   }
 
-  private setPivots(klines: Array<any>): void {
+  private setSignals(klines: Array<any>): void {
     const buyTemplate = {
       borderColor: '#00b746',
       label: {
@@ -200,23 +201,23 @@ export class CandlestickChartComponent implements AfterViewInit {
       }
     };
 
-    const pivotKlines = klines.filter(kline => {
-      return kline[12] ? true : false;
+    const signalKlines = klines.filter(kline => {
+      return kline.signal ? true : false;
     });
 
     const xaxis: Array<any> = [];
 
-    pivotKlines.forEach(kline => {
-      const openTime = kline[0];
-      const pivot = kline[12];
+    signalKlines.forEach(kline => {
+      const openTime = kline.times.open;
+      const signal = kline.signal;
 
-      if (pivot === 'BUY') {
+      if (signal === 'BUY') {
         buyTemplate['x'] = Number(openTime);
         xaxis.push(deepmerge({}, buyTemplate));
-      } else if (pivot === 'SELL') {
+      } else if (signal === 'SELL') {
         sellTemplate['x'] = Number(openTime);
         xaxis.push(deepmerge({}, sellTemplate));
-      } else if (pivot === 'CLOSE') {
+      } else if (signal === 'CLOSE') {
         closeTemplate['x'] = Number(openTime);
         xaxis.push(deepmerge({}, closeTemplate));
       }

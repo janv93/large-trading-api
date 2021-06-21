@@ -2,6 +2,7 @@ import { AfterViewInit, Component, ElementRef, ViewChild, Input } from '@angular
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import { ChartService } from '../chart.service';
+import { BinanceKline } from '../interfaces';
 
 @Component({
   selector: 'profit-chart',
@@ -82,7 +83,7 @@ export class ProfitChartComponent implements AfterViewInit {
     };
   }
 
-  private postBacktest(klines: Array<any>): void {
+  private postBacktest(klines: Array<BinanceKline>): void {
     const query = {
       commission: this.commission,
       type: this.chartService.strategyType
@@ -94,8 +95,8 @@ export class ProfitChartComponent implements AfterViewInit {
     this.http.post(url, klines).subscribe((res: any) => {
       const mappedPercentages = res.map(kline => {
         return {
-          x: kline.time,
-          y: Number(kline.percentage)
+          x: kline.times.open,
+          y: kline.percentProfit
         };
       });
 
@@ -110,7 +111,7 @@ export class ProfitChartComponent implements AfterViewInit {
     chart.render();
   }
 
-  private calcStats(klines: Array<any>, percentages: Array<any>): void {
+  private calcStats(klines: Array<BinanceKline>, percentages: Array<any>): void {
     const tradesCount = klines.filter(kline => kline.signal !== undefined).length;
 
     this.stats = {
