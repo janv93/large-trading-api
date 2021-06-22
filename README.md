@@ -15,6 +15,6 @@ This node API fulfills all the fundamental necessities of trading automation, in
 ### TBD:
 
 - [ ] Caching candlesticks in data base
-- [ ] Finding linear/consistent and profitable algorithm on 100k+ timeframes
+- [ ] Finding linear/consistent and profitable algorithm on 100k+ timeframes (max: 10k on RSI algorithm)
 - [ ] When profitable: Start forward test with Binance
 - [ ] Implement Machine Learning: Linear regression on indicators, LSTM on closes
