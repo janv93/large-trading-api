@@ -4,7 +4,7 @@ import { BinanceKline } from '../interfaces';
 export default class BinanceController {
   public klines = [];
 
-  public getKlines(symbol: string, timeframe: string, endTime?: number): Promise<any> {
+  public getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<any> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
     const query = {
@@ -17,6 +17,10 @@ export default class BinanceController {
       query['endTime'] = endTime;
     }
 
+    if (startTime && startTime > 0) {
+      query['startTime'] = startTime;
+    }
+
     const klineUrl = this.createUrl(baseUrl, query);
 
     console.log('GET ' + klineUrl);
@@ -26,14 +30,21 @@ export default class BinanceController {
   public getKlinesMultiple(symbol, times: number, timeframe: string): Promise<any> {
     this.klines = [];
     return new Promise((resolve, reject) => {
-      this.getKlinesRecursive(symbol, -1, times, timeframe, resolve, reject);
+      //this.getKlinesRecursive(symbol, -1, times, timeframe, resolve, reject);
+      const startDate = new Date();
+      const timespan = 1000 * 60 * 60 * 24 * 2;
+      const startTime = startDate.getTime() - timespan;
+      this.getKlinesRecursiveFromDateUntilNow(symbol, startTime, timeframe, resolve, reject);
     });
   }
 
+  /**
+   * get last times * 1000 timeframes
+   */
   public getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string, resolve: Function, reject: Function) {
     this.getKlines(symbol, timeframe, endTime).then(res => {
       this.klines = res.data.concat(this.klines);
-      const start = res.data[0][0];
+      const start = this.klines[0][0];
       const end = start - 60000;
       times--;
 
@@ -57,6 +68,39 @@ export default class BinanceController {
     });
   }
 
+  /**
+   * get startTime to now timeframes
+   */
+  public getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, timeframe: string, resolve: Function, reject: Function) {
+    this.getKlines(symbol, timeframe, undefined, startTime).then(res => {
+      this.klines = this.klines.concat(res.data);
+      const end = this.klines[this.klines.length - 1][0];
+      const start = end + 60000;
+      const now = (new Date()).getTime();
+
+      if (start < now) {
+        this.getKlinesRecursiveFromDateUntilNow(symbol, start, timeframe, resolve, reject);
+      } else {
+        console.log();
+        console.log('Received total of ' + this.klines.length + ' klines');
+        const firstDate = new Date(this.klines[0][0]);
+        console.log('First date: ' + firstDate);
+        const lastDate = new Date(this.klines[this.klines.length - 1][0]);
+        console.log('Last date: ' + lastDate);
+        console.log();
+        const binanceKlines = this.mapResult();
+        resolve(binanceKlines);
+      }
+    }).catch(err => {
+      this.handleError(err);
+      reject(err);
+    });
+  }
+
+  public initKlinesDatabase() {
+    
+  }
+
   private mapResult(): Array<BinanceKline> {
     return this.klines.map(k => {
       return {
@@ -77,9 +121,9 @@ export default class BinanceController {
   }
 
   private createUrl(baseUrl: string, queryObj: any): string {
-    let url = baseUrl;  
+    let url = baseUrl;
     let firstParam = true;
-  
+
     Object.keys(queryObj).forEach(param => {
       const query = param + '=' + queryObj[param];
       firstParam ? url += '?' : url += '&';
