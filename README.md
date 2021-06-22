@@ -7,7 +7,7 @@ This node API fulfills all the fundamental necessities of trading automation, in
 
 ### Done:
 
-- [x] Fetching Binance candlestick data
+- [x] Fetch Binance candlestick data
 - [x] Indicators working: RSI, MACD (same as Binance/TradingView)
 - [x] Basic Algorithms setting position signals
 - [x] Backtesting position signals
