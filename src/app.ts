@@ -15,6 +15,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/initKlines', (req, res) => {
+  routesController.initKlines(req, res);
+});
+
 app.get('/klines', (req, res) => {
   routesController.getKlines(req, res);
 });

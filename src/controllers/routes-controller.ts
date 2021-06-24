@@ -4,16 +4,27 @@ import BacktestController from './algorithms/backtest-controller';
 import IndicatorsController from './technical-analysis/indicators-controller';
 import MacdController from './algorithms/macd-controller';
 import RsiController from './algorithms/rsi-controller';
+import Database from '../data/db';
+import BaseController from './base-controller';
 
-export default class RoutesController {
+export default class RoutesController extends BaseController {
   private binanceController = new BinanceController();
   private momentumController = new MomentumController();
   private backtestController = new BacktestController();
   private indicatorsController = new IndicatorsController();
   private macdController = new MacdController();
   private rsiController = new RsiController();
+  private database = new Database();
 
   constructor() {
+    super();
+  }
+
+  public initKlines(req, res): void {
+    this.binanceController.initKlinesDatabase(req.query.symbol, req.query.timeframe)
+      .then(response => {
+        res.send(response);
+      });
   }
 
   /**
@@ -21,7 +32,7 @@ export default class RoutesController {
    */
   public getKlines(req, res): void {
     this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
-      .then((response: any) => {
+      .then(response => {
         res.send(response);
       });
   }
@@ -35,19 +46,21 @@ export default class RoutesController {
   public getKlinesWithAlgorithm(req, res): void {
     const query = req.query;
 
-    this.binanceController.getKlinesMultiple(query.symbol, query.times, query.timeframe)
+    this.database.findKlines(query.symbol, query.timeframe)
       .then((response: any) => {
+        const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
+        console.log(responseInRange.length);
         let klinesWithSignals: Array<any> = [];
 
         switch(query.algorithm) {
           case 'momentum':
-            klinesWithSignals = this.momentumController.setSignals(response, query.streak);
+            klinesWithSignals = this.momentumController.setSignals(responseInRange, query.streak);
             break;
           case 'macd':
-            klinesWithSignals = this.macdController.setSignals(response, query.fast, query.slow, query.signal);
+            klinesWithSignals = this.macdController.setSignals(responseInRange, query.fast, query.slow, query.signal);
             break;
           case 'rsi':
-            klinesWithSignals = this.rsiController.setSignals(response, Number(query.length));
+            klinesWithSignals = this.rsiController.setSignals(responseInRange, Number(query.length));
             break;
         }
         
@@ -56,6 +69,8 @@ export default class RoutesController {
         } else {
           res.send('Algorithm "' + query.algorithm + '" does not exist');
         }
+      }).catch(err => {
+        this.handleError(err);
       });
   }
 

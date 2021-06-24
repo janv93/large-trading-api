@@ -12,4 +12,12 @@ export default class BaseController {
     const diff = Number(kline.prices.close) - Number(kline.prices.open)
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }
+
+  public handleError(err: any) {
+    if (err.response && err.response.data) {
+      console.log(err.response.data);
+    } else {
+      console.log(err);
+    }
+  }
 }
