@@ -4,6 +4,7 @@ import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import deepmerge from 'deepmerge';
 import { ChartService } from '../chart.service';
 import { BinanceKline } from '../interfaces';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'candlestick-chart',
@@ -26,7 +27,7 @@ export class CandlestickChartComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const symbol = 'MATICUSDT';
     this.initChart(symbol);
-    this.getKlines(symbol, 1, 'rsi', '1m');
+    this.getKlines(symbol, 10, 'rsi', '1m');
     this.chartService.strategyType = 'noClose'; // close or noClose, if strategy has close or only buy + sell
   }
 
@@ -91,22 +92,35 @@ export class CandlestickChartComponent implements AfterViewInit {
     };
   }
 
-  private getKlines(symbol, times, strategy, timeframe) {
-    const query = this.getStrategyQuery(strategy, symbol, times, timeframe);
+  private getKlines(symbol: string, times: number, strategy: string, timeframe: string) {
+    this.initKlines(symbol, timeframe).subscribe(() => {
+      const query = this.getStrategyQuery(strategy, symbol, times, timeframe);
+      const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
+      const url = this.chartService.createUrl(baseUrl, query);
 
-    const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
-    const url = this.chartService.createUrl(baseUrl, query);
-
-    this.http.get(url).subscribe((res: any) => {
-      this.setSignals(res);
-      const klines = this.mapKlines(res);
-      this.options.series[0].data = klines;
-      this.renderChart();
-      this.chartService.klinesSubject.next(res);
+      this.http.get(url).subscribe((res: any) => {
+        this.setSignals(res);
+        const klines = this.mapKlines(res);
+        this.options.series[0].data = klines;
+        this.renderChart();
+        this.chartService.klinesSubject.next(res);
+      });
     });
   }
 
-  private getStrategyQuery(strategy, symbol, times, timeframe): any {
+  private initKlines(symbol: string, timeframe: string): Observable<any> {
+    const query = {
+      symbol,
+      timeframe
+    };
+
+    const baseUrl = this.baseUrl + '/initKlines';
+    const url = this.chartService.createUrl(baseUrl, query);
+
+    return this.http.get(url);
+  }
+
+  private getStrategyQuery(strategy: string, symbol: string, times: number, timeframe: string): any {
     switch (strategy) {
       case 'pivotReversal':
         return {
