@@ -49,7 +49,6 @@ export default class RoutesController extends BaseController {
     this.database.findKlines(query.symbol, query.timeframe)
       .then((response: any) => {
         const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
-        console.log(responseInRange.length);
         let klinesWithSignals: Array<any> = [];
 
         switch(query.algorithm) {
