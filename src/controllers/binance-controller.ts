@@ -80,8 +80,6 @@ export default class BinanceController extends BaseController {
       const end = this.klines[this.klines.length - 1][0];
       const start = end + 60000;
       const now = (new Date()).getTime();
-      console.log('startTime: ' + startTime)
-      console.log('now: ' + now)
 
       if (start < now) {
         this.getKlinesRecursiveFromDateUntilNow(symbol, start, timeframe, resolve, reject);
@@ -109,7 +107,7 @@ export default class BinanceController extends BaseController {
    */
   public initKlinesDatabase(symbol: string, timeframe: string) {
     const startDate = new Date();
-    const timespan = 1000 * 60 * 60 * 24 * 20;
+    const timespan = 1000 * 60 * 60 * 24 * 100;
     const startTime = startDate.getTime() - timespan;
 
     return new Promise((resolve, reject) => {
