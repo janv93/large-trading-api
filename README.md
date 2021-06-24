@@ -11,10 +11,10 @@ This node API fulfills all the fundamental necessities of trading automation, in
 - [x] Indicators working: RSI, MACD (same as Binance/TradingView)
 - [x] Basic Algorithms setting position signals
 - [x] Backtesting position signals
+- [x] Caching candlesticks in data base
 
 ### TBD:
 
-- [ ] Caching candlesticks in data base
 - [ ] Finding linear/consistent and profitable algorithm on 100k+ timeframes (max: 10k on RSI algorithm)
 - [ ] When profitable: Start forward test with Binance
 - [ ] Implement Machine Learning: Linear regression on indicators, LSTM on closes
