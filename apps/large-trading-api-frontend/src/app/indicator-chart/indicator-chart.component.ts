@@ -28,12 +28,14 @@ export class IndicatorChartComponent implements AfterViewInit {
     switch (this.chart) {
       case 'rsi': this.initChartRSI(); break;
       case 'macd': this.initChartMacd(); break;
+      case 'ema': this.initChartEma(); break;
     }
 
     this.chartService.klinesSubject.subscribe((res: any) => {
       switch (this.chart) {
-        case 'rsi': this.postRSI(res); break;
-        case 'macd': this.postMACD(res); break;
+        case 'rsi': this.postRsi(res); break;
+        case 'macd': this.postMacd(res); break;
+        case 'ema': this.postEma(res); break;
       }
     });
   }
@@ -70,7 +72,7 @@ export class IndicatorChartComponent implements AfterViewInit {
         curve: 'straight'
       },
       title: {
-        text: 'RSI',
+        text: 'RSI (' + this.chartService.rsiLength + ')',
         align: 'left'
       },
       xaxis: {
@@ -86,6 +88,53 @@ export class IndicatorChartComponent implements AfterViewInit {
         labels: {
           formatter: (y) => {
             return y.toFixed(0);
+          }
+        }
+      }
+    };
+  }
+
+  private initChartEma(): void {
+    this.options = {
+      series: [{
+        name: 'EMA',
+        data: []
+      }],
+      chart: {
+        height: 200,
+        type: 'line',
+        animations: {
+          enabled: false
+        }
+      },
+      tooltip: {
+        x: {
+          formatter: (val) => {
+            const d = new Date(val);
+            return d.toLocaleTimeString();
+          }
+        }
+      },
+      dataLabels: {
+        enabled: false
+      },
+      stroke: {
+        curve: 'straight'
+      },
+      title: {
+        text: 'EMA (' + this.chartService.emaPeriod + ')',
+        align: 'left'
+      },
+      xaxis: {
+        labels: {
+          datetimeUTC: false
+        },
+        type: 'datetime'
+      },
+      yaxis: {
+        labels: {
+          formatter: (y) => {
+            return y.toFixed(2);
           }
         }
       }
@@ -149,7 +198,7 @@ export class IndicatorChartComponent implements AfterViewInit {
     };
   }
 
-  private postRSI(klines: Array<any>) {
+  private postRsi(klines: Array<any>) {
     const query = {
       indicator: 'rsi',
       length: this.chartService.rsiLength
@@ -170,7 +219,28 @@ export class IndicatorChartComponent implements AfterViewInit {
     });
   }
 
-  private postMACD(klines: Array<any>) {
+  private postEma(klines: Array<any>) {
+    const query = {
+      indicator: 'ema',
+      period: this.chartService.emaPeriod
+    };
+
+    const url = this.chartService.createUrl(this.baseUrl, query);
+
+    this.http.post(url, klines).subscribe((res: any) => {
+      const mappedValues = res.map(val => {
+        return {
+          x: val.time,
+          y: Number(val.ema)
+        };
+      });
+
+      this.options.series[0].data = mappedValues;
+      this.renderChart();
+    });
+  }
+
+  private postMacd(klines: Array<any>) {
     const query = {
       indicator: 'macd',
       fast: 12,

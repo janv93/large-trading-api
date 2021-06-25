@@ -27,7 +27,7 @@ export class CandlestickChartComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const symbol = 'MATICUSDT';
     this.initChart(symbol);
-    this.getKlines(symbol, 10, 'rsi', '1m');
+    this.getKlines(symbol, 20, 'ema', '1m');
     this.chartService.strategyType = 'noClose'; // close or noClose, if strategy has close or only buy + sell
   }
 
@@ -124,8 +124,8 @@ export class CandlestickChartComponent implements AfterViewInit {
     switch (strategy) {
       case 'pivotReversal':
         return {
-          symbol: symbol,
-          times: times,
+          symbol,
+          times,
           timeframe,
           algorithm: 'pivotReversal',
           leftBars: 4,
@@ -133,16 +133,16 @@ export class CandlestickChartComponent implements AfterViewInit {
         };
       case 'momentum':
         return {
-          symbol: symbol,
-          times: times,
+          symbol,
+          times,
           timeframe,
           algorithm: 'momentum',
           streak: 2
         };
       case 'macd':
         return {
-          symbol: symbol,
-          times: times,
+          symbol,
+          times,
           timeframe,
           algorithm: 'macd',
           fast: 12,
@@ -151,11 +151,19 @@ export class CandlestickChartComponent implements AfterViewInit {
         }
       case 'rsi':
         return {
-          symbol: symbol,
-          times: times,
+          symbol,
+          times,
           timeframe,
           algorithm: 'rsi',
           length: this.chartService.rsiLength
+        }
+      case 'ema':
+        return {
+          symbol,
+          times,
+          timeframe,
+          algorithm: 'ema',
+          period: this.chartService.emaPeriod
         }
     }
   }
