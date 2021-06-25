@@ -13,7 +13,7 @@ export default class IndicatorsController {
     const values = klines.map(kline => kline.prices.close);
 
     const inputRsi = {
-      values: values,
+      values,
       period: length
     };
 
@@ -34,11 +34,11 @@ export default class IndicatorsController {
     const smoothing = (Number(fast) + Number(slow)) / 2;
 
     const inputMacd = {
-      values: values,
+      values,
       fastPeriod: fast,
       slowPeriod: slow,
       signalPeriod: signal,
-      smoothing: smoothing
+      smoothing
     };
 
     const macdValues = TACopy.MACD.calculate(inputMacd);
@@ -52,5 +52,26 @@ export default class IndicatorsController {
     });
 
     return valuesWithMacd;
+  }
+
+  public ema(klines: Array<BinanceKline>, period: number) {
+    const values = klines.map(kline => kline.prices.close);
+
+    const inputEma = {
+      period,
+      values,
+      smoothing: 2
+    };
+
+    const emaValues = TACopy.EMA.calculate(inputEma);
+
+    const valuesWithEma = emaValues.map((value: any, index: number) => {
+      return {
+        time: klines[index + period - 1].times.open,
+        ema: value
+      }
+    });
+
+    return valuesWithEma;
   }
 }

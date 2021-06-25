@@ -13,7 +13,6 @@ export default class MacdController extends BaseController {
   public setSignals(klines: Array<BinanceKline>, fast: string, slow: string, signal: string): Array<BinanceKline> {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
-    this.findOptimalEntry(klinesWithHistogram, histogram);
 
     let lastHistogram: number;
     let lastMove: string;
@@ -41,7 +40,7 @@ export default class MacdController extends BaseController {
       const move = h - lastHistogram > 0 ? 'up' : 'down';
       const momentumSwitch = move !== lastMove;
 
-      // buy when macd h. is decreasing at high value or increasing at low value, sell when macd h. hits 0
+      // buy when histogram is decreasing at high value or increasing at low value, sell when histogram hits 0
       if (momentumSwitch) {
         if (!positionOpen) {
           if (move === 'down' && h > 0) {
@@ -50,7 +49,7 @@ export default class MacdController extends BaseController {
             peakHigh = h > peakHigh ? h : peakHigh;
             const averageHigh = sumHighs / numberHighs;
 
-            if (h > (averageHigh + peakHigh) / 2) {
+            if (h > 0.003) {
               kline.signal = this.sellSignal;
               positionOpen = true;
               positionOpenType = this.sellSignal;
@@ -58,10 +57,10 @@ export default class MacdController extends BaseController {
           } else if (move === 'up' && h < 0) {
             sumLows += h;
             numberLows++;
-            peakLow = h > peakLow ? h : peakLow;
+            peakLow = h < peakLow ? h : peakLow;
             const averageLow = sumLows / numberLows;
 
-            if (h < (averageLow + peakLow) / 2) {
+            if (h < -0.003) {
               kline.signal = this.buySignal;
               positionOpen = true;
               positionOpenType = this.buySignal;
@@ -83,7 +82,7 @@ export default class MacdController extends BaseController {
   }
 
   /**
-   * test different macd h. strategies
+   * test different histogram strategies
    */
   private findOptimalEntry(klines: Array<BinanceKline>, histogram: Array<any>) {
     let lastHistogram: number;

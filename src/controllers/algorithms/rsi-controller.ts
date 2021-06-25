@@ -13,12 +13,12 @@ export default class RsiController extends BaseController {
   public setSignals(klines: Array<BinanceKline>, length: number): Array<BinanceKline> {
     const rsi = this.indicatorsController.rsi(klines, length);
     const klinesWithRsi = klines.slice(-rsi.length);
-    this.overBoughtOverSold(klinesWithRsi, rsi);
+    this.setOverBoughtOverSoldSignals(klinesWithRsi, rsi);
 
     return klines;
   }
 
-  private overBoughtOverSold(klines: Array<BinanceKline>, rsi: Array<any>): Array<BinanceKline> {
+  private setOverBoughtOverSoldSignals(klines: Array<BinanceKline>, rsi: Array<any>): Array<BinanceKline> {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 

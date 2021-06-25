@@ -1,20 +1,22 @@
+import Database from '../data/db';
+import BaseController from './base-controller';
 import BinanceController from './binance-controller';
 import MomentumController from './algorithms/momentum-controller';
 import BacktestController from './algorithms/backtest-controller';
 import IndicatorsController from './technical-analysis/indicators-controller';
 import MacdController from './algorithms/macd-controller';
 import RsiController from './algorithms/rsi-controller';
-import Database from '../data/db';
-import BaseController from './base-controller';
+import EmaController from './algorithms/ema-controller';
 
 export default class RoutesController extends BaseController {
+  private database = new Database();
   private binanceController = new BinanceController();
   private momentumController = new MomentumController();
   private backtestController = new BacktestController();
   private indicatorsController = new IndicatorsController();
   private macdController = new MacdController();
   private rsiController = new RsiController();
-  private database = new Database();
+  private emaController = new EmaController();
 
   constructor() {
     super();
@@ -61,6 +63,8 @@ export default class RoutesController extends BaseController {
           case 'rsi':
             klinesWithSignals = this.rsiController.setSignals(responseInRange, Number(query.length));
             break;
+          case 'ema':
+            klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.period));
         }
         
         if (klinesWithSignals.length > 0) {
@@ -85,6 +89,7 @@ export default class RoutesController extends BaseController {
     switch (query.indicator) {
       case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, Number(query.length)); break;
       case 'macd': indicatorChart = this.indicatorsController.macd(req.body, query.fast, query.slow, query.signal); break;
+      case 'ema': indicatorChart = this.indicatorsController.ema(req.body, Number(query.period)); break;
     }
 
     if (indicatorChart.length > 0) {
