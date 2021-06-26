@@ -47,7 +47,6 @@ export default class RoutesController extends BaseController {
    */
   public getKlinesWithAlgorithm(req, res): void {
     const query = req.query;
-
     this.database.findKlines(query.symbol, query.timeframe)
       .then((response: any) => {
         const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
@@ -74,6 +73,7 @@ export default class RoutesController extends BaseController {
         }
       }).catch(err => {
         this.handleError(err);
+        res.status(500).json({ error: err.message });
       });
   }
 

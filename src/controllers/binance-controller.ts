@@ -77,8 +77,8 @@ export default class BinanceController extends BaseController {
   public getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, timeframe: string, resolve: Function, reject: Function) {
     this.getKlines(symbol, timeframe, undefined, startTime).then(res => {
       this.klines = this.klines.concat(res.data);
-      const end = this.klines[this.klines.length - 1][0];
-      const start = end + 60000;
+      const end: number = this.klines[this.klines.length - 1][0];
+      const start: number = end + this.timeframeToMilliseconds(timeframe);
       const now = (new Date()).getTime();
 
       if (start < now) {
@@ -107,7 +107,7 @@ export default class BinanceController extends BaseController {
    */
   public initKlinesDatabase(symbol: string, timeframe: string) {
     const startDate = new Date();
-    const timespan = 1000 * 60 * 60 * 24 * 100;
+    const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 50;
     const startTime = startDate.getTime() - timespan;
 
     return new Promise((resolve, reject) => {
@@ -123,7 +123,7 @@ export default class BinanceController extends BaseController {
             };
 
             this.database.insert(insert);
-            resolve('Database initialized with ' + newKlines.length + ' klines');
+            resolve({ message: 'Database initialized with ' + newKlines.length + ' klines' });
           }).catch(err => {
             this.handleError(err);
             reject(err);
@@ -139,7 +139,6 @@ export default class BinanceController extends BaseController {
             const mergedKlines = dbKlines.concat(newKlines);
             console.log('Added ' + newKlines.length + ' new klines to database');
             console.log();
-
             this.database.updateKlines(symbol, timeframe, mergedKlines).then(() => {
               this.database.findKlines(symbol, timeframe).then(updatedKlines => {
                 resolve(updatedKlines[0].klines);

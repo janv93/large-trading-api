@@ -3,11 +3,11 @@ import BaseController from '../controllers/base-controller';
 import { BinanceKline } from '../interfaces';
 
 export default class Database extends BaseController {
-  private db = new Datastore({ filename: 'src/data/storage/candlesticks.db' });
+  private db: Datastore;
 
   constructor() {
     super();
-    this.db.loadDatabase();
+    this.init();
   }
 
   public insert(value) {
@@ -15,6 +15,8 @@ export default class Database extends BaseController {
   }
 
   public findKlines(symbol: string, timeframe: string): Promise<any> {
+    this.init();
+
     return new Promise((resolve, reject) => {
       this.db.find({ symbol, timeframe }, (err, docs) => {
         if (err) {
@@ -38,4 +40,8 @@ export default class Database extends BaseController {
     })
   }
 
+  private init(): void {
+    this.db = new Datastore({ filename: 'src/data/storage/candlesticks.db' });
+    this.db.loadDatabase();
+  }
 }

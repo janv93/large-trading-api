@@ -20,4 +20,17 @@ export default class BaseController {
       console.log(err);
     }
   }
+
+  public timeframeToMilliseconds(timeframe: string): number {
+    const unit = timeframe.slice(-1);
+    const value = Number(timeframe.slice(0, timeframe.length - 1));
+
+    switch (unit) {
+      case 'm': return value * 60000;
+      case 'h': return value * 60 * 60000;
+      case 'd': return value * 24 * 60 * 60000;
+      case 'w': return value * 7 * 24 * 60 * 60000;
+      default: return -1;
+    }
+  }
 }
