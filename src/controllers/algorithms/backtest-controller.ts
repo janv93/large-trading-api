@@ -16,9 +16,20 @@ export default class BacktestController extends BaseController {
           const diff = kline.prices.close - lastSignalKline.prices.close;
           const percentage = diff / lastSignalKline.prices.close * 100;
 
-          // if buy->sell, add percentage, and vice versa
           percentProfit += lastSignalKline.signal === this.buySignal ? percentage : -percentage;
-          percentProfit -= commission;
+
+          if (kline.signal === this.closeSignal) {
+            // if buy/sell->close, we pay 1x commission
+            percentProfit -= commission;
+          } else {
+            // if buy/sell->sell/buy, we pay 2x commission
+            percentProfit -= commission * 2;
+          }
+        } else {
+          if (lastSignalKline) {
+            // if close->buy/sell, we pay 1x commission
+            percentProfit -= commission;
+          }
         }
 
         lastSignalKline = kline;
