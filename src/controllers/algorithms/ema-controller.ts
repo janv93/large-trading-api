@@ -14,34 +14,60 @@ export default class EmaController extends BaseController {
     const ema = this.indicatorsController.ema(klines, period);
     const klinesWithEma = klines.slice(-ema.length);
 
-    let lastSignal: string;
+    let lastMove: string;
+    let positionOpen = false;
     let lastEma: number;
+    let pivotEma: number;
+    let threshold = 0.00;
 
     klinesWithEma.forEach((kline, index) => {
       const e = ema[index].ema;
 
-      if (lastSignal === this.buySignal) {
-        if (e < lastEma) {
-          kline.signal = this.sellSignal;
-          lastSignal = this.sellSignal;
-        }
-      } else if (lastSignal === this.sellSignal) {
-        if (e > lastEma) {
-          kline.signal = this.buySignal;
-          lastSignal = this.buySignal;
-        }
-      } else {
-        if (lastEma) {
-          if (e > lastEma) {
+      if (!lastEma) {
+        lastEma = e;
+        return;
+      }
+
+      const move = e - lastEma > 0 ? 'up' : 'down';
+
+      if (!lastMove) {
+        lastMove = move;
+        lastEma = e;
+        return;
+      }
+
+      const momentumSwitch = move !== lastMove;
+
+      if (momentumSwitch) {
+        pivotEma = lastEma;
+
+        if (positionOpen) {
+          const diffToPivot = e - pivotEma;
+
+          if (move === 'up' && diffToPivot > threshold) {
             kline.signal = this.buySignal;
-            lastSignal = this.buySignal;
-          } else {
+          } else if (move === 'down' && diffToPivot < -threshold) {
             kline.signal = this.sellSignal;
-            lastSignal = this.sellSignal;
+          } else {
+            kline.signal = this.closeSignal;
+            positionOpen = false;
           }
         }
       }
 
+      if (!positionOpen) {
+        const diffToPivot = e - pivotEma;
+
+        if (move === 'up' && diffToPivot > threshold) {
+          kline.signal = this.buySignal;
+          positionOpen = true;
+        } else if (move === 'down' && diffToPivot < -threshold) {
+          kline.signal = this.sellSignal;
+          positionOpen = true;
+        }
+      }
+
+      lastMove = move;
       lastEma = e;
     });
 

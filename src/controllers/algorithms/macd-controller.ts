@@ -33,11 +33,12 @@ export default class MacdController extends BaseController {
         return;
       }
 
+      const move = h - lastHistogram > 0 ? 'up' : 'down';
+
       if (!lastMove) {
-        lastMove = h - lastHistogram > 0 ? 'up' : 'down';
+        lastMove = move;
       }
 
-      const move = h - lastHistogram > 0 ? 'up' : 'down';
       const momentumSwitch = move !== lastMove;
 
       // buy when histogram is decreasing at high value or increasing at low value, sell when histogram hits 0
