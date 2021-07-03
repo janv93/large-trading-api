@@ -26,10 +26,8 @@ export default class BacktestController extends BaseController {
             percentProfit -= commission * 2;
           }
         } else {
-          if (lastSignalKline) {
-            // if close->buy/sell, we pay 1x commission
-            percentProfit -= commission;
-          }
+          // if close->buy/sell, we pay 1x commission
+          percentProfit -= commission;
         }
 
         lastSignalKline = kline;
