@@ -76,7 +76,7 @@ export class ProfitChartComponent implements AfterViewInit {
       yaxis: {
         labels: {
           formatter: (y) => {
-            return y.toFixed(0) + '%';
+            return y.toFixed(2) + '%';
           }
         }
       }
@@ -116,7 +116,7 @@ export class ProfitChartComponent implements AfterViewInit {
     this.stats = {
       trades: tradesCount,
       profit: (percentages[percentages.length - 1].y).toFixed(2) + '%',
-      ppt: (percentages[percentages.length - 1].y / tradesCount).toFixed(3) + '%',
+      ppt: tradesCount === 0 ? '0%' : (percentages[percentages.length - 1].y / tradesCount).toFixed(3) + '%',
       maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%'
     };
   }

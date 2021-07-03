@@ -134,7 +134,7 @@ export class IndicatorChartComponent implements AfterViewInit {
       yaxis: {
         labels: {
           formatter: (y) => {
-            return y.toFixed(2);
+            return y.toFixed(3);
           }
         }
       }
