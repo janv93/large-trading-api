@@ -8,13 +8,13 @@ Frontend: [AngularChartVisualizer](https://github.com/janv93/AngularChartVisuali
 ### Done:
 
 - [x] Fetch Binance candlestick data
-- [x] Indicators working: RSI, MACD (same as Binance/TradingView)
+- [x] Caching candlesticks in data base
+- [x] Indicators working: EMA, RSI, MACD (same as Binance/TradingView)
 - [x] Basic Algorithms setting position signals
 - [x] Backtesting position signals
-- [x] Caching candlesticks in data base
 
 ### TBD:
 
-- [ ] Finding linear/consistent and profitable algorithm on 100k+ timeframes (max: 10k on RSI algorithm)
+- [ ] Finding profitable and linear/consistent algorithm on 100k+ timeframes
 - [ ] When profitable: Start forward test with Binance
 - [ ] Implement Machine Learning: Linear regression on indicators, LSTM on closes
