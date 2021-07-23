@@ -25,9 +25,8 @@ export class CandlestickChartComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    const symbol = 'MATICUSDT';
-    this.initChart(symbol);
-    this.getKlines(symbol, 5, 'ema', '1m');
+    this.initChart(this.chartService.symbol);
+    this.getKlines(this.chartService.symbol, this.chartService.timeframeMultiplier, this.chartService.strategy, this.chartService.timeframe);
   }
 
   private initChart(symbol): void {

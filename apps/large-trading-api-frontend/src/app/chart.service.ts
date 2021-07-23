@@ -6,8 +6,12 @@ import { Subject } from 'rxjs';
 })
 export class ChartService {
   public klinesSubject = new Subject();
+  public symbol = 'MATICUSDT';
+  public timeframe = '1m';
+  public timeframeMultiplier = 1;  // 1 = 1 * 1000 timeframes
+  public strategy = 'ema';
   public rsiLength = 7;
-  public emaPeriod = 25;
+  public emaPeriod = 200;
   public baseUrl = 'http://127.0.0.1:3000';
 
   constructor() {
