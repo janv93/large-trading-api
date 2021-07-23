@@ -7,6 +7,7 @@ import IndicatorsController from './technical-analysis/indicators-controller';
 import MacdController from './algorithms/macd-controller';
 import RsiController from './algorithms/rsi-controller';
 import EmaController from './algorithms/ema-controller';
+import PatternComparatorController from './algorithms/ai/pattern-comparator-controller';
 
 export default class RoutesController extends BaseController {
   private database = new Database();
@@ -17,6 +18,7 @@ export default class RoutesController extends BaseController {
   private macdController = new MacdController();
   private rsiController = new RsiController();
   private emaController = new EmaController();
+  private patternComparatorController = new PatternComparatorController();
 
   constructor() {
     super();
@@ -64,6 +66,10 @@ export default class RoutesController extends BaseController {
             break;
           case 'ema':
             klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.period));
+            break;
+          case 'patternCompare':
+            klinesWithSignals = this.patternComparatorController.setSignals(responseInRange, Number(query.range));
+            break;
         }
         
         if (klinesWithSignals.length > 0) {
