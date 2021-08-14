@@ -18,7 +18,7 @@ export default class EmaController extends BaseController {
     let positionOpen = false;
     let lastEma: number;
     let pivotEma: number;
-    let threshold = 0.0025;
+    let threshold = 0.0001;
 
     klinesWithEma.forEach((kline, index) => {
       const e = ema[index].ema;
@@ -43,10 +43,11 @@ export default class EmaController extends BaseController {
 
         if (positionOpen) {
           const diffToPivot = e - pivotEma;
+          const diffToPivotPercent = Math.abs(diffToPivot / pivotEma);
 
-          if (move === 'up' && diffToPivot > threshold) {
+          if (move === 'up' && diffToPivotPercent > threshold) {
             kline.signal = this.buySignal;
-          } else if (move === 'down' && diffToPivot < -threshold) {
+          } else if (move === 'down' && diffToPivotPercent > threshold) {
             kline.signal = this.sellSignal;
           } else {
             kline.signal = this.closeSignal;
@@ -57,11 +58,12 @@ export default class EmaController extends BaseController {
 
       if (!positionOpen) {
         const diffToPivot = e - pivotEma;
+        const diffToPivotPercent = Math.abs(diffToPivot / pivotEma);
 
-        if (move === 'up' && diffToPivot > threshold) {
+        if (move === 'up' && diffToPivotPercent > threshold) {
           kline.signal = this.buySignal;
           positionOpen = true;
-        } else if (move === 'down' && diffToPivot < -threshold) {
+        } else if (move === 'down' && diffToPivotPercent > threshold) {
           kline.signal = this.sellSignal;
           positionOpen = true;
         }

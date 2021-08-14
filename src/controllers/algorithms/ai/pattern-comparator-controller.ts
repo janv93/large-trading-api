@@ -9,7 +9,29 @@ export default class PatternComparatorController extends BaseController {
   public setSignals(klines: Array<BinanceKline>, range: number): Array<BinanceKline> {
     const normalizedPatterns: Array<Array<number>> = this.normalizePatterns(klines, range);   // create array of patterns for comparing to one another
 
+    normalizedPatterns.forEach((pattern, index) => {
+      const similarity = this.comparePatterns(normalizedPatterns[normalizedPatterns.length - 1], pattern);
+
+      if (similarity < 0.11 * range) {
+        console.log(similarity);
+        console.log(new Date(klines[index].times.open));
+        console.log();
+      }
+    });
+
     return klines;
+  }
+
+  private comparePatterns(first: Array<number>, second: Array<number>): number {
+    let similarity = 0;
+
+    first.forEach((value, index) => {
+      const diff = value - second[index];
+      const absDiff = Math.abs(diff);
+      similarity += absDiff;
+    });
+
+    return similarity;
   }
 
   /**
@@ -38,7 +60,7 @@ export default class PatternComparatorController extends BaseController {
 
     const normalizedPattern = closes.map(close => {
       return (close - min) / range;
-    });   
+    });
 
     return normalizedPattern;
   }
