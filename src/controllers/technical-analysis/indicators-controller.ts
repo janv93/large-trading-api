@@ -74,4 +74,25 @@ export default class IndicatorsController {
 
     return valuesWithEma;
   }
+
+  public bb(klines: Array<BinanceKline>, period: number) {
+    const values = klines.map(kline => kline.prices.close);
+
+    const inputBb = {
+      period,
+      values,
+      stdDev: 2
+    };
+
+    const bbValues = TA.BollingerBands.calculate(inputBb);
+
+    const valuesWithBb = bbValues.map((value: any, index: number) => {
+      return {
+        time: klines[index + period - 1].times.open,
+        bb: value
+      };
+    });
+
+    return valuesWithBb;
+  }
 }

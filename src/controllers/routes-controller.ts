@@ -7,6 +7,7 @@ import IndicatorsController from './technical-analysis/indicators-controller';
 import MacdController from './algorithms/macd-controller';
 import RsiController from './algorithms/rsi-controller';
 import EmaController from './algorithms/ema-controller';
+import BbController from './algorithms/bb-controller';
 import PatternComparatorController from './algorithms/ai/pattern-comparator-controller';
 
 export default class RoutesController extends BaseController {
@@ -18,6 +19,7 @@ export default class RoutesController extends BaseController {
   private macdController = new MacdController();
   private rsiController = new RsiController();
   private emaController = new EmaController();
+  private bbController = new BbController();
   private patternComparatorController = new PatternComparatorController();
 
   constructor() {
@@ -67,6 +69,9 @@ export default class RoutesController extends BaseController {
           case 'ema':
             klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.period));
             break;
+          case 'bb':
+            klinesWithSignals = this.bbController.setSignals(responseInRange, Number(query.period));
+            break;
           case 'patternCompare':
             klinesWithSignals = this.patternComparatorController.setSignals(responseInRange, Number(query.range));
             break;
@@ -96,6 +101,7 @@ export default class RoutesController extends BaseController {
       case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, Number(query.length)); break;
       case 'macd': indicatorChart = this.indicatorsController.macd(req.body, query.fast, query.slow, query.signal); break;
       case 'ema': indicatorChart = this.indicatorsController.ema(req.body, Number(query.period)); break;
+      case 'bb': indicatorChart = this.indicatorsController.bb(req.body, Number(query.period)); break;
     }
 
     if (indicatorChart.length > 0) {
