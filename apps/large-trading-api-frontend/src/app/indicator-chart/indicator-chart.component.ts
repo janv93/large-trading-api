@@ -29,6 +29,7 @@ export class IndicatorChartComponent implements AfterViewInit {
       case 'rsi': this.initChartRSI(); break;
       case 'macd': this.initChartMacd(); break;
       case 'ema': this.initChartEma(); break;
+      case 'bb': this.initChartBb(); break;
     }
 
     this.chartService.klinesSubject.subscribe((res: any) => {
@@ -36,6 +37,7 @@ export class IndicatorChartComponent implements AfterViewInit {
         case 'rsi': this.postRsi(res); break;
         case 'macd': this.postMacd(res); break;
         case 'ema': this.postEma(res); break;
+        case 'bb': this.postBb(res); break;
       }
     });
   }
@@ -198,6 +200,63 @@ export class IndicatorChartComponent implements AfterViewInit {
     };
   }
 
+  private initChartBb(): void {
+    this.options = {
+      series: [
+        {
+          name: 'BB Upper',
+          data: []
+        },
+        {
+          name: 'Price',
+          data: []
+        },
+        {
+          name: 'BB Lower',
+          data: []
+        }
+      ],
+      chart: {
+        height: 400,
+        type: 'line',
+        animations: {
+          enabled: false
+        }
+      },
+      tooltip: {
+        x: {
+          formatter: (val) => {
+            const d = new Date(val);
+            return d.toLocaleTimeString();
+          }
+        }
+      },
+      dataLabels: {
+        enabled: false
+      },
+      stroke: {
+        curve: 'straight'
+      },
+      title: {
+        text: 'BB (' + this.chartService.bbPeriod + ')',
+        align: 'left'
+      },
+      xaxis: {
+        labels: {
+          datetimeUTC: false
+        },
+        type: 'datetime'
+      },
+      yaxis: {
+        labels: {
+          formatter: (y) => {
+            return y.toFixed(3);
+          }
+        }
+      }
+    };
+  }
+
   private postRsi(klines: Array<any>) {
     const query = {
       indicator: 'rsi',
@@ -259,6 +318,44 @@ export class IndicatorChartComponent implements AfterViewInit {
       });
 
       this.options.series[0].data = mappedValues;
+      this.renderChart();
+    });
+  }
+
+  private postBb(klines: Array<any>) {
+    const query = {
+      indicator: 'bb',
+      period: this.chartService.bbPeriod
+    };
+
+    const url = this.chartService.createUrl(this.baseUrl, query);
+
+    this.http.post(url, klines).subscribe((res: any) => {
+      const mappedValuesUpper = res.map(val => {
+        return {
+          x: val.time,
+          y: Number(val.bb.upper)
+        };
+      });
+
+      const mappedValuesLower = res.map(val => {
+        return {
+          x: val.time,
+          y: Number(val.bb.lower)
+        };
+      });
+
+      const closes = klines.map(kline => kline.prices.close).slice(-res.length);
+      const mappedValuesCloses = closes.map((val, index) => {
+        return {
+          x: res[index].time,
+          y: val
+        };
+      });
+
+      this.options.series[0].data = mappedValuesUpper;
+      this.options.series[1].data = mappedValuesCloses;
+      this.options.series[2].data = mappedValuesLower;
       this.renderChart();
     });
   }

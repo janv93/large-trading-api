@@ -146,7 +146,7 @@ export class CandlestickChartComponent implements AfterViewInit {
           fast: 12,
           slow: 26,
           signal: 9
-        }
+        };
       case 'rsi':
         return {
           symbol,
@@ -154,7 +154,7 @@ export class CandlestickChartComponent implements AfterViewInit {
           timeframe,
           algorithm: 'rsi',
           length: this.chartService.rsiLength
-        }
+        };
       case 'ema':
         return {
           symbol,
@@ -162,7 +162,15 @@ export class CandlestickChartComponent implements AfterViewInit {
           timeframe,
           algorithm: 'ema',
           period: this.chartService.emaPeriod
-        }
+        };
+      case 'bb':
+        return {
+          symbol,
+          times,
+          timeframe,
+          algorithm: 'bb',
+          period: this.chartService.bbPeriod
+        };
     }
   }
 
