@@ -82,6 +82,8 @@ export default class EmaController extends BaseController {
   public trade() {
     const now = new Date();
     const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const timeDiffToNextHour = 60 * 60000 - (minutes * 60000 + seconds * 1000);
 
     const symbol = 'BTC';
     const timeframe = '1h';
@@ -138,7 +140,7 @@ export default class EmaController extends BaseController {
             }
           });
         }, 60 * 60000);
-      }, (60 * 60000 + 10000) - minutes * 60000);
+      }, timeDiffToNextHour + 10000);
     }).catch(err => {
       this.handleError(err);
     });
