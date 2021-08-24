@@ -7,9 +7,9 @@ import { Subject } from 'rxjs';
 export class ChartService {
   public klinesSubject = new Subject();
   public symbol = 'BTCUSDT';
-  public timeframe = '15m';
-  public timeframeMultiplier = 20;  // 1 = 1 * 1000 timeframes
-  public strategy = 'bb';
+  public timeframe = '1h';
+  public timeframeMultiplier = 1;  // 1 = 1 * 1000 timeframes
+  public strategy = 'ema';
   public rsiLength = 7;
   public emaPeriod = 80;
   public bbPeriod = 21;
