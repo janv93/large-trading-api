@@ -21,7 +21,7 @@ export default class EmaController extends BaseController {
     let positionOpen = false;
     let lastEma: number;
     let pivotEma: number;
-    let threshold = 0.000;
+    let threshold = 0.0001;
 
     klinesWithEma.forEach((kline, index) => {
       const e = ema[index].ema;
