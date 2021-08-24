@@ -93,6 +93,14 @@ export default class RoutesController extends BaseController {
     res.send(performance);
   }
 
+  public tradeStrategy(req, res): void {
+    switch (req.query.strategy) {
+      case 'ema': this.emaController.trade();
+    }
+
+    res.send('Running');
+  }
+
   public postTechnicalIndicator(req, res): void {
     const query = req.query;
     let indicatorChart: Array<any> = [];

@@ -15,8 +15,8 @@ Frontend: [AngularChartVisualizer](https://github.com/janv93/AngularChartVisuali
 - [x] Basic Algorithms setting position signals
 - [x] Backtesting position signals
 - [x] Find profitable and linear/consistent algorithm on 100k+ / max timeframes (Currently: EMA 80 on BTC 1h, linear, 320% on max time span)
+- [x] When profitable: Start forward test with Binance
 
 ### TBD:
 
-- [ ] When profitable: Start forward test with Binance
 - [ ] Implement Machine Learning: Linear regression on indicators, LSTM on closes

@@ -2,6 +2,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import config from 'config';
 import RoutesController from './controllers/routes-controller';
+import dotenv from 'dotenv';
+if (dotenv) { dotenv.config(); }
 
 const app = express();
 const routesController = new RoutesController();
@@ -25,6 +27,10 @@ app.get('/klines', (req, res) => {
 
 app.get('/klinesWithAlgorithm', (req, res) => {
   routesController.getKlinesWithAlgorithm(req, res);
+});
+
+app.get('/trade', (req, res) => {
+  routesController.tradeStrategy(req, res);
 });
 
 app.post('/backtest', (req, res) => {

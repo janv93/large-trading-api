@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import { BinanceKline } from '../interfaces';
 import BaseController from './base-controller';
 import Database from '../data/db';
@@ -60,7 +61,7 @@ export default class BinanceController extends BaseController {
         const lastDate = new Date(this.klines[this.klines.length - 1][0]);
         console.log('Last date: ' + lastDate);
         console.log();
-        const binanceKlines = this.mapResult();
+        const binanceKlines = this.mapResult(this.klines);
         resolve(binanceKlines);
         this.klines = [];
       }
@@ -91,7 +92,7 @@ export default class BinanceController extends BaseController {
         const lastDate = new Date(this.klines[this.klines.length - 1][0]);
         console.log('Last date: ' + lastDate);
         console.log();
-        const binanceKlines = this.mapResult();
+        const binanceKlines = this.mapResult(this.klines);
         resolve(binanceKlines);
         this.klines = [];
       }
@@ -159,8 +160,8 @@ export default class BinanceController extends BaseController {
     });
   }
 
-  private mapResult(): Array<BinanceKline> {
-    return this.klines.map(k => {
+  public mapResult(klines: Array<any>): Array<BinanceKline> {
+    return klines.map(k => {
       return {
         times: {
           open: k[0],
@@ -178,6 +179,63 @@ export default class BinanceController extends BaseController {
     });
   }
 
+  public setLeverage(symbol: string, leverage: number) {
+    const now = Date.now();
+  
+    const query = 'symbol=' + symbol + 'USDT' + '&leverage=' + leverage + '&timestamp=' + now;
+    const hmac = this.createHmac(query);
+  
+    const options = {
+      headers: {
+        'X-MBX-APIKEY': process.env.binance_api_key
+      }
+    };
+  
+    const url = 'https://fapi.binance.com/fapi/v1/leverage?' + query + '&signature=' + hmac;
+  
+    return axios.post(url, null, options);
+  }
+
+  public long(symbol, quantity) {
+    return this.createOrder(symbol, 'BUY', quantity).then(() => {
+      console.log('LONG position opened');
+    }).catch(err => this.handleError(err));
+  }
+
+  public short(symbol, quantity) {
+    return this.createOrder(symbol, 'SELL', quantity).then(() => {
+      console.log('SHORT position opened');
+    }).catch(err => this.handleError(err));
+  }
+
+  public createOrder(symbol: string, side: string, quantity: number) {
+    const now = Date.now();
+
+    let query =
+      'symbol=' + symbol + 'USDT'
+      + '&timestamp=' + now
+      + '&side=' + side
+      + '&type=' + 'MARKET';
+
+    query += '&quantity=' + quantity;
+
+    const hmac = this.createHmac(query);
+
+    const options = {
+      headers: {
+        'X-MBX-APIKEY': process.env.binance_api_key
+      }
+    };
+
+    const url = 'https://fapi.binance.com/fapi/v1/order?' + query + '&signature=' + hmac;
+
+    return axios.post(url, null, options);
+  }
+
+  private createHmac(query) {
+    return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex')
+  }
+
   private createUrl(baseUrl: string, queryObj: any): string {
     let url = baseUrl;
     let firstParam = true;
@@ -191,4 +249,6 @@ export default class BinanceController extends BaseController {
 
     return url;
   }
+
+
 }
