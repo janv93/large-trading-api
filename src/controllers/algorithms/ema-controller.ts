@@ -21,7 +21,7 @@ export default class EmaController extends BaseController {
     let positionOpen = false;
     let lastEma: number;
     let pivotEma: number;
-    let threshold = 0.0001;
+    let threshold = 0.000;
 
     klinesWithEma.forEach((kline, index) => {
       const e = ema[index].ema;
@@ -97,7 +97,7 @@ export default class EmaController extends BaseController {
             const mappedKlines: Array<BinanceKline> = this.binanceController.mapResult(res.data);
             mappedKlines.splice(-1);  // remove running timeframe
             console.log(mappedKlines.slice(-3))
-            const ema = this.indicatorsController.ema(mappedKlines, 10);
+            const ema = this.indicatorsController.ema(mappedKlines, 80);
             console.log(ema.slice(-3))
 
             const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
