@@ -115,9 +115,10 @@ export class ProfitChartComponent implements AfterViewInit {
 
     this.stats = {
       trades: tradesCount,
-      profit: (percentages[percentages.length - 1].y).toFixed(2) + '%',
+      profit: percentages[percentages.length - 1].y.toFixed(2) + '%',
       ppt: tradesCount === 0 ? '0%' : (percentages[percentages.length - 1].y / tradesCount).toFixed(3) + '%',
-      maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%'
+      maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%',
+      drawbackProfitRatio: (this.calcMaxDrawback(percentages) / percentages[percentages.length - 1].y).toFixed(2)
     };
   }
 
