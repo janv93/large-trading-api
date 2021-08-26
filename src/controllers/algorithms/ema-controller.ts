@@ -89,11 +89,13 @@ export default class EmaController extends BaseController {
     const seconds = now.getSeconds();
     const timeDiffToNextHour = 60 * 60000 - (minutes * 60000 + seconds * 1000);
 
+    const leverage = 20;
     const symbol = 'ETH';
     const timeframe = '1h';
     const quantity = 0.5;
 
-    this.binanceController.setLeverage(symbol, 20).then(() => {
+    this.binanceController.setLeverage(symbol, leverage).then(() => {
+      console.log('Leverage set to ' + leverage);
       setTimeout(() => {  // wait for full hour
         this.tradeInterval(symbol, timeframe, quantity);
         setInterval(() => { // run every hour
