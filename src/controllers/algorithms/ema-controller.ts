@@ -6,6 +6,7 @@ import BinanceController from '../binance-controller';
 export default class EmaController extends BaseController {
   private indicatorsController: IndicatorsController;
   private binanceController: BinanceController;
+  private tradingPositionOpen = false;
 
   constructor() {
     super();
@@ -21,7 +22,7 @@ export default class EmaController extends BaseController {
     let positionOpen = false;
     let lastEma: number;
     let pivotEma: number;
-    let threshold = 0.0001;
+    let threshold = 0.000;
 
     klinesWithEma.forEach((kline, index) => {
       const e = ema[index].ema;
@@ -79,6 +80,9 @@ export default class EmaController extends BaseController {
     return klines;
   }
 
+  /**
+   * run live trading algorithm
+   */
   public trade() {
     const now = new Date();
     const minutes = now.getMinutes();
@@ -88,61 +92,68 @@ export default class EmaController extends BaseController {
     const symbol = 'BTC';
     const timeframe = '1h';
     const quantity = 0.03;
-    let positionOpen = false;
 
     this.binanceController.setLeverage(symbol, 20).then(() => {
       setTimeout(() => {  // wait for full hour
+        this.tradeInterval(symbol, timeframe, quantity);
         setInterval(() => { // run every hour
-          this.binanceController.getKlines(symbol + 'USDT', timeframe).then(res => {
-            const mappedKlines: Array<BinanceKline> = this.binanceController.mapResult(res.data);
-            mappedKlines.splice(-1);  // remove running timeframe
-            console.log(mappedKlines.slice(-3))
-            const ema = this.indicatorsController.ema(mappedKlines, 80);
-            console.log(ema.slice(-3))
-
-            const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
-            const lastMove = ema[ema.length - 2].ema - ema[ema.length - 3].ema > 0 ? 'up' : 'down';
-            console.log(lastMove);
-            console.log(move);
-
-            const momentumSwitch = move !== lastMove;
-
-            if (!positionOpen) {
-              if (momentumSwitch) {
-                if (move === 'up') {
-                  // open long
-                  this.binanceController.long(symbol, quantity).catch(err => {
-                    this.handleError(err);
-                  });
-                  positionOpen = true;
-                } else {
-                  // open short
-                  this.binanceController.short(symbol, quantity).catch(err => {
-                    this.handleError(err);
-                  });
-                  positionOpen = true;
-                }
-              }
-            } else {
-              if (momentumSwitch) {
-                if (move === 'up') {
-                  // close short open long
-                  this.binanceController.long(symbol, quantity * 2).catch(err => {
-                    this.handleError(err);
-                  });
-                } else {
-                  // close long open short
-                  this.binanceController.short(symbol, quantity * 2).catch(err => {
-                    this.handleError(err);
-                  });
-                }
-              }
-            }
-          });
+          this.tradeInterval(symbol, timeframe, quantity);
         }, 60 * 60000);
       }, timeDiffToNextHour + 10000);
     }).catch(err => {
       this.handleError(err);
+    });
+  }
+
+  /**
+   * run trading algorithm in selected interval
+   */
+  private tradeInterval(symbol: string, timeframe: string, quantity: number) {
+    this.binanceController.getKlines(symbol + 'USDT', timeframe).then(res => {
+      const mappedKlines: Array<BinanceKline> = this.binanceController.mapResult(res.data);
+      mappedKlines.splice(-1);  // remove running timeframe
+      console.log(mappedKlines.slice(-3))
+      const ema = this.indicatorsController.ema(mappedKlines, 80);
+      console.log(ema.slice(-3))
+
+      const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
+      const lastMove = ema[ema.length - 2].ema - ema[ema.length - 3].ema > 0 ? 'up' : 'down';
+      console.log(lastMove);
+      console.log(move);
+
+      const momentumSwitch = move !== lastMove;
+
+      if (!this.tradingPositionOpen) {
+        if (momentumSwitch) {
+          if (move === 'up') {
+            // open long
+            this.binanceController.long(symbol, quantity).catch(err => {
+              this.handleError(err);
+            });
+            this.tradingPositionOpen = true;
+          } else {
+            // open short
+            this.binanceController.short(symbol, quantity).catch(err => {
+              this.handleError(err);
+            });
+            this.tradingPositionOpen = true;
+          }
+        }
+      } else {
+        if (momentumSwitch) {
+          if (move === 'up') {
+            // close short open long
+            this.binanceController.long(symbol, quantity * 2).catch(err => {
+              this.handleError(err);
+            });
+          } else {
+            // close long open short
+            this.binanceController.short(symbol, quantity * 2).catch(err => {
+              this.handleError(err);
+            });
+          }
+        }
+      }
     });
   }
 
