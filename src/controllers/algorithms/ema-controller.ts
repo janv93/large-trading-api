@@ -89,9 +89,9 @@ export default class EmaController extends BaseController {
     const seconds = now.getSeconds();
     const timeDiffToNextHour = 60 * 60000 - (minutes * 60000 + seconds * 1000);
 
-    const symbol = 'BTC';
+    const symbol = 'ETH';
     const timeframe = '1h';
-    const quantity = 0.03;
+    const quantity = 0.5;
 
     this.binanceController.setLeverage(symbol, 20).then(() => {
       setTimeout(() => {  // wait for full hour
