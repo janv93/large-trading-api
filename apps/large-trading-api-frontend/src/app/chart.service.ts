@@ -8,7 +8,7 @@ export class ChartService {
   public klinesSubject = new Subject();
   public symbol = 'ETHUSDT';
   public timeframe = '1h';
-  public timeframeMultiplier = 10;  // 1 = 1 * 1000 timeframes
+  public timeframeMultiplier = 20;  // 1 = 1 * 1000 timeframes
   public strategy = 'ema';
   public rsiLength = 7;
   public emaPeriod = 80;
