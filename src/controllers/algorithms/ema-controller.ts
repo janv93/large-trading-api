@@ -80,6 +80,79 @@ export default class EmaController extends BaseController {
     return klines;
   }
 
+  public setSignalsTPSL(klines: Array<BinanceKline>, period: number): Array<BinanceKline> {
+    const ema = this.indicatorsController.ema(klines, period);
+    const klinesWithEma = klines.slice(-ema.length);
+
+    let lastMove: string;
+    let positionOpen = false;
+    let lastEma: number;
+    let lastSignal: string;
+    let posOpenPrice: number;
+    const takeProfitPercent = 0.05;
+    const stopLossPercent = 0.01;
+
+    klinesWithEma.forEach((kline, index) => {
+      const e = ema[index].ema;
+
+      if (!lastEma) {
+        lastEma = e;
+        return;
+      }
+
+      const move = e - lastEma > 0 ? 'up' : 'down';
+
+      if (!lastMove) {
+        lastMove = move;
+        lastEma = e;
+        return;
+      }
+
+      const momentumSwitch = move !== lastMove;
+
+      if (!positionOpen && momentumSwitch) {
+        posOpenPrice = kline.prices.close;
+
+        if (move === 'up') {
+          kline.signal = this.buySignal;
+          positionOpen = true;
+        } else {
+          kline.signal = this.sellSignal;
+          positionOpen = true;
+        }
+
+        lastSignal = kline.signal;
+      } else if (positionOpen) {
+        const currentPrice = kline.prices.close;
+        const priceDiff = currentPrice - posOpenPrice;
+        const priceDiffPercent = priceDiff / posOpenPrice;
+
+        if (lastSignal === this.buySignal) {
+          const takeProfitReached = priceDiffPercent > takeProfitPercent;
+          const stopLossReached = priceDiffPercent < -stopLossPercent;
+
+          if (takeProfitReached || stopLossReached) {
+            kline.signal = this.closeSignal;
+            positionOpen = false;
+          }
+        } else {
+          const takeProfitReached = priceDiffPercent < -takeProfitPercent;
+          const stopLossReached = priceDiffPercent > stopLossPercent;
+
+          if (takeProfitReached || stopLossReached) {
+            kline.signal = this.closeSignal;
+            positionOpen = false;
+          }
+        }
+      }
+
+      lastMove = move;
+      lastEma = e;
+    });
+
+    return klines;
+  }
+
   /**
    * run live trading algorithm
    */

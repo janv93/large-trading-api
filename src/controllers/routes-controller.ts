@@ -56,7 +56,7 @@ export default class RoutesController extends BaseController {
         const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
         let klinesWithSignals: Array<any> = [];
 
-        switch(query.algorithm) {
+        switch (query.algorithm) {
           case 'momentum':
             klinesWithSignals = this.momentumController.setSignals(responseInRange, query.streak);
             break;
@@ -69,6 +69,9 @@ export default class RoutesController extends BaseController {
           case 'ema':
             klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.period));
             break;
+          case 'ematpsl':
+            klinesWithSignals = this.emaController.setSignalsTPSL(responseInRange, Number(query.period));
+            break;
           case 'bb':
             klinesWithSignals = this.bbController.setSignals(responseInRange, Number(query.period));
             break;
@@ -76,7 +79,7 @@ export default class RoutesController extends BaseController {
             klinesWithSignals = this.patternComparatorController.setSignals(responseInRange, Number(query.range));
             break;
         }
-        
+
         if (klinesWithSignals.length > 0) {
           res.send(klinesWithSignals);
         } else {
