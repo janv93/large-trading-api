@@ -165,7 +165,7 @@ export default class EmaController extends BaseController {
     const leverage = 20;
     const symbol = 'ETH';
     const timeframe = '1h';
-    const quantity = 0.5;
+    const quantity = 0.7;
 
     this.binanceController.setLeverage(symbol, leverage).then(() => {
       console.log('Leverage set to ' + leverage);
