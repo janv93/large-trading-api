@@ -156,23 +156,22 @@ export default class EmaController extends BaseController {
   /**
    * run live trading algorithm
    */
-  public trade() {
+  public trade(symbol: string) {
     const now = new Date();
     const minutes = now.getMinutes();
     const seconds = now.getSeconds();
     const timeDiffToNextHour = 60 * 60000 - (minutes * 60000 + seconds * 1000);
 
     const leverage = 20;
-    const symbol = 'ETH';
     const timeframe = '1h';
-    const quantity = 0.7;
+    const quantityUSD = 1500;
 
     this.binanceController.setLeverage(symbol, leverage).then(() => {
       console.log('Leverage set to ' + leverage);
       setTimeout(() => {  // wait for full hour
-        this.tradeInterval(symbol, timeframe, quantity);
+        this.tradeInterval(symbol, timeframe, quantityUSD);
         setInterval(() => { // run every hour
-          this.tradeInterval(symbol, timeframe, quantity);
+          this.tradeInterval(symbol, timeframe, quantityUSD);
         }, 60 * 60000);
       }, timeDiffToNextHour + 10000);
     }).catch(err => {
@@ -183,9 +182,10 @@ export default class EmaController extends BaseController {
   /**
    * run trading algorithm in selected interval
    */
-  private tradeInterval(symbol: string, timeframe: string, quantity: number) {
+  private tradeInterval(symbol: string, timeframe: string, quantityUSD: number) {
     this.binanceController.getKlines(symbol + 'USDT', timeframe).then(res => {
       const mappedKlines: Array<BinanceKline> = this.binanceController.mapResult(res.data);
+      const cryptoQuantity = quantityUSD / mappedKlines[mappedKlines.length -1].prices.close;
       mappedKlines.splice(-1);  // remove running timeframe
       console.log(mappedKlines.slice(-3))
       const ema = this.indicatorsController.ema(mappedKlines, 80);
@@ -202,13 +202,13 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // open long
-            this.binanceController.long(symbol, quantity).catch(err => {
+            this.binanceController.long(symbol, cryptoQuantity).catch(err => {
               this.handleError(err);
             });
             this.tradingPositionOpen = true;
           } else {
             // open short
-            this.binanceController.short(symbol, quantity).catch(err => {
+            this.binanceController.short(symbol, cryptoQuantity).catch(err => {
               this.handleError(err);
             });
             this.tradingPositionOpen = true;
@@ -218,12 +218,12 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // close short open long
-            this.binanceController.long(symbol, quantity * 2).catch(err => {
+            this.binanceController.long(symbol, cryptoQuantity * 2).catch(err => {
               this.handleError(err);
             });
           } else {
             // close long open short
-            this.binanceController.short(symbol, quantity * 2).catch(err => {
+            this.binanceController.short(symbol, cryptoQuantity * 2).catch(err => {
               this.handleError(err);
             });
           }
