@@ -185,7 +185,7 @@ export default class EmaController extends BaseController {
   private tradeInterval(symbol: string, timeframe: string, quantityUSD: number) {
     this.binanceController.getKlines(symbol + 'USDT', timeframe).then(res => {
       const mappedKlines: Array<BinanceKline> = this.binanceController.mapResult(res.data);
-      const cryptoQuantity = quantityUSD / mappedKlines[mappedKlines.length -1].prices.close;
+      const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length -1].prices.close).toFixed(2));
       mappedKlines.splice(-1);  // remove running timeframe
       console.log(mappedKlines.slice(-3))
       const ema = this.indicatorsController.ema(mappedKlines, 80);
