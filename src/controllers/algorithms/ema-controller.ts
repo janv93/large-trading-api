@@ -6,7 +6,7 @@ import BinanceController from '../binance-controller';
 export default class EmaController extends BaseController {
   private indicatorsController: IndicatorsController;
   private binanceController: BinanceController;
-  private tradingPositionOpen = false;
+  private tradingPositionOpen = new Map();
 
   constructor() {
     super();
@@ -165,6 +165,7 @@ export default class EmaController extends BaseController {
     const leverage = 20;
     const timeframe = '1h';
     const quantityUSD = 1500;
+    this.tradingPositionOpen.set(symbol, false);
 
     this.binanceController.setLeverage(symbol, leverage).then(() => {
       console.log('Leverage set to ' + leverage);
@@ -198,20 +199,20 @@ export default class EmaController extends BaseController {
 
       const momentumSwitch = move !== lastMove;
 
-      if (!this.tradingPositionOpen) {
+      if (!this.tradingPositionOpen.get(symbol)) {
         if (momentumSwitch) {
           if (move === 'up') {
             // open long
             this.binanceController.long(symbol, cryptoQuantity).catch(err => {
               this.handleError(err);
             });
-            this.tradingPositionOpen = true;
+            this.tradingPositionOpen.set(symbol, true);
           } else {
             // open short
             this.binanceController.short(symbol, cryptoQuantity).catch(err => {
               this.handleError(err);
             });
-            this.tradingPositionOpen = true;
+            this.tradingPositionOpen.set(symbol, true);
           }
         }
       } else {
