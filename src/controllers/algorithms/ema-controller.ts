@@ -169,6 +169,7 @@ export default class EmaController extends BaseController {
 
     this.binanceController.setLeverage(symbol, leverage).then(() => {
       console.log('Leverage set to ' + leverage);
+      console.log(symbol + ' live trading started')
       setTimeout(() => {  // wait for full hour
         this.tradeInterval(symbol, timeframe, quantityUSD);
         setInterval(() => { // run every hour
