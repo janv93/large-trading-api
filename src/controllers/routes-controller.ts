@@ -69,8 +69,8 @@ export default class RoutesController extends BaseController {
           case 'ema':
             klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.period));
             break;
-          case 'ematpsl':
-            klinesWithSignals = this.emaController.setSignalsTPSL(responseInRange, Number(query.period));
+          case 'emasl':
+            klinesWithSignals = this.emaController.setSignalsSL(responseInRange, Number(query.period));
             break;
           case 'bb':
             klinesWithSignals = this.bbController.setSignals(responseInRange, Number(query.period));

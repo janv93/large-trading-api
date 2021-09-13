@@ -80,7 +80,7 @@ export default class EmaController extends BaseController {
     return klines;
   }
 
-  public setSignalsTPSL(klines: Array<BinanceKline>, period: number): Array<BinanceKline> {
+  public setSignalsSL(klines: Array<BinanceKline>, period: number): Array<BinanceKline> {
     const ema = this.indicatorsController.ema(klines, period);
     const klinesWithEma = klines.slice(-ema.length);
 
@@ -89,8 +89,7 @@ export default class EmaController extends BaseController {
     let lastEma: number;
     let lastSignal: string;
     let posOpenPrice: number;
-    const takeProfitPercent = 0.05;
-    const stopLossPercent = 0.01;
+    const stopLossPercent = 0.0;
 
     klinesWithEma.forEach((kline, index) => {
       const e = ema[index].ema;
@@ -123,25 +122,33 @@ export default class EmaController extends BaseController {
 
         lastSignal = kline.signal;
       } else if (positionOpen) {
-        const currentPrice = kline.prices.close;
-        const priceDiff = currentPrice - posOpenPrice;
-        const priceDiffPercent = priceDiff / posOpenPrice;
+        if (momentumSwitch) {
+          posOpenPrice = kline.prices.close;
 
-        if (lastSignal === this.buySignal) {
-          const takeProfitReached = priceDiffPercent > takeProfitPercent;
-          const stopLossReached = priceDiffPercent < -stopLossPercent;
-
-          if (takeProfitReached || stopLossReached) {
-            kline.signal = this.closeSignal;
-            positionOpen = false;
+          if (move === 'up') {
+            kline.signal = this.buySignal;
+          } else {
+            kline.signal = this.sellSignal;
           }
         } else {
-          const takeProfitReached = priceDiffPercent < -takeProfitPercent;
-          const stopLossReached = priceDiffPercent > stopLossPercent;
+          const currentPrice = kline.prices.close;
+          const priceDiff = currentPrice - posOpenPrice;
+          const priceDiffPercent = priceDiff / posOpenPrice;
 
-          if (takeProfitReached || stopLossReached) {
-            kline.signal = this.closeSignal;
-            positionOpen = false;
+          if (lastSignal === this.buySignal) {
+            const stopLossReached = priceDiffPercent < -stopLossPercent;
+
+            if (stopLossReached) {
+              kline.signal = this.closeSignal;
+              positionOpen = false;
+            }
+          } else {
+            const stopLossReached = priceDiffPercent > stopLossPercent;
+
+            if (stopLossReached) {
+              kline.signal = this.closeSignal;
+              positionOpen = false;
+            }
           }
         }
       }
@@ -164,7 +171,7 @@ export default class EmaController extends BaseController {
 
     const leverage = 20;
     const timeframe = '1h';
-    const quantityUSD = 2250;
+    const quantityUSD = 1000;
     this.tradingPositionOpen.set(symbol, false);
 
     this.binanceController.setLeverage(symbol, leverage).then(() => {
@@ -187,7 +194,7 @@ export default class EmaController extends BaseController {
   private tradeInterval(symbol: string, timeframe: string, quantityUSD: number) {
     this.binanceController.getKlines(symbol + 'USDT', timeframe).then(res => {
       const mappedKlines: Array<BinanceKline> = this.binanceController.mapResult(res.data);
-      const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length -1].prices.close).toFixed(2));
+      const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length - 1].prices.close).toFixed(2));
       mappedKlines.splice(-1);  // remove running timeframe
       console.log(mappedKlines.slice(-3))
       const ema = this.indicatorsController.ema(mappedKlines, 80);
