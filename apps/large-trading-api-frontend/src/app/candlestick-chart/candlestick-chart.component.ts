@@ -163,12 +163,12 @@ export class CandlestickChartComponent implements AfterViewInit {
           algorithm: 'ema',
           period: this.chartService.emaPeriod
         };
-      case 'ematpsl':
+      case 'emasl':
         return {
           symbol,
           times,
           timeframe,
-          algorithm: 'ematpsl',
+          algorithm: 'emasl',
           period: this.chartService.emaPeriod
         };
       case 'bb':

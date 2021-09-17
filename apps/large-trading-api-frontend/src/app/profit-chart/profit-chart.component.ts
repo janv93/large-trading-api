@@ -118,15 +118,16 @@ export class ProfitChartComponent implements AfterViewInit {
       profit: percentages[percentages.length - 1].y.toFixed(2) + '%',
       ppt: tradesCount === 0 ? '0%' : (percentages[percentages.length - 1].y / tradesCount).toFixed(3) + '%',
       maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%',
-      drawbackProfitRatio: (this.calcMaxDrawback(percentages) / percentages[percentages.length - 1].y).toFixed(2)
+      drawbackProfitRatio: (this.calcMaxDrawback(percentages) / percentages[percentages.length - 1].y).toFixed(2),
+      positiveNegative: this.calcPositiveNegative(percentages)
     };
   }
 
-  private calcMaxDrawback(klines: Array<any>): number {
+  private calcMaxDrawback(percentages: Array<any>): number {
     let high = 0;
     let maxDrawback = 0;
 
-    klines.forEach(kline => {
+    percentages.forEach(kline => {
       if (kline.y < high) {
         if (high - kline.y > maxDrawback) {
           maxDrawback = high - kline.y;
@@ -137,6 +138,26 @@ export class ProfitChartComponent implements AfterViewInit {
     });
 
     return maxDrawback;
+  }
+
+  private calcPositiveNegative(percentages: Array<any>): string {
+    let pos = 0;
+    let neg = 0;
+    let lastPercentage;
+
+    percentages.map(p => p.y).forEach(percentage => {
+      if (lastPercentage !== undefined) {
+        if (percentage > lastPercentage) {
+          pos++;
+        } else if (percentage < lastPercentage) {
+          neg++;
+        }
+      }
+
+      lastPercentage = percentage;
+    });
+
+    return pos + ' / ' + neg;
   }
 
 }
