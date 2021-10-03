@@ -1,8 +1,8 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { BinanceKline } from '../interfaces';
-import BaseController from './base-controller';
-import Database from '../data/db';
+import { BinanceKucoinKline } from '../../interfaces';
+import BaseController from '../base-controller';
+import Database from '../../data/db';
 
 export default class BinanceController extends BaseController {
   private database: Database = new Database();
@@ -48,7 +48,7 @@ export default class BinanceController extends BaseController {
     this.getKlines(symbol, timeframe, endTime).then(res => {
       this.klines = res.data.concat(this.klines);
       const start = this.klines[0][0];
-      const end = start - 60000;
+      const end = start - this.timeframeToMilliseconds(timeframe);
       times--;
 
       if (times > 0) {
@@ -114,7 +114,7 @@ export default class BinanceController extends BaseController {
     return new Promise((resolve, reject) => {
       this.database.findKlines(symbol, timeframe).then(res => {
         if (res.length === 0) {
-          new Promise<Array<BinanceKline>>((resolve, reject) => {
+          new Promise<Array<BinanceKucoinKline>>((resolve, reject) => {
             this.getKlinesRecursiveFromDateUntilNow(symbol, startTime, timeframe, resolve, reject);
           }).then(newKlines => {
             const insert = {
@@ -133,7 +133,7 @@ export default class BinanceController extends BaseController {
           const dbKlines = res[0].klines;
           const lastKline = dbKlines[dbKlines.length - 1];
 
-          new Promise<Array<BinanceKline>>((resolve, reject) => {
+          new Promise<Array<BinanceKucoinKline>>((resolve, reject) => {
             this.getKlinesRecursiveFromDateUntilNow(symbol, lastKline.times.open, timeframe, resolve, reject);
           }).then(newKlines => {
             newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
@@ -160,7 +160,7 @@ export default class BinanceController extends BaseController {
     });
   }
 
-  public mapResult(klines: Array<any>): Array<BinanceKline> {
+  public mapResult(klines: Array<any>): Array<BinanceKucoinKline> {
     return klines.map(k => {
       return {
         times: {
@@ -235,20 +235,5 @@ export default class BinanceController extends BaseController {
   private createHmac(query) {
     return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex')
   }
-
-  private createUrl(baseUrl: string, queryObj: any): string {
-    let url = baseUrl;
-    let firstParam = true;
-
-    Object.keys(queryObj).forEach(param => {
-      const query = param + '=' + queryObj[param];
-      firstParam ? url += '?' : url += '&';
-      url += query;
-      firstParam = false;
-    });
-
-    return url;
-  }
-
 
 }

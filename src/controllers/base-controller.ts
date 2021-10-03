@@ -1,4 +1,4 @@
-import { BinanceKline } from '../interfaces';
+import { BinanceKucoinKline } from '../interfaces';
 
 export default class BaseController {
   public buySignal = 'BUY';
@@ -8,7 +8,7 @@ export default class BaseController {
   /**
    * 1 = green, -1 = red, 0 = steady
    */
-  public getKlineColor(kline: BinanceKline) {
+  public getKlineColor(kline: BinanceKucoinKline) {
     const diff = Number(kline.prices.close) - Number(kline.prices.open)
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }
@@ -32,5 +32,31 @@ export default class BaseController {
       case 'w': return value * 7 * 24 * 60 * 60000;
       default: return -1;
     }
+  }
+
+  public timeframeToSeconds(timeframe: string): number {
+    return this.timeframeToMilliseconds(timeframe) / 1000;
+  }
+
+  public timeframeToMinutes(timeframe: string): number {
+    return this.timeframeToSeconds(timeframe) / 60;
+  }
+
+  public roundTimeToNearestTimeframe(timestamp: number, timeframe: number): number {
+    return timestamp - timestamp % timeframe;
+  }
+
+  public createUrl(baseUrl: string, queryObj: any): string {
+    let url = baseUrl;
+    let firstParam = true;
+
+    Object.keys(queryObj).forEach(param => {
+      const query = param + '=' + queryObj[param];
+      firstParam ? url += '?' : url += '&';
+      url += query;
+      firstParam = false;
+    });
+
+    return url;
   }
 }

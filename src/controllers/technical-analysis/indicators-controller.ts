@@ -1,6 +1,6 @@
 import * as TA from 'technicalindicators';
 import * as TACopy from '../../utilities/technicalindicators-copy/index';
-import { BinanceKline } from '../../interfaces';
+import { BinanceKucoinKline } from '../../interfaces';
 
 export default class IndicatorsController {
   constructor() {
@@ -9,7 +9,7 @@ export default class IndicatorsController {
   /**
    * calculate rsi for each object in Array, starting at position length
    */
-  public rsi(klines: Array<BinanceKline>, length: number): Array<any> {
+  public rsi(klines: Array<BinanceKucoinKline>, length: number): Array<any> {
     const values = klines.map(kline => kline.prices.close);
 
     const inputRsi = {
@@ -29,7 +29,7 @@ export default class IndicatorsController {
     return valuesWithRsi;
   }
 
-  public macd(klines: Array<BinanceKline>, fast, slow, signal): Array<any> {
+  public macd(klines: Array<BinanceKucoinKline>, fast, slow, signal): Array<any> {
     const values = klines.map(kline => kline.prices.close);
     const smoothing = (Number(fast) + Number(slow)) / 2;
 
@@ -54,7 +54,7 @@ export default class IndicatorsController {
     return valuesWithMacd;
   }
 
-  public ema(klines: Array<BinanceKline>, period: number) {
+  public ema(klines: Array<BinanceKucoinKline>, period: number) {
     const values = klines.map(kline => kline.prices.close);
 
     const inputEma = {
@@ -75,7 +75,7 @@ export default class IndicatorsController {
     return valuesWithEma;
   }
 
-  public bb(klines: Array<BinanceKline>, period: number) {
+  public bb(klines: Array<BinanceKucoinKline>, period: number) {
     const values = klines.map(kline => kline.prices.close);
 
     const inputBb = {

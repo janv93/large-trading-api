@@ -1,6 +1,6 @@
 import Datastore from 'nedb';
 import BaseController from '../controllers/base-controller';
-import { BinanceKline } from '../interfaces';
+import { BinanceKucoinKline } from '../interfaces';
 
 export default class Database extends BaseController {
   private db: Datastore;
@@ -28,7 +28,7 @@ export default class Database extends BaseController {
     });
   }
 
-  public updateKlines(symbol: string, timeframe: string, klines: Array<BinanceKline>): Promise<any> {
+  public updateKlines(symbol: string, timeframe: string, klines: Array<BinanceKucoinKline>): Promise<any> {
     return new Promise((resolve, reject) => {
       this.db.update({ symbol, timeframe }, { $set: { klines } }, (err, numReplaced) => {
         if (err) {

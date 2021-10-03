@@ -18,26 +18,32 @@ app.use((req, res, next) => {
 });
 
 app.get('/initKlines', (req, res) => {
+  console.log('/initKlines');
   routesController.initKlines(req, res);
 });
 
 app.get('/klines', (req, res) => {
+  console.log('/klines');
   routesController.getKlines(req, res);
 });
 
 app.get('/klinesWithAlgorithm', (req, res) => {
+  console.log('/klinesWithAlgorithm');
   routesController.getKlinesWithAlgorithm(req, res);
 });
 
 app.get('/trade', (req, res) => {
+  console.log('/trade');
   routesController.tradeStrategy(req, res);
 });
 
 app.post('/backtest', (req, res) => {
+  console.log('/backtest');
   routesController.postBacktestData(req, res);
 });
 
 app.post('/indicators', (req, res) => {
+  console.log('/indicators');
   routesController.postTechnicalIndicator(req, res);
 });
 

@@ -1,4 +1,4 @@
-import { BinanceKline } from '../../interfaces';
+import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class BacktestController extends BaseController {
@@ -6,9 +6,9 @@ export default class BacktestController extends BaseController {
     super();
   }
 
-  public calcBacktestPerformance(klines: Array<BinanceKline>, commission: number): Array<BinanceKline> {
+  public calcBacktestPerformance(klines: Array<BinanceKucoinKline>, commission: number): Array<BinanceKucoinKline> {
     let percentProfit = 0.0;
-    let lastSignalKline: BinanceKline;
+    let lastSignalKline: BinanceKucoinKline;
 
     klines.forEach(kline => {
       if (kline.signal) {

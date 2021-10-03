@@ -1,6 +1,7 @@
 import Database from '../data/db';
 import BaseController from './base-controller';
-import BinanceController from './binance-controller';
+import BinanceController from './exchanges/binance-controller';
+import KucoinController from './exchanges/kucoin-controller';
 import MomentumController from './algorithms/momentum-controller';
 import BacktestController from './algorithms/backtest-controller';
 import IndicatorsController from './technical-analysis/indicators-controller';
@@ -13,6 +14,7 @@ import PatternComparatorController from './algorithms/ai/pattern-comparator-cont
 export default class RoutesController extends BaseController {
   private database = new Database();
   private binanceController = new BinanceController();
+  private kucoinController = new KucoinController();
   private momentumController = new MomentumController();
   private backtestController = new BacktestController();
   private indicatorsController = new IndicatorsController();
@@ -27,20 +29,40 @@ export default class RoutesController extends BaseController {
   }
 
   public initKlines(req, res): void {
-    this.binanceController.initKlinesDatabase(req.query.symbol, req.query.timeframe)
-      .then(response => {
-        res.send(response);
-      });
+    switch (req.query.exchange) {
+      case 'binance':
+        this.binanceController.initKlinesDatabase(req.query.symbol, req.query.timeframe)
+          .then(response => {
+            res.send(response);
+          });
+        break;
+      case 'kucoin':
+        this.kucoinController.initKlinesDatabase(req.query.symbol, req.query.timeframe)
+          .then(response => {
+            res.send(response);
+          });
+        break;
+    }
   }
 
   /**
    * get list of klines / candlesticks from binance
    */
   public getKlines(req, res): void {
-    this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
-      .then(response => {
-        res.send(response);
-      });
+    switch (req.query.exchange) {
+      case 'binance':
+        this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
+          .then(response => {
+            res.send(response);
+          });
+        break;
+      case 'kucoin':
+        this.kucoinController.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
+          .then(response => {
+            res.send(response);
+          });
+        break;
+    }
   }
 
   /**

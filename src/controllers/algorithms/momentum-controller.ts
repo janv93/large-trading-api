@@ -1,4 +1,4 @@
-import { BinanceKline } from '../../interfaces';
+import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class PivotReversalController extends BaseController {
@@ -6,7 +6,7 @@ export default class PivotReversalController extends BaseController {
     super();
   }
 
-  public setSignals(klines: Array<BinanceKline>, streak: number): Array<BinanceKline> {
+  public setSignals(klines: Array<BinanceKucoinKline>, streak: number): Array<BinanceKucoinKline> {
     const colors: Array<number> = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;
@@ -48,7 +48,7 @@ export default class PivotReversalController extends BaseController {
     return rangeGreen ? this.buySignal : rangeRed ? this.sellSignal : '';
   }
 
-  private isClose(klines: Array<BinanceKline>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
+  private isClose(klines: Array<BinanceKucoinKline>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
     const range = klines.slice(lastEntryIndex + 1, index + 1);
     const closePriceAtLastEntry = klines[lastEntryIndex].prices.close;
 

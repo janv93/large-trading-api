@@ -1,7 +1,7 @@
 import IndicatorsController from '../technical-analysis/indicators-controller';
-import { BinanceKline } from '../../interfaces';
+import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
-import BinanceController from '../binance-controller';
+import BinanceController from '../exchanges/binance-controller';
 
 export default class EmaController extends BaseController {
   private indicatorsController: IndicatorsController;
@@ -14,7 +14,7 @@ export default class EmaController extends BaseController {
     this.binanceController = new BinanceController();
   }
 
-  public setSignals(klines: Array<BinanceKline>, period: number): Array<BinanceKline> {
+  public setSignals(klines: Array<BinanceKucoinKline>, period: number): Array<BinanceKucoinKline> {
     const ema = this.indicatorsController.ema(klines, period);
     const klinesWithEma = klines.slice(-ema.length);
 
@@ -80,7 +80,7 @@ export default class EmaController extends BaseController {
     return klines;
   }
 
-  public setSignalsSL(klines: Array<BinanceKline>, period: number): Array<BinanceKline> {
+  public setSignalsSL(klines: Array<BinanceKucoinKline>, period: number): Array<BinanceKucoinKline> {
     const ema = this.indicatorsController.ema(klines, period);
     const klinesWithEma = klines.slice(-ema.length);
 
@@ -193,7 +193,7 @@ export default class EmaController extends BaseController {
    */
   private tradeInterval(symbol: string, timeframe: string, quantityUSD: number) {
     this.binanceController.getKlines(symbol + 'USDT', timeframe).then(res => {
-      const mappedKlines: Array<BinanceKline> = this.binanceController.mapResult(res.data);
+      const mappedKlines: Array<BinanceKucoinKline> = this.binanceController.mapResult(res.data);
       const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length - 1].prices.close).toFixed(2));
       mappedKlines.splice(-1);  // remove running timeframe
       console.log(mappedKlines.slice(-3))

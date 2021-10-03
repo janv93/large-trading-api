@@ -1,5 +1,5 @@
 import IndicatorsController from '../technical-analysis/indicators-controller';
-import { BinanceKline } from '../../interfaces';
+import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class MacdController extends BaseController {
@@ -10,7 +10,7 @@ export default class MacdController extends BaseController {
     this.indicatorsController = new IndicatorsController();
   }
 
-  public setSignals(klines: Array<BinanceKline>, fast: string, slow: string, signal: string): Array<BinanceKline> {
+  public setSignals(klines: Array<BinanceKucoinKline>, fast: string, slow: string, signal: string): Array<BinanceKucoinKline> {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
 
@@ -85,7 +85,7 @@ export default class MacdController extends BaseController {
   /**
    * test different histogram strategies
    */
-  private findOptimalEntry(klines: Array<BinanceKline>, histogram: Array<any>) {
+  private findOptimalEntry(klines: Array<BinanceKucoinKline>, histogram: Array<any>) {
     let lastHistogram: number;
     let lastMove: string;
     let sumDiffs = 0.0;

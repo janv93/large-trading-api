@@ -1,5 +1,5 @@
 import IndicatorsController from '../technical-analysis/indicators-controller';
-import { BinanceKline } from '../../interfaces';
+import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class BbController extends BaseController {
@@ -10,7 +10,7 @@ export default class BbController extends BaseController {
     this.indicatorsController = new IndicatorsController();
   }
 
-  public setSignals(klines: Array<BinanceKline>, period: number): Array<BinanceKline> {
+  public setSignals(klines: Array<BinanceKucoinKline>, period: number): Array<BinanceKucoinKline> {
     const bb = this.indicatorsController.bb(klines, period);
     const klinesWithBb = klines.slice(-bb.length);
 
@@ -22,7 +22,7 @@ export default class BbController extends BaseController {
     let takeProfitPrice: number;
     let stopLossPrice: number;
 
-    klinesWithBb.forEach((kline: BinanceKline, index: number) => {
+    klinesWithBb.forEach((kline: BinanceKucoinKline, index: number) => {
       if (!positionOpen) {
         if (kline.prices.close < bb[index].bb.lower - bb[index].bb.lower * threshold) {
           kline.signal = this.buySignal;
