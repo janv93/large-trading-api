@@ -6,13 +6,15 @@ import { Subject } from 'rxjs';
 })
 export class ChartService {
   public klinesSubject = new Subject();
-  public symbol = 'ETHUSDT';
+  public exchange = 'binance';
+  public symbol = 'BTCUSDT';
   public timeframe = '1h';
   public timeframeMultiplier = 20;  // 1 = 1 * 1000 timeframes
   public strategy = 'ema';
   public rsiLength = 7;
   public emaPeriod = 80;
   public bbPeriod = 21;
+  public commission = 0.06;
   public baseUrl = 'http://127.0.0.1:3000';
 
   constructor() {

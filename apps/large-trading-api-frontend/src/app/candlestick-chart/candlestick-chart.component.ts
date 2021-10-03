@@ -109,7 +109,8 @@ export class CandlestickChartComponent implements AfterViewInit {
   private initKlines(symbol: string, timeframe: string): Observable<any> {
     const query = {
       symbol,
-      timeframe
+      timeframe,
+      exchange: this.chartService.exchange
     };
 
     const baseUrl = this.baseUrl + '/initKlines';

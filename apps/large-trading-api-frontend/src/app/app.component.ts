@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { ChartService } from './chart.service';
 
 @Component({
   selector: 'app-root',
@@ -6,6 +7,6 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  public commission = 0.036;
-  public noCommission = 0.0;
+  constructor(public chartService: ChartService) {
+  }
 }
