@@ -59,4 +59,19 @@ export default class BaseController {
 
     return url;
   }
+
+  public createQuery(queryObj: any): string {
+    let url = '';
+    let firstParam = true;
+
+    Object.keys(queryObj).forEach(param => {
+      const query = param + '=' + queryObj[param];
+      firstParam ? url += '?' : url += '&';
+      url += query;
+      firstParam = false;
+    });
+
+    return url;
+  }
+
 }

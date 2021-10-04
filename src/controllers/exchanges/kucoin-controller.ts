@@ -1,5 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
+import btoa from 'btoa';
 import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 import Database from '../../data/db';
@@ -76,7 +77,6 @@ export default class KucoinController extends BaseController {
    */
   public getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, endTime: number, timeframe: string, resolve: Function, reject: Function) {
     this.getKlines(symbol, timeframe, endTime, startTime).then(res => {
-      console.log(res.data);
       this.klines = this.klines.concat(res.data.data);
       const end: number = this.klines[this.klines.length - 1][0];
       const newStartTime: number = end + this.timeframeToMilliseconds(timeframe);
@@ -163,6 +163,52 @@ export default class KucoinController extends BaseController {
     });
   }
 
+  public long(symbol, quantity, leverage) {
+    return this.createOrder(symbol, 'buy', quantity, leverage).then((res) => {
+      console.log(res.data);
+      console.log('LONG position opened');
+    }).catch(err => this.handleError(err));
+  }
+
+  public short(symbol, quantity, leverage) {
+    return this.createOrder(symbol, 'sell', quantity, leverage).then((res) => {
+      console.log(res.data);
+      console.log('SHORT position opened');
+    }).catch(err => this.handleError(err));
+  }
+
+  public createOrder(symbol: string, side: string, quantity: number, leverage: number) {
+    const now = Date.now();
+
+    const query = {
+      symbol,
+      side,
+      leverage,
+      type: 'market',
+      size: this.mapKcLotSize(symbol, quantity),
+      clientOid: now
+    };
+
+    const kcApiPassphrase = btoa(this.createHmac(process.env.kucoin_api_passphrase));
+    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + this.createQuery(query) + JSON.stringify(query)
+    const kcApiSign = btoa(this.createHmac(kcApiSignContent));
+
+    const options = {
+      headers: {
+        'KC-API-KEY': process.env.kucoin_api_key,
+        'KC-API-SECRET': process.env.kucoin_api_secret,
+        'KC-API-SIGN': kcApiSign,
+        'KC-API-TIMESTAMP': now,
+        'KC-API-PASSPHRASE': kcApiPassphrase,
+        'KC-API-KEY-VERSION': 2
+      }
+    };
+
+    const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
+
+    return axios.post(url, query, options);
+  }
+
   public mapResult(klines: Array<any>): Array<BinanceKucoinKline> {
     return klines.map(k => {
       return {
@@ -179,6 +225,22 @@ export default class KucoinController extends BaseController {
         volume: Number(k[5])
       };
     });
+  }
+
+  private createHmac(query): Buffer {
+    return crypto.createHmac('sha256', process.env.kucoin_api_secret as any).update(query).digest()
+  }
+
+  /**
+   * returns lot size for quantity
+   */
+  private mapKcLotSize(symbol: string, quantity: number): number {
+    const lotSizes = {
+      XBTUSDTM: 0.001,
+      ETHUSDTM: 0.01,
+    };
+
+    return quantity / lotSizes[symbol];
   }
 
 }
