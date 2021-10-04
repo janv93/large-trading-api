@@ -2,16 +2,16 @@ import IndicatorsController from '../technical-analysis/indicators-controller';
 import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 import BinanceController from '../exchanges/binance-controller';
+import KucoinController from '../exchanges/kucoin-controller';
 
 export default class EmaController extends BaseController {
-  private indicatorsController: IndicatorsController;
-  private binanceController: BinanceController;
+  private indicatorsController = new IndicatorsController();;
+  private binanceController = new BinanceController();
+  private kucoinController = new KucoinController();
   private tradingPositionOpen = new Map();
 
   constructor() {
     super();
-    this.indicatorsController = new IndicatorsController();
-    this.binanceController = new BinanceController();
   }
 
   public setSignals(klines: Array<BinanceKucoinKline>, period: number): Array<BinanceKucoinKline> {
@@ -174,26 +174,23 @@ export default class EmaController extends BaseController {
     const quantityUSD = 1300;
     this.tradingPositionOpen.set(symbol, false);
 
-    this.binanceController.setLeverage(symbol, leverage).then(() => {
-      console.log('Leverage set to ' + leverage);
-      console.log(symbol + ' live trading started')
-      setTimeout(() => {  // wait for full hour
-        this.tradeInterval(symbol, timeframe, quantityUSD);
-        setInterval(() => { // run every hour
-          this.tradeInterval(symbol, timeframe, quantityUSD);
-        }, 60 * 60000);
-      }, timeDiffToNextHour + 10000);
-    }).catch(err => {
-      this.handleError(err);
-    });
+    console.log(symbol + ' live trading started')
+
+    setTimeout(() => {  // wait for full hour
+      this.tradeInterval(symbol, timeframe, quantityUSD, leverage);
+      setInterval(() => { // run every hour
+        this.tradeInterval(symbol, timeframe, quantityUSD, leverage);
+      }, 60 * 60000);
+    }, timeDiffToNextHour + 10000);
+
   }
 
   /**
    * run trading algorithm in selected interval
    */
-  private tradeInterval(symbol: string, timeframe: string, quantityUSD: number) {
-    this.binanceController.getKlines(symbol + 'USDT', timeframe).then(res => {
-      const mappedKlines: Array<BinanceKucoinKline> = this.binanceController.mapResult(res.data);
+  private tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
+    this.kucoinController.getKlines(symbol + 'USDT', timeframe).then(res => {
+      const mappedKlines: Array<BinanceKucoinKline> = this.kucoinController.mapResult(res.data);
       const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length - 1].prices.close).toFixed(2));
       mappedKlines.splice(-1);  // remove running timeframe
       console.log(mappedKlines.slice(-3))
@@ -211,13 +208,13 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // open long
-            this.binanceController.long(symbol, cryptoQuantity).catch(err => {
+            this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
               this.handleError(err);
             });
             this.tradingPositionOpen.set(symbol, true);
           } else {
             // open short
-            this.binanceController.short(symbol, cryptoQuantity).catch(err => {
+            this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
               this.handleError(err);
             });
             this.tradingPositionOpen.set(symbol, true);
