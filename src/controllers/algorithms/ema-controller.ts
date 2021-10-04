@@ -189,7 +189,7 @@ export default class EmaController extends BaseController {
    * run trading algorithm in selected interval
    */
   private tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
-    this.kucoinController.getKlines(symbol + 'USDT', timeframe).then(res => {
+    this.kucoinController.getKlines(symbol + 'USDTM', timeframe).then(res => {
       const mappedKlines: Array<BinanceKucoinKline> = this.kucoinController.mapResult(res.data);
       const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length - 1].prices.close).toFixed(2));
       mappedKlines.splice(-1);  // remove running timeframe
