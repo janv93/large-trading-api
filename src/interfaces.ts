@@ -9,7 +9,7 @@ export interface BinanceKucoinKline {
 
 export interface BinanceKucoinTimes {
   open: number;
-  close: number;
+  close?: number;
 }
 
 export interface BinanceKucoinPrices {

@@ -213,8 +213,7 @@ export default class KucoinController extends BaseController {
     return klines.map(k => {
       return {
         times: {
-          open: k[0],
-          close: k[6]
+          open: k[0]
         },
         prices: {
           open: Number(k[1]),
