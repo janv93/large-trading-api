@@ -206,6 +206,7 @@ export default class KucoinController extends BaseController {
 
     const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
 
+    console.log('POST ' + url);
     return axios.post(url, query, options);
   }
 
