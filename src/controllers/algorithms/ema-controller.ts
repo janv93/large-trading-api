@@ -208,13 +208,22 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // open long
-            this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
+            this.kucoinController.closeOrder(symbol).then(() => {
+              this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
+                this.handleError(err);
+              });
+            }).catch(err => {
               this.handleError(err);
             });
+            
             this.tradingPositionOpen.set(symbol, true);
           } else {
             // open short
-            this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
+            this.kucoinController.closeOrder(symbol).then(() => {
+              this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
+                this.handleError(err);
+              });
+            }).catch(err => {
               this.handleError(err);
             });
             this.tradingPositionOpen.set(symbol, true);
@@ -224,14 +233,23 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // close short open long
-            this.binanceController.long(symbol, cryptoQuantity * 2).catch(err => {
+            this.kucoinController.closeOrder(symbol).then(() => {
+              this.binanceController.long(symbol, cryptoQuantity).catch(err => {
+                this.handleError(err);
+              });
+            }).catch(err => {
               this.handleError(err);
             });
           } else {
             // close long open short
-            this.binanceController.short(symbol, cryptoQuantity * 2).catch(err => {
+            this.kucoinController.closeOrder(symbol).then(() => {
+              this.binanceController.short(symbol, cryptoQuantity).catch(err => {
+                this.handleError(err);
+              });
+            }).catch(err => {
               this.handleError(err);
             });
+            
           }
         }
       }

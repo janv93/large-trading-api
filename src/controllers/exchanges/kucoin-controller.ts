@@ -210,6 +210,37 @@ export default class KucoinController extends BaseController {
     return axios.post(url, query, options);
   }
 
+  public closeOrder(symbol: string) {
+    const now = Date.now();
+
+    const query = {
+      symbol,
+      type: 'market',
+      clientOid: now,
+      closeOrder: true
+    };
+
+    const kcApiPassphrase = btoa(this.createHmac(process.env.kucoin_api_passphrase));
+    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + this.createQuery(query) + JSON.stringify(query)
+    const kcApiSign = btoa(this.createHmac(kcApiSignContent));
+
+    const options = {
+      headers: {
+        'KC-API-KEY': process.env.kucoin_api_key,
+        'KC-API-SECRET': process.env.kucoin_api_secret,
+        'KC-API-SIGN': kcApiSign,
+        'KC-API-TIMESTAMP': now,
+        'KC-API-PASSPHRASE': kcApiPassphrase,
+        'KC-API-KEY-VERSION': 2
+      }
+    };
+
+    const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
+
+    console.log('POST ' + url);
+    return axios.post(url, query, options);
+  }
+
   public mapResult(klines: Array<any>): Array<BinanceKucoinKline> {
     return klines.map(k => {
       return {
