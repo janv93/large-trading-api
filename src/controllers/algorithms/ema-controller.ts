@@ -208,22 +208,14 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // open long
-            this.kucoinController.closeOrder(symbol).then(() => {
-              this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
-                this.handleError(err);
-              });
-            }).catch(err => {
+            this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
               this.handleError(err);
             });
-            
+
             this.tradingPositionOpen.set(symbol, true);
           } else {
             // open short
-            this.kucoinController.closeOrder(symbol).then(() => {
-              this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
-                this.handleError(err);
-              });
-            }).catch(err => {
+            this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
               this.handleError(err);
             });
             this.tradingPositionOpen.set(symbol, true);
@@ -249,7 +241,7 @@ export default class EmaController extends BaseController {
             }).catch(err => {
               this.handleError(err);
             });
-            
+
           }
         }
       }
