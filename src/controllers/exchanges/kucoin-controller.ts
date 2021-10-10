@@ -178,14 +178,15 @@ export default class KucoinController extends BaseController {
   }
 
   public createOrder(symbol: string, side: string, quantity: number, leverage: number) {
+    const mappedSymbol = this.mapSymbol(symbol);
     const now = Date.now();
 
     const query = {
-      symbol,
+      mappedSymbol,
       side,
       leverage,
       type: 'market',
-      size: this.mapKcLotSize(symbol, quantity),
+      size: this.mapKcLotSize(mappedSymbol, quantity),
       clientOid: now
     };
 
@@ -211,10 +212,11 @@ export default class KucoinController extends BaseController {
   }
 
   public closeOrder(symbol: string) {
+    const mappedSymbol = this.mapSymbol(symbol);
     const now = Date.now();
 
     const query = {
-      symbol,
+      mappedSymbol,
       type: 'market',
       clientOid: now,
       closeOrder: true
@@ -272,6 +274,14 @@ export default class KucoinController extends BaseController {
     };
 
     return quantity / lotSizes[symbol];
+  }
+
+  private mapSymbol(symbol: string): string {
+    switch (symbol) {
+      case 'BTCUSDT': return 'XBTUSDTM';
+      case 'ETHUSDT': return 'ETHUSDTM';
+      default: return '';
+    }
   }
 
 }
