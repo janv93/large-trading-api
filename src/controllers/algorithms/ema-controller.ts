@@ -189,8 +189,8 @@ export default class EmaController extends BaseController {
    * run trading algorithm in selected interval
    */
   private tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
-    this.kucoinController.getKlines(symbol, timeframe).then(res => {
-      const mappedKlines: Array<BinanceKucoinKline> = this.kucoinController.mapResult(res.data.data);
+    this.binanceController.getKlines(symbol, timeframe).then(res => {
+      const mappedKlines: Array<BinanceKucoinKline> = this.binanceController.mapResult(res.data);
       const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length - 1].prices.close)/** .toFixed(2) for binance */);
       mappedKlines.splice(-1);  // remove running timeframe
       console.log(mappedKlines.slice(-3))
@@ -241,7 +241,6 @@ export default class EmaController extends BaseController {
             }).catch(err => {
               this.handleError(err);
             });
-
           }
         }
       }
