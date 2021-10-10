@@ -163,7 +163,7 @@ export default class EmaController extends BaseController {
   /**
    * run live trading algorithm
    */
-  public trade(symbol: string) {
+  public trade(symbol: string, alreadyOpen?: boolean) {
     const now = new Date();
     const minutes = now.getMinutes();
     const seconds = now.getSeconds();
@@ -172,7 +172,7 @@ export default class EmaController extends BaseController {
     const leverage = 20;
     const timeframe = '1h';
     const quantityUSD = 1300;
-    this.tradingPositionOpen.set(symbol, false);
+    this.tradingPositionOpen.set(symbol, alreadyOpen);
 
     console.log(symbol + ' live trading started')
 

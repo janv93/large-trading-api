@@ -120,7 +120,7 @@ export default class RoutesController extends BaseController {
 
   public tradeStrategy(req, res): void {
     switch (req.query.strategy) {
-      case 'ema': this.emaController.trade(req.query.symbol);
+      case 'ema': this.emaController.trade(req.query.symbol, req.query.open ? true: false);
     }
 
     res.send('Running');
