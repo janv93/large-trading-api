@@ -182,7 +182,7 @@ export default class KucoinController extends BaseController {
     const now = Date.now();
 
     const query = {
-      mappedSymbol,
+      symbol: mappedSymbol,
       side,
       leverage,
       type: 'market',
@@ -216,7 +216,7 @@ export default class KucoinController extends BaseController {
     const now = Date.now();
 
     const query = {
-      mappedSymbol,
+      symbol: mappedSymbol,
       type: 'market',
       clientOid: now,
       closeOrder: true
