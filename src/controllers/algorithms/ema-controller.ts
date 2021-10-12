@@ -226,7 +226,7 @@ export default class EmaController extends BaseController {
           if (move === 'up') {
             // close short open long
             this.kucoinController.closeOrder(symbol).then(() => {
-              this.binanceController.long(symbol, cryptoQuantity).catch(err => {
+              this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
                 this.handleError(err);
               });
             }).catch(err => {
@@ -235,7 +235,7 @@ export default class EmaController extends BaseController {
           } else {
             // close long open short
             this.kucoinController.closeOrder(symbol).then(() => {
-              this.binanceController.short(symbol, cryptoQuantity).catch(err => {
+              this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
                 this.handleError(err);
               });
             }).catch(err => {
