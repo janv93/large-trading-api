@@ -169,7 +169,7 @@ export default class EmaController extends BaseController {
     const seconds = now.getSeconds();
     const timeDiffToNextHour = 60 * 60000 - (minutes * 60000 + seconds * 1000);
 
-    const leverage = 20;
+    const leverage = 50;
     const timeframe = '1h';
     const quantityUSD = 1300;
     this.tradingPositionOpen.set(symbol, alreadyOpen);
