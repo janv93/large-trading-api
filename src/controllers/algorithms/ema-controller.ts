@@ -3,11 +3,13 @@ import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 import BinanceController from '../exchanges/binance-controller';
 import KucoinController from '../exchanges/kucoin-controller';
+import BtseController from '../exchanges/btse-controller';
 
 export default class EmaController extends BaseController {
   private indicatorsController = new IndicatorsController();;
   private binanceController = new BinanceController();
   private kucoinController = new KucoinController();
+  private btseController = new BtseController();
   private tradingPositionOpen = new Map();
 
   constructor() {
@@ -171,7 +173,7 @@ export default class EmaController extends BaseController {
 
     const leverage = 50;
     const timeframe = '1h';
-    const quantityUSD = 1300;
+    const quantityUSD = 200;
     this.tradingPositionOpen.set(symbol, alreadyOpen);
 
     console.log(symbol + ' live trading started')
@@ -208,16 +210,11 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // open long
-            this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
-              this.handleError(err);
-            });
-
+            this.btseController.long(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
             this.tradingPositionOpen.set(symbol, true);
           } else {
             // open short
-            this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
-              this.handleError(err);
-            });
+            this.btseController.short(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
             this.tradingPositionOpen.set(symbol, true);
           }
         }
@@ -225,22 +222,14 @@ export default class EmaController extends BaseController {
         if (momentumSwitch) {
           if (move === 'up') {
             // close short open long
-            this.kucoinController.closeOrder(symbol).then(() => {
-              this.kucoinController.long(symbol, cryptoQuantity, leverage).catch(err => {
-                this.handleError(err);
-              });
-            }).catch(err => {
-              this.handleError(err);
-            });
+            this.btseController.closeOrder(symbol).then(() => {
+              this.btseController.long(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
+            }).catch(err => this.handleError(err));
           } else {
             // close long open short
-            this.kucoinController.closeOrder(symbol).then(() => {
-              this.kucoinController.short(symbol, cryptoQuantity, leverage).catch(err => {
-                this.handleError(err);
-              });
-            }).catch(err => {
-              this.handleError(err);
-            });
+            this.btseController.closeOrder(symbol).then(() => {
+              this.btseController.short(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
+            }).catch(err => this.handleError(err));
           }
         }
       }

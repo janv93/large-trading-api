@@ -44,7 +44,7 @@ export default class BinanceController extends BaseController {
   /**
    * get last times * 1000 timeframes
    */
-  public getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string, resolve: Function, reject: Function) {
+  public getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string, resolve: Function, reject: Function): void {
     this.getKlines(symbol, timeframe, endTime).then(res => {
       this.klines = res.data.concat(this.klines);
       const start = this.klines[0][0];
@@ -75,7 +75,7 @@ export default class BinanceController extends BaseController {
   /**
    * get startTime to now timeframes
    */
-  public getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, timeframe: string, resolve: Function, reject: Function) {
+  public getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, timeframe: string, resolve: Function, reject: Function): void {
     this.getKlines(symbol, timeframe, undefined, startTime).then(res => {
       this.klines = this.klines.concat(res.data);
       const end: number = this.klines[this.klines.length - 1][0];
@@ -106,7 +106,7 @@ export default class BinanceController extends BaseController {
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public initKlinesDatabase(symbol: string, timeframe: string) {
+  public initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
     const startDate = new Date();
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 50;
     const startTime = startDate.getTime() - timespan;
@@ -179,7 +179,7 @@ export default class BinanceController extends BaseController {
     });
   }
 
-  public setLeverage(symbol: string, leverage: number) {
+  public setLeverage(symbol: string, leverage: number): Promise<any> {
     const now = Date.now();
   
     const query = 'symbol=' + symbol + 'USDT' + '&leverage=' + leverage + '&timestamp=' + now;
@@ -196,19 +196,19 @@ export default class BinanceController extends BaseController {
     return axios.post(url, null, options);
   }
 
-  public long(symbol, quantity) {
+  public long(symbol, quantity): Promise<any> {
     return this.createOrder(symbol, 'BUY', quantity).then(() => {
       console.log('LONG position opened');
     }).catch(err => this.handleError(err));
   }
 
-  public short(symbol, quantity) {
+  public short(symbol, quantity): Promise<any> {
     return this.createOrder(symbol, 'SELL', quantity).then(() => {
       console.log('SHORT position opened');
     }).catch(err => this.handleError(err));
   }
 
-  public createOrder(symbol: string, side: string, quantity: number) {
+  public createOrder(symbol: string, side: string, quantity: number): Promise<any> {
     const now = Date.now();
 
     let query =
@@ -232,8 +232,8 @@ export default class BinanceController extends BaseController {
     return axios.post(url, null, options);
   }
 
-  private createHmac(query) {
-    return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex')
+  private createHmac(query): string {
+    return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex');
   }
 
 }

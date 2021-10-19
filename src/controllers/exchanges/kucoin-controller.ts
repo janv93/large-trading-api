@@ -163,21 +163,21 @@ export default class KucoinController extends BaseController {
     });
   }
 
-  public long(symbol, quantity, leverage) {
+  public long(symbol, quantity, leverage): Promise<any> {
     return this.createOrder(symbol, 'buy', quantity, leverage).then((res) => {
       console.log(res.data);
       console.log('LONG position opened');
     }).catch(err => this.handleError(err));
   }
 
-  public short(symbol, quantity, leverage) {
+  public short(symbol, quantity, leverage): Promise<any> {
     return this.createOrder(symbol, 'sell', quantity, leverage).then((res) => {
       console.log(res.data);
       console.log('SHORT position opened');
     }).catch(err => this.handleError(err));
   }
 
-  public createOrder(symbol: string, side: string, quantity: number, leverage: number) {
+  public createOrder(symbol: string, side: string, quantity: number, leverage: number): Promise<any> {
     const mappedSymbol = this.mapSymbol(symbol);
     const now = Date.now();
 
@@ -211,7 +211,7 @@ export default class KucoinController extends BaseController {
     return axios.post(url, query, options);
   }
 
-  public closeOrder(symbol: string) {
+  public closeOrder(symbol: string): Promise<any> {
     const mappedSymbol = this.mapSymbol(symbol);
     const now = Date.now();
 
@@ -261,7 +261,7 @@ export default class KucoinController extends BaseController {
   }
 
   private createHmac(query): Buffer {
-    return crypto.createHmac('sha256', process.env.kucoin_api_secret as any).update(query).digest()
+    return crypto.createHmac('sha256', process.env.kucoin_api_secret as any).update(query).digest();
   }
 
   /**
