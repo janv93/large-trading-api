@@ -74,6 +74,8 @@ export default class BtseController extends BaseController {
         const url = 'https://api.btse.com/futures/api/v2.1/order';
     
         console.log('POST ' + url);
+        console.log('Body: ' + JSON.stringify(body));
+
         axios.post(url, body, options).then(res => resolve(res)).catch(err => reject(err));
       }).catch(err => reject(err));
     });
@@ -102,6 +104,8 @@ export default class BtseController extends BaseController {
     const url = 'https://api.btse.com/futures/api/v2.1/order/close_position';
 
     console.log('POST ' + url);
+    console.log('Body: ' + JSON.stringify(body));
+
     return axios.post(url, body, options);
   }
 
