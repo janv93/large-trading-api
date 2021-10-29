@@ -176,7 +176,7 @@ export default class EmaController extends BaseController {
 
     const leverage = 50;
     const timeframe = '1h';
-    const quantityUSD = 1300;
+    const quantityUSD = 2500;
     this.tradingPositionOpen.set(symbol, alreadyOpen);
 
     console.log(symbol + ' live trading started')
