@@ -1,6 +1,6 @@
 import BaseController from '../../base-controller';
-import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
-// import * as tf from '@tensorflow/tfjs-node';   // CPU
+// import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
+import * as tf from '@tensorflow/tfjs-node';   // CPU
 
 export default class TensorflowController extends BaseController {
   constructor() {
@@ -9,59 +9,50 @@ export default class TensorflowController extends BaseController {
   }
 
   run() {
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
     const dataX: Array<any> = []
     const dataY: Array<any> = [];
-    const dataZ: Array<any> = [];
 
-    dataZ.push([[8]],[[7.3]],[[9.6]]);
+    for (let i = 0; i < 10; i++) {
+      const num1 = Math.floor(Math.random() * 10);
+      const num2 = Math.floor(Math.random() * 10);
+      const sum = num1 + num2;
 
-    // Creating the data
-    for (let i = 0; i < alphabet.length - 1; i++) {
-      dataX.push([[i+1]]);
-
-      // One-hot-encoding the output values
-      let arr = new Array(alphabet.length).fill(0)
-      arr[alphabet.indexOf(alphabet.charAt(i + 1))] = 1;
-      dataY.push(arr);
+      dataX.push([num1, num2]);
+      dataY.push(sum);
     }
 
     // Transforming the data to tensors
     const x = tf.tensor(dataX);
     const y = tf.tensor(dataY);
-    const z = tf.tensor(dataZ);
 
-    // Printing the tensors
-    z.print()
+    x.print();
+    y.print();
 
-    // Creating the RNN Model
+    // Creating the Model
     const model = tf.sequential();
-    model.add(tf.layers.lstm({ units: 48, inputShape: [1, 1] }))
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: alphabet.length, activation: 'softmax' }));
+    model.add(tf.layers.dense({ units: 4, inputShape: [2] }))
+    model.add(tf.layers.dense({ units: 10, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 10, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 1 }));
 
     // Compiling the model
     model.compile({
       optimizer: 'adam',
-      loss: 'categoricalCrossentropy',
-      metrics: ['accuracy']
+      loss: 'meanAbsoluteError',
+      metrics: ['mae']
     });
+
+    const dataTestX = [[3, 5], [15.3, 0.5]];
+    const testX = tf.tensor(dataTestX);
+    testX.print();
 
     // Fitting the model
     model.fit(x, y, {
-      batchSize: alphabet.length,
-      epochs: 50
+      batchSize: 100,
+      epochs: 500
     }).then((history) => {
       // printing loss and predictions
-      console.log((model.predict(z) as any).argMax(1).dataSync())
+      console.log((model.predict(testX) as any).dataSync())
     });
   }
 }
