@@ -1,5 +1,6 @@
 import BaseController from '../../base-controller';
-import * as tf from '@tensorflow/tfjs-node-gpu';
+import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
+// import * as tf from '@tensorflow/tfjs-node';   // CPU
 
 export default class TensorflowController extends BaseController {
   constructor() {
