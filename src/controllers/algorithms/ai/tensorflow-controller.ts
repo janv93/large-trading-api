@@ -37,14 +37,14 @@ export default class TensorflowController extends BaseController {
     // Creating the RNN Model
     const model = tf.sequential();
     model.add(tf.layers.lstm({ units: 48, inputShape: [1, 1] }))
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 2000, activation: 'relu' }));
     model.add(tf.layers.dense({ units: alphabet.length, activation: 'softmax' }));
 
     // Compiling the model
@@ -57,7 +57,7 @@ export default class TensorflowController extends BaseController {
     // Fitting the model
     model.fit(x, y, {
       batchSize: alphabet.length,
-      epochs: 200
+      epochs: 50
     }).then((history) => {
       // printing loss and predictions
       console.log((model.predict(z) as any).argMax(1).dataSync())
