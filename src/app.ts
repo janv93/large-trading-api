@@ -4,8 +4,6 @@ import config from 'config';
 import RoutesController from './controllers/routes-controller';
 import dotenv from 'dotenv';
 if (dotenv) { dotenv.config(); }
-import TensorflowController from './controllers/algorithms/ai/tensorflow-controller';
-const tf = new TensorflowController();
 
 const app = express();
 const routesController = new RoutesController();
