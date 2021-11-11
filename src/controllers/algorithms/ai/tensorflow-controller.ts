@@ -1,6 +1,5 @@
 import BaseController from '../../base-controller';
 import { BinanceKucoinKline } from '../../../interfaces';
-import BinanceController from '../../exchanges/binance-controller';
 
 // import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
 import * as tf from '@tensorflow/tfjs-node';   // CPU
@@ -78,9 +77,11 @@ export default class TensorflowController extends BaseController {
 
     // Creating the Model
     const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 100, inputShape: [100], activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 200, inputShape: [100], activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 400, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 400, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
     model.add(tf.layers.dense({ units: 100, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 40, activation: 'relu' }));
     model.add(tf.layers.dense({ units: 10, activation: 'relu' }));
     model.add(tf.layers.dense({ units: 2, activation: 'relu' }));
 
@@ -93,7 +94,7 @@ export default class TensorflowController extends BaseController {
 
     // Fitting the model
     model.fit(x, y, {
-      batchSize: 20,
+      batchSize: 100,
       epochs: 100,
       validationSplit: 0.5
     }).then((history) => {
@@ -110,14 +111,15 @@ export default class TensorflowController extends BaseController {
    */
   private createTrendTrainingData(klines: Array<BinanceKucoinKline>): Array<any> {
     const closes = klines.map(kline => kline.prices.close);
+    const normalizedCloses = this.normalize(closes);
     const trendLength = 50;
     const trainingLength = trendLength * 2;
     const sampleLength = trainingLength + trendLength;
     const samples: Array<any> = [];
 
-    for (let i = 0; i < closes.length - sampleLength; i++) {
-      const trainingData = closes.slice(i, i + trainingLength);
-      const trendData = closes.slice(i + trainingLength, i + trainingLength + trendLength);
+    for (let i = 0; i < normalizedCloses.length - sampleLength; i++) {
+      const trainingData = normalizedCloses.slice(i, i + trainingLength);
+      const trendData = normalizedCloses.slice(i + trainingLength, i + trainingLength + trendLength);
       const trend = this.getTrend(trainingData[trainingData.length - 1], trendData);
       const sample = { trainingData, trend };
       samples.push(sample);
@@ -139,5 +141,16 @@ export default class TensorflowController extends BaseController {
     const bullish = maxPercent > threshold ? 1 : 0;
 
     return { bearish, bullish };
+  }
+
+  /**
+   * normalize data to values between 0 and 1
+   */
+  private normalize(closes: Array<number>): Array<number> {
+    const minClose = Math.min(...closes);
+    const maxClose = Math.max(...closes);
+    const range = maxClose - minClose;
+
+    return closes.map(close => (close - minClose) / range);
   }
 }
