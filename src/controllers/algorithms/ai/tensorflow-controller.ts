@@ -1,8 +1,8 @@
 import BaseController from '../../base-controller';
 import { BinanceKucoinKline } from '../../../interfaces';
 
-import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
-// import * as tf from '@tensorflow/tfjs-node';   // CPU
+// import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
+import * as tf from '@tensorflow/tfjs-node';   // CPU
 
 export default class TensorflowController extends BaseController {
   constructor() {
@@ -65,7 +65,7 @@ export default class TensorflowController extends BaseController {
   public setSignals(klines: Array<BinanceKucoinKline>): Array<BinanceKucoinKline> {
     const samples = this.createTrendTrainingData(klines);
 
-    const dataX: Array<any> = samples.map(sample => [sample.trainingData]);
+    const dataX: Array<any> = samples.map(sample => sample.trainingData.map(data => [data]));
     const dataY: Array<any> = samples.map(sample => sample.trendData);
     const dataTestX: Array<any> = dataX.slice(-10);
 
@@ -79,11 +79,16 @@ export default class TensorflowController extends BaseController {
 
     // Creating the Model
     const model = tf.sequential();
-    model.add(tf.layers.lstm({ units: 200, inputShape: [1, 20], activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 400, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 400, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 200, activation: 'relu' }));
+    model.add(tf.layers.lstm({ units: 128, inputShape: [10, 1], returnSequences: true }));
+    model.add(tf.layers.dropout({ rate: 0.2 }));
+    model.add(tf.layers.lstm({ units: 128, returnSequences: true }));
+    model.add(tf.layers.dropout({ rate: 0.2 }));
+    model.add(tf.layers.lstm({ units: 128 }));
+    model.add(tf.layers.dropout({ rate: 0.2 }));
+    model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+    model.add(tf.layers.dropout({ rate: 0.2 }));
     model.add(tf.layers.dense({ units: 1, activation: 'relu' }));
+
 
     // Compiling the model
     model.compile({
@@ -95,9 +100,11 @@ export default class TensorflowController extends BaseController {
     // Fitting the model
     model.fit(x, y, {
       batchSize: 1000,
-      epochs: 1000,
-      validationSplit: 0.5
+      epochs: 10,
+      validationSplit: 0.9,
+      callbacks: tf.node.tensorBoard('log')
     }).then((history) => {
+      console.log();
       console.log('### Training finished ###');
       // printing loss and predictions
       testX.print();
@@ -114,7 +121,7 @@ export default class TensorflowController extends BaseController {
     const closes = klines.map(kline => kline.prices.close);
     const normalizedCloses = this.normalize(closes);
     const trendLength = 1;
-    const trainingLength = trendLength * 20;
+    const trainingLength = trendLength * 10;
     const sampleLength = trainingLength + trendLength;
     const samples: Array<any> = [];
 
