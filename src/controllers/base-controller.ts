@@ -74,4 +74,15 @@ export default class BaseController {
     return url;
   }
 
+  /**
+   * normalize to values between 0 and 1
+   */
+   public normalize(values: Array<number>): Array<number> {
+    const minClose = Math.min(...values);
+    const maxClose = Math.max(...values);
+    const range = maxClose - minClose;
+
+    return values.map(close => (close - minClose) / range);
+  }
+
 }
