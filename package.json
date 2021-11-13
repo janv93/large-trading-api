@@ -4,7 +4,8 @@
   "description": "WIP",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist/app.js"
+    "start": "tsc && node dist/app.js",
+    "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log"
   },
   "repository": {
     "type": "git",
