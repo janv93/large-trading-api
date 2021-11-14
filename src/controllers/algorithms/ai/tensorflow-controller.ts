@@ -100,15 +100,17 @@ export default class TensorflowController extends BaseController {
     // Fitting the model
     model.fit(x, y, {
       batchSize: 1000,
-      epochs: 10,
+      epochs: 100,
       validationSplit: 0.9,
       callbacks: tf.node.tensorBoard('log')
     }).then((history) => {
       console.log();
       console.log('### Training finished ###');
+      console.log();
+
       // printing loss and predictions
-      testX.print();
-      console.log((model.predict(testX) as any).dataSync())
+      // testX.print();
+      // console.log((model.predict(testX) as any).dataSync());
     });
 
     return klines;
