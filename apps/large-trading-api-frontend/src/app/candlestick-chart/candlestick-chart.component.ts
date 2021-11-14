@@ -180,6 +180,13 @@ export class CandlestickChartComponent implements AfterViewInit {
           algorithm: 'bb',
           period: this.chartService.bbPeriod
         };
+      case 'deepTrend':
+        return {
+          symbol,
+          times,
+          timeframe,
+          algorithm: 'deepTrend'
+        };
     }
   }
 

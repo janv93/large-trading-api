@@ -7,10 +7,10 @@ import { Subject } from 'rxjs';
 export class ChartService {
   public klinesSubject = new Subject();
   public exchange = 'binance';
-  public symbol = 'BTCUSDT';
+  public symbol = 'ETHUSDT';
   public timeframe = '1h';
-  public timeframeMultiplier = 3;  // 1 = 1 * 1000 timeframes
-  public strategy = 'ema';
+  public timeframeMultiplier = 5;  // 1 = 1 * 1000 timeframes
+  public strategy = 'deepTrend';
   public rsiLength = 7;
   public emaPeriod = 80;
   public bbPeriod = 21;
