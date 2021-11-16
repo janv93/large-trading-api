@@ -19,7 +19,7 @@ Frontend: [AngularChartVisualizer](https://github.com/janv93/AngularChartVisuali
 
 ### WIP:
 
-- [ ] Tensorflow for price prediction.
+- [ ] Tensorflow.js algos
 
 
 ## Note:
