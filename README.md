@@ -13,7 +13,7 @@ Frontend: [AngularChartVisualizer](https://github.com/janv93/AngularChartVisuali
 - [x] Caching candlesticks in data base
 - [x] Indicators working: EMA, RSI, MACD (same as Binance/TradingView)
 - [x] Basic Algorithms setting position signals
-- [x] Backtesting position signals
+- [x] Backtest
 - [x] Find profitable and linear/consistent algorithm on 100k+ / max timeframes (Currently: EMA 80 on 1h)
 - [x] Forward test
 
