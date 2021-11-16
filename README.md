@@ -15,11 +15,11 @@ Frontend: [AngularChartVisualizer](https://github.com/janv93/AngularChartVisuali
 - [x] Basic Algorithms setting position signals
 - [x] Backtesting position signals
 - [x] Find profitable and linear/consistent algorithm on 100k+ / max timeframes (Currently: EMA 80 on 1h)
-- [x] When profitable: Start forward test with Binance
+- [x] Forward test
 
 ### WIP:
 
-- [ ] Tensorflow network for price prediction.
+- [ ] Tensorflow for price prediction.
 
 
 ## Note:
