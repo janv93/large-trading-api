@@ -108,7 +108,7 @@ export default class BinanceController extends BaseController {
    */
   public initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
     const startDate = new Date();
-    const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 50;
+    const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 100;
     const startTime = startDate.getTime() - timespan;
 
     return new Promise((resolve, reject) => {
