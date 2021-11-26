@@ -67,10 +67,17 @@ export default class TensorflowController extends BaseController {
 
   public setSignals(klines: Array<BinanceKucoinKline>): Array<BinanceKucoinKline> {
     console.log('Received ' + klines.length + ' klines');
-    const samples = this.createTrendTrainingData(klines);
 
-    const dataX: Array<any> = samples.map(sample => sample.trainingData);
-    const dataY: Array<any> = samples.map(sample => sample.trendData);
+    // this.trainModelPriceToPrice(klines);
+    this.trainModelPriceDiffToPriceDiff(klines);
+
+    return klines;
+  }
+
+  private trainModelPriceToPrice(klines: Array<BinanceKucoinKline>) {
+    const samples = this.createTrainingDataPriceToPrice(klines);
+    const dataX: Array<any> = samples.map(sample => sample.inputs);
+    const dataY: Array<any> = samples.map(sample => sample.outputs);
     const dataTestX: Array<any> = dataX.slice(-10);
 
     // Transforming the data to tensors
@@ -113,14 +120,16 @@ export default class TensorflowController extends BaseController {
       console.log(predictions);
       this.plotlyController.plotPredictions(dataTestX, predictions, outputUnits);
     });
+  }
 
-    return klines;
+  private trainModelPriceDiffToPriceDiff(klines: Array<BinanceKucoinKline>) {
+
   }
 
   /**
    * create a training data set with inputs and outputs
    */
-  private createTrendTrainingData(klines: Array<BinanceKucoinKline>): Array<any> {
+  private createTrainingDataPriceToPrice(klines: Array<BinanceKucoinKline>): Array<any> {
     const closes = klines.map(kline => kline.prices.close);
     const normalizedCloses = this.normalize(closes);
     const trendLength = 1;
@@ -129,35 +138,12 @@ export default class TensorflowController extends BaseController {
     const samples: Array<any> = [];
 
     for (let i = 0; i < normalizedCloses.length - sampleLength; i++) {
-      const trainingData = normalizedCloses.slice(i, i + trainingLength);
-      const trendData = normalizedCloses.slice(i + trainingLength, i + trainingLength + trendLength);
-      // const trend = this.getTrend(trainingData[trainingData.length - 1], trendData);
-      const sample = { trainingData, trendData };
+      const inputs = normalizedCloses.slice(i, i + trainingLength);
+      const outputs = normalizedCloses.slice(i + trainingLength, i + trainingLength + trendLength);
+      const sample = { inputs, outputs };
       samples.push(sample);
     }
 
     return samples;
-  }
-
-  /**
-   * calculates if the trend is up or down compared to the last price of the training data set
-   */
-  private getTrend(lastPrice: number, trendData: Array<number>): any {
-    const minClose = Math.min(...trendData);
-    const maxClose = Math.max(...trendData);
-    const threshold = 0.01;
-    const minPercent = minClose < lastPrice ? (lastPrice - minClose) / lastPrice : 0;
-    const maxPercent = maxClose > lastPrice ? (maxClose - lastPrice) / lastPrice : 0;
-    let bearish = minPercent > threshold ? 1 : 0;
-    let bullish = maxPercent > threshold ? 1 : 0;
-
-    const both = bearish && bullish;
-
-    if (both) {
-      bearish = 0;
-      bullish = 0;
-    }
-
-    return { bearish, bullish };
   }
 }
