@@ -124,7 +124,7 @@ export class IndicatorChartComponent implements AfterViewInit {
         curve: 'straight'
       },
       title: {
-        text: 'EMA (' + this.chartService.emaPeriod + ')',
+        text: 'EMA (' + this.chartService.emaPeriodOpen + ')',
         align: 'left'
       },
       xaxis: {
@@ -281,7 +281,7 @@ export class IndicatorChartComponent implements AfterViewInit {
   private postEma(klines: Array<any>) {
     const query = {
       indicator: 'ema',
-      period: this.chartService.emaPeriod
+      period: this.chartService.emaPeriodOpen
     };
 
     const url = this.chartService.createUrl(this.baseUrl, query);
