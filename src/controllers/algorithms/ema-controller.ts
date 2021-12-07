@@ -19,67 +19,74 @@ export default class EmaController extends BaseController {
     super();
   }
 
-  public setSignals(klines: Array<BinanceKucoinKline>, period: number): Array<BinanceKucoinKline> {
-    const ema = this.indicatorsController.ema(klines, period);
-    const klinesWithEma = klines.slice(-ema.length);
+  /**
+   * sets position signals depending on emas going up or down
+   */
+  public setSignals(klines: Array<BinanceKucoinKline>, periodOpen: number, periodClose: number): Array<BinanceKucoinKline> {
+    const emaOpenFull = this.indicatorsController.ema(klines, periodOpen);
+    const emaCloseFull = this.indicatorsController.ema(klines, periodClose);
+    const maxLength = Math.min(emaOpenFull.length, emaCloseFull.length);
+    const emaOpen = emaOpenFull.slice(-maxLength);
+    const emaClose = emaCloseFull.slice(-maxLength);
+    const klinesWithEma = klines.slice(-maxLength);
 
-    let lastMove: string;
+    let lastMoveOpen: string;
+    let lastMoveClose: string;
+    let lastEmaOpen: number;
+    let lastEmaClose: number;
     let positionOpen = false;
-    let lastEma: number;
-    let pivotEma: number;
-    let threshold = 0.000;
 
-    klinesWithEma.forEach((kline, index) => {
-      const e = ema[index].ema;
+    klinesWithEma.forEach((kline, i) => {
+      const eOpen = emaOpen[i].ema;
+      const eClose = emaClose[i].ema;
 
-      if (!lastEma) {
-        lastEma = e;
+      // init
+
+      if (i === 0) {
+        lastEmaOpen = eOpen;
+        lastEmaClose = eClose;
         return;
       }
 
-      const move = e - lastEma > 0 ? 'up' : 'down';
+      const moveOpen = eOpen - lastEmaOpen > 0 ? 'up' : 'down';
+      const moveClose = eClose - lastEmaClose > 0 ? 'up' : 'down';
 
-      if (!lastMove) {
-        lastMove = move;
-        lastEma = e;
+      if (i === 1) {
+        lastMoveOpen = moveOpen;
+        lastEmaOpen = eOpen;
+        lastMoveClose = moveClose;
+        lastEmaClose = eClose;
         return;
       }
 
-      const momentumSwitch = move !== lastMove;
+      const momentumSwitchOpen = moveOpen !== lastMoveOpen;
+      const momentumSwitchClose = moveClose !== lastMoveClose;
 
-      if (momentumSwitch) {
-        pivotEma = lastEma;
+      // init end
 
-        if (positionOpen) {
-          const diffToPivot = e - pivotEma;
-          const diffToPivotPercent = Math.abs(diffToPivot / pivotEma);
+      // set signals
 
-          if (move === 'up' && diffToPivotPercent > threshold) {
-            kline.signal = this.buySignal;
-          } else if (move === 'down' && diffToPivotPercent > threshold) {
-            kline.signal = this.sellSignal;
-          } else {
-            kline.signal = this.closeSignal;
-            positionOpen = false;
-          }
-        }
+      if (positionOpen && momentumSwitchClose && lastMoveOpen !== moveClose) {
+        kline.signal = this.closeSignal;
+        positionOpen = false;
       }
 
-      if (!positionOpen) {
-        const diffToPivot = e - pivotEma;
-        const diffToPivotPercent = Math.abs(diffToPivot / pivotEma);
-
-        if (move === 'up' && diffToPivotPercent > threshold) {
+      if (!positionOpen && momentumSwitchOpen) {
+        if (moveOpen === 'up') {
           kline.signal = this.buySignal;
           positionOpen = true;
-        } else if (move === 'down' && diffToPivotPercent > threshold) {
+        } else if (moveOpen === 'down') {
           kline.signal = this.sellSignal;
           positionOpen = true;
         }
       }
 
-      lastMove = move;
-      lastEma = e;
+      // set signals end
+
+      lastMoveOpen = moveOpen;
+      lastEmaOpen = eOpen;
+      lastMoveClose = moveClose;
+      lastEmaClose = eClose;
     });
 
     return klines;

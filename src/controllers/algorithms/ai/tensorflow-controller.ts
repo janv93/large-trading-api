@@ -1,12 +1,14 @@
 import BaseController from '../../base-controller';
 import { BinanceKucoinKline } from '../../../interfaces';
 import PlotlyController from '../../plotly-controller';
+import IndicatorsController from '../../technical-analysis/indicators-controller';
 
 // import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
 import * as tf from '@tensorflow/tfjs-node';   // CPU
 
 export default class TensorflowController extends BaseController {
   private plotlyController = new PlotlyController();
+  private indicatorsController = new IndicatorsController();
 
   constructor() {
     super();
@@ -69,7 +71,7 @@ export default class TensorflowController extends BaseController {
     console.log('Received ' + klines.length + ' klines');
 
     // this.trainModelPriceToPrice(klines);
-    this.trainModelPriceDiffToPriceDiff(klines);
+    this.trainModelIndicatorsToPriceDiff(klines);
 
     return klines;
   }
@@ -99,8 +101,7 @@ export default class TensorflowController extends BaseController {
 
     // creating the Model
     const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 100, inputShape: [inputCount], activation }));
-    model.add(tf.layers.dense({ units: outputCount, activation }));
+    model.add(tf.layers.dense({ units: outputCount, inputShape: [inputCount], activation }));
 
     // compiling the model
     model.compile({
@@ -132,14 +133,14 @@ export default class TensorflowController extends BaseController {
    * train model on inputs and outputs as price diff to previous kline
    */
   private trainModelPriceDiffToPriceDiff(klines: Array<BinanceKucoinKline>) {
-    const inputCount = 5;
+    const inputCount = 1;
     const outputCount = 1;
-    const samples = this.createTrainingDataPriceDiffToPriceDiff(klines, 5, 1);
+    const samples = this.createTrainingDataPriceDiffToPriceDiff(klines, inputCount, outputCount);
 
     // create inputs and outputs
-    const dataX: Array<any> = samples.map(sample => sample.inputs);
+    const dataX: Array<any> = samples.map(sample => [sample.inputs]);
     const dataY: Array<any> = samples.map(sample => sample.outputs);
-    const dataTestX: Array<any> = dataX.slice(-10);
+    const dataTestX: Array<any> = dataX.slice(-100);
 
     // transforming the data to tensors
     const x = tf.tensor(dataX);
@@ -149,12 +150,12 @@ export default class TensorflowController extends BaseController {
     x.print();
     y.print();
 
-    const activation = undefined;
+    const activation = 'relu';
 
     // creating the Model
     const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 100, inputShape: [inputCount], activation }));
-    model.add(tf.layers.dense({ units: outputCount, activation }));
+    model.add(tf.layers.lstm({ units: 5, inputShape: [inputCount, 1], activation }));
+    model.add(tf.layers.dense({ units: outputCount }));
 
     // compiling the model
     model.compile({
@@ -166,7 +167,7 @@ export default class TensorflowController extends BaseController {
     // fitting the model
     model.fit(x, y, {
       batchSize: 100,
-      epochs: 100,
+      epochs: 20,
       validationSplit: 0.9,
       callbacks: tf.node.tensorBoard('log')
     }).then((history) => {
@@ -178,7 +179,151 @@ export default class TensorflowController extends BaseController {
       const predictions = (model.predict(testX) as any).dataSync();
       testX.print();
       console.log(predictions);
-      // this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
+      this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
+    });
+  }
+
+  /**
+   * train model on inputs as indicators and
+   */
+  private trainModelIndicatorsToPriceDiff(klines: Array<BinanceKucoinKline>) {
+    const samples = this.createTrainingDataIndicatorsToPriceDiff(klines);
+
+    // create inputs and outputs
+    const dataX: Array<any> = samples.map(sample => [sample.inputs]);
+    const dataY: Array<any> = samples.map(sample => sample.outputs);
+    const dataTestX: Array<any> = dataX.slice(-100);
+
+    // transforming the data to tensors
+    const x = tf.tensor(dataX);
+    const y = tf.tensor(dataY);
+    const testX = tf.tensor(dataTestX);
+
+    x.print();
+    y.print();
+
+    const activation = 'sigmoid';
+
+    // creating the Model
+    const model = tf.sequential();
+    model.add(tf.layers.lstm({ units: 30, inputShape: [1, 11], activation }));
+    model.add(tf.layers.dense({ units: 30, activation }));
+    model.add(tf.layers.dense({ units: 30, activation }));
+    model.add(tf.layers.dense({ units: 1 }));
+
+    // compiling the model
+    model.compile({
+      optimizer: tf.train.adam(0.00001),
+      loss: tf.losses.meanSquaredError,
+      metrics: [tf.metrics.meanAbsoluteError]
+    });
+
+    // fitting the model
+    model.fit(x, y, {
+      batchSize: 64,
+      epochs: 200,
+      validationSplit: 0.9,
+      callbacks: tf.node.tensorBoard('log')
+    }).then((history) => {
+      console.log();
+      console.log('### Training finished ###');
+      console.log();
+
+      // printing loss and predictions
+      const predictions = (model.predict(testX) as any).dataSync();
+      testX.print();
+      console.log(predictions);
+    });
+  }
+
+  private createTrainingDataIndicatorsToPriceDiff(klines: Array<BinanceKucoinKline>): Array<any> {
+    // btc dominance?
+    // fear and greed index?
+
+    const rsiFull = this.indicatorsController.rsi(klines, 7);
+    const macdFull = this.createDiffs(this.indicatorsController.macd(klines, 12, 26, 9).map(macd => macd.histogram), false, 0.1);
+    const bbFull = this.indicatorsController.bb(klines, 21);
+    const ema20Full = this.createDiffs(this.indicatorsController.ema(klines, 20).map(ema => ema.ema), true, 100);
+    const ema50Full = this.createDiffs(this.indicatorsController.ema(klines, 50).map(ema => ema.ema), true, 100);
+    const ema100Full = this.createDiffs(this.indicatorsController.ema(klines, 100).map(ema => ema.ema), true, 100);
+
+    const maxLength = Math.min(rsiFull.length, macdFull.length, bbFull.length, ema20Full.length, ema50Full.length, ema100Full.length);
+
+    const klinesInIndicatorRange = klines.slice(-maxLength);
+    const rsi = rsiFull.slice(-maxLength);
+    const macd = macdFull.slice(-maxLength);
+    const bb = bbFull.slice(-maxLength);
+    const ema20 = ema20Full.slice(-maxLength);
+    const ema50 = ema50Full.slice(-maxLength);
+    const ema100 = ema100Full.slice(-maxLength);
+
+    const maxVolume = Math.max(...klinesInIndicatorRange.map(kline => kline.volume));
+
+    const klinesWithIndicators = klinesInIndicatorRange.map((kline: BinanceKucoinKline, i: number) => {
+      return {
+        closeDiff: ((kline.prices.close - kline.prices.open) / kline.prices.open) * 10,   // price diff since opening, normalized
+        highDiff: ((kline.prices.high - kline.prices.open) / kline.prices.open) * 10,
+        lowDiff: ((kline.prices.low - kline.prices.open) / kline.prices.open) * 10,
+        volume: kline.volume / maxVolume,   // relative volume
+        rsi: rsi[i].rsi / 100,
+        macd: macd[i],
+        bbAbove: kline.prices.close > bb[i].bb.upper ? 1 : 0,   // one-hot-encoding for price > upper band
+        bbBelow: kline.prices.close < bb[i].bb.lower ? 1 : 0,   // OHE for price < lower band
+        ema20: ema20[i],
+        ema50: ema50[i],
+        ema100: ema100[i],
+      };
+    });
+
+    klinesWithIndicators.pop(); // remove last element because of live data
+
+    const samples = this.createInputsOutputs(klinesWithIndicators, 1, 1);
+    const transformedSamples = this.transformIndicatorsSamples(samples);
+
+    const s = transformedSamples.map(sample => Math.abs(sample.outputs[0]));
+    const sum = s.reduce((a, b) => a+b, 0);
+    const avg = (sum/s.length) || 0;
+
+    console.log(avg);
+
+    return transformedSamples;
+  }
+
+  /**
+   * transform samples to inputs and outputs as arrays
+   */
+  private transformIndicatorsSamples(samples: Array<any>) {
+    return samples.map(sample => {
+      return {
+        inputs: Object.values(sample.inputs[0]),
+        outputs: [sample.outputs[0].closeDiff]
+      }
+    });
+  }
+
+  /**
+   * create a training data set with inputs and outputs as price diff to previous
+   */
+  private createTrainingDataPriceDiffToPriceDiff(klines: Array<BinanceKucoinKline>, inputCount: number, outputCount: number): Array<any> {
+    const closes = klines.map(kline => kline.prices.close);
+    const diffs = this.createDiffs(closes, true, 100);
+
+    return this.createInputsOutputs(diffs, inputCount, outputCount);
+  }
+
+  /**
+   * creates an array of deltas between one value and its predecessor in percentage
+   */
+  private createDiffs(values: Array<number>, isPercentage: boolean, factor = 1): Array<number> {
+    return values.slice(-(values.length - 1)).map((value, i) => {
+      const previousValue = values[i];
+      const diff = value - previousValue;
+
+      if (isPercentage) {
+        return (diff / previousValue) * factor;
+      } else {
+        return diff * factor;
+      }
     });
   }
 
@@ -193,24 +338,9 @@ export default class TensorflowController extends BaseController {
   }
 
   /**
-   * create a training data set with inputs and outputs as price diff to previous
-   */
-  private createTrainingDataPriceDiffToPriceDiff(klines: Array<BinanceKucoinKline>, inputCount: number, outputCount: number) {
-    const closes = klines.map(kline => kline.prices.close);
-
-    const diffs = closes.slice(-(closes.length - 1)).map((close, i) => {
-      const previousClose = closes[i];
-      const diff = close - previousClose;
-      return diff / previousClose;
-    });
-
-    return this.createInputsOutputs(diffs, inputCount, outputCount);
-  }
-
-  /**
    * create samples from sequences in values
    */
-  private createInputsOutputs(values: Array<number>, inputLength: number, outputLength: number): Array<any> {
+  private createInputsOutputs(values: Array<any>, inputLength: number, outputLength: number): Array<any> {
     const samples: Array<any> = [];
     const totalLength = inputLength + outputLength;
 

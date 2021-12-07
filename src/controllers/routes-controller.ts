@@ -91,7 +91,7 @@ export default class RoutesController extends BaseController {
             klinesWithSignals = this.rsiController.setSignals(responseInRange, Number(query.length));
             break;
           case 'ema':
-            klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.period));
+            klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.periodOpen), Number(query.periodClose));
             break;
           case 'emasl':
             klinesWithSignals = this.emaController.setSignalsSL(responseInRange, Number(query.period));
@@ -137,7 +137,7 @@ export default class RoutesController extends BaseController {
 
     switch (query.indicator) {
       case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, Number(query.length)); break;
-      case 'macd': indicatorChart = this.indicatorsController.macd(req.body, query.fast, query.slow, query.signal); break;
+      case 'macd': indicatorChart = this.indicatorsController.macd(req.body, Number(query.fast), Number(query.slow), Number(query.signal)); break;
       case 'ema': indicatorChart = this.indicatorsController.ema(req.body, Number(query.period)); break;
       case 'bb': indicatorChart = this.indicatorsController.bb(req.body, Number(query.period)); break;
     }

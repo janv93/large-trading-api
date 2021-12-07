@@ -29,15 +29,15 @@ export default class IndicatorsController {
     return valuesWithRsi;
   }
 
-  public macd(klines: Array<BinanceKucoinKline>, fast, slow, signal): Array<any> {
+  public macd(klines: Array<BinanceKucoinKline>, fast: number, slow: number, signal: number): Array<any> {
     const values = klines.map(kline => kline.prices.close);
-    const smoothing = (Number(fast) + Number(slow)) / 2;
+    const smoothing = (fast + slow) / 2;
 
     const inputMacd = {
       values,
-      fastPeriod: fast,
-      slowPeriod: slow,
-      signalPeriod: signal,
+      fastPeriod: String(fast),
+      slowPeriod: String(slow),
+      signalPeriod: String(signal),
       smoothing
     };
 

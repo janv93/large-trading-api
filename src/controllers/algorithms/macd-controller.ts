@@ -10,7 +10,7 @@ export default class MacdController extends BaseController {
     this.indicatorsController = new IndicatorsController();
   }
 
-  public setSignals(klines: Array<BinanceKucoinKline>, fast: string, slow: string, signal: string): Array<BinanceKucoinKline> {
+  public setSignals(klines: Array<BinanceKucoinKline>, fast: number, slow: number, signal: number): Array<BinanceKucoinKline> {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
 
