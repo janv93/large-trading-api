@@ -136,7 +136,7 @@ export class CandlestickChartComponent implements AfterViewInit {
           times,
           timeframe,
           algorithm: 'momentum',
-          streak: 2
+          streak: this.chartService.momentumStreak
         };
       case 'macd':
         return {
