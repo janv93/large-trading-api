@@ -1,7 +1,7 @@
 import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 
-export default class PivotReversalController extends BaseController {
+export default class MomentumController extends BaseController {
   constructor() {
     super();
   }
@@ -45,28 +45,22 @@ export default class PivotReversalController extends BaseController {
     const rangeGreen = range.every(kline => kline >= 0);
     const rangeRed = range.every(kline => kline <= 0);
 
-    return rangeGreen ? this.buySignal : rangeRed ? this.sellSignal : '';
+    let signal = rangeGreen ? this.buySignal : rangeRed ? this.sellSignal : ''
+    // invert the signal
+    signal = this.invertSignal(signal);
+
+    return signal;
   }
 
   private isClose(klines: Array<BinanceKucoinKline>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
-    const range = klines.slice(lastEntryIndex + 1, index + 1);
     const closePriceAtLastEntry = klines[lastEntryIndex].prices.close;
+    const currentPrice = klines[index].prices.close;
 
-    // condition 1: opposite signal occurs since last signal, trend reversal
-    let conditionOppositeTrend = false;
+    const priceDiff = currentPrice - closePriceAtLastEntry;
+    const priceDiffPercent = priceDiff / closePriceAtLastEntry;
+    const slRate = 0.003;
+    const tpRate = slRate * 2;
 
-    if (range.length >= streak) {
-      const isOppositeEntry = this.isEntry(colors, index, streak);
-
-      conditionOppositeTrend = isOppositeEntry ? (isOppositeEntry !== lastEntrySignal ? true : false) : false;
-    }
-    
-
-    // condition 2: close price dropped certain percentage below highest close since streak
-
-    // vice versa for SELL signal
-
-
-    return conditionOppositeTrend;
+    return this.isTpslReached(lastEntrySignal, priceDiffPercent, slRate, tpRate);
   }
 }

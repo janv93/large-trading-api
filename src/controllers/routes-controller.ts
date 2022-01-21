@@ -11,6 +11,7 @@ import EmaController from './algorithms/ema-controller';
 import BbController from './algorithms/bb-controller';
 import PatternComparatorController from './algorithms/ai/pattern-comparator-controller';
 import TensorflowController from './algorithms/ai/tensorflow-controller';
+import FlashCrashController from './algorithms/flash-crash-controller';
 
 export default class RoutesController extends BaseController {
   private database = new Database();
@@ -25,6 +26,7 @@ export default class RoutesController extends BaseController {
   private bbController = new BbController();
   private patternComparatorController = new PatternComparatorController();
   private tensorflowController = new TensorflowController();
+  private flashCrashController = new FlashCrashController();
 
   constructor() {
     super();
@@ -104,6 +106,9 @@ export default class RoutesController extends BaseController {
             break;
           case 'deepTrend':
             klinesWithSignals = this.tensorflowController.setSignals(responseInRange);
+            break;
+          case 'flashCrash':
+            klinesWithSignals = this.flashCrashController.setSignals(responseInRange);
             break;
         }
 
