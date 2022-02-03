@@ -19,6 +19,10 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 - [ ] Tensorflow.js algos
 
+### Todo:
+
+- [ ] Transformer as improvement to standard NNs (position encoding time steps)
+
 
 ## Note:
 
