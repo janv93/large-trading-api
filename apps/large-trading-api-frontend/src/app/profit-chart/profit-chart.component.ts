@@ -19,6 +19,9 @@ export class ProfitChartComponent implements AfterViewInit {
   @Input()
   public title: string;
 
+  @Input()
+  public flowingProfit: boolean;
+
   public stats: any;
   private options: any;
 
@@ -85,7 +88,8 @@ export class ProfitChartComponent implements AfterViewInit {
 
   private postBacktest(klines: Array<BinanceKline>): void {
     const query = {
-      commission: this.commission
+      commission: this.commission,
+      flowingProfit: this.flowingProfit
     };
 
     const baseUrl = this.chartService.baseUrl + '/backtest';

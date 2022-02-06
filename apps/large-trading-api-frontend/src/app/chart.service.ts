@@ -9,8 +9,8 @@ export class ChartService {
   public exchange = 'binance';
   public symbol = 'BTCUSDT';
   public timeframe = '1h';
-  public timeframeMultiplier = 10;  // 1 = 1 * 1000 timeframes
-  public strategy = 'momentum';
+  public timeframeMultiplier = 1;  // 1 = 1 * 1000 timeframes
+  public strategy = 'ema';
   public rsiLength = 7;
   public emaPeriodOpen = 80;
   public emaPeriodClose = 80;
