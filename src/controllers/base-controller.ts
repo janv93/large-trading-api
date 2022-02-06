@@ -103,5 +103,9 @@ export default class BaseController {
   public invertSignal(signal: string): string {
     return signal === this.buySignal ? this.sellSignal : (signal === this.sellSignal ? this.buySignal : '');
   }
+  
+  public stringToBoolean(input: string): boolean {
+    return input === 'true';
+  }
 
 }

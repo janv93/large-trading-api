@@ -6,30 +6,26 @@ export default class BacktestController extends BaseController {
     super();
   }
 
-  public calcBacktestPerformance(klines: Array<BinanceKucoinKline>, commission: number): Array<BinanceKucoinKline> {
-    let percentProfit = 0.0;
+  public calcBacktestPerformance(klines: Array<BinanceKucoinKline>, commission: number, flowingProfit: boolean): Array<BinanceKucoinKline> {
+    let percentProfit = 0;
     let lastSignalKline: BinanceKucoinKline;
 
-    klines.forEach(kline => {
-      if (kline.signal) {
-        if (lastSignalKline && lastSignalKline.signal !== this.closeSignal) {
-          const diff = kline.prices.close - lastSignalKline.prices.close;
-          const percentage = diff / lastSignalKline.prices.close * 100;
-
-          percentProfit += lastSignalKline.signal === this.buySignal ? percentage : -percentage;
-
-          if (kline.signal === this.closeSignal) {
-            // if buy/sell->close, we pay 1x commission
-            percentProfit -= commission;
-          } else {
-            // if buy/sell->sell/buy, we pay 2x commission
-            percentProfit -= commission * 2;
+    klines.forEach((kline: BinanceKucoinKline, i: number) => {
+      if (lastSignalKline) {
+        if (flowingProfit) {  // recalculate profit every kline
+          const profitChange = this.calcProfitChange(kline, klines[i - 1], lastSignalKline);
+          percentProfit += lastSignalKline.signal === this.buySignal ? profitChange : -profitChange;
+        } else {  // recalculate profit only on signal close/reopen
+          if (kline.signal && lastSignalKline.signal !== this.closeSignal) {
+            const profitChange = this.calcProfitChange(kline, lastSignalKline);
+            percentProfit += lastSignalKline.signal === this.buySignal ? profitChange : -profitChange;
           }
-        } else {
-          // if close->buy/sell, we pay 1x commission
-          percentProfit -= commission;
         }
+      }
 
+      if (kline.signal) {
+        const currentCommission = this.calcCommission(commission, kline, lastSignalKline);
+        percentProfit -= currentCommission;
         lastSignalKline = kline;
       }
 
@@ -37,5 +33,21 @@ export default class BacktestController extends BaseController {
     });
 
     return klines;
+  }
+
+  private calcProfitChange(kline: BinanceKucoinKline, lastKline: BinanceKucoinKline, lastSignalKline?: BinanceKucoinKline): number {
+    const diff = kline.prices.close - lastKline.prices.close;
+    return diff / (lastSignalKline ?? lastKline).prices.close * 100;
+  }
+
+  /**
+   * if close and open at once, double commission
+   */
+  private calcCommission(baseCommission: number, signalKline: BinanceKucoinKline, lastSignalKline: BinanceKucoinKline): number {
+    if (signalKline.signal !== this.closeSignal && lastSignalKline && lastSignalKline.signal !== this.closeSignal) {
+      return baseCommission * 2;
+    } else {
+      return baseCommission;
+    }
   }
 }
