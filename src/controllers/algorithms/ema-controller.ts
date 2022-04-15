@@ -73,10 +73,10 @@ export default class EmaController extends BaseController {
 
       if (!positionOpen && momentumSwitchOpen) {
         if (moveOpen === 'up') {
-          kline.signal = this.buySignal;
+          kline.signal = this.closeBuySignal;
           positionOpen = true;
         } else if (moveOpen === 'down') {
-          kline.signal = this.sellSignal;
+          kline.signal = this.closeSellSignal;
           positionOpen = true;
         }
       }
@@ -125,10 +125,10 @@ export default class EmaController extends BaseController {
         posOpenPrice = kline.prices.close;
 
         if (move === 'up') {
-          kline.signal = this.buySignal;
+          kline.signal = this.closeBuySignal;
           positionOpen = true;
         } else {
-          kline.signal = this.sellSignal;
+          kline.signal = this.closeSellSignal;
           positionOpen = true;
         }
 
@@ -138,16 +138,16 @@ export default class EmaController extends BaseController {
           posOpenPrice = kline.prices.close;
 
           if (move === 'up') {
-            kline.signal = this.buySignal;
+            kline.signal = this.closeBuySignal;
           } else {
-            kline.signal = this.sellSignal;
+            kline.signal = this.closeSellSignal;
           }
         } else {
           const currentPrice = kline.prices.close;
           const priceDiff = currentPrice - posOpenPrice;
           const priceDiffPercent = priceDiff / posOpenPrice;
 
-          if (lastSignal === this.buySignal) {
+          if (lastSignal === this.closeBuySignal) {
             const stopLossReached = priceDiffPercent < -stopLossPercent;
 
             if (stopLossReached) {

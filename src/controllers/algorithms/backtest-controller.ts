@@ -9,23 +9,24 @@ export default class BacktestController extends BaseController {
   public calcBacktestPerformance(klines: Array<BinanceKucoinKline>, commission: number, flowingProfit: boolean): Array<BinanceKucoinKline> {
     let percentProfit = 0;
     let lastSignalKline: BinanceKucoinKline;
+    let currentAmount = 0;
 
     klines.forEach((kline: BinanceKucoinKline, i: number) => {
       if (lastSignalKline) {
         if (flowingProfit) {  // recalculate profit every kline
           const profitChange = this.calcProfitChange(kline, klines[i - 1], lastSignalKline);
-          percentProfit += lastSignalKline.signal === this.buySignal ? profitChange : -profitChange;
-        } else {  // recalculate profit only on signal close/reopen
+          percentProfit += profitChange * currentAmount;
+        } else {  // recalculate profit only on signal
           if (kline.signal && lastSignalKline.signal !== this.closeSignal) {
             const profitChange = this.calcProfitChange(kline, lastSignalKline);
-            percentProfit += lastSignalKline.signal === this.buySignal ? profitChange : -profitChange;
+            percentProfit += profitChange * currentAmount;
           }
         }
       }
 
       if (kline.signal) {
-        const currentCommission = this.calcCommission(commission, kline, lastSignalKline);
-        percentProfit -= currentCommission;
+        percentProfit -= this.calcCommission(commission, kline, currentAmount);
+        currentAmount = this.calcAmount(currentAmount, kline);
         lastSignalKline = kline;
       }
 
@@ -40,14 +41,27 @@ export default class BacktestController extends BaseController {
     return diff / (lastSignalKline ?? lastKline).prices.close * 100;
   }
 
-  /**
-   * if close and open at once, double commission
-   */
-  private calcCommission(baseCommission: number, signalKline: BinanceKucoinKline, lastSignalKline: BinanceKucoinKline): number {
-    if (signalKline.signal !== this.closeSignal && lastSignalKline && lastSignalKline.signal !== this.closeSignal) {
-      return baseCommission * 2;
-    } else {
-      return baseCommission;
+  private calcCommission(baseCommission: number, signalKline: BinanceKucoinKline, currentAmount: number): number {
+    switch (signalKline.signal) {
+      case this.closeSignal: return baseCommission * currentAmount;
+      case this.buySignal:
+      case this.sellSignal: return baseCommission * (signalKline.amount || 1);
+      case this.closeBuySignal:
+      case this.closeSellSignal: return baseCommission * currentAmount + baseCommission * (signalKline.amount || 1);
+      default: return NaN;
+    }
+  }
+
+  private calcAmount(currentAmount: number, kline: BinanceKucoinKline): number {
+    const amount = kline.amount ?? 1;   // if amount is not present, use default amount of 1
+
+    switch (kline.signal) {
+      case this.closeSignal: return 0;
+      case this.closeBuySignal: return amount;
+      case this.closeSellSignal: return -amount;
+      case this.buySignal: return currentAmount + amount;
+      case this.sellSignal: return currentAmount - amount;
+      default: return NaN;
     }
   }
 }

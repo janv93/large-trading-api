@@ -2,7 +2,9 @@ import { BinanceKucoinKline } from '../interfaces';
 
 export default class BaseController {
   public buySignal = 'BUY';
+  public closeBuySignal = 'CLOSEBUY';
   public sellSignal = 'SELL';
+  public closeSellSignal = 'CLOSESELL';
   public closeSignal = 'CLOSE';
 
   /**
@@ -89,7 +91,7 @@ export default class BaseController {
     let slReached: boolean;
     let tpReached: boolean;
 
-    if (entrySignal === this.buySignal) {
+    if (entrySignal === this.buySignal || entrySignal === this.closeBuySignal) {
       slReached = priceDiffPercent < -slRate;
       tpReached = priceDiffPercent > tpRate;
     } else {
@@ -101,7 +103,13 @@ export default class BaseController {
   }
 
   public invertSignal(signal: string): string {
-    return signal === this.buySignal ? this.sellSignal : (signal === this.sellSignal ? this.buySignal : '');
+    switch (signal) {
+      case this.buySignal: return this.sellSignal;
+      case this.sellSignal: return this.buySignal;
+      case this.closeBuySignal: return this.closeSellSignal;
+      case this.closeSellSignal: return this.closeBuySignal;
+      default: return '';
+    }
   }
   
   public stringToBoolean(input: string): boolean {

@@ -25,25 +25,25 @@ export default class BbController extends BaseController {
     klinesWithBb.forEach((kline: BinanceKucoinKline, index: number) => {
       if (!positionOpen) {
         if (kline.prices.close < bb[index].bb.lower - bb[index].bb.lower * threshold) {
-          kline.signal = this.buySignal;
+          kline.signal = this.closeBuySignal;
           positionOpen = true;
           takeProfitPrice = kline.prices.close + kline.prices.close * takeProfitFactor;
           stopLossPrice = kline.prices.close - kline.prices.close * stopLossFactor;
-          positionOpenType = this.buySignal;
+          positionOpenType = this.closeBuySignal;
         } else if (kline.prices.close > bb[index].bb.upper + bb[index].bb.upper * threshold) {
-          kline.signal = this.sellSignal;
+          kline.signal = this.closeSellSignal;
           positionOpen = true;
           takeProfitPrice = kline.prices.close - kline.prices.close * takeProfitFactor;
           stopLossPrice = kline.prices.close + kline.prices.close * stopLossFactor;
-          positionOpenType = this.sellSignal;
+          positionOpenType = this.closeSellSignal;
         }
       } else {
-        if (positionOpenType === this.buySignal) {
+        if (positionOpenType === this.closeBuySignal) {
           if (kline.prices.close > takeProfitPrice || kline.prices.close < stopLossPrice) {
             kline.signal = this.closeSignal;
             positionOpen = false;
           }
-        } else if (positionOpenType === this.sellSignal) {
+        } else if (positionOpenType === this.closeSellSignal) {
           if (kline.prices.close < takeProfitPrice || kline.prices.close > stopLossPrice) {
             kline.signal = this.closeSignal;
             positionOpen = false;

@@ -51,9 +51,9 @@ export default class MacdController extends BaseController {
             const averageHigh = sumHighs / numberHighs;
 
             if (h > 0.003) {
-              kline.signal = this.sellSignal;
+              kline.signal = this.closeSellSignal;
               positionOpen = true;
-              positionOpenType = this.sellSignal;
+              positionOpenType = this.closeSellSignal;
             }
           } else if (move === 'up' && h < 0) {
             sumLows += h;
@@ -62,13 +62,13 @@ export default class MacdController extends BaseController {
             const averageLow = sumLows / numberLows;
 
             if (h < -0.003) {
-              kline.signal = this.buySignal;
+              kline.signal = this.closeBuySignal;
               positionOpen = true;
-              positionOpenType = this.buySignal;
+              positionOpenType = this.closeBuySignal;
             }
           }
         } else {
-          if ((positionOpenType === this.sellSignal && h < 0) || (positionOpenType === this.buySignal && h > 0)) {
+          if ((positionOpenType === this.closeSellSignal && h < 0) || (positionOpenType === this.closeBuySignal && h > 0)) {
             kline.signal = this.closeSignal;
             positionOpen = false;
           }

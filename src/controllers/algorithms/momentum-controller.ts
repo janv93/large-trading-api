@@ -45,7 +45,7 @@ export default class MomentumController extends BaseController {
     const rangeGreen = range.every(kline => kline >= 0);
     const rangeRed = range.every(kline => kline <= 0);
 
-    let signal = rangeGreen ? this.buySignal : rangeRed ? this.sellSignal : ''
+    let signal = rangeGreen ? this.closeBuySignal : rangeRed ? this.closeSellSignal : ''
     // invert the signal
     signal = this.invertSignal(signal);
 

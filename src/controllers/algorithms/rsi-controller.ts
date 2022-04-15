@@ -27,23 +27,23 @@ export default class RsiController extends BaseController {
     klines.forEach((kline, index) => {
       const r = rsi[index].rsi;
 
-      if (lastSignal === this.buySignal) {
+      if (lastSignal === this.closeBuySignal) {
         if (r > rsiThresholdHigh) {
-          kline.signal = this.sellSignal;
-          lastSignal = this.sellSignal;
+          kline.signal = this.closeSellSignal;
+          lastSignal = this.closeSellSignal;
         }
-      } else if (lastSignal === this.sellSignal) {
+      } else if (lastSignal === this.closeSellSignal) {
         if (r < rsiThresholdLow) {
-          kline.signal = this.buySignal;
-          lastSignal = this.buySignal;
+          kline.signal = this.closeBuySignal;
+          lastSignal = this.closeBuySignal;
         }
       } else {
         if (r > rsiThresholdHigh) {
-          kline.signal = this.sellSignal;
-          lastSignal = this.sellSignal;
+          kline.signal = this.closeSellSignal;
+          lastSignal = this.closeSellSignal;
         } else if (r < rsiThresholdLow) {
-          kline.signal = this.buySignal;
-          lastSignal = this.buySignal;
+          kline.signal = this.closeBuySignal;
+          lastSignal = this.closeBuySignal;
         }
       }
     });
