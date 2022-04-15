@@ -5,6 +5,7 @@ export interface BinanceKline {
   numberOfTrades: number;
   signal?: string;
   percentProfit?: number;
+  amount?: number;
 };
 
 export interface BinanceTimes {

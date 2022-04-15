@@ -216,6 +216,21 @@ export class CandlestickChartComponent implements AfterViewInit {
       }
     };
 
+    const closeBuyTemplate = {
+      borderColor: '#00b746',
+      label: {
+        borderColor: '#00b746',
+        style: {
+          fontSize: '12px',
+          color: '#fff',
+          background: '#00b746'
+        },
+        orientation: 'horizontal',
+        offsetY: 7,
+        text: 'CBUY'
+      }
+    };
+
     const sellTemplate = {
       borderColor: '#FF0000',
       label: {
@@ -228,6 +243,21 @@ export class CandlestickChartComponent implements AfterViewInit {
         orientation: 'horizontal',
         offsetY: 260,
         text: 'SELL'
+      }
+    };
+
+    const closeSellTemplate = {
+      borderColor: '#FF0000',
+      label: {
+        borderColor: '#FF0000',
+        style: {
+          fontSize: '12px',
+          color: '#fff',
+          background: '#FF0000'
+        },
+        orientation: 'horizontal',
+        offsetY: 260,
+        text: 'CSELL'
       }
     };
 
@@ -265,6 +295,29 @@ export class CandlestickChartComponent implements AfterViewInit {
       } else if (signal === 'CLOSE') {
         closeTemplate['x'] = Number(openTime);
         xaxis.push(deepmerge({}, closeTemplate));
+      }
+
+      switch (signal) {
+        case 'CLOSE':
+          closeTemplate['x'] = Number(openTime);
+          xaxis.push(deepmerge({}, closeTemplate));
+          break;
+        case 'BUY':
+          buyTemplate['x'] = Number(openTime);
+          xaxis.push(deepmerge({}, buyTemplate));
+          break;
+        case 'SELL':
+          sellTemplate['x'] = Number(openTime);
+          xaxis.push(deepmerge({}, sellTemplate));
+          break;
+        case 'CLOSEBUY':
+          closeBuyTemplate['x'] = Number(openTime);
+          xaxis.push(deepmerge({}, closeBuyTemplate));
+          break;
+        case 'CLOSESELL':
+          closeSellTemplate['x'] = Number(openTime);
+          xaxis.push(deepmerge({}, closeSellTemplate));
+          break;
       }
     });
 
