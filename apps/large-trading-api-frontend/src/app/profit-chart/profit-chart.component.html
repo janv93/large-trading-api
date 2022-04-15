@@ -1,5 +1,5 @@
 <div #apexChart class="apex-chart"></div>
-<div class="d-flex justify-content-between ml-5">
+<div *ngIf="!flowingProfit" class="d-flex justify-content-between ml-5">
   <p>Total profit: {{ stats?.profit }}</p>
   <p>Number of trades: {{ stats?.trades }}</p>
   <p>Positive / Negative: {{ stats?.positiveNegative }}</p>
