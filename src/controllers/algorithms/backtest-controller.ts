@@ -43,11 +43,11 @@ export default class BacktestController extends BaseController {
 
   private calcCommission(baseCommission: number, signalKline: BinanceKucoinKline, currentAmount: number): number {
     switch (signalKline.signal) {
-      case this.closeSignal: return baseCommission * currentAmount;
+      case this.closeSignal: return baseCommission * Math.abs(currentAmount);
       case this.buySignal:
       case this.sellSignal: return baseCommission * (signalKline.amount || 1);
       case this.closeBuySignal:
-      case this.closeSellSignal: return baseCommission * currentAmount + baseCommission * (signalKline.amount || 1);
+      case this.closeSellSignal: return baseCommission * Math.abs(currentAmount) + baseCommission * (signalKline.amount || 1);
       default: return NaN;
     }
   }
