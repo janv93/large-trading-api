@@ -2,16 +2,12 @@ import IndicatorsController from '../technical-analysis/indicators-controller';
 import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 import BinanceController from '../exchanges/binance-controller';
-import KucoinController from '../exchanges/kucoin-controller';
 import BtseController from '../exchanges/btse-controller';
-import MtfController from './mtf-controller';
 
 export default class EmaController extends BaseController {
   private indicatorsController = new IndicatorsController();
   private binanceController = new BinanceController();
-  private kucoinController = new KucoinController();
   private btseController = new BtseController();
-  private mtfController = new MtfController();
 
   private tradingPositionOpen = new Map();
 

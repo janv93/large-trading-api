@@ -12,6 +12,7 @@ import BbController from './algorithms/bb-controller';
 import PatternComparatorController from './algorithms/ai/pattern-comparator-controller';
 import TensorflowController from './algorithms/ai/tensorflow-controller';
 import FlashCrashController from './algorithms/flash-crash-controller';
+import DcaController from './algorithms/investing/dca-controller';
 
 export default class RoutesController extends BaseController {
   private database = new Database();
@@ -27,6 +28,7 @@ export default class RoutesController extends BaseController {
   private patternComparatorController = new PatternComparatorController();
   private tensorflowController = new TensorflowController();
   private flashCrashController = new FlashCrashController();
+  private dcaController = new DcaController();
 
   constructor() {
     super();
@@ -109,6 +111,9 @@ export default class RoutesController extends BaseController {
             break;
           case 'flashCrash':
             klinesWithSignals = this.flashCrashController.setSignals(responseInRange);
+            break;
+          case 'dca':
+            klinesWithSignals = this.dcaController.setSignals(responseInRange);
             break;
         }
 
