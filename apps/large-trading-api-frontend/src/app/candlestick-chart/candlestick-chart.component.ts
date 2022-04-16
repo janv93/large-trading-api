@@ -188,6 +188,13 @@ export class CandlestickChartComponent implements AfterViewInit {
           timeframe,
           algorithm: 'deepTrend'
         };
+      case 'dca':
+        return {
+          symbol,
+          times,
+          timeframe,
+          algorithm: 'dca'
+        };
     }
   }
 

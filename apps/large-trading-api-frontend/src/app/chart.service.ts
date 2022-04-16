@@ -10,7 +10,7 @@ export class ChartService {
   public symbol = 'ETHUSDT';
   public timeframe = '1h';
   public timeframeMultiplier = 10;  // 1 = 1 * 1000 timeframes
-  public strategy = 'ema';
+  public strategy = 'dca';
   public rsiLength = 7;
   public emaPeriodOpen = 80;
   public emaPeriodClose = 80;
