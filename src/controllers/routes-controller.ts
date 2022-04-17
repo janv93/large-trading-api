@@ -13,6 +13,7 @@ import PatternComparatorController from './algorithms/ai/pattern-comparator-cont
 import TensorflowController from './algorithms/ai/tensorflow-controller';
 import FlashCrashController from './algorithms/flash-crash-controller';
 import DcaController from './algorithms/investing/dca-controller';
+import MartingaleController from './algorithms/investing/martingale-controller';
 
 export default class RoutesController extends BaseController {
   private database = new Database();
@@ -29,6 +30,7 @@ export default class RoutesController extends BaseController {
   private tensorflowController = new TensorflowController();
   private flashCrashController = new FlashCrashController();
   private dcaController = new DcaController();
+  private martingaleController = new MartingaleController();
 
   constructor() {
     super();
@@ -115,6 +117,9 @@ export default class RoutesController extends BaseController {
           case 'dca':
             klinesWithSignals = this.dcaController.setSignals(responseInRange);
             break;
+          case 'martingale':
+            klinesWithSignals = this.martingaleController.setSignals(responseInRange);
+            break;
         }
 
         if (klinesWithSignals.length > 0) {
@@ -135,7 +140,7 @@ export default class RoutesController extends BaseController {
 
   public tradeStrategy(req, res): void {
     switch (req.query.strategy) {
-      case 'ema': this.emaController.trade(req.query.symbol, req.query.open ? true: false);
+      case 'ema': this.emaController.trade(req.query.symbol, req.query.open ? true : false);
     }
 
     res.send('Running');
