@@ -195,6 +195,13 @@ export class CandlestickChartComponent implements AfterViewInit {
           timeframe,
           algorithm: 'dca'
         };
+      case 'martingale':
+        return {
+          symbol,
+          times,
+          timeframe,
+          algorithm: 'martingale'
+        };
     }
   }
 
