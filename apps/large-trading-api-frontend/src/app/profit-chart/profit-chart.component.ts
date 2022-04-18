@@ -121,6 +121,7 @@ export class ProfitChartComponent implements AfterViewInit {
       trades: tradesCount,
       profit: percentages[percentages.length - 1].y.toFixed(2) + '%',
       ppt: tradesCount === 0 ? '0%' : (percentages[percentages.length - 1].y / tradesCount).toFixed(3) + '%',
+      ppa: this.calcProfitPerAmount(klines, percentages).toFixed(2) + '%',
       maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%',
       drawbackProfitRatio: (this.calcMaxDrawback(percentages) / percentages[percentages.length - 1].y).toFixed(2),
       positiveNegative: this.calcPositiveNegative(percentages)
@@ -162,6 +163,18 @@ export class ProfitChartComponent implements AfterViewInit {
     });
 
     return pos + ' / ' + neg;
+  }
+
+  private calcProfitPerAmount(klines: Array<BinanceKline>, percentages: Array<any>): number {
+    let totalAmount = 0;
+
+    klines.forEach((kline: BinanceKline) => {
+      if (kline.signal) {
+        totalAmount += kline.amount ?? 1;
+      }
+    });
+
+    return totalAmount === 0 ? 0 : percentages[percentages.length - 1].y / totalAmount;
   }
 
 }
