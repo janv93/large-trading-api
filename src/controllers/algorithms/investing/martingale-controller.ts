@@ -20,8 +20,11 @@ export default class MartingaleController extends BaseController {
         const percentDiff = (lastClose - close) / lastClose;
 
         if (percentDiff > threshold) {
-          kline.signal = this.buySignal;
-          kline.amount = Math.pow(2, streak);
+          if (streak > 1) {
+            kline.signal = this.buySignal;
+            kline.amount = Math.pow(2, streak);
+          }
+
           streak++;
           lastClose = kline.prices.close;
         } else if (percentDiff < -threshold) {
