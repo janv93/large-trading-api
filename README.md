@@ -24,7 +24,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [ ] Transformer as improvement to standard NNs (position encoding time steps)
 - [ ] Add APIs for backtesting and trading stocks and ETFs
 
-### How to use:
+### How to use backtests:
 
 - npm i, npm start the project
 - start the frontend project [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
