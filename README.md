@@ -29,7 +29,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - npm i, npm start the project
 - start the frontend project [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
 - add or use existing algorithms in src/controllers/algorithms/
-- add settings for algorithm to frontend code
+- when adding new algorithm, add settings for algorithm to frontend code
 - done
 
 ## Note:
