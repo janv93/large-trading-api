@@ -5,6 +5,7 @@ import IndicatorsController from '../../technical-analysis/indicators-controller
 
 // import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
 import * as tf from '@tensorflow/tfjs-node';   // CPU
+import { data } from '@tensorflow/tfjs-node';
 
 export default class TensorflowController extends BaseController {
   private plotlyController = new PlotlyController();
@@ -71,7 +72,7 @@ export default class TensorflowController extends BaseController {
     console.log('Received ' + klines.length + ' klines');
 
     // this.trainModelPriceToPrice(klines);
-    this.trainModelIndicatorsToPriceDiff(klines);
+    this.trainModelPriceDiffToPriceDiff(klines);
 
     return klines;
   }
@@ -133,12 +134,12 @@ export default class TensorflowController extends BaseController {
    * train model on inputs and outputs as price diff to previous kline
    */
   private trainModelPriceDiffToPriceDiff(klines: Array<BinanceKucoinKline>) {
-    const inputCount = 1;
+    const inputCount = 10;
     const outputCount = 1;
     const samples = this.createTrainingDataPriceDiffToPriceDiff(klines, inputCount, outputCount);
 
     // create inputs and outputs
-    const dataX: Array<any> = samples.map(sample => [sample.inputs]);
+    const dataX: Array<any> = samples.map(sample => sample.inputs);
     const dataY: Array<any> = samples.map(sample => sample.outputs);
     const dataTestX: Array<any> = dataX.slice(-100);
 
@@ -154,7 +155,9 @@ export default class TensorflowController extends BaseController {
 
     // creating the Model
     const model = tf.sequential();
-    model.add(tf.layers.lstm({ units: 5, inputShape: [inputCount, 1], activation }));
+    model.add(tf.layers.dense({ units: 10, inputShape: [inputCount], activation }));
+    model.add(tf.layers.dense({ units: 20, activation }));
+    model.add(tf.layers.dense({ units: 20, activation }));
     model.add(tf.layers.dense({ units: outputCount }));
 
     // compiling the model
@@ -167,7 +170,7 @@ export default class TensorflowController extends BaseController {
     // fitting the model
     model.fit(x, y, {
       batchSize: 100,
-      epochs: 20,
+      epochs: 200,
       validationSplit: 0.9,
       callbacks: tf.node.tensorBoard('log')
     }).then((history) => {
@@ -177,9 +180,34 @@ export default class TensorflowController extends BaseController {
 
       // printing loss and predictions
       const predictions = (model.predict(testX) as any).dataSync();
-      testX.print();
-      console.log(predictions);
-      this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
+
+      const actual = dataTestX.map((input, i) => {
+        console.log(dataTestX[i + 1])
+        return dataTestX[i + 1] ? dataTestX[i + 1][inputCount - 1] : null;
+      });
+
+      const mappedData = this.mapInputsToPredictions(dataTestX, actual, predictions);
+      console.log(mappedData);
+      // this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
+
+
+      // analyze actual vs prediction
+      let correctPredictions = 0;
+      let incorrectPredictions = 0;
+
+      mappedData.forEach(data => {
+        const bothNegative = data.actual < 0 && data.prediction < 0;
+        const bothPositive = data.actual > 0 && data.prediction > 0;
+
+        if (bothNegative || bothPositive) {
+          correctPredictions++;
+        } else {
+          incorrectPredictions++;
+        }
+      });
+
+      console.log(correctPredictions);
+      console.log(incorrectPredictions);
     });
   }
 
@@ -352,5 +380,14 @@ export default class TensorflowController extends BaseController {
     }
 
     return samples;
+  }
+
+  /**
+   * map inputs to corresponding predictions
+   */
+  private mapInputsToPredictions(inputs: Array<any>, actual: Array<any>, predictions: Array<any>): Array<any> {
+    return inputs.map((input: any, i: number) => {
+      return { input, actual: actual[i], prediction: predictions[i] };
+    });
   }
 }
