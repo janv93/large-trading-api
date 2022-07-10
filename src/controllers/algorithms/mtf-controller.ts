@@ -2,6 +2,8 @@ import { BinanceKucoinKline } from '../../interfaces';
 import BaseController from '../base-controller';
 import BinanceController from '../exchanges/binance-controller';
 
+// WIP
+
 export default class MtfController extends BaseController {
   private binanceController = new BinanceController();
 
