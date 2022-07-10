@@ -15,10 +15,6 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [x] Find profitable and linear/consistent algorithm on 100k+ / max timeframes (Currently: EMA 80 on 1h)
 - [x] Forward test
 
-### WIP:
-
-- [ ] Tensorflow.js algos
-
 ### Todo:
 
 - [ ] Transformer as improvement to standard NNs (position encoding time steps)
