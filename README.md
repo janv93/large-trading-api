@@ -22,11 +22,10 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 ### How to use backtests:
 
-- npm i
 - start the frontend project [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
 - add or use existing algorithms in src/controllers/algorithms/
 - when adding new algorithm, add settings for algorithm to frontend code
-- npm start
+- npm i, npm start
 - initialize data, e.g. localhost:3000/initKlines?exchange=binance&symbol=BTCUSDT&timeframe=1h
 - call algorithm, e.g. localhost:3000/klinesWithAlgorithm?algorithm=deepTrend&symbol=BTCUSDT&timeframe=1h&times=10
 
