@@ -23,6 +23,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 ### How to use backtests:
 
 - start the frontend project [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
+- add credentials file (.env) to call APIs
 - add or use existing algorithms in src/controllers/algorithms/
 - when adding new algorithm, add settings for algorithm to frontend code
 - npm i, npm start
