@@ -7,12 +7,12 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 ### Done:
 
-- [x] Fetch Binance candlestick data
+- [x] Fetch candlestick data
 - [x] Caching candlesticks in data base
-- [x] Indicators working: EMA, RSI, MACD (same as Binance/TradingView)
-- [x] Basic Algorithms setting position signals
+- [x] Indicators
+- [x] Algorithms setting position signals
 - [x] Backtest
-- [x] Find profitable and linear/consistent algorithm on 100k+ / max timeframes (Currently: EMA 80 on 1h)
+- [x] Find profitable and linear/consistent algorithm
 - [x] Forward test
 
 ### Todo:
