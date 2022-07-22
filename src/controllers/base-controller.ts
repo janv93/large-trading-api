@@ -79,7 +79,7 @@ export default class BaseController {
   /**
    * normalize to values between 0 and 1
    */
-   public normalize(values: Array<number>): Array<number> {
+  public normalize(values: Array<number>): Array<number> {
     const minClose = Math.min(...values);
     const maxClose = Math.max(...values);
     const range = maxClose - minClose;
@@ -111,7 +111,7 @@ export default class BaseController {
       default: return '';
     }
   }
-  
+
   public stringToBoolean(input: string): boolean {
     return input === 'true';
   }

@@ -155,9 +155,9 @@ export default class TensorflowController extends BaseController {
 
     // creating the Model
     const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 10, inputShape: [inputCount], activation }));
-    model.add(tf.layers.dense({ units: 20, activation }));
-    model.add(tf.layers.dense({ units: 20, activation }));
+    model.add(tf.layers.dense({ units: 100, inputShape: [inputCount], activation }));
+    model.add(tf.layers.dense({ units: 200, activation }));
+    model.add(tf.layers.dense({ units: 200, activation }));
     model.add(tf.layers.dense({ units: outputCount }));
 
     // compiling the model
@@ -170,7 +170,7 @@ export default class TensorflowController extends BaseController {
     // fitting the model
     model.fit(x, y, {
       batchSize: 100,
-      epochs: 200,
+      epochs: 100,
       validationSplit: 0.9,
       callbacks: tf.node.tensorBoard('log')
     }).then((history) => {
@@ -196,13 +196,16 @@ export default class TensorflowController extends BaseController {
       let incorrectPredictions = 0;
 
       mappedData.forEach(data => {
+        const overThreshold = data.prediction > 5 || data.prediction < -5;
         const bothNegative = data.actual < 0 && data.prediction < 0;
         const bothPositive = data.actual > 0 && data.prediction > 0;
 
-        if (bothNegative || bothPositive) {
-          correctPredictions++;
-        } else {
-          incorrectPredictions++;
+        if (overThreshold) {
+          if (bothNegative || bothPositive) {
+            correctPredictions++;
+          } else {
+            incorrectPredictions++;
+          }
         }
       });
 
@@ -309,8 +312,8 @@ export default class TensorflowController extends BaseController {
     const transformedSamples = this.transformIndicatorsSamples(samples);
 
     const s = transformedSamples.map(sample => Math.abs(sample.outputs[0]));
-    const sum = s.reduce((a, b) => a+b, 0);
-    const avg = (sum/s.length) || 0;
+    const sum = s.reduce((a, b) => a + b, 0);
+    const avg = (sum / s.length) || 0;
 
     console.log(avg);
 
@@ -390,4 +393,5 @@ export default class TensorflowController extends BaseController {
       return { input, actual: actual[i], prediction: predictions[i] };
     });
   }
+
 }
