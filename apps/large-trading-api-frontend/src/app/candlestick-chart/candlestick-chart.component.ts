@@ -202,6 +202,13 @@ export class CandlestickChartComponent implements AfterViewInit {
           timeframe,
           algorithm: 'martingale'
         };
+      case 'flashCrash':
+        return {
+          symbol,
+          times,
+          timeframe,
+          algorithm: 'flashCrash'
+        };
     }
   }
 
