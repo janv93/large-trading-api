@@ -87,16 +87,16 @@ export default class BaseController {
     return values.map(close => (close - minClose) / range);
   }
 
-  public isTpslReached(entrySignal: string, priceDiffPercent: number, slRate: number, tpRate: number): boolean {
+  public isTpslReached(entrySignal: string, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
     let slReached: boolean;
     let tpReached: boolean;
 
     if (entrySignal === this.buySignal || entrySignal === this.closeBuySignal) {
-      slReached = priceDiffPercent < -slRate;
-      tpReached = priceDiffPercent > tpRate;
+      slReached = priceDiffPercent < -stopLoss;
+      tpReached = priceDiffPercent > takeProfit;
     } else {
-      slReached = priceDiffPercent > slRate;
-      tpReached = priceDiffPercent < -tpRate;
+      slReached = priceDiffPercent > stopLoss;
+      tpReached = priceDiffPercent < -takeProfit;
     }
 
     return slReached || tpReached ? true : false;
@@ -114,6 +114,10 @@ export default class BaseController {
 
   public stringToBoolean(input: string): boolean {
     return input === 'true';
+  }
+
+  public percentage(base: number, change: number): number {
+    return (change - base) / base;
   }
 
 }
