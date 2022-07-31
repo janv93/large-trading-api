@@ -14,7 +14,7 @@ export default class FlashCrashController extends BaseController {
     let isFlashCrash = false;
     let openPrice;
     const lookback = 8;
-    const threshold = 5 / 100; // 1%
+    const threshold = 3 / 100; // 1%
 
     klines.forEach((kline, index) => {
       if (index > lookback) {
@@ -37,11 +37,11 @@ export default class FlashCrashController extends BaseController {
             if (isTpslReached) {
               kline.signal = this.closeSignal;
               isOpen = false;
+              isFlashCrash = false;
             }
           } else if (isStable) {    // 2. wait for stabilize
             kline.signal = this.buySignal;
             openPrice = close;
-            isFlashCrash = false;
             isOpen = true;
           }
         } else if (lookBackPercentChange < -threshold) {    // 1. enter flash crash
