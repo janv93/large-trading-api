@@ -13,8 +13,8 @@ export default class FlashCrashController extends BaseController {
     let isOpen = false;
     let isFlashCrash = false;
     let openPrice;
-    const lookback = 8;
-    const threshold = 3 / 100; // 1%
+    const lookback = 5;
+    const threshold = 2 / 100;
 
     klines.forEach((kline, index) => {
       if (index > lookback) {
@@ -23,8 +23,8 @@ export default class FlashCrashController extends BaseController {
         const lookBackPercentChange = this.percentage(lookBackClose, close);
 
         if (isFlashCrash) {
-          const stableInterval = 2;
-          const stableTreshold = 0.1 / 100;
+          const stableInterval = 3;
+          const stableTreshold = 0.3 / 100;
 
           const stableLookBackClose = klines[index - stableInterval].prices.close;
           const stablePercentChange = Math.abs(this.percentage(stableLookBackClose, close));
@@ -32,7 +32,9 @@ export default class FlashCrashController extends BaseController {
 
           if (isOpen) {     // 3. exit on tp or sl
             const percentChangeSinceOpen = this.percentage(openPrice, close);
-            const isTpslReached = this.isTpslReached(this.buySignal, percentChangeSinceOpen, 0.3 / 100, 2 / 100);
+            const takeProfit = threshold * 3 / 4
+            const stopLoss = threshold / 3;
+            const isTpslReached = this.isTpslReached(this.buySignal, percentChangeSinceOpen, stopLoss, takeProfit);
 
             if (isTpslReached) {
               kline.signal = this.closeSignal;
