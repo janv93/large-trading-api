@@ -11,14 +11,11 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [x] Fetch candlestick data
 - [x] Caching candlesticks in data base
 - [x] Indicators
-- [x] Algorithms setting position signals
-- [x] Backtest
-- [x] Find profitable and linear/consistent algorithm
-- [x] Forward test
+- [x] Algorithms setting position signals on past data
 
 ### Todo:
 
-- [ ] Transformer as improvement to standard NNs (position encoding time steps)
+- [ ] AI: Transformer as improvement to standard NNs (position encoding time steps)
 - [ ] Add APIs for backtesting and trading stocks and ETFs
 
 ### How to use backtests:
