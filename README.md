@@ -1,5 +1,6 @@
 # Large Trading API
-This node API fulfills all the fundamental necessities of trading automation, including backtesting, price prediction and executive behavior like opening and closing positions via popular APIs.
+This API allows to backtest any custom trading algorithm on crypto currencies (eventually also the stock/index market).
+A backtest is a test of an algorithm on historical data.
 
 Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
 
