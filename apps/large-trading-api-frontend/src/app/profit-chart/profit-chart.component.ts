@@ -3,13 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import { ChartService } from '../chart.service';
 import { BinanceKline } from '../interfaces';
+import { BaseComponent } from '../base-component';
 
 @Component({
   selector: 'profit-chart',
   templateUrl: './profit-chart.component.html',
   styleUrls: ['./profit-chart.component.scss']
 })
-export class ProfitChartComponent implements AfterViewInit {
+export class ProfitChartComponent extends BaseComponent implements AfterViewInit {
   @ViewChild('apexChart')
   public apexChart: ElementRef;
 
@@ -29,6 +30,7 @@ export class ProfitChartComponent implements AfterViewInit {
     private http: HttpClient,
     private chartService: ChartService
   ) {
+    super();
   }
 
   ngAfterViewInit(): void {
@@ -66,7 +68,7 @@ export class ProfitChartComponent implements AfterViewInit {
         x: {
           formatter: (val) => {
             const d = new Date(val);
-            return d.toLocaleTimeString();
+            return this.dateToSimpleString(d);
           }
         }
       },

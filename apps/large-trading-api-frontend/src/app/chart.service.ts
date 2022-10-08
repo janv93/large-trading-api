@@ -9,7 +9,7 @@ export class ChartService {
   public exchange = 'binance';
   public symbol = 'ETHUSDT';
   public timeframe = '1h';
-  public timeframeMultiplier = 80;  // 1 = 1000 timeframes
+  public timeframeMultiplier = 30;  // 1 = 1000 timeframes
   public strategy = 'ema';
   public rsiLength = 7;
   public emaPeriodOpen = 80;
