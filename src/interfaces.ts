@@ -1,6 +1,6 @@
-export interface BinanceKucoinKline {
-  times: BinanceKucoinTimes;
-  prices: BinanceKucoinPrices;
+export interface Kline {
+  times: KlineTimes;
+  prices: KlinePrices;
   volume: number;
   numberOfTrades?: number;
   signal?: string;
@@ -8,12 +8,12 @@ export interface BinanceKucoinKline {
   amount?: number;
 };
 
-export interface BinanceKucoinTimes {
+export interface KlineTimes {
   open: number;
   close?: number;
 }
 
-export interface BinanceKucoinPrices {
+export interface KlinePrices {
   open: number;
   close: number;
   high: number;

@@ -1,4 +1,4 @@
-import { BinanceKucoinKline } from '../../../interfaces';
+import { Kline } from '../../../interfaces';
 import BaseController from '../../base-controller';
 
 
@@ -7,12 +7,12 @@ export default class MartingaleController extends BaseController {
     super();
   }
 
-  public setSignals(klines: Array<BinanceKucoinKline>): Array<BinanceKucoinKline> {
+  public setSignals(klines: Array<Kline>): Array<Kline> {
     const threshold = 0.1;
     let streak = 0;
     let lastClose;
 
-    klines.forEach((kline: BinanceKucoinKline, i: number) => {
+    klines.forEach((kline: Kline, i: number) => {
       if (i === 0) {
         lastClose = kline.prices.close;
       } else {

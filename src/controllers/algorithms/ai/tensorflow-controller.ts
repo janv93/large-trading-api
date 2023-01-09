@@ -1,5 +1,5 @@
 import BaseController from '../../base-controller';
-import { BinanceKucoinKline } from '../../../interfaces';
+import { Kline } from '../../../interfaces';
 import PlotlyController from '../../plotly-controller';
 import IndicatorsController from '../../technical-analysis/indicators-controller';
 
@@ -68,7 +68,7 @@ export default class TensorflowController extends BaseController {
     });
   }
 
-  public setSignals(klines: Array<BinanceKucoinKline>): Array<BinanceKucoinKline> {
+  public setSignals(klines: Array<Kline>): Array<Kline> {
     console.log('Received ' + klines.length + ' klines');
 
     // this.trainModelPriceToPrice(klines);
@@ -80,7 +80,7 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs and outputs as price
    */
-  private trainModelPriceToPrice(klines: Array<BinanceKucoinKline>) {
+  private trainModelPriceToPrice(klines: Array<Kline>) {
     const inputCount = 5;
     const outputCount = 1;
     const samples = this.createTrainingDataPriceToPrice(klines, inputCount, outputCount);
@@ -133,7 +133,7 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs and outputs as price diff to previous kline
    */
-  private trainModelPriceDiffToPriceDiff(klines: Array<BinanceKucoinKline>) {
+  private trainModelPriceDiffToPriceDiff(klines: Array<Kline>) {
     const inputCount = 10;
     const outputCount = 1;
     const samples = this.createTrainingDataPriceDiffToPriceDiff(klines, inputCount, outputCount);
@@ -217,7 +217,7 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs as indicators and
    */
-  private trainModelIndicatorsToPriceDiff(klines: Array<BinanceKucoinKline>) {
+  private trainModelIndicatorsToPriceDiff(klines: Array<Kline>) {
     const samples = this.createTrainingDataIndicatorsToPriceDiff(klines);
 
     // create inputs and outputs
@@ -267,7 +267,7 @@ export default class TensorflowController extends BaseController {
     });
   }
 
-  private createTrainingDataIndicatorsToPriceDiff(klines: Array<BinanceKucoinKline>): Array<any> {
+  private createTrainingDataIndicatorsToPriceDiff(klines: Array<Kline>): Array<any> {
     // btc dominance?
     // fear and greed index?
 
@@ -290,7 +290,7 @@ export default class TensorflowController extends BaseController {
 
     const maxVolume = Math.max(...klinesInIndicatorRange.map(kline => kline.volume));
 
-    const klinesWithIndicators = klinesInIndicatorRange.map((kline: BinanceKucoinKline, i: number) => {
+    const klinesWithIndicators = klinesInIndicatorRange.map((kline: Kline, i: number) => {
       return {
         closeDiff: ((kline.prices.close - kline.prices.open) / kline.prices.open) * 10,   // price diff since opening, normalized
         highDiff: ((kline.prices.high - kline.prices.open) / kline.prices.open) * 10,
@@ -335,7 +335,7 @@ export default class TensorflowController extends BaseController {
   /**
    * create a training data set with inputs and outputs as price diff to previous
    */
-  private createTrainingDataPriceDiffToPriceDiff(klines: Array<BinanceKucoinKline>, inputCount: number, outputCount: number): Array<any> {
+  private createTrainingDataPriceDiffToPriceDiff(klines: Array<Kline>, inputCount: number, outputCount: number): Array<any> {
     const closes = klines.map(kline => kline.prices.close);
     const diffs = this.createDiffs(closes, true, 100);
 
@@ -361,7 +361,7 @@ export default class TensorflowController extends BaseController {
   /**
    * create a training data set with inputs and outputs
    */
-  private createTrainingDataPriceToPrice(klines: Array<BinanceKucoinKline>, inputCount: number, outputCount: number): Array<any> {
+  private createTrainingDataPriceToPrice(klines: Array<Kline>, inputCount: number, outputCount: number): Array<any> {
     const closes = klines.map(kline => kline.prices.close);
     const normalizedCloses = this.normalize(closes);
 

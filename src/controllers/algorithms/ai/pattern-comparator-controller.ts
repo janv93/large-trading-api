@@ -1,4 +1,4 @@
-import { BinanceKucoinKline } from '../../../interfaces';
+import { Kline } from '../../../interfaces';
 import BaseController from '../../base-controller';
 
 export default class PatternComparatorController extends BaseController {
@@ -6,7 +6,7 @@ export default class PatternComparatorController extends BaseController {
     super();
   }
 
-  public setSignals(klines: Array<BinanceKucoinKline>, range: number): Array<BinanceKucoinKline> {
+  public setSignals(klines: Array<Kline>, range: number): Array<Kline> {
     const normalizedPatterns: Array<Array<number>> = this.normalizePatterns(klines, range);   // create array of patterns for comparing to one another
 
     normalizedPatterns.forEach((pattern, index) => {
@@ -37,7 +37,7 @@ export default class PatternComparatorController extends BaseController {
   /**
    * creates array of price patterns for each point in time for the next <range> klines
    */
-  private normalizePatterns(klines: Array<BinanceKucoinKline>, range: number): Array<Array<number>> {
+  private normalizePatterns(klines: Array<Kline>, range: number): Array<Array<number>> {
     const normalizedPatterns: Array<Array<number>> = [];
 
     for (let i = 0; i < klines.length - range; i++) {
@@ -52,7 +52,7 @@ export default class PatternComparatorController extends BaseController {
   /**
    * normalize price pattern array to have values between 0 and 1
    */
-  private normalizePattern(klines: Array<BinanceKucoinKline>): Array<number> {
+  private normalizePattern(klines: Array<Kline>): Array<number> {
     const closes: Array<number> = klines.map(kline => kline.prices.close);
     const min = Math.min(...closes);
     const max = Math.max(...closes);

@@ -1,4 +1,4 @@
-import { BinanceKucoinKline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 import BinanceController from '../exchanges/binance-controller';
 

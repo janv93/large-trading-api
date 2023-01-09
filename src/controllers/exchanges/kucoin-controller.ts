@@ -1,7 +1,7 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import btoa from 'btoa';
-import { BinanceKucoinKline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 import Database from '../../data/db';
 
@@ -81,7 +81,7 @@ export default class KucoinController extends BaseController {
       const end: number = this.klines[this.klines.length - 1][0];
       const newStartTime: number = end + this.timeframeToMilliseconds(timeframe);
       const newEndTime: number = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
-      const now = (new Date()).getTime();
+      const now = Date.now();
 
       if (newStartTime < now) {
         this.getKlinesRecursiveFromDateUntilNow(symbol, newStartTime, newEndTime, timeframe, resolve, reject);
@@ -108,15 +108,14 @@ export default class KucoinController extends BaseController {
    * allows to cache already requested klines and only request recent klines
    */
   public initKlinesDatabase(symbol: string, timeframe: string) {
-    const startDate = new Date();
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 3;
-    const startTime = this.roundTimeToNearestTimeframe(startDate.getTime() - timespan, this.timeframeToMilliseconds(timeframe));
+    const startTime = this.roundTimeToNearestTimeframe(Date.now() - timespan, this.timeframeToMilliseconds(timeframe));
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
 
     return new Promise((resolve, reject) => {
       this.database.findKlines(symbol, timeframe).then(res => {
         if (res.length === 0) {
-          new Promise<Array<BinanceKucoinKline>>((resolve, reject) => {
+          new Promise<Array<Kline>>((resolve, reject) => {
             this.getKlinesRecursiveFromDateUntilNow(symbol, startTime, endTime, timeframe, resolve, reject);
           }).then(newKlines => {
             const insert = {
@@ -136,7 +135,7 @@ export default class KucoinController extends BaseController {
           const lastKline = dbKlines[dbKlines.length - 1];
           const endTime = lastKline.times.open + this.timeframeToMilliseconds(timeframe) * 200;
 
-          new Promise<Array<BinanceKucoinKline>>((resolve, reject) => {
+          new Promise<Array<Kline>>((resolve, reject) => {
             this.getKlinesRecursiveFromDateUntilNow(symbol, lastKline.times.open, endTime, timeframe, resolve, reject);
           }).then(newKlines => {
             newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
@@ -243,7 +242,7 @@ export default class KucoinController extends BaseController {
     return axios.post(url, query, options);
   }
 
-  public mapResult(klines: Array<any>): Array<BinanceKucoinKline> {
+  public mapResult(klines: Array<any>): Array<Kline> {
     return klines.map(k => {
       return {
         times: {

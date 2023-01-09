@@ -1,5 +1,5 @@
 import IndicatorsController from '../technical-analysis/indicators-controller';
-import { BinanceKucoinKline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class RsiController extends BaseController {
@@ -10,7 +10,7 @@ export default class RsiController extends BaseController {
     this.indicatorsController = new IndicatorsController();
   }
 
-  public setSignals(klines: Array<BinanceKucoinKline>, length: number): Array<BinanceKucoinKline> {
+  public setSignals(klines: Array<Kline>, length: number): Array<Kline> {
     const rsi = this.indicatorsController.rsi(klines, length);
     const klinesWithRsi = klines.slice(-rsi.length);
     this.setOverBoughtOverSoldSignals(klinesWithRsi, rsi);
@@ -18,7 +18,7 @@ export default class RsiController extends BaseController {
     return klines;
   }
 
-  private setOverBoughtOverSoldSignals(klines: Array<BinanceKucoinKline>, rsi: Array<any>): Array<BinanceKucoinKline> {
+  private setOverBoughtOverSoldSignals(klines: Array<Kline>, rsi: Array<any>): Array<Kline> {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 

@@ -1,5 +1,5 @@
 import IndicatorsController from '../technical-analysis/indicators-controller';
-import { BinanceKucoinKline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 import BinanceController from '../exchanges/binance-controller';
 import BtseController from '../exchanges/btse-controller';
@@ -18,7 +18,7 @@ export default class EmaController extends BaseController {
   /**
    * sets position signals depending on emas going up or down
    */
-  public setSignals(klines: Array<BinanceKucoinKline>, periodOpen: number, periodClose: number): Array<BinanceKucoinKline> {
+  public setSignals(klines: Array<Kline>, periodOpen: number, periodClose: number): Array<Kline> {
     const emaOpenFull = this.indicatorsController.ema(klines, periodOpen);
     const emaCloseFull = this.indicatorsController.ema(klines, periodClose);
     const maxLength = Math.min(emaOpenFull.length, emaCloseFull.length);
@@ -88,7 +88,7 @@ export default class EmaController extends BaseController {
     return klines;
   }
 
-  public setSignalsSL(klines: Array<BinanceKucoinKline>, period: number): Array<BinanceKucoinKline> {
+  public setSignalsSL(klines: Array<Kline>, period: number): Array<Kline> {
     const ema = this.indicatorsController.ema(klines, period);
     const klinesWithEma = klines.slice(-ema.length);
 
@@ -198,7 +198,7 @@ export default class EmaController extends BaseController {
    */
   private tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
     this.binanceController.getKlines(symbol, timeframe).then(res => {
-      const mappedKlines: Array<BinanceKucoinKline> = this.binanceController.mapResult(res.data);
+      const mappedKlines: Array<Kline> = this.binanceController.mapResult(res.data);
       const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length - 1].prices.close)/** .toFixed(2) for binance */);
       mappedKlines.splice(-1);  // remove running timeframe
       console.log(mappedKlines.slice(-3))

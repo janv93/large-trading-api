@@ -1,4 +1,4 @@
-import { BinanceKucoinKline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class BacktestController extends BaseController {
@@ -6,12 +6,12 @@ export default class BacktestController extends BaseController {
     super();
   }
 
-  public calcBacktestPerformance(klines: Array<BinanceKucoinKline>, commission: number, flowingProfit: boolean): Array<BinanceKucoinKline> {
+  public calcBacktestPerformance(klines: Array<Kline>, commission: number, flowingProfit: boolean): Array<Kline> {
     let percentProfit = 0;
-    let lastSignalKline: BinanceKucoinKline;
+    let lastSignalKline: Kline;
     let currentAmount = 0;
 
-    klines.forEach((kline: BinanceKucoinKline, i: number) => {
+    klines.forEach((kline: Kline, i: number) => {
       if (lastSignalKline) {
         if (flowingProfit) {  // recalculate profit every kline
           const profitChange = this.calcProfitChange(kline, klines[i - 1], lastSignalKline);
@@ -36,12 +36,12 @@ export default class BacktestController extends BaseController {
     return klines;
   }
 
-  private calcProfitChange(kline: BinanceKucoinKline, lastKline: BinanceKucoinKline, lastSignalKline?: BinanceKucoinKline): number {
+  private calcProfitChange(kline: Kline, lastKline: Kline, lastSignalKline?: Kline): number {
     const diff = kline.prices.close - lastKline.prices.close;
     return diff / (lastSignalKline ?? lastKline).prices.close * 100;
   }
 
-  private calcCommission(baseCommission: number, signalKline: BinanceKucoinKline, currentAmount: number): number {
+  private calcCommission(baseCommission: number, signalKline: Kline, currentAmount: number): number {
     switch (signalKline.signal) {
       case this.closeSignal: return baseCommission * Math.abs(currentAmount);
       case this.buySignal:
@@ -52,7 +52,7 @@ export default class BacktestController extends BaseController {
     }
   }
 
-  private calcAmount(currentAmount: number, kline: BinanceKucoinKline): number {
+  private calcAmount(currentAmount: number, kline: Kline): number {
     const amount = kline.amount ?? 1;   // if amount is not present, use default amount of 1
 
     switch (kline.signal) {

@@ -1,4 +1,4 @@
-import { BinanceKucoinKline } from '../interfaces';
+import { Kline } from '../interfaces';
 
 export default class BaseController {
   public buySignal = 'BUY';
@@ -10,7 +10,7 @@ export default class BaseController {
   /**
    * 1 = green, -1 = red, 0 = steady
    */
-  public getKlineColor(kline: BinanceKucoinKline) {
+  public getKlineColor(kline: Kline) {
     const diff = Number(kline.prices.close) - Number(kline.prices.open)
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }

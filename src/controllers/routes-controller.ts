@@ -1,5 +1,6 @@
 import Database from '../data/db';
 import BaseController from './base-controller';
+import AlpacaController from './exchanges/alpaca-controller';
 import BinanceController from './exchanges/binance-controller';
 import KucoinController from './exchanges/kucoin-controller';
 import MomentumController from './algorithms/momentum-controller';
@@ -17,6 +18,7 @@ import MartingaleController from './algorithms/investing/martingale-controller';
 
 export default class RoutesController extends BaseController {
   private database = new Database();
+  private alpacaController = new AlpacaController();
   private binanceController = new BinanceController();
   private kucoinController = new KucoinController();
   private momentumController = new MomentumController();
@@ -37,40 +39,36 @@ export default class RoutesController extends BaseController {
   }
 
   public initKlines(req, res): void {
+    let controller;
+
     switch (req.query.exchange) {
-      case 'binance':
-        this.binanceController.initKlinesDatabase(req.query.symbol, req.query.timeframe)
-          .then(response => {
-            res.send(response);
-          });
-        break;
-      case 'kucoin':
-        this.kucoinController.initKlinesDatabase(req.query.symbol, req.query.timeframe)
-          .then(response => {
-            res.send(response);
-          });
-        break;
+      case 'binance': controller = this.binanceController; break;
+      case 'kucoin': controller = this.kucoinController; break;
+      case 'alpaca': controller = this.alpacaController; break;
     }
+
+    controller.initKlinesDatabase(req.query.symbol, req.query.timeframe)
+      .then(response => {
+        res.send(response);
+      });
   }
 
   /**
    * get list of klines / candlesticks from binance
    */
   public getKlines(req, res): void {
+    let controller;
+
     switch (req.query.exchange) {
-      case 'binance':
-        this.binanceController.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
-          .then(response => {
-            res.send(response);
-          });
-        break;
-      case 'kucoin':
-        this.kucoinController.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
-          .then(response => {
-            res.send(response);
-          });
-        break;
+      case 'binance': controller = this.binanceController; break;
+      case 'kucoin': controller = this.kucoinController; break;
+      case 'alpaca': controller = this.alpacaController; break;
     }
+
+    controller.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
+      .then(response => {
+        res.send(response);
+      });
   }
 
   /**

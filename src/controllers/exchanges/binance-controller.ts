@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { BinanceKucoinKline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 import Database from '../../data/db';
 
@@ -80,7 +80,7 @@ export default class BinanceController extends BaseController {
       this.klines = this.klines.concat(res.data);
       const end: number = this.klines[this.klines.length - 1][0];
       const start: number = end + this.timeframeToMilliseconds(timeframe);
-      const now = (new Date()).getTime();
+      const now = Date.now();
 
       if (start < now) {
         this.getKlinesRecursiveFromDateUntilNow(symbol, start, timeframe, resolve, reject);
@@ -107,14 +107,13 @@ export default class BinanceController extends BaseController {
    * allows to cache already requested klines and only request recent klines
    */
   public initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
-    const startDate = new Date();
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 100;
-    const startTime = startDate.getTime() - timespan;
+    const startTime = Date.now() - timespan;
 
     return new Promise((resolve, reject) => {
       this.database.findKlines(symbol, timeframe).then(res => {
         if (res.length === 0) {
-          new Promise<Array<BinanceKucoinKline>>((resolve, reject) => {
+          new Promise<Array<Kline>>((resolve, reject) => {
             this.getKlinesRecursiveFromDateUntilNow(symbol, startTime, timeframe, resolve, reject);
           }).then(newKlines => {
             const insert = {
@@ -133,7 +132,7 @@ export default class BinanceController extends BaseController {
           const dbKlines = res[0].klines;
           const lastKline = dbKlines[dbKlines.length - 1];
 
-          new Promise<Array<BinanceKucoinKline>>((resolve, reject) => {
+          new Promise<Array<Kline>>((resolve, reject) => {
             this.getKlinesRecursiveFromDateUntilNow(symbol, lastKline.times.open, timeframe, resolve, reject);
           }).then(newKlines => {
             newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
@@ -160,7 +159,7 @@ export default class BinanceController extends BaseController {
     });
   }
 
-  public mapResult(klines: Array<any>): Array<BinanceKucoinKline> {
+  public mapResult(klines: Array<any>): Array<Kline> {
     return klines.map(k => {
       return {
         times: {

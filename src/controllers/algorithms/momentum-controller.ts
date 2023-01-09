@@ -1,4 +1,4 @@
-import { BinanceKucoinKline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class MomentumController extends BaseController {
@@ -6,7 +6,7 @@ export default class MomentumController extends BaseController {
     super();
   }
 
-  public setSignals(klines: Array<BinanceKucoinKline>, streak: number): Array<BinanceKucoinKline> {
+  public setSignals(klines: Array<Kline>, streak: number): Array<Kline> {
     const colors: Array<number> = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;
@@ -52,7 +52,7 @@ export default class MomentumController extends BaseController {
     return signal;
   }
 
-  private isClose(klines: Array<BinanceKucoinKline>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
+  private isClose(klines: Array<Kline>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
     const closePriceAtLastEntry = klines[lastEntryIndex].prices.close;
     const currentPrice = klines[index].prices.close;
 
