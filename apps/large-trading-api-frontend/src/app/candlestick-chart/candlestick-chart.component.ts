@@ -2,6 +2,7 @@ import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import deepmerge from 'deepmerge';
+import { BaseComponent } from '../base-component';
 import { ChartService } from '../chart.service';
 import { BinanceKline } from '../interfaces';
 import { Observable } from 'rxjs';
@@ -11,7 +12,7 @@ import { Observable } from 'rxjs';
   templateUrl: './candlestick-chart.component.html',
   styleUrls: ['./candlestick-chart.component.scss']
 })
-export class CandlestickChartComponent implements AfterViewInit {
+export class CandlestickChartComponent extends BaseComponent implements AfterViewInit {
   @ViewChild('apexChart')
   public apexChart: ElementRef;
 
@@ -22,6 +23,7 @@ export class CandlestickChartComponent implements AfterViewInit {
     private http: HttpClient,
     private chartService: ChartService
   ) {
+    super();
   }
 
   ngAfterViewInit(): void {
@@ -69,7 +71,7 @@ export class CandlestickChartComponent implements AfterViewInit {
         x: {
           formatter: (val) => {
             const d = new Date(val);
-            return d.toLocaleTimeString();
+            return this.dateToSimpleString(d);
           }
         }
       },

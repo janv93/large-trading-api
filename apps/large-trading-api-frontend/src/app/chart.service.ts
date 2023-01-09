@@ -6,10 +6,10 @@ import { Subject } from 'rxjs';
 })
 export class ChartService {
   public klinesSubject = new Subject();
-  public exchange = 'binance';
-  public symbol = 'ETHUSDT';
+  public exchange = 'alpaca';
+  public symbol = 'TSLA';
   public timeframe = '1h';
-  public timeframeMultiplier = 30;  // 1 = 1000 timeframes
+  public timeframeMultiplier = 200;  // 1 = 1000 timeframes
   public strategy = 'ema';
   public rsiLength = 7;
   public emaPeriodOpen = 80;
