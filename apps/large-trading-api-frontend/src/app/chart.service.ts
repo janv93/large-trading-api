@@ -7,10 +7,10 @@ import { Subject } from 'rxjs';
 export class ChartService {
   public klinesSubject = new Subject();
   public exchange = 'alpaca';
-  public symbol = 'TSLA';
-  public timeframe = '1h';
+  public symbol = 'SPY';
+  public timeframe = '1d';
   public timeframeMultiplier = 200;  // 1 = 1000 timeframes
-  public strategy = 'ema';
+  public strategy = 'martingale';
   public rsiLength = 7;
   public emaPeriodOpen = 80;
   public emaPeriodClose = 80;

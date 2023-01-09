@@ -1,10 +1,10 @@
 <div #apexChart class="apex-chart"></div>
 <div *ngIf="!flowingProfit" class="d-flex justify-content-between ml-5">
-  <p>Total profit: {{ stats?.profit }}</p>
+  <p>Profit per trade: {{ stats?.ppt }}</p>
+  <p>Profit per single trading amount (average profit per invested dollar): {{ stats?.ppa }}</p>
+  <p>Cumulative total profit: {{ stats?.profit }}</p>
   <p>Number of trades: {{ stats?.trades }}</p>
   <p>Positive / Negative: {{ stats?.positiveNegative }}</p>
-  <p>Profit per trade: {{ stats?.ppt }}</p>
-  <p>Profit per amount: {{ stats?.ppa }}</p>
-  <p>Max. drawback: {{ stats?.maxDrawback }}</p>
-  <p>Max. drawback to profit ratio: {{ stats?.drawbackProfitRatio }}</p>
+  <p>Percentage max drawback / profit: {{ stats?.drawbackProfitRatio }}</p>
+  <p>Cumulative max drawback: {{ stats?.maxDrawback }}</p>
 </div>
