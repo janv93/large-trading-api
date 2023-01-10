@@ -17,6 +17,7 @@ export class ChartService {
   public emaPeriodSL = 80;
   public bbPeriod = 21;
   public momentumStreak = 5;
+  public martingaleThreshold = 0.01;
   public commission = 0.04;
   public baseUrl = 'http://127.0.0.1:3000';
 
