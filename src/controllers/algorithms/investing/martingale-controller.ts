@@ -7,8 +7,7 @@ export default class MartingaleController extends BaseController {
     super();
   }
 
-  public setSignals(klines: Array<Kline>): Array<Kline> {
-    const threshold = 0.1;
+  public setSignals(klines: Array<Kline>, threshold: number): Array<Kline> {
     let streak = 0;
     let lastClose;
 

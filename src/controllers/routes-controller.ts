@@ -116,7 +116,7 @@ export default class RoutesController extends BaseController {
             klinesWithSignals = this.dcaController.setSignals(responseInRange);
             break;
           case 'martingale':
-            klinesWithSignals = this.martingaleController.setSignals(responseInRange);
+            klinesWithSignals = this.martingaleController.setSignals(responseInRange, Number(query.threshold));
             break;
         }
 
