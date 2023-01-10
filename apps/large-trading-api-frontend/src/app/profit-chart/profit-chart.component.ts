@@ -27,8 +27,8 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
   private options: any;
 
   constructor(
-    private http: HttpClient,
-    private chartService: ChartService
+    public chartService: ChartService,
+    private http: HttpClient
   ) {
     super();
   }
