@@ -24,7 +24,6 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
   public flowingProfit: boolean;
 
   public stats: any;
-  public isInvestmentStrategy: boolean;
   private options: any;
 
   constructor(
@@ -108,7 +107,6 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
 
       this.options.series[0].data = mappedPercentages;
       this.renderChart();
-      this.calcIsInvestmentStrategy(res);
       this.calcStats(res, mappedPercentages);
     });
   }
@@ -116,15 +114,6 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
   private renderChart() {
     const chart = new ApexCharts(this.apexChart.nativeElement, this.options);
     chart.render();
-  }
-
-  /**
-   * checks if all signals are buy signals
-   */
-  private calcIsInvestmentStrategy(klines: Array<BinanceKline>) {
-    this.isInvestmentStrategy = !klines.some((kline: BinanceKline) => {
-      return kline.signal && kline.signal !== this.buySignal;
-    });
   }
 
   private calcStats(klines: Array<BinanceKline>, percentages: Array<any>): void {

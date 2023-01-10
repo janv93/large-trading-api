@@ -11,6 +11,7 @@ export class ChartService {
   public timeframe = '1d';
   public timeframeMultiplier = 200;  // 1 = 1000 timeframes
   public strategy = 'martingale';
+  public isInvestmentStrategy: boolean;
   public rsiLength = 7;
   public emaPeriodOpen = 80;
   public emaPeriodClose = 80;
@@ -22,6 +23,7 @@ export class ChartService {
   public baseUrl = 'http://127.0.0.1:3000';
 
   constructor() {
+    this.checkIsInvestmentStrategy();
   }
 
   public createUrl(baseUrl: string, queryObj: any): string {
@@ -36,5 +38,10 @@ export class ChartService {
     });
 
     return url;
+  }
+
+  private checkIsInvestmentStrategy() {
+    const investmentStrategies = ['dca', 'martingale'];
+    this.isInvestmentStrategy = investmentStrategies.includes(this.strategy);
   }
 }
