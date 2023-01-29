@@ -15,7 +15,8 @@ export default class TwitterController extends BaseController {
       screen_name: user,
       exclude_replies: true,
       include_rts: false,
-      count: 200
+      count: 200,
+      tweet_mode: 'extended'
     };
 
     const finalUrl = this.createUrl(url, query);
@@ -27,7 +28,7 @@ export default class TwitterController extends BaseController {
     }).then(res => res.data.map(tweet => this.deletePropertiesEqualToValue({
       timestamp: (new Date(tweet.created_at)).getTime(),
       id: tweet.id,
-      text: tweet.text,
+      text: tweet.full_text,
       hashtags: tweet.entities.hashtags.map(h => h.text),
       symbols: tweet.entities.symbols.map(s => s.text),
       urls: tweet.entities.urls.map(u => u.url),
