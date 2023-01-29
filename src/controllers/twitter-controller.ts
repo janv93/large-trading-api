@@ -25,7 +25,7 @@ export default class TwitterController extends BaseController {
         'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
       }
     }).then(res => res.data.map(tweet => this.deletePropertiesEqualToValue({
-      timestamp: tweet.created_at,
+      timestamp: (new Date(tweet.created_at)).getTime(),
       id: tweet.id,
       text: tweet.text,
       hashtags: tweet.entities.hashtags.map(h => h.text),
