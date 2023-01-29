@@ -1,21 +1,21 @@
 import { Kline } from '../interfaces';
 
 export default class BaseController {
-  public buySignal = 'BUY';
-  public closeBuySignal = 'CLOSEBUY';
-  public sellSignal = 'SELL';
-  public closeSellSignal = 'CLOSESELL';
-  public closeSignal = 'CLOSE';
+  protected buySignal = 'BUY';
+  protected closeBuySignal = 'CLOSEBUY';
+  protected sellSignal = 'SELL';
+  protected closeSellSignal = 'CLOSESELL';
+  protected closeSignal = 'CLOSE';
 
   /**
    * 1 = green, -1 = red, 0 = steady
    */
-  public getKlineColor(kline: Kline) {
+  protected getKlineColor(kline: Kline) {
     const diff = Number(kline.prices.close) - Number(kline.prices.open)
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }
 
-  public handleError(err: any) {
+  protected handleError(err: any) {
     if (err.response && err.response.data) {
       console.log(err.response.data);
     } else {
@@ -23,7 +23,7 @@ export default class BaseController {
     }
   }
 
-  public timeframeToMilliseconds(timeframe: string): number {
+  protected timeframeToMilliseconds(timeframe: string): number {
     const unit = timeframe.slice(-1);
     const value = Number(timeframe.slice(0, timeframe.length - 1));
 
@@ -36,19 +36,19 @@ export default class BaseController {
     }
   }
 
-  public timeframeToSeconds(timeframe: string): number {
+  protected timeframeToSeconds(timeframe: string): number {
     return this.timeframeToMilliseconds(timeframe) / 1000;
   }
 
-  public timeframeToMinutes(timeframe: string): number {
+  protected timeframeToMinutes(timeframe: string): number {
     return this.timeframeToSeconds(timeframe) / 60;
   }
 
-  public roundTimeToNearestTimeframe(timestamp: number, timeframe: number): number {
+  protected roundTimeToNearestTimeframe(timestamp: number, timeframe: number): number {
     return timestamp - timestamp % timeframe;
   }
 
-  public createUrl(baseUrl: string, queryObj: any): string {
+  protected createUrl(baseUrl: string, queryObj: any): string {
     let url = baseUrl;
     let firstParam = true;
 
@@ -62,7 +62,7 @@ export default class BaseController {
     return url;
   }
 
-  public createQuery(queryObj: any): string {
+  protected createQuery(queryObj: any): string {
     let url = '';
     let firstParam = true;
 
@@ -79,7 +79,7 @@ export default class BaseController {
   /**
    * normalize to values between 0 and 1
    */
-  public normalize(values: Array<number>): Array<number> {
+  protected normalize(values: Array<number>): Array<number> {
     const minClose = Math.min(...values);
     const maxClose = Math.max(...values);
     const range = maxClose - minClose;
@@ -87,7 +87,7 @@ export default class BaseController {
     return values.map(close => (close - minClose) / range);
   }
 
-  public isTpslReached(entrySignal: string, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
+  protected isTpslReached(entrySignal: string, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
     let slReached: boolean;
     let tpReached: boolean;
 
@@ -102,7 +102,7 @@ export default class BaseController {
     return slReached || tpReached ? true : false;
   }
 
-  public invertSignal(signal: string): string {
+  protected invertSignal(signal: string): string {
     switch (signal) {
       case this.buySignal: return this.sellSignal;
       case this.sellSignal: return this.buySignal;
@@ -112,12 +112,24 @@ export default class BaseController {
     }
   }
 
-  public stringToBoolean(input: string): boolean {
+  protected stringToBoolean(input: string): boolean {
     return input === 'true';
   }
 
-  public percentage(base: number, change: number): number {
+  protected percentage(base: number, change: number): number {
     return (change - base) / base;
+  }
+
+  protected deletePropertiesEqualToValue(obj: object, value: any): object {
+    const newObj = { ...obj };
+    for (const prop in newObj) {
+      if (Array.isArray(newObj[prop]) && Array.isArray(value) && newObj[prop].length === 0 && value.length === 0) {
+        delete newObj[prop];
+      } else if (newObj[prop] === value) {
+        delete newObj[prop];
+      }
+    }
+    return newObj;
   }
 
 }

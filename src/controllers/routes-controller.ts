@@ -15,15 +15,17 @@ import TensorflowController from './algorithms/ai/tensorflow-controller';
 import FlashCrashController from './algorithms/flash-crash-controller';
 import DcaController from './algorithms/investing/dca-controller';
 import MartingaleController from './algorithms/investing/martingale-controller';
+import TwitterSentimentController from './algorithms/sentiment/twitter-sentiment-controller';
+import { Kline } from '../interfaces';
 
 export default class RoutesController extends BaseController {
   private database = new Database();
-  private alpacaController = new AlpacaController();
-  private binanceController = new BinanceController();
-  private kucoinController = new KucoinController();
+  private alpaca = new AlpacaController();
+  private binance = new BinanceController();
+  private kucoin = new KucoinController();
+  private indicatorsController = new IndicatorsController();
   private momentumController = new MomentumController();
   private backtestController = new BacktestController();
-  private indicatorsController = new IndicatorsController();
   private macdController = new MacdController();
   private rsiController = new RsiController();
   private emaController = new EmaController();
@@ -33,6 +35,7 @@ export default class RoutesController extends BaseController {
   private flashCrashController = new FlashCrashController();
   private dcaController = new DcaController();
   private martingaleController = new MartingaleController();
+  private twitterSentimentController = new TwitterSentimentController();
 
   constructor() {
     super();
@@ -42,9 +45,9 @@ export default class RoutesController extends BaseController {
     let controller;
 
     switch (req.query.exchange) {
-      case 'binance': controller = this.binanceController; break;
-      case 'kucoin': controller = this.kucoinController; break;
-      case 'alpaca': controller = this.alpacaController; break;
+      case 'binance': controller = this.binance; break;
+      case 'kucoin': controller = this.kucoin; break;
+      case 'alpaca': controller = this.alpaca; break;
     }
 
     controller.initKlinesDatabase(req.query.symbol, req.query.timeframe)
@@ -60,9 +63,9 @@ export default class RoutesController extends BaseController {
     let controller;
 
     switch (req.query.exchange) {
-      case 'binance': controller = this.binanceController; break;
-      case 'kucoin': controller = this.kucoinController; break;
-      case 'alpaca': controller = this.alpacaController; break;
+      case 'binance': controller = this.binance; break;
+      case 'kucoin': controller = this.kucoin; break;
+      case 'alpaca': controller = this.alpaca; break;
     }
 
     controller.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
@@ -82,48 +85,21 @@ export default class RoutesController extends BaseController {
     this.database.findKlines(query.symbol, query.timeframe)
       .then((response: any) => {
         const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
-        let klinesWithSignals: Array<any> = [];
+        const klinesWithSignals = this.handleAlgoSync(responseInRange, query);
 
-        switch (query.algorithm) {
-          case 'momentum':
-            klinesWithSignals = this.momentumController.setSignals(responseInRange, query.streak);
-            break;
-          case 'macd':
-            klinesWithSignals = this.macdController.setSignals(responseInRange, query.fast, query.slow, query.signal);
-            break;
-          case 'rsi':
-            klinesWithSignals = this.rsiController.setSignals(responseInRange, Number(query.length));
-            break;
-          case 'ema':
-            klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.periodOpen), Number(query.periodClose));
-            break;
-          case 'emasl':
-            klinesWithSignals = this.emaController.setSignalsSL(responseInRange, Number(query.period));
-            break;
-          case 'bb':
-            klinesWithSignals = this.bbController.setSignals(responseInRange, Number(query.period));
-            break;
-          case 'patternCompare':
-            klinesWithSignals = this.patternComparatorController.setSignals(responseInRange, Number(query.range));
-            break;
-          case 'deepTrend':
-            klinesWithSignals = this.tensorflowController.setSignals(responseInRange);
-            break;
-          case 'flashCrash':
-            klinesWithSignals = this.flashCrashController.setSignals(responseInRange);
-            break;
-          case 'dca':
-            klinesWithSignals = this.dcaController.setSignals(responseInRange);
-            break;
-          case 'martingale':
-            klinesWithSignals = this.martingaleController.setSignals(responseInRange, Number(query.threshold));
-            break;
-        }
-
-        if (klinesWithSignals.length > 0) {
+        if (klinesWithSignals && klinesWithSignals.length > 0) {
           res.send(klinesWithSignals);
         } else {
-          res.send('Algorithm "' + query.algorithm + '" does not exist');
+          this.handleAlgoAsync(responseInRange, query).then(asyncRes => {
+            res.send(asyncRes);
+          }).catch(err => {
+            if (err === 'invalid') {
+              res.send('Algorithm "' + query.algorithm + '" does not exist');
+            } else {
+              this.handleError(err);
+              res.status(500).json({ error: err.message });
+            }
+          });
         }
       }).catch(err => {
         this.handleError(err);
@@ -160,5 +136,61 @@ export default class RoutesController extends BaseController {
     } else {
       res.send('Indicator "' + query.indicator + '" does not exist');
     }
+  }
+
+  private handleAlgoSync(responseInRange: Array<Kline>, query) {
+    let klinesWithSignals: Array<any> = [];
+
+    switch (query.algorithm) {
+      case 'momentum':
+        klinesWithSignals = this.momentumController.setSignals(responseInRange, query.streak);
+        break;
+      case 'macd':
+        klinesWithSignals = this.macdController.setSignals(responseInRange, query.fast, query.slow, query.signal);
+        break;
+      case 'rsi':
+        klinesWithSignals = this.rsiController.setSignals(responseInRange, Number(query.length));
+        break;
+      case 'ema':
+        klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.periodOpen), Number(query.periodClose));
+        break;
+      case 'emasl':
+        klinesWithSignals = this.emaController.setSignalsSL(responseInRange, Number(query.period));
+        break;
+      case 'bb':
+        klinesWithSignals = this.bbController.setSignals(responseInRange, Number(query.period));
+        break;
+      case 'patternCompare':
+        klinesWithSignals = this.patternComparatorController.setSignals(responseInRange, Number(query.range));
+        break;
+      case 'deepTrend':
+        klinesWithSignals = this.tensorflowController.setSignals(responseInRange);
+        break;
+      case 'flashCrash':
+        klinesWithSignals = this.flashCrashController.setSignals(responseInRange);
+        break;
+      case 'dca':
+        klinesWithSignals = this.dcaController.setSignals(responseInRange);
+        break;
+      case 'martingale':
+        klinesWithSignals = this.martingaleController.setSignals(responseInRange, Number(query.threshold));
+        break;
+    }
+
+    return klinesWithSignals;
+  }
+
+  private handleAlgoAsync(responseInRange, query): Promise<Array<Kline>> {
+    return new Promise((resolve, reject) => {
+      switch (query.algorithm) {
+        case 'twitterSentiment':
+          this.twitterSentimentController.setSignals(responseInRange, query.user).then(klinesWSignals => {
+            resolve(klinesWSignals)
+          }).catch(err => reject(err));
+
+          break;
+        default: reject('invalid');
+      }
+    });
   }
 }
