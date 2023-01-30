@@ -14,7 +14,7 @@ export default class TwitterSentimentController extends BaseController {
     return new Promise((resolve, reject) => {
       this.twitter.getUserTweets(user)
       .then((tweets: Array<Tweet>) => {
-        console.log(tweets);
+        this.processTweets(tweets);
         resolve(klines);
       })
       .catch(err => {
@@ -22,5 +22,9 @@ export default class TwitterSentimentController extends BaseController {
         reject(err);
       });
     });
+  }
+
+  private processTweets(tweets: Array<Tweet>) {
+    
   }
 }

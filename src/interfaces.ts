@@ -27,8 +27,12 @@ export interface Tweet {
   hashtags?: Array<string>;
   symbols?: Array<string>;
   urls?: Array<string>;
-  user: string;
-  userId: number;
-  userFollowers: number;
-  userFollowing: number;
+  user: TwitterUser;
+};
+
+export interface TwitterUser {
+  name: string;
+  id: number;
+  followers: number;
+  following: number;
 };
