@@ -36,3 +36,8 @@ export interface TwitterUser {
   followers: number;
   following: number;
 };
+
+export interface TwitterTimeline {
+  name: string;
+  tweets: Array<Tweet>;
+}

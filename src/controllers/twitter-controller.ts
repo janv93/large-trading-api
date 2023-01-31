@@ -1,6 +1,6 @@
 import axios from 'axios';
 import BaseController from './base-controller';
-import { TwitterUser, Tweet } from '../interfaces';
+import { Tweet, TwitterUser, TwitterTimeline } from '../interfaces';
 
 export default class TwitterController extends BaseController {
   private baseUrl = 'https://api.twitter.com';
@@ -8,16 +8,21 @@ export default class TwitterController extends BaseController {
     'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
   };
 
-  public getUserTweets(user: string): Promise<Array<Tweet>> {
+  public getUserTweets(user: string | number): Promise<Array<Tweet>> {
     const url = this.baseUrl + '/1.1/statuses/user_timeline.json';
 
     const query = {
-      screen_name: user,
       exclude_replies: true,
       include_rts: false,
       count: 200,
       tweet_mode: 'extended'
     };
+
+    if (typeof user === 'string') {
+      query['screen_name'] = user;
+    } else {
+      query['user_id'] = user;
+    }
 
     const finalUrl = this.createUrl(url, query);
 
@@ -42,32 +47,33 @@ export default class TwitterController extends BaseController {
     const url = this.baseUrl + '/1.1/friends/list.json';
 
     const query = {
-      screen_name: user
+      screen_name: user,
+      count: 200
     };
 
     const finalUrl = this.createUrl(url, query);
 
     return axios.get(finalUrl, { headers: this.headers })
-      .then(res => res.data.map(user => ({
-        name: user.name,
+      .then(res => res.data.users.map(user => ({
+        name: user.screen_name,
         id: user.id,
         followers: user.followers_count,
         following: user.friends_count
       })));
   }
 
-  public async getFriendsWithTheirTweets(user: string): Promise<Array<{ friend: TwitterUser, tweets: Array<Tweet> }>> {
+  public async getFriendsWithTheirTweets(user: string): Promise<Array<TwitterTimeline>> {
     const friends = await this.getUserFriends(user);
 
-    const friendTweets = await Promise.all(friends.map(async friend => {
-      const tweets = await this.getUserTweets(friend.name);
-      return { friend, tweets };
+    const friendTweets = await Promise.all(friends.map(async user => {
+      const tweets = await this.getUserTweets(user.name);
+      return { name: user.name, tweets };
     }));
 
     return friendTweets;
   }
 
-  public filterTweetsBySymbols(tweets: Array<Tweet>): Array<Tweet> {
+  public filterTweetsOnlySymbols(tweets: Array<Tweet>): Array<Tweet> {
     return tweets.filter(tweet => tweet.symbols && tweet.symbols.length > 0);
   }
 }
