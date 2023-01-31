@@ -1,30 +1,29 @@
-import { Kline, Tweet, TwitterTimeline } from '../../../interfaces';
+import { Kline, TwitterTimeline } from '../../../interfaces';
 import BaseController from '../../base-controller';
 import TwitterController from '../../twitter-controller';
+import BinanceController from '../../exchanges/binance-controller';
 
 
 export default class TwitterSentimentController extends BaseController {
   private twitter = new TwitterController();
+  private binance = new BinanceController();
 
   constructor() {
     super();
   }
 
-  public setSignals(klines: Array<Kline>, user: string): Promise<Array<Kline>> {
-    return new Promise((resolve, reject) => {
-      this.twitter.getFriendsWithTheirTweets(user)
-      .then((timelines: Array<TwitterTimeline>) => {
-        this.processResponse(timelines);
-        resolve(klines);
-      })
-      .catch(err => {
-        this.handleError(err);
-        reject(err);
-      });
-    });
+  public async setSignals(klines: Array<Kline>, user: string): Promise<Array<Kline>> {
+    try {
+      const timelines = await this.twitter.getFriendsWithTheirTweets(user);
+      this.processResponse(timelines);
+      return klines;
+    } catch (err) {
+      this.handleError(err);
+      throw err;
+    }
   }
 
-  private processResponse(timelines: Array<TwitterTimeline>) {
+  private async processResponse(timelines: Array<TwitterTimeline>) {
     const timelinesWithSymbols = timelines.map(t => ({
       name: t.name,
       tweets: this.twitter.filterTweetsOnlySymbols(t.tweets)
@@ -36,6 +35,10 @@ export default class TwitterSentimentController extends BaseController {
       timestamp: tweet.timestamp
     })));
 
-    console.log(tweetsWithSymbols);
+    // console.log(tweetsWithSymbols);
+
+    const symbols = await this.binance.getSymbols();
+
+    console.log(symbols);
   }
 }

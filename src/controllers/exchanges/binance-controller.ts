@@ -180,18 +180,18 @@ export default class BinanceController extends BaseController {
 
   public setLeverage(symbol: string, leverage: number): Promise<any> {
     const now = Date.now();
-  
+
     const query = 'symbol=' + symbol + 'USDT' + '&leverage=' + leverage + '&timestamp=' + now;
     const hmac = this.createHmac(query);
-  
+
     const options = {
       headers: {
         'X-MBX-APIKEY': process.env.binance_api_key
       }
     };
-  
+
     const url = 'https://fapi.binance.com/fapi/v1/leverage?' + query + '&signature=' + hmac;
-  
+
     return axios.post(url, null, options);
   }
 
@@ -229,6 +229,22 @@ export default class BinanceController extends BaseController {
     const url = 'https://fapi.binance.com/fapi/v1/order?' + query + '&signature=' + hmac;
 
     return axios.post(url, null, options);
+  }
+
+  public async getSymbols(): Promise<string[]> {
+    const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
+    const res = await axios.get(baseUrl);
+
+    const symbols = res.data.symbols
+      .map(symbol => symbol.symbol)
+      .filter(symbol => symbol.includes('USDT') || symbol.includes('BUSD'))
+      .filter(symbol => (!symbol.includes('UP') && !symbol.includes('DOWN')))
+      .map(symbol => symbol.replace(/USDT|BUSD/g, ''));
+
+      const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
+      uniqueSymbols.sort();
+
+    return uniqueSymbols;
   }
 
   private createHmac(query): string {
