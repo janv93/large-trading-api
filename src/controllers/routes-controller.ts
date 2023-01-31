@@ -10,7 +10,6 @@ import MacdController from './algorithms/macd-controller';
 import RsiController from './algorithms/rsi-controller';
 import EmaController from './algorithms/ema-controller';
 import BbController from './algorithms/bb-controller';
-import PatternComparatorController from './algorithms/ai/pattern-comparator-controller';
 import TensorflowController from './algorithms/ai/tensorflow-controller';
 import FlashCrashController from './algorithms/flash-crash-controller';
 import DcaController from './algorithms/investing/dca-controller';
@@ -30,7 +29,6 @@ export default class RoutesController extends BaseController {
   private rsiController = new RsiController();
   private emaController = new EmaController();
   private bbController = new BbController();
-  private patternComparatorController = new PatternComparatorController();
   private tensorflowController = new TensorflowController();
   private flashCrashController = new FlashCrashController();
   private dcaController = new DcaController();
@@ -159,9 +157,6 @@ export default class RoutesController extends BaseController {
         break;
       case 'bb':
         klinesWithSignals = this.bbController.setSignals(responseInRange, Number(query.period));
-        break;
-      case 'patternCompare':
-        klinesWithSignals = this.patternComparatorController.setSignals(responseInRange, Number(query.range));
         break;
       case 'deepTrend':
         klinesWithSignals = this.tensorflowController.setSignals(responseInRange);
