@@ -32,7 +32,8 @@ export default class TwitterSentimentController extends BaseController {
 
     const tweetsWithSymbols = timelinesWithSymbols.map(t => t.tweets.map(tweet => ({
       text: tweet.text,
-      symbols: tweet.symbols
+      symbols: tweet.symbols,
+      timestamp: tweet.timestamp
     })));
 
     console.log(tweetsWithSymbols);
