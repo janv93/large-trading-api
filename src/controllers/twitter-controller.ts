@@ -74,6 +74,6 @@ export default class TwitterController extends BaseController {
   }
 
   public filterTweetsOnlySymbols(tweets: Array<Tweet>): Array<Tweet> {
-    return tweets.filter(tweet => tweet.symbols && tweet.symbols.length > 0);
+    return tweets.filter(tweet => tweet.symbols && tweet.symbols.length);
   }
 }
