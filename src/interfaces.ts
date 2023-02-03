@@ -21,18 +21,16 @@ export interface KlinePrices {
 };
 
 export interface Tweet {
-  timestamp: number;
+  time: number;
   id: number;
   text: string;
-  hashtags?: Array<string>;
   symbols?: Array<string>;
   urls?: Array<string>;
-  user: TwitterUser;
 };
 
 export interface TwitterUser {
   name: string;
-  id: number;
+  id: string;
   followers: number;
   following: number;
 };

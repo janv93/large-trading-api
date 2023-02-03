@@ -41,6 +41,8 @@
     "express": "^4.17.1",
     "moment": "^2.29.4",
     "nedb": "^1.8.0",
+    "oauth": "^0.10.0",
+    "oauth-1.0a": "^2.2.6",
     "plotly": "^1.0.6",
     "technicalindicators": "^3.1.0",
     "tslint": "^6.1.3",
