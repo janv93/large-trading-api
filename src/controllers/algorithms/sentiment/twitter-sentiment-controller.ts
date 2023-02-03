@@ -2,11 +2,13 @@ import { Kline, TwitterTimeline } from '../../../interfaces';
 import BaseController from '../../base-controller';
 import TwitterController from '../../twitter-controller';
 import BinanceController from '../../exchanges/binance-controller';
+import CoinmarketcapController from '../../twitter-controller copy';
 
 
 export default class TwitterSentimentController extends BaseController {
   private twitter = new TwitterController();
   private binance = new BinanceController();
+  private cmc = new CoinmarketcapController();
 
   constructor() {
     super();
@@ -36,6 +38,8 @@ export default class TwitterSentimentController extends BaseController {
     })));
 
     console.log(tweetsWithSymbols);
+
+    const mappedSymbols = this.cmc.getSymbol('Bitcoin');
 
     const symbols = await this.binance.getSymbols();
   }
