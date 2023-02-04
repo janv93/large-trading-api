@@ -19,7 +19,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [ ] Algorithm that builds strategies using multiple indicators and figuring out which combined indicators work the best
 - [ ] Sentiment analysis of popular Twitter traders using Twitter API and ChatGPT API
 
-### How to use backtests:
+## How to use backtests:
 
 - either start the frontend project [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer) or call manually
 - add credentials file (.env) to call APIs
