@@ -1,5 +1,5 @@
 # Large Trading API
-This API allows to backtest any custom trading algorithm on crypto currencies (eventually also the stock/index market).
+This API allows to backtest any custom trading algorithm on symbols like cryptos, stocks, etfs, forex.
 A backtest is a test of an algorithm on historical data.
 
 Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
