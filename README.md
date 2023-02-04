@@ -1,5 +1,5 @@
 # Large Trading API
-This API allows to backtest any custom trading algorithm on crypto currencies (eventually also the stock/index market).
+This API allows to backtest any custom trading algorithm on symbols like cryptos, stocks, etfs, forex.
 A backtest is a test of an algorithm on historical data.
 
 Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
@@ -19,10 +19,10 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [ ] Algorithm that builds strategies using multiple indicators and figuring out which combined indicators work the best
 - [ ] Sentiment analysis of popular Twitter traders using Twitter API and ChatGPT API
 
-### How to use backtests:
+## How to use backtests:
 
 - either start the frontend project [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer) or call manually
-- add credentials file (.env) to call APIs
+- add credentials file (.env) to call APIs (most importantly binance or alpaca for ticker retrieval)
 - add or use existing algorithms in src/controllers/algorithms/
 - when adding new algorithm, add settings for algorithm to frontend code
 - npm i, npm start
