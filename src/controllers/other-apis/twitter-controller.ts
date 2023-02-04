@@ -1,11 +1,13 @@
 import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
-import BaseController from './base-controller';
-import { Tweet, TwitterUser, TwitterTimeline } from '../interfaces';
+import BaseController from '../base-controller';
+import CoinmarketcapController from './coinmarketcap-controller';
+import { Tweet, TwitterUser, TwitterTimeline } from '../../interfaces';
 
 
 export default class TwitterController extends BaseController {
+  private cmc = new CoinmarketcapController();
   private baseUrl = 'https://api.twitter.com';
   private headers = {
     'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
@@ -18,6 +20,7 @@ export default class TwitterController extends BaseController {
       exclude: 'retweets,replies',
       max_results: 100,
       'tweet.fields': 'created_at',
+      'user.fields': 'name'
     };
 
     const finalUrl = this.createUrl(url, query);
@@ -33,13 +36,14 @@ export default class TwitterController extends BaseController {
       if (!parsed.data) {
         return [];
       }
-
-      return parsed.data.map(tweet => ({
-        time: (new Date(tweet.created_at)).getTime(),
-        id: tweet.id,
-        text: tweet.text,
-        symbols: this.getTweetSymbols(tweet.text),
-      }))
+      return parsed.data.map(tweet => {
+        return {
+          time: (new Date(tweet.created_at)).getTime(),
+          id: tweet.id,
+          text: tweet.text,
+          symbols: this.getTweetSymbols(tweet.text)
+        }
+      });
     }).catch(err => this.handleError(err));
   }
 
@@ -72,17 +76,26 @@ export default class TwitterController extends BaseController {
       return { name: user.name, tweets };
     }));
 
-    return friendTweets;
-  }
+    const friendTweetsOnlySymbols = friendTweets.map(t => ({
+      name: t.name,
+      tweets: t.tweets.filter(tweet => tweet.symbols && tweet.symbols.length)
+    })).filter(t => t.tweets.length);
 
-  public filterTweetsOnlySymbols(tweets: Array<Tweet>): Array<Tweet> {
-    return tweets.filter(tweet => tweet.symbols && tweet.symbols.length);
+    const allCryptos = this.cmc.getAllSymbols();
+
+    friendTweetsOnlySymbols.forEach(ft => ft.tweets.forEach(tw => tw.symbols = tw.symbols
+      .map(s => allCryptos[s] || s)
+      .filter(symbol => symbol.length >= 3 && symbol.length <= 5)
+    ));
+
+    return friendTweetsOnlySymbols;
   }
 
   private getTweetSymbols(text: string): Array<string> {
-    const symbolPattern = /\$\w+/g;
+    const symbolPattern = /[$#]\w+/g;
     const symbols = text.match(symbolPattern);
-    return symbols || [];
+    return symbols ? symbols
+      .map(symbol => symbol.slice(1).toLowerCase()) : []
   }
 
   private buildOAuth10A(): Function {

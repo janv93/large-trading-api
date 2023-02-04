@@ -1,4 +1,4 @@
-import BaseController from './base-controller';
+import BaseController from '../base-controller';
 import plotly from 'plotly';
 
 export default class PlotlyController extends BaseController {

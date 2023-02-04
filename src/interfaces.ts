@@ -24,8 +24,7 @@ export interface Tweet {
   time: number;
   id: number;
   text: string;
-  symbols?: Array<string>;
-  urls?: Array<string>;
+  symbols: Array<string>;
 };
 
 export interface TwitterUser {
@@ -38,4 +37,4 @@ export interface TwitterUser {
 export interface TwitterTimeline {
   name: string;
   tweets: Array<Tweet>;
-}
+};

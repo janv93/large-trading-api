@@ -236,10 +236,11 @@ export default class BinanceController extends BaseController {
     const res = await axios.get(baseUrl);
 
     const symbols = res.data.symbols
-      .map(symbol => symbol.symbol)
-      .filter(symbol => symbol.includes('USDT') || symbol.includes('BUSD'))
-      .filter(symbol => (!symbol.includes('UP') && !symbol.includes('DOWN')))
-      .map(symbol => symbol.replace(/USDT|BUSD/g, ''));
+      .map(s => s.symbol)
+      .filter(s => s.includes('USDT') || s.includes('BUSD'))
+      .filter(s => (!s.includes('UP') && !s.includes('DOWN')))
+      .map(s => s.replace(/USDT|BUSD/g, ''))
+      .map(s => s.toLowerCase());
 
       const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
       uniqueSymbols.sort();

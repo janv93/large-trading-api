@@ -1,5 +1,6 @@
 import axios from 'axios';
-import BaseController from './base-controller';
+import BaseController from '../base-controller';
+import cryptos from './coinmarketcap-all-cryptos';
 
 
 export default class CoinmarketcapController extends BaseController {
@@ -13,12 +14,16 @@ export default class CoinmarketcapController extends BaseController {
     const url = this.baseUrl + '/cryptocurrency/info';
 
     const query = {
-      slug: name.toLowerCase(),
+      slug: name.toLowerCase()
     };
 
     const finalUrl = this.createUrl(url, query);
 
     const res = await axios.get(finalUrl, { headers: this.headers });
-    console.log(res.data.data['1'].symbol);
+    return res.data.data['1'].symbol.toLowerCase();
+  }
+
+  public getAllSymbols(): any {
+    return cryptos;
   }
 }

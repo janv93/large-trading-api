@@ -1,6 +1,6 @@
 import BaseController from '../../base-controller';
 import { Kline } from '../../../interfaces';
-import PlotlyController from '../../plotly-controller';
+import PlotlyController from '../../other-apis/plotly-controller';
 import IndicatorsController from '../../technical-analysis/indicators-controller';
 
 // import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU

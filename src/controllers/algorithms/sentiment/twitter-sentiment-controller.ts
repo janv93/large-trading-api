@@ -1,46 +1,28 @@
 import { Kline, TwitterTimeline } from '../../../interfaces';
 import BaseController from '../../base-controller';
-import TwitterController from '../../twitter-controller';
+import TwitterController from '../../other-apis/twitter-controller';
 import BinanceController from '../../exchanges/binance-controller';
-import CoinmarketcapController from '../../twitter-controller copy';
 
 
 export default class TwitterSentimentController extends BaseController {
   private twitter = new TwitterController();
   private binance = new BinanceController();
-  private cmc = new CoinmarketcapController();
 
   constructor() {
     super();
   }
 
   public async setSignals(klines: Array<Kline>, user: string): Promise<Array<Kline>> {
-    try {
-      const timelines = await this.twitter.getFriendsWithTheirTweets(user);
-      this.processResponse(timelines);
-      return klines;
-    } catch (err) {
-      this.handleError(err);
-      throw err;
-    }
+    const timelines = await this.twitter.getFriendsWithTheirTweets(user);
+    this.processResponse(timelines);
+    return klines;
   }
 
   private async processResponse(timelines: Array<TwitterTimeline>) {
-    const timelinesWithSymbols = timelines.map(t => ({
-      name: t.name,
-      tweets: this.twitter.filterTweetsOnlySymbols(t.tweets)
-    })).filter(t => t.tweets.length);
-
-    const tweetsWithSymbols = timelinesWithSymbols.map(t => t.tweets.map(tweet => ({
-      text: tweet.text,
-      symbols: tweet.symbols,
-      timestamp: tweet.time
-    })));
-
-    console.log(tweetsWithSymbols);
-
-    const mappedSymbols = this.cmc.getSymbol('Bitcoin');
-
     const symbols = await this.binance.getSymbols();
+
+    timelines.forEach(ti => ti.tweets.forEach(tw => tw.symbols = tw.symbols.filter(s => symbols.includes(s))));  // filter out symbols not on binance
+    timelines.forEach(ti => ti.tweets.filter(tw => tw.symbols.length));
+    timelines.forEach(t => console.log(t.tweets))
   }
 }
