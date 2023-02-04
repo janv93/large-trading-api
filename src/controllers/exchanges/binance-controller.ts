@@ -8,10 +8,6 @@ export default class BinanceController extends BaseController {
   private database: Database = new Database();
   private klines = [];
 
-  constructor() {
-    super();
-  }
-
   public getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<any> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 

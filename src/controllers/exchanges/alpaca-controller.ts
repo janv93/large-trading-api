@@ -8,10 +8,6 @@ export default class AlpacaController extends BaseController {
   private database: Database = new Database();
   private klines: Array<any> = [];
 
-  constructor() {
-    super();
-  }
-
   public getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<any> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
 

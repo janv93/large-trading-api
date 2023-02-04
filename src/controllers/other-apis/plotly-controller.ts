@@ -4,10 +4,6 @@ import plotly from 'plotly';
 export default class PlotlyController extends BaseController {
   private _plotly = new plotly(process.env.plotly_username, process.env.plotly_api_key);
 
-  constructor() {
-    super();
-  }
-
   public plot(sequence: Array<number>) {
     const data = { y: sequence, type: 'scatter' };
     const layout = { fileopt: "overwrite", filename: "LTAPI simple plot" };

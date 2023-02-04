@@ -4,11 +4,6 @@ import btoa from 'btoa';
 import BaseController from '../base-controller';
 
 export default class BtseController extends BaseController {
-
-  constructor() {
-    super();
-  }
-
   public setLeverage(symbol: string, leverage: number): Promise<any> {
     const now = Date.now();
   

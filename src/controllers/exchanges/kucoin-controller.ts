@@ -9,10 +9,6 @@ export default class KucoinController extends BaseController {
   private database: Database = new Database();
   private klines = [];
 
-  constructor() {
-    super();
-  }
-
   public getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<any> {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
 

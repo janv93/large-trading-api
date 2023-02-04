@@ -2,10 +2,6 @@ import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class FlashCrashController extends BaseController {
-  constructor() {
-    super();
-  }
-
   public setSignals(klines: Array<Kline>): Array<Kline> {
     // WIP: react to rapid price decrease in short time interval
     // idea: use martingale at resistances / max % drop

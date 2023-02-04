@@ -3,12 +3,7 @@ import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class MacdController extends BaseController {
-  private indicatorsController: IndicatorsController;
-
-  constructor() {
-    super();
-    this.indicatorsController = new IndicatorsController();
-  }
+  private indicatorsController = new IndicatorsController();
 
   public setSignals(klines: Array<Kline>, fast: number, slow: number, signal: number): Array<Kline> {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);

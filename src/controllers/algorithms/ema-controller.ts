@@ -8,12 +8,7 @@ export default class EmaController extends BaseController {
   private indicatorsController = new IndicatorsController();
   private binanceController = new BinanceController();
   private btseController = new BtseController();
-
   private tradingPositionOpen = new Map();
-
-  constructor() {
-    super();
-  }
 
   /**
    * sets position signals depending on emas going up or down

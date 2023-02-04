@@ -35,10 +35,6 @@ export default class RoutesController extends BaseController {
   private martingaleController = new MartingaleController();
   private twitterSentimentController = new TwitterSentimentController();
 
-  constructor() {
-    super();
-  }
-
   public initKlines(req, res): void {
     let controller;
 

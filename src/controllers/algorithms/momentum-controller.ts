@@ -2,10 +2,6 @@ import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class MomentumController extends BaseController {
-  constructor() {
-    super();
-  }
-
   public setSignals(klines: Array<Kline>, streak: number): Array<Kline> {
     const colors: Array<number> = klines.map(kline => this.getKlineColor(kline));
 

@@ -105,7 +105,8 @@ export default class TwitterController extends BaseController {
       process.env.twitter_api_key,
       process.env.twitter_api_secret,
       '1.0A', null, 'HMAC-SHA1'
-    )
+    );
+
     return promisify(oauth.get.bind(oauth))
   }
 }

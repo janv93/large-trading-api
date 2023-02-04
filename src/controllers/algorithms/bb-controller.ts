@@ -3,12 +3,7 @@ import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class BbController extends BaseController {
-  private indicatorsController: IndicatorsController;
-
-  constructor() {
-    super();
-    this.indicatorsController = new IndicatorsController();
-  }
+  private indicatorsController = new IndicatorsController();;
 
   public setSignals(klines: Array<Kline>, period: number): Array<Kline> {
     const bb = this.indicatorsController.bb(klines, period);
