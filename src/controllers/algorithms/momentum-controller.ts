@@ -2,8 +2,8 @@ import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 
 export default class MomentumController extends BaseController {
-  public setSignals(klines: Array<Kline>, streak: number): Array<Kline> {
-    const colors: Array<number> = klines.map(kline => this.getKlineColor(kline));
+  public setSignals(klines: Kline[], streak: number): Kline[] {
+    const colors: number[] = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;
     let lastEntrySignal: string;
@@ -32,7 +32,7 @@ export default class MomentumController extends BaseController {
     return klines;
   }
 
-  private isEntry(colors: Array<number>, index: number, streak: number): string {
+  private isEntry(colors: number[], index: number, streak: number): string {
     if (streak > index) {
       return '';
     }
@@ -48,7 +48,7 @@ export default class MomentumController extends BaseController {
     return signal;
   }
 
-  private isClose(klines: Array<Kline>, colors: Array<any>, index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
+  private isClose(klines: Kline[], colors: any[], index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
     const closePriceAtLastEntry = klines[lastEntryIndex].prices.close;
     const currentPrice = klines[index].prices.close;
 

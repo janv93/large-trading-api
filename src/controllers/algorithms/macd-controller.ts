@@ -5,7 +5,7 @@ import BaseController from '../base-controller';
 export default class MacdController extends BaseController {
   private indicatorsController = new IndicatorsController();
 
-  public setSignals(klines: Array<Kline>, fast: number, slow: number, signal: number): Array<Kline> {
+  public setSignals(klines: Kline[], fast: number, slow: number, signal: number): Kline[] {
     const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
 
@@ -80,7 +80,7 @@ export default class MacdController extends BaseController {
   /**
    * test different histogram strategies
    */
-  private findOptimalEntry(klines: Array<Kline>, histogram: Array<any>) {
+  private findOptimalEntry(klines: Kline[], histogram: any[]) {
     let lastHistogram: number;
     let lastMove: string;
     let sumDiffs = 0.0;

@@ -13,7 +13,7 @@ export default class TwitterController extends BaseController {
     'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
   };
 
-  public async getUserTweets(user: string): Promise<Array<Tweet>> {
+  public async getUserTweets(user: string): Promise<Tweet[]> {
     const url = this.baseUrl + '/2/users/' + user + '/tweets';
 
     const query = {
@@ -47,7 +47,7 @@ export default class TwitterController extends BaseController {
     }).catch(err => this.handleError(err));
   }
 
-  public getUserFriends(user: string): Promise<Array<TwitterUser>> {
+  public getUserFriends(user: string): Promise<TwitterUser[]> {
     const url = this.baseUrl + '/1.1/friends/list.json';
 
     const query = {
@@ -68,7 +68,7 @@ export default class TwitterController extends BaseController {
       })).catch(err => this.handleError(err));
   }
 
-  public async getFriendsWithTheirTweets(user: string): Promise<Array<TwitterTimeline>> {
+  public async getFriendsWithTheirTweets(user: string): Promise<TwitterTimeline[]> {
     const friends = await this.getUserFriends(user);
 
     const friendTweets = await Promise.all(friends.map(async user => {
@@ -91,7 +91,7 @@ export default class TwitterController extends BaseController {
     return friendTweetsOnlySymbols;
   }
 
-  private getTweetSymbols(text: string): Array<string> {
+  private getTweetSymbols(text: string): string[] {
     const symbolPattern = /[$#]\w+/g;
     const symbols = text.match(symbolPattern);
     return symbols ? symbols

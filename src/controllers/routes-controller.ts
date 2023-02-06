@@ -116,7 +116,7 @@ export default class RoutesController extends BaseController {
 
   public postTechnicalIndicator(req, res): void {
     const query = req.query;
-    let indicatorChart: Array<any> = [];
+    let indicatorChart: any[] = [];
 
     switch (query.indicator) {
       case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, Number(query.length)); break;
@@ -132,8 +132,8 @@ export default class RoutesController extends BaseController {
     }
   }
 
-  private handleAlgoSync(responseInRange: Array<Kline>, query) {
-    let klinesWithSignals: Array<any> = [];
+  private handleAlgoSync(responseInRange: Kline[], query) {
+    let klinesWithSignals: any[] = [];
 
     switch (query.algorithm) {
       case 'momentum':
@@ -171,7 +171,7 @@ export default class RoutesController extends BaseController {
     return klinesWithSignals;
   }
 
-  private handleAlgoAsync(responseInRange, query): Promise<Array<Kline>> {
+  private handleAlgoAsync(responseInRange, query): Promise<Kline[]> {
     return new Promise((resolve, reject) => {
       switch (query.algorithm) {
         case 'twitterSentiment':

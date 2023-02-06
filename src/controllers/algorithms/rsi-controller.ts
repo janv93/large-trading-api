@@ -5,7 +5,7 @@ import BaseController from '../base-controller';
 export default class RsiController extends BaseController {
   private indicatorsController = new IndicatorsController();
 
-  public setSignals(klines: Array<Kline>, length: number): Array<Kline> {
+  public setSignals(klines: Kline[], length: number): Kline[] {
     const rsi = this.indicatorsController.rsi(klines, length);
     const klinesWithRsi = klines.slice(-rsi.length);
     this.setOverBoughtOverSoldSignals(klinesWithRsi, rsi);
@@ -13,7 +13,7 @@ export default class RsiController extends BaseController {
     return klines;
   }
 
-  private setOverBoughtOverSoldSignals(klines: Array<Kline>, rsi: Array<any>): Array<Kline> {
+  private setOverBoughtOverSoldSignals(klines: Kline[], rsi: any[]): Kline[] {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 

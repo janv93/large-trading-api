@@ -5,7 +5,7 @@ import BaseController from '../base-controller';
 export default class BbController extends BaseController {
   private indicatorsController = new IndicatorsController();;
 
-  public setSignals(klines: Array<Kline>, period: number): Array<Kline> {
+  public setSignals(klines: Kline[], period: number): Kline[] {
     const bb = this.indicatorsController.bb(klines, period);
     const klinesWithBb = klines.slice(-bb.length);
 

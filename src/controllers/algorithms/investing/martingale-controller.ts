@@ -3,7 +3,7 @@ import BaseController from '../../base-controller';
 
 
 export default class MartingaleController extends BaseController {
-  public setSignals(klines: Array<Kline>, threshold: number): Array<Kline> {
+  public setSignals(klines: Kline[], threshold: number): Kline[] {
     let streak = 0;
     let lastClose;
 

@@ -28,7 +28,7 @@ export default class Database extends BaseController {
     });
   }
 
-  public updateKlines(symbol: string, timeframe: string, klines: Array<Kline>): Promise<any> {
+  public updateKlines(symbol: string, timeframe: string, klines: Kline[]): Promise<any> {
     return new Promise((resolve, reject) => {
       this.db.update({ symbol, timeframe }, { $set: { klines } }, (err, numReplaced) => {
         if (err) {

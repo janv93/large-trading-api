@@ -31,6 +31,24 @@ export default class BinanceController extends BaseController {
     return axios.get(klineUrl);
   }
 
+  public async getKlinesUntilNextFullHour(symbol: string, startTime: number): Promise<any> {
+    const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
+    const interval = '1m';
+    const limit = 60 - (new Date(startTime).getMinutes());
+
+    const query = {
+      limit: limit.toString(),
+      interval,
+      symbol,
+      startTime
+    };
+
+    const klineUrl = this.createUrl(baseUrl, query);
+
+    console.log('GET' + 'klineUrl');
+    return axios.get(klineUrl);
+  }
+
   public getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getKlinesRecursive(symbol, -1, times, timeframe, resolve, reject);
@@ -102,60 +120,43 @@ export default class BinanceController extends BaseController {
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
+  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 100;
     const startTime = Date.now() - timespan;
 
-    return new Promise((resolve, reject) => {
-      this.database.findKlines(symbol, timeframe).then(res => {
-        if (res.length === 0) {
-          new Promise<Array<Kline>>((resolve, reject) => {
-            this.getKlinesRecursiveFromDateUntilNow(symbol, startTime, timeframe, resolve, reject);
-          }).then(newKlines => {
-            const insert = {
-              symbol,
-              timeframe,
-              klines: newKlines
-            };
+    try {
+      const res = await this.database.findKlines(symbol, timeframe);
+      const dbKlines = res[0]?.klines || [];
+      const lastKline = dbKlines[dbKlines.length - 1];
 
-            this.database.insert(insert);
-            resolve({ message: 'Database initialized with ' + newKlines.length + ' klines' });
-          }).catch(err => {
-            this.handleError(err);
-            reject(err);
-          });
-        } else {
-          const dbKlines = res[0].klines;
-          const lastKline = dbKlines[dbKlines.length - 1];
-
-          new Promise<Array<Kline>>((resolve, reject) => {
-            this.getKlinesRecursiveFromDateUntilNow(symbol, lastKline.times.open, timeframe, resolve, reject);
-          }).then(newKlines => {
-            newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-            const mergedKlines = dbKlines.concat(newKlines);
-            console.log('Added ' + newKlines.length + ' new klines to database');
-            console.log();
-            this.database.updateKlines(symbol, timeframe, mergedKlines).then(() => {
-              this.database.findKlines(symbol, timeframe).then(updatedKlines => {
-                resolve(updatedKlines[0].klines);
-              }).catch(err => {
-                this.handleError(err);
-                reject(err);
-              });
-            }).catch(err => {
-              this.handleError(err);
-            });
-          }).catch(err => {
-            this.handleError(err);
-          });
-        }
-      }).catch(err => {
-        this.handleError(err);
+      const newKlines = await new Promise<Kline[]>((resolve, reject) => {
+        this.getKlinesRecursiveFromDateUntilNow(
+          symbol,
+          lastKline?.times.open || startTime,
+          timeframe,
+          resolve,
+          reject
+        );
       });
-    });
+
+      if (dbKlines.length === 0) {
+        await this.database.insert({ symbol, timeframe, klines: newKlines });
+        return { message: `Database initialized with ${newKlines.length} klines` };
+      } else {
+        newKlines.shift();
+        const mergedKlines = dbKlines.concat(newKlines);
+        console.log(`Added ${newKlines.length} new klines to database`);
+        console.log();
+        await this.database.updateKlines(symbol, timeframe, mergedKlines);
+        return (await this.database.findKlines(symbol, timeframe))[0].klines;
+      }
+    } catch (err) {
+      this.handleError(err);
+      throw err;
+    }
   }
 
-  public mapResult(klines: Array<any>): Array<Kline> {
+  public mapResult(klines: any[]): Kline[] {
     return klines.map(k => {
       return {
         times: {
@@ -238,8 +239,8 @@ export default class BinanceController extends BaseController {
       .map(s => s.replace(/USDT|BUSD/g, ''))
       .map(s => s.toLowerCase());
 
-      const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
-      uniqueSymbols.sort();
+    const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
+    uniqueSymbols.sort();
 
     return uniqueSymbols;
   }

@@ -4,15 +4,15 @@ import plotly from 'plotly';
 export default class PlotlyController extends BaseController {
   private _plotly = new plotly(process.env.plotly_username, process.env.plotly_api_key);
 
-  public plot(sequence: Array<number>) {
+  public plot(sequence: number[]) {
     const data = { y: sequence, type: 'scatter' };
     const layout = { fileopt: "overwrite", filename: "LTAPI simple plot" };
 
     this.draw(data, layout);
   }
 
-  public plotPredictions(inputs: Array<Array<number>>, predictions: Array<number>, outputUnits: number) {
-    const mergedInputs: Array<number> = inputs.map(input => input[0]);
+  public plotPredictions(inputs: number[][], predictions: number[], outputUnits: number) {
+    const mergedInputs: number[] = inputs.map(input => input[0]);
     const lastInput = inputs[inputs.length - 1]
     mergedInputs.push(...lastInput.slice(1, lastInput.length));
 
@@ -25,8 +25,8 @@ export default class PlotlyController extends BaseController {
 
     const layout = { fileopt: "overwrite", filename: "LTAPI multi plot" };
 
-    const splittedPredictions: Array<Array<number>> = [];
-    let samplePredictions: Array<number> = [];
+    const splittedPredictions: number[][] = [];
+    let samplePredictions: number[] = [];
 
     predictions.forEach((prediction, i) => {
       const isSplit = i % outputUnits === outputUnits - 1;

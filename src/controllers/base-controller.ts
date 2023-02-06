@@ -79,7 +79,7 @@ export default class BaseController {
   /**
    * normalize to values between 0 and 1
    */
-  protected normalize(values: Array<number>): Array<number> {
+  protected normalize(values: number[]): number[] {
     const minClose = Math.min(...values);
     const maxClose = Math.max(...values);
     const range = maxClose - minClose;

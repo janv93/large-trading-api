@@ -18,12 +18,12 @@ export default class MtfController extends BaseController {
     '1W'
   ];
 
-  public generateMtf(timeframes: Array<string>) {
+  public generateMtf(timeframes: string[]) {
     const sortedTimeframes = this.sortTimeframes(timeframes);
     const smallestTimeframe = sortedTimeframes[0];
   }
 
-  private sortTimeframes(timeframes: Array<string>): Array<string> {
+  private sortTimeframes(timeframes: string[]): string[] {
     return timeframes.sort((a, b) => {
       return this.timeframesInOrder.indexOf(a) - this.timeframesInOrder.indexOf(b);
     });

@@ -6,7 +6,7 @@ import Database from '../../data/db';
 
 export default class AlpacaController extends BaseController {
   private database: Database = new Database();
-  private klines: Array<any> = [];
+  private klines: any[] = [];
 
   public getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<any> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
@@ -86,7 +86,7 @@ export default class AlpacaController extends BaseController {
     return new Promise((resolve, reject) => {
       this.database.findKlines(symbol, timeframe).then(res => {
         if (res.length === 0) {  // not in database yet
-          new Promise<Array<Kline>>((resolve, reject) => {
+          new Promise<Kline[]>((resolve, reject) => {
             this.getKlinesRecursive(symbol, startTime, timeframe, resolve, reject);
           }).then(newKlines => {
             const insert = {
@@ -106,7 +106,7 @@ export default class AlpacaController extends BaseController {
           const lastKline = dbKlines[dbKlines.length - 1];
           const newStart = lastKline.times.open;
 
-          new Promise<Array<Kline>>((resolve, reject) => {
+          new Promise<Kline[]>((resolve, reject) => {
             this.getKlinesRecursive(symbol, newStart, timeframe, resolve, reject);
           }).then(newKlines => {
             newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
@@ -133,7 +133,7 @@ export default class AlpacaController extends BaseController {
     });
   }
 
-  public mapResult(klines: Array<any>): Array<Kline> {
+  public mapResult(klines: any[]): Kline[] {
     return klines.map(k => {
       return {
         times: {

@@ -17,8 +17,8 @@ export default class TensorflowController extends BaseController {
   }
 
   test() {
-    const dataX: Array<any> = [];
-    const dataY: Array<any> = [];
+    const dataX: any[] = [];
+    const dataY: any[] = [];
 
     for (let i = 0; i < 100; i++) {
       const num1 = Math.floor(Math.random() * 20);
@@ -68,7 +68,7 @@ export default class TensorflowController extends BaseController {
     });
   }
 
-  public setSignals(klines: Array<Kline>): Array<Kline> {
+  public setSignals(klines: Kline[]): Kline[] {
     console.log('Received ' + klines.length + ' klines');
 
     // this.trainModelPriceToPrice(klines);
@@ -80,15 +80,15 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs and outputs as price
    */
-  private trainModelPriceToPrice(klines: Array<Kline>) {
+  private trainModelPriceToPrice(klines: Kline[]) {
     const inputCount = 5;
     const outputCount = 1;
     const samples = this.createTrainingDataPriceToPrice(klines, inputCount, outputCount);
 
     // create inputs and outputs
-    const dataX: Array<any> = samples.map(sample => sample.inputs);
-    const dataY: Array<any> = samples.map(sample => sample.outputs);
-    const dataTestX: Array<any> = dataX.slice(-10);
+    const dataX: any[] = samples.map(sample => sample.inputs);
+    const dataY: any[] = samples.map(sample => sample.outputs);
+    const dataTestX: any[] = dataX.slice(-10);
 
     // transforming the data to tensors
     const x = tf.tensor(dataX);
@@ -133,15 +133,15 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs and outputs as price diff to previous kline
    */
-  private trainModelPriceDiffToPriceDiff(klines: Array<Kline>) {
+  private trainModelPriceDiffToPriceDiff(klines: Kline[]) {
     const inputCount = 10;
     const outputCount = 1;
     const samples = this.createTrainingDataPriceDiffToPriceDiff(klines, inputCount, outputCount);
 
     // create inputs and outputs
-    const dataX: Array<any> = samples.map(sample => sample.inputs);
-    const dataY: Array<any> = samples.map(sample => sample.outputs);
-    const dataTestX: Array<any> = dataX.slice(-100);
+    const dataX: any[] = samples.map(sample => sample.inputs);
+    const dataY: any[] = samples.map(sample => sample.outputs);
+    const dataTestX: any[] = dataX.slice(-100);
 
     // transforming the data to tensors
     const x = tf.tensor(dataX);
@@ -217,13 +217,13 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs as indicators and
    */
-  private trainModelIndicatorsToPriceDiff(klines: Array<Kline>) {
+  private trainModelIndicatorsToPriceDiff(klines: Kline[]) {
     const samples = this.createTrainingDataIndicatorsToPriceDiff(klines);
 
     // create inputs and outputs
-    const dataX: Array<any> = samples.map(sample => [sample.inputs]);
-    const dataY: Array<any> = samples.map(sample => sample.outputs);
-    const dataTestX: Array<any> = dataX.slice(-100);
+    const dataX: any[] = samples.map(sample => [sample.inputs]);
+    const dataY: any[] = samples.map(sample => sample.outputs);
+    const dataTestX: any[] = dataX.slice(-100);
 
     // transforming the data to tensors
     const x = tf.tensor(dataX);
@@ -267,7 +267,7 @@ export default class TensorflowController extends BaseController {
     });
   }
 
-  private createTrainingDataIndicatorsToPriceDiff(klines: Array<Kline>): Array<any> {
+  private createTrainingDataIndicatorsToPriceDiff(klines: Kline[]): any[] {
     // btc dominance?
     // fear and greed index?
 
@@ -323,7 +323,7 @@ export default class TensorflowController extends BaseController {
   /**
    * transform samples to inputs and outputs as arrays
    */
-  private transformIndicatorsSamples(samples: Array<any>) {
+  private transformIndicatorsSamples(samples: any[]) {
     return samples.map(sample => {
       return {
         inputs: Object.values(sample.inputs[0]),
@@ -335,7 +335,7 @@ export default class TensorflowController extends BaseController {
   /**
    * create a training data set with inputs and outputs as price diff to previous
    */
-  private createTrainingDataPriceDiffToPriceDiff(klines: Array<Kline>, inputCount: number, outputCount: number): Array<any> {
+  private createTrainingDataPriceDiffToPriceDiff(klines: Kline[], inputCount: number, outputCount: number): any[] {
     const closes = klines.map(kline => kline.prices.close);
     const diffs = this.createDiffs(closes, true, 100);
 
@@ -345,7 +345,7 @@ export default class TensorflowController extends BaseController {
   /**
    * creates an array of deltas between one value and its predecessor in percentage
    */
-  private createDiffs(values: Array<number>, isPercentage: boolean, factor = 1): Array<number> {
+  private createDiffs(values: number[], isPercentage: boolean, factor = 1): number[] {
     return values.slice(-(values.length - 1)).map((value, i) => {
       const previousValue = values[i];
       const diff = value - previousValue;
@@ -361,7 +361,7 @@ export default class TensorflowController extends BaseController {
   /**
    * create a training data set with inputs and outputs
    */
-  private createTrainingDataPriceToPrice(klines: Array<Kline>, inputCount: number, outputCount: number): Array<any> {
+  private createTrainingDataPriceToPrice(klines: Kline[], inputCount: number, outputCount: number): any[] {
     const closes = klines.map(kline => kline.prices.close);
     const normalizedCloses = this.normalize(closes);
 
@@ -371,8 +371,8 @@ export default class TensorflowController extends BaseController {
   /**
    * create samples from sequences in values
    */
-  private createInputsOutputs(values: Array<any>, inputLength: number, outputLength: number): Array<any> {
-    const samples: Array<any> = [];
+  private createInputsOutputs(values: any[], inputLength: number, outputLength: number): any[] {
+    const samples: any[] = [];
     const totalLength = inputLength + outputLength;
 
     for (let i = 0; i < values.length - totalLength; i++) {
@@ -388,7 +388,7 @@ export default class TensorflowController extends BaseController {
   /**
    * map inputs to corresponding predictions
    */
-  private mapInputsToPredictions(inputs: Array<any>, actual: Array<any>, predictions: Array<any>): Array<any> {
+  private mapInputsToPredictions(inputs: any[], actual: any[], predictions: any[]): any[] {
     return inputs.map((input: any, i: number) => {
       return { input, actual: actual[i], prediction: predictions[i] };
     });
