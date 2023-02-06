@@ -49,71 +49,69 @@ export default class BinanceController extends BaseController {
     return axios.get(klineUrl);
   }
 
-  public getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.getKlinesRecursive(symbol, -1, times, timeframe, resolve, reject);
-    });
+  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<any> {
+    try {
+      const binanceKlines = await this.getKlinesRecursive(symbol, -1, times, timeframe);
+      return binanceKlines;
+    } catch (err) {
+      this.handleError(err);
+      throw err;
+    }
   }
 
   /**
    * get last times * 1000 timeframes
    */
-  public getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string, resolve: Function, reject: Function): void {
-    this.getKlines(symbol, timeframe, endTime).then(res => {
-      this.klines = res.data.concat(this.klines);
-      const start = this.klines[0][0];
-      const end = start - this.timeframeToMilliseconds(timeframe);
-      times--;
-
-      if (times > 0) {
-        this.getKlinesRecursive(symbol, end, times, timeframe, resolve, reject);
-      } else {
-        console.log();
-        console.log('Received total of ' + this.klines.length + ' klines');
-        const firstDate = new Date(this.klines[0][0]);
-        console.log('First date: ' + firstDate);
-        const lastDate = new Date(this.klines[this.klines.length - 1][0]);
-        console.log('Last date: ' + lastDate);
-        console.log();
-        const binanceKlines = this.mapResult(this.klines);
-        resolve(binanceKlines);
-        this.klines = [];
+  public async getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string): Promise<Kline[]> {
+    while (times > 0) {
+      try {
+        const res = await this.getKlines(symbol, timeframe, endTime);
+        this.klines = res.data.concat(this.klines);
+        endTime = this.klines[0][0] - this.timeframeToMilliseconds(timeframe);
+        times--;
+      } catch (err) {
+        this.handleError(err);
+        throw err;
       }
+    }
 
-    }).catch(err => {
-      this.handleError(err);
-      reject(err);
-    });
+    console.log();
+    console.log('Received total of ' + this.klines.length + ' klines');
+    const firstDate = new Date(this.klines[0][0]);
+    console.log('First date: ' + firstDate);
+    const lastDate = new Date(this.klines[this.klines.length - 1][0]);
+    console.log('Last date: ' + lastDate);
+    console.log();
+    const binanceKlines = this.mapResult(this.klines);
+    this.klines = [];
+    return binanceKlines;
   }
 
   /**
    * get startTime to now timeframes
    */
-  public getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, timeframe: string, resolve: Function, reject: Function): void {
-    this.getKlines(symbol, timeframe, undefined, startTime).then(res => {
+  public async getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
+    try {
+      const res = await this.getKlines(symbol, timeframe, undefined, startTime);
       this.klines = this.klines.concat(res.data);
-      const end: number = this.klines[this.klines.length - 1][0];
-      const start: number = end + this.timeframeToMilliseconds(timeframe);
+      const end = this.klines[this.klines.length - 1][0];
+      const nextStart = end + this.timeframeToMilliseconds(timeframe);
       const now = Date.now();
 
-      if (start < now) {
-        this.getKlinesRecursiveFromDateUntilNow(symbol, start, timeframe, resolve, reject);
+      if (nextStart < now) {
+        return this.getKlinesRecursiveFromDateUntilNow(symbol, nextStart, timeframe);
       } else {
-        console.log();
-        console.log('Received total of ' + this.klines.length + ' klines');
-        const firstDate = new Date(this.klines[0][0]);
-        console.log('First date: ' + firstDate);
-        const lastDate = new Date(this.klines[this.klines.length - 1][0]);
-        console.log('Last date: ' + lastDate);
-        console.log();
+        console.log(`Received total of ${this.klines.length} klines`);
+        console.log(`First date: ${new Date(this.klines[0][0])}`);
+        console.log(`Last date: ${new Date(this.klines[this.klines.length - 1][0])}`);
         const binanceKlines = this.mapResult(this.klines);
-        resolve(binanceKlines);
         this.klines = [];
+        return binanceKlines;
       }
-    }).catch(err => {
+    } catch (err) {
       this.handleError(err);
-      reject(err);
-    });
+      throw err;
+    }
   }
 
   /**
@@ -129,15 +127,11 @@ export default class BinanceController extends BaseController {
       const dbKlines = res[0]?.klines || [];
       const lastKline = dbKlines[dbKlines.length - 1];
 
-      const newKlines = await new Promise<Kline[]>((resolve, reject) => {
-        this.getKlinesRecursiveFromDateUntilNow(
-          symbol,
-          lastKline?.times.open || startTime,
-          timeframe,
-          resolve,
-          reject
-        );
-      });
+      const newKlines = await this.getKlinesRecursiveFromDateUntilNow(
+        symbol,
+        lastKline?.times.open || startTime,
+        timeframe
+      );
 
       if (dbKlines.length === 0) {
         await this.database.insert({ symbol, timeframe, klines: newKlines });
@@ -178,7 +172,12 @@ export default class BinanceController extends BaseController {
   public setLeverage(symbol: string, leverage: number): Promise<any> {
     const now = Date.now();
 
-    const query = 'symbol=' + symbol + 'USDT' + '&leverage=' + leverage + '&timestamp=' + now;
+    const query = {
+      symbol: symbol + 'USDT',
+      leverage: leverage,
+      timestamp: now
+    };
+
     const hmac = this.createHmac(query);
 
     const options = {
@@ -187,43 +186,53 @@ export default class BinanceController extends BaseController {
       }
     };
 
-    const url = 'https://fapi.binance.com/fapi/v1/leverage?' + query + '&signature=' + hmac;
+    const url = this.createUrl('https://fapi.binance.com/fapi/v1/leverage', { ...query, signature: hmac });
 
     return axios.post(url, null, options);
   }
 
-  public long(symbol, quantity): Promise<any> {
-    return this.createOrder(symbol, 'BUY', quantity).then(() => {
-      console.log('LONG position opened');
-    }).catch(err => this.handleError(err));
+  public async short(symbol: string, quantity: number): Promise<void> {
+    try {
+      await this.createOrder(symbol, 'SELL', quantity);
+      console.log('SHORT position opened');
+    } catch (err) {
+      this.handleError(err);
+      throw err;
+    }
   }
 
-  public short(symbol, quantity): Promise<any> {
-    return this.createOrder(symbol, 'SELL', quantity).then(() => {
-      console.log('SHORT position opened');
-    }).catch(err => this.handleError(err));
+  public async long(symbol: string, quantity: number): Promise<void> {
+    try {
+      await this.createOrder(symbol, 'BUY', quantity);
+      console.log('LONG position opened');
+    } catch (err) {
+      this.handleError(err);
+      throw err;
+    }
   }
 
   public createOrder(symbol: string, side: string, quantity: number): Promise<any> {
     const now = Date.now();
 
-    let query =
-      'symbol=' + symbol + 'USDT'
-      + '&timestamp=' + now
-      + '&side=' + side
-      + '&type=' + 'MARKET';
+    const queryObj = {
+      symbol: symbol + 'USDT',
+      timestamp: now,
+      side: side,
+      type: 'MARKET',
+      quantity: quantity
+    };
 
-    query += '&quantity=' + quantity;
-
-    const hmac = this.createHmac(query);
+    const hmac = this.createHmac(this.createUrl('', queryObj));
+    const url = this.createUrl('https://fapi.binance.com/fapi/v1/order', {
+      ...queryObj,
+      signature: hmac
+    });
 
     const options = {
       headers: {
         'X-MBX-APIKEY': process.env.binance_api_key
       }
     };
-
-    const url = 'https://fapi.binance.com/fapi/v1/order?' + query + '&signature=' + hmac;
 
     return axios.post(url, null, options);
   }
