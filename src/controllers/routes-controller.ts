@@ -35,7 +35,7 @@ export default class RoutesController extends BaseController {
   private martingaleController = new MartingaleController();
   private twitterSentimentController = new TwitterSentimentController();
 
-  public initKlines(req, res): void {
+  public async initKlines(req, res): Promise<void> {
     let controller;
 
     switch (req.query.exchange) {
@@ -44,16 +44,14 @@ export default class RoutesController extends BaseController {
       case 'alpaca': controller = this.alpaca; break;
     }
 
-    controller.initKlinesDatabase(req.query.symbol, req.query.timeframe)
-      .then(response => {
-        res.send(response);
-      });
+    const response = await controller.initKlinesDatabase(req.query.symbol, req.query.timeframe);
+    res.send(response);
   }
 
   /**
    * get list of klines / candlesticks from binance
    */
-  public getKlines(req, res): void {
+  public async getKlines(req, res): Promise<void> {
     let controller;
 
     switch (req.query.exchange) {
@@ -62,10 +60,8 @@ export default class RoutesController extends BaseController {
       case 'alpaca': controller = this.alpaca; break;
     }
 
-    controller.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe)
-      .then(response => {
-        res.send(response);
-      });
+    const response = await controller.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe);
+    res.send(response);
   }
 
   /**
@@ -74,31 +70,29 @@ export default class RoutesController extends BaseController {
    * algorithm is delivered through query parameter 'algorithm'
    * depending on algorithm, additional query params may be necessary
    */
-  public getKlinesWithAlgorithm(req, res): void {
+  public async getKlinesWithAlgorithm(req, res): Promise<void> {
     const query = req.query;
-    this.database.findKlines(query.symbol, query.timeframe)
-      .then((response: any) => {
-        const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
-        const klinesWithSignals = this.handleAlgoSync(responseInRange, query);
 
-        if (klinesWithSignals && klinesWithSignals.length > 0) {
-          res.send(klinesWithSignals);
-        } else {
-          this.handleAlgoAsync(responseInRange, query).then(asyncRes => {
-            res.send(asyncRes);
-          }).catch(err => {
-            if (err === 'invalid') {
-              res.send('Algorithm "' + query.algorithm + '" does not exist');
-            } else {
-              this.handleError(err);
-              res.status(500).json({ error: err.message });
-            }
-          });
-        }
-      }).catch(err => {
+    try {
+      const response = await this.database.findKlines(query.symbol, query.timeframe);
+      const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
+      let klinesWithSignals;
+
+      if (klinesWithSignals && klinesWithSignals.length > 0) {
+        klinesWithSignals = this.handleAlgoSync(responseInRange, req.query);
+      } else {
+        klinesWithSignals = await this.handleAlgoAsync(responseInRange, req.query);
+      }
+
+      res.send(klinesWithSignals);
+    } catch (err: any) {
+      if (err === 'invalid') {
+        res.send('Algorithm "' + query.algorithm + '" does not exist');
+      } else {
         this.handleError(err);
         res.status(500).json({ error: err.message });
-      });
+      }
+    }
   }
 
   public postBacktestData(req, res): void {
@@ -132,8 +126,8 @@ export default class RoutesController extends BaseController {
     }
   }
 
-  private handleAlgoSync(responseInRange: Kline[], query) {
-    let klinesWithSignals: any[] = [];
+  private handleAlgoSync(responseInRange: Kline[], query): Kline[] {
+    let klinesWithSignals: Kline[] = [];
 
     switch (query.algorithm) {
       case 'momentum':
