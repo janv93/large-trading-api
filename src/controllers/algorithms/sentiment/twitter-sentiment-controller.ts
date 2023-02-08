@@ -10,7 +10,7 @@ export default class TwitterSentimentController extends BaseController {
 
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
     const timelines = await this.twitter.getFriendsWithTheirTweets(user);
-    this.processTimelines(timelines);
+    await this.processTimelines(timelines);
     return klines;
   }
 
