@@ -168,7 +168,7 @@ export default class RoutesController extends BaseController {
     switch (query.algorithm) {
       case 'twitterSentiment':
         return await this.twitterSentimentController.setSignals(responseInRange, query.user);
-      default: throw new Error('invalid');
+      default: throw 'invalid';
     }
   }
 }
