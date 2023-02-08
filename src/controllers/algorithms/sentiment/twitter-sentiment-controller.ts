@@ -15,25 +15,45 @@ export default class TwitterSentimentController extends BaseController {
   }
 
   private async processTimelines(timelines: TwitterTimeline[]) {
-    const symbols = await this.binance.getSymbols();
+    const binanceSymbols = await this.binance.getUsdtBusdSymbols();
 
-    timelines.forEach(ti => ti.tweets.forEach(tw => tw.symbols = tw.symbols.filter(s => symbols.includes(s)))); // filter out symbols not on binance
+    const shortBinanceSymbols = binanceSymbols
+      .map(s => s.replace(/USDT|BUSD/g, ''))
+      .map(s => s.toLowerCase());
+
+    timelines.forEach(ti => ti.tweets.forEach(tw => tw.symbols = tw.symbols.filter(s => shortBinanceSymbols.includes(s)))); // filter out symbols not on binance
     timelines.forEach(ti => ti.tweets = ti.tweets.filter(tw => tw.symbols.length)); // filter out empty symbols
-    // timelines.forEach(t => console.log(t.tweets));
 
-    const maxTime = this.timeframeToMilliseconds('1m') * 100 * 1000;
-    const earliestTime = Date.now() - maxTime;
+    const earliestTime = Date.now() - this.timeframeToMilliseconds('1m') * 100 * 1000;
 
     timelines.forEach(ti => ti.tweets = ti.tweets.filter(tw => tw.time < earliestTime));  // filter out tweets too far in the past
 
-    const tweetedSymbols: string[] = [];
+    const tweetedSymbols = {};
 
-    timelines.forEach(ti => ti.tweets.forEach(tw => tweetedSymbols.push(...tw.symbols))); // push all symbols in an array
+    timelines.forEach(ti => ti.tweets.forEach(tw => tw.symbols.forEach(s => tweetedSymbols[s] ? tweetedSymbols[s]++ : tweetedSymbols[s] = 1))); // create unique list with amount of symbol mentions
 
-    const uniqueTweetedSymbols = [...new Set(tweetedSymbols)];
+    const sortedSymbols = Object.keys(tweetedSymbols).sort((a, b) => tweetedSymbols[b] - tweetedSymbols[a]);  // sort by amount of mentions
+    const accordingBinanceSymbols: string[] = [];
 
-    const responses = await Promise.all(uniqueTweetedSymbols.map(s => this.binance.initKlinesDatabase(s, '1m')));
+    sortedSymbols.forEach(s => { // create array with according binance symbols
+      const binanceSymbolUsdt = (s + 'usdt').toUpperCase();
+      const binanceSymbolBusd = (s + 'busd').toUpperCase();
+      const usdtSymbolExists = binanceSymbols.includes(binanceSymbolUsdt);
+      const busdSymbolExists = binanceSymbols.includes(binanceSymbolBusd);
 
-    console.log(responses);
+      if (usdtSymbolExists) {
+        accordingBinanceSymbols.push(binanceSymbolUsdt);
+      } else if (busdSymbolExists) {
+        accordingBinanceSymbols.push(binanceSymbolBusd);
+      }
+    });
+
+    const mostTweetedSymbols = accordingBinanceSymbols.slice(0, 10); // 10 most tweeted symbols
+
+    await this.binance.initKlinesDatabase(mostTweetedSymbols[7], '1m');
+    console.log('done');
+    //const responses = await Promise.all(mostTweetedSymbols.map(s => this.binance.initKlinesDatabase(s, '1m')));
+
+    //console.log(responses);
   }
 }

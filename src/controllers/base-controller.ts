@@ -15,7 +15,11 @@ export default class BaseController {
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }
 
-  protected handleError(err: any) {
+  protected handleError(err: any, symbol?: string) {
+    if (symbol) {
+      console.log('Error received for symbol ' + symbol + ':');
+    }
+
     if (err.response && err.response.data) {
       console.log(err.response.data);
     } else {

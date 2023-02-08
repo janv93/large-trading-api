@@ -54,7 +54,7 @@ export default class BinanceController extends BaseController {
       const binanceKlines = await this.getKlinesRecursive(symbol, -1, times, timeframe);
       return binanceKlines;
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol);
       throw err;
     }
   }
@@ -70,7 +70,7 @@ export default class BinanceController extends BaseController {
         endTime = this.klines[0][0] - this.timeframeToMilliseconds(timeframe);
         times--;
       } catch (err) {
-        this.handleError(err);
+        this.handleError(err, symbol);
         throw err;
       }
     }
@@ -109,7 +109,7 @@ export default class BinanceController extends BaseController {
         return binanceKlines;
       }
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol);
       throw err;
     }
   }
@@ -145,7 +145,7 @@ export default class BinanceController extends BaseController {
         return (await this.database.findKlines(symbol, timeframe))[0].klines;
       }
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol);
       throw err;
     }
   }
@@ -195,7 +195,7 @@ export default class BinanceController extends BaseController {
       await this.createOrder(symbol, 'SELL', quantity);
       console.log('SHORT position opened');
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol);
       throw err;
     }
   }
@@ -236,7 +236,7 @@ export default class BinanceController extends BaseController {
     return axios.post(url, null, options);
   }
 
-  public async getSymbols(): Promise<string[]> {
+  public async getUsdtBusdSymbols(): Promise<string[]> {
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res = await axios.get(baseUrl);
 
@@ -244,8 +244,6 @@ export default class BinanceController extends BaseController {
       .map(s => s.symbol)
       .filter(s => s.includes('USDT') || s.includes('BUSD'))
       .filter(s => (!s.includes('UP') && !s.includes('DOWN')))
-      .map(s => s.replace(/USDT|BUSD/g, ''))
-      .map(s => s.toLowerCase());
 
     const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
     uniqueSymbols.sort();
