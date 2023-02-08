@@ -110,43 +110,42 @@ export default class RoutesController extends BaseController {
 
   public postTechnicalIndicator(req, res): void {
     const query = req.query;
+    const { indicator, length, fast, slow, signal, period } = query;
     let indicatorChart: any[] = [];
 
-    switch (query.indicator) {
-      case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, Number(query.length)); break;
-      case 'macd': indicatorChart = this.indicatorsController.macd(req.body, Number(query.fast), Number(query.slow), Number(query.signal)); break;
-      case 'ema': indicatorChart = this.indicatorsController.ema(req.body, Number(query.period)); break;
-      case 'bb': indicatorChart = this.indicatorsController.bb(req.body, Number(query.period)); break;
+    switch (indicator) {
+      case 'rsi': indicatorChart = this.indicatorsController.rsi(req.body, Number(length)); break;
+      case 'macd': indicatorChart = this.indicatorsController.macd(req.body, Number(fast), Number(slow), Number(signal)); break;
+      case 'ema': indicatorChart = this.indicatorsController.ema(req.body, Number(period)); break;
+      case 'bb': indicatorChart = this.indicatorsController.bb(req.body, Number(period)); break;
+      default: res.send(`Indicator "${indicator}" does not exist`); return;
     }
 
-    if (indicatorChart.length > 0) {
-      res.send(indicatorChart);
-    } else {
-      res.send('Indicator "' + query.indicator + '" does not exist');
-    }
+    res.send(indicatorChart);
   }
 
   private handleAlgoSync(responseInRange: Kline[], query): Kline[] {
     let klinesWithSignals: Kline[] = [];
+    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, streak } = query;
 
-    switch (query.algorithm) {
+    switch (algorithm) {
       case 'momentum':
-        klinesWithSignals = this.momentumController.setSignals(responseInRange, query.streak);
+        klinesWithSignals = this.momentumController.setSignals(responseInRange, streak);
         break;
       case 'macd':
-        klinesWithSignals = this.macdController.setSignals(responseInRange, query.fast, query.slow, query.signal);
+        klinesWithSignals = this.macdController.setSignals(responseInRange, fast, slow, signal);
         break;
       case 'rsi':
-        klinesWithSignals = this.rsiController.setSignals(responseInRange, Number(query.length));
+        klinesWithSignals = this.rsiController.setSignals(responseInRange, Number(length));
         break;
       case 'ema':
-        klinesWithSignals = this.emaController.setSignals(responseInRange, Number(query.periodOpen), Number(query.periodClose));
+        klinesWithSignals = this.emaController.setSignals(responseInRange, Number(periodOpen), Number(periodClose));
         break;
       case 'emasl':
-        klinesWithSignals = this.emaController.setSignalsSL(responseInRange, Number(query.period));
+        klinesWithSignals = this.emaController.setSignalsSL(responseInRange, Number(periodClose));
         break;
       case 'bb':
-        klinesWithSignals = this.bbController.setSignals(responseInRange, Number(query.period));
+        klinesWithSignals = this.bbController.setSignals(responseInRange, Number(length));
         break;
       case 'deepTrend':
         klinesWithSignals = this.tensorflowController.setSignals(responseInRange);
@@ -158,24 +157,18 @@ export default class RoutesController extends BaseController {
         klinesWithSignals = this.dcaController.setSignals(responseInRange);
         break;
       case 'martingale':
-        klinesWithSignals = this.martingaleController.setSignals(responseInRange, Number(query.threshold));
+        klinesWithSignals = this.martingaleController.setSignals(responseInRange, Number(threshold));
         break;
     }
 
     return klinesWithSignals;
   }
 
-  private handleAlgoAsync(responseInRange, query): Promise<Kline[]> {
-    return new Promise((resolve, reject) => {
-      switch (query.algorithm) {
-        case 'twitterSentiment':
-          this.twitterSentimentController.setSignals(responseInRange, query.user).then(klinesWSignals => {
-            resolve(klinesWSignals)
-          }).catch(err => reject(err));
-
-          break;
-        default: reject('invalid');
-      }
-    });
+  private async handleAlgoAsync(responseInRange, query): Promise<Kline[]> {
+    switch (query.algorithm) {
+      case 'twitterSentiment':
+        return await this.twitterSentimentController.setSignals(responseInRange, query.user);
+      default: throw new Error('invalid');
+    }
   }
 }

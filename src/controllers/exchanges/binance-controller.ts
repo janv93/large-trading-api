@@ -187,7 +187,6 @@ export default class BinanceController extends BaseController {
     };
 
     const url = this.createUrl('https://fapi.binance.com/fapi/v1/leverage', { ...query, signature: hmac });
-
     return axios.post(url, null, options);
   }
 
@@ -250,7 +249,6 @@ export default class BinanceController extends BaseController {
 
     const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
     uniqueSymbols.sort();
-
     return uniqueSymbols;
   }
 
