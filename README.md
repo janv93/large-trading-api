@@ -28,8 +28,3 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - npm i, npm start
 - initialize data, e.g. localhost:3000/initKlines?exchange=binance&symbol=BTCUSDT&timeframe=1h (this is also done by the frontend)
 - call algorithm, e.g. localhost:3000/klinesWithAlgorithm?algorithm=deepTrend&symbol=BTCUSDT&timeframe=1h&times=10 (this is also done by the frontend)
-
-## Note:
-
-- Install software requiements for tensorflow in order to use GPU: https://www.tensorflow.org/install/gpu.
-- You can replace @tensorflow/tfjs-node-gpu with @tensorflow/tfjs-node to use CPU instead. This can greatly increase performance, depending on the network shape.
