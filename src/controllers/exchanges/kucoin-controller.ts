@@ -3,10 +3,10 @@ import crypto from 'crypto';
 import btoa from 'btoa';
 import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
-import Database from '../../data/db';
+import database from '../../data/database';
 
 export default class KucoinController extends BaseController {
-  private database: Database = new Database();
+  private database = database;
   private klines = [];
 
   public getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<any> {
@@ -109,8 +109,8 @@ export default class KucoinController extends BaseController {
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
 
     return new Promise((resolve, reject) => {
-      this.database.findKlines(symbol, timeframe).then(res => {
-        if (res.length === 0) {
+      this.database.findSnapshot(symbol, timeframe).then(res => {
+        if (!res) {
           new Promise<Kline[]>((resolve, reject) => {
             this.getKlinesRecursiveFromDateUntilNow(symbol, startTime, endTime, timeframe, resolve, reject);
           }).then(newKlines => {
@@ -120,14 +120,14 @@ export default class KucoinController extends BaseController {
               klines: newKlines
             };
 
-            this.database.insert(insert);
+            this.database.writeSnapshot(insert);
             resolve({ message: 'Database initialized with ' + newKlines.length + ' klines' });
           }).catch(err => {
             this.handleError(err);
             reject(err);
           });
         } else {
-          const dbKlines = res[0].klines;
+          const dbKlines = res.klines;
           const lastKline = dbKlines[dbKlines.length - 1];
           const endTime = lastKline.times.open + this.timeframeToMilliseconds(timeframe) * 200;
 
@@ -138,9 +138,9 @@ export default class KucoinController extends BaseController {
             const mergedKlines = dbKlines.concat(newKlines);
             console.log('Added ' + newKlines.length + ' new klines to database');
             console.log();
-            this.database.updateKlines(symbol, timeframe, mergedKlines).then(() => {
-              this.database.findKlines(symbol, timeframe).then(updatedKlines => {
-                resolve(updatedKlines[0].klines);
+            this.database.updateSnapshot(symbol, timeframe, mergedKlines).then(() => {
+              this.database.findSnapshot(symbol, timeframe).then(updatedKlines => {
+                resolve(updatedKlines.klines);
               }).catch(err => {
                 this.handleError(err);
                 reject(err);

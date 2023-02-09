@@ -1,8 +1,7 @@
+require('dotenv').config();
 import express from 'express';
 import config from 'config';
 import RoutesController from './controllers/routes-controller';
-import dotenv from 'dotenv';
-if (dotenv) { dotenv.config(); }
 
 const app = express();
 const routesController = new RoutesController();

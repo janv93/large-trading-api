@@ -1,11 +1,10 @@
 import axios from 'axios';
-import crypto from 'crypto';
 import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
-import Database from '../../data/db';
+import database from '../../data/database';
 
 export default class AlpacaController extends BaseController {
-  private database: Database = new Database();
+  private database = database;
   private klines: any[] = [];
 
   public getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<any> {
@@ -84,8 +83,8 @@ export default class AlpacaController extends BaseController {
     const startTime = Date.now() - timespan;
 
     return new Promise((resolve, reject) => {
-      this.database.findKlines(symbol, timeframe).then(res => {
-        if (res.length === 0) {  // not in database yet
+      this.database.findSnapshot(symbol, timeframe).then(res => {
+        if (!res) {  // not in database yet
           new Promise<Kline[]>((resolve, reject) => {
             this.getKlinesRecursive(symbol, startTime, timeframe, resolve, reject);
           }).then(newKlines => {
@@ -95,14 +94,14 @@ export default class AlpacaController extends BaseController {
               klines: newKlines
             };
 
-            this.database.insert(insert);
+            this.database.writeSnapshot(insert);
             resolve({ message: 'Database initialized with ' + newKlines.length + ' klines' });
           }).catch(err => {
             this.handleError(err);
             reject(err);
           });
         } else {  // already in database
-          const dbKlines = res[0].klines;
+          const dbKlines = res.klines;
           const lastKline = dbKlines[dbKlines.length - 1];
           const newStart = lastKline.times.open;
 
@@ -113,9 +112,9 @@ export default class AlpacaController extends BaseController {
             const mergedKlines = dbKlines.concat(newKlines);
             console.log('Added ' + newKlines.length + ' new klines to database');
             console.log();
-            this.database.updateKlines(symbol, timeframe, mergedKlines).then(() => {
-              this.database.findKlines(symbol, timeframe).then(updatedKlines => {
-                resolve(updatedKlines[0].klines);
+            this.database.updateSnapshot(symbol, timeframe, mergedKlines).then(() => {
+              this.database.findSnapshot(symbol, timeframe).then(updatedKlines => {
+                resolve(updatedKlines.klines);
               }).catch(err => {
                 this.handleError(err);
                 reject(err);

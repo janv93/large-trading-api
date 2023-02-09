@@ -2,10 +2,10 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
-import Database from '../../data/db';
+import database from '../../data/database';
 
 export default class BinanceController extends BaseController {
-  private database: Database = new Database();
+  private database = database
   private klines = [];
 
   public getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<any> {
@@ -123,8 +123,8 @@ export default class BinanceController extends BaseController {
     const startTime = Date.now() - timespan;
 
     try {
-      const res = await this.database.findKlines(symbol, timeframe);
-      const dbKlines = res[0]?.klines || [];
+      const res = await this.database.findSnapshot(symbol, timeframe);
+      const dbKlines = res?.klines || [];
       const lastKline = dbKlines[dbKlines.length - 1];
 
       const newKlines = await this.getKlinesRecursiveFromDateUntilNow(
@@ -134,15 +134,15 @@ export default class BinanceController extends BaseController {
       );
 
       if (dbKlines.length === 0) {
-        await this.database.insert({ symbol, timeframe, klines: newKlines });
+        await this.database.writeSnapshot({ symbol, timeframe, klines: newKlines });
         return { message: `Database initialized with ${newKlines.length} klines` };
       } else {
         newKlines.shift();
         const mergedKlines = dbKlines.concat(newKlines);
         console.log(`Added ${newKlines.length} new klines to database`);
         console.log();
-        await this.database.updateKlines(symbol, timeframe, mergedKlines);
-        return (await this.database.findKlines(symbol, timeframe))[0].klines;
+        await this.database.updateSnapshot(symbol, timeframe, mergedKlines);
+        return (await this.database.findSnapshot(symbol, timeframe)).klines;
       }
     } catch (err) {
       this.handleError(err, symbol);

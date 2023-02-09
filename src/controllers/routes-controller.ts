@@ -1,4 +1,4 @@
-import Database from '../data/db';
+import database from '../data/database';
 import BaseController from './base-controller';
 import AlpacaController from './exchanges/alpaca-controller';
 import BinanceController from './exchanges/binance-controller';
@@ -18,7 +18,7 @@ import TwitterSentimentController from './algorithms/sentiment/twitter-sentiment
 import { Kline } from '../interfaces';
 
 export default class RoutesController extends BaseController {
-  private database = new Database();
+  private database = database;
   private alpaca = new AlpacaController();
   private binance = new BinanceController();
   private kucoin = new KucoinController();
@@ -74,13 +74,11 @@ export default class RoutesController extends BaseController {
     const query = req.query;
 
     try {
-      const response = await this.database.findKlines(query.symbol, query.timeframe);
-      const responseInRange = response[0].klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
-      let klinesWithSignals;
+      const response = await this.database.findSnapshot(query.symbol, query.timeframe);
+      const responseInRange = response.klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
+      let klinesWithSignals = this.handleAlgoSync(responseInRange, query);
 
-      if (klinesWithSignals && klinesWithSignals.length > 0) {
-        klinesWithSignals = this.handleAlgoSync(responseInRange, req.query);
-      } else {
+      if (!klinesWithSignals || !klinesWithSignals.length) {
         klinesWithSignals = await this.handleAlgoAsync(responseInRange, req.query);
       }
 
