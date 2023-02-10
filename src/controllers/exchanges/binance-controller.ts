@@ -106,6 +106,7 @@ export default class BinanceController extends BaseController {
         console.log(`Last date: ${new Date(this.klines[this.klines.length - 1][0])}`);
         const binanceKlines = this.mapResult(this.klines);
         this.klines = [];
+
         return binanceKlines;
       }
     } catch (err) {
@@ -122,31 +123,26 @@ export default class BinanceController extends BaseController {
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 100;
     const startTime = Date.now() - timespan;
 
-    try {
-      const res = await this.database.findSnapshot(symbol, timeframe);
-      const dbKlines = res?.klines || [];
-      const lastKline = dbKlines[dbKlines.length - 1];
+    const res = await this.database.getKlines(symbol, timeframe);
+    const dbKlines = res || [];
+    const lastKline = dbKlines[dbKlines.length - 1];
 
-      const newKlines = await this.getKlinesRecursiveFromDateUntilNow(
-        symbol,
-        lastKline?.times.open || startTime,
-        timeframe
-      );
+    const newKlines = await this.getKlinesRecursiveFromDateUntilNow(
+      symbol,
+      lastKline?.times.open || startTime,
+      timeframe
+    );
 
-      if (dbKlines.length === 0) {
-        await this.database.writeSnapshot({ symbol, timeframe, klines: newKlines });
-        return { message: `Database initialized with ${newKlines.length} klines` };
-      } else {
-        newKlines.shift();
-        const mergedKlines = dbKlines.concat(newKlines);
-        console.log(`Added ${newKlines.length} new klines to database`);
-        console.log();
-        await this.database.updateSnapshot(symbol, timeframe, mergedKlines);
-        return (await this.database.findSnapshot(symbol, timeframe)).klines;
-      }
-    } catch (err) {
-      this.handleError(err, symbol);
-      throw err;
+    if (dbKlines.length === 0) {
+      await this.database.writeKlines(symbol, timeframe, newKlines);
+      return { message: `Database initialized with ${newKlines.length} klines` };
+    } else {
+      newKlines.shift();
+      await this.database.writeKlines(symbol, timeframe, newKlines);
+      console.log(`Added ${newKlines.length} new klines to database`);
+      console.log();
+      const mergedKlines = dbKlines.concat(newKlines);
+      return mergedKlines;
     }
   }
 

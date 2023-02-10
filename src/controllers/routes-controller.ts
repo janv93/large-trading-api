@@ -74,8 +74,8 @@ export default class RoutesController extends BaseController {
     const query = req.query;
 
     try {
-      const response = await this.database.findSnapshot(query.symbol, query.timeframe);
-      const responseInRange = response.klines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
+      const response = await this.database.getKlines(query.symbol, query.timeframe);
+      const responseInRange = response.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
       let klinesWithSignals = this.handleAlgoSync(responseInRange, query);
 
       if (!klinesWithSignals || !klinesWithSignals.length) {

@@ -5,7 +5,6 @@ import IndicatorsController from '../../technical-analysis/indicators-controller
 
 // import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
 import * as tf from '@tensorflow/tfjs-node';   // CPU
-import { data } from '@tensorflow/tfjs-node';
 
 export default class TensorflowController extends BaseController {
   private plotlyController = new PlotlyController();

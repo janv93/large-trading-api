@@ -1,9 +1,3 @@
-export interface Snapshot {
-  symbol: string;
-  timeframe: string;
-  klines: Kline[];
-};
-
 export interface Kline {
   times: KlineTimes;
   prices: KlinePrices;

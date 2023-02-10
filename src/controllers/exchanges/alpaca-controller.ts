@@ -83,25 +83,19 @@ export default class AlpacaController extends BaseController {
     const startTime = Date.now() - timespan;
 
     return new Promise((resolve, reject) => {
-      this.database.findSnapshot(symbol, timeframe).then(res => {
-        if (!res) {  // not in database yet
+      this.database.getKlines(symbol, timeframe).then(res => {
+        if (!res || !res.length) {  // not in database yet
           new Promise<Kline[]>((resolve, reject) => {
             this.getKlinesRecursive(symbol, startTime, timeframe, resolve, reject);
           }).then(newKlines => {
-            const insert = {
-              symbol,
-              timeframe,
-              klines: newKlines
-            };
-
-            this.database.writeSnapshot(insert);
+            this.database.writeKlines(symbol, timeframe, newKlines);
             resolve({ message: 'Database initialized with ' + newKlines.length + ' klines' });
           }).catch(err => {
             this.handleError(err);
             reject(err);
           });
         } else {  // already in database
-          const dbKlines = res.klines;
+          const dbKlines = res;
           const lastKline = dbKlines[dbKlines.length - 1];
           const newStart = lastKline.times.open;
 
@@ -109,16 +103,11 @@ export default class AlpacaController extends BaseController {
             this.getKlinesRecursive(symbol, newStart, timeframe, resolve, reject);
           }).then(newKlines => {
             newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-            const mergedKlines = dbKlines.concat(newKlines);
             console.log('Added ' + newKlines.length + ' new klines to database');
             console.log();
-            this.database.updateSnapshot(symbol, timeframe, mergedKlines).then(() => {
-              this.database.findSnapshot(symbol, timeframe).then(updatedKlines => {
-                resolve(updatedKlines.klines);
-              }).catch(err => {
-                this.handleError(err);
-                reject(err);
-              });
+            this.database.writeKlines(symbol, timeframe, newKlines).then(() => {
+              const mergedKlines = dbKlines.concat(newKlines);
+              resolve(mergedKlines)
             }).catch(err => {
               this.handleError(err);
             });
@@ -151,10 +140,10 @@ export default class AlpacaController extends BaseController {
   }
 
   private mapTimeframe(timeframe: string): string {
-    const amount = timeframe.replace(/\D/g,'');
+    const amount = timeframe.replace(/\D/g, '');
     const unit = timeframe.replace(/[0-9]/g, '');
 
-    switch(unit) {
+    switch (unit) {
       case 'm': return amount + 'Minute';
       case 'h': return amount + 'Hour';
       case 'd': return amount + 'Day';
