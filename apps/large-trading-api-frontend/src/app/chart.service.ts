@@ -6,11 +6,11 @@ import { Subject } from 'rxjs';
 })
 export class ChartService {
   public klinesSubject = new Subject();
-  public exchange = 'alpaca';
+  public exchange = 'alpaca'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
   public symbol = 'SPY';
-  public timeframe = '1d';
-  public timeframeMultiplier = 200;  // 1 = 1000 timeframes
-  public strategy = 'martingale';
+  public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
+  public timeframeMultiplier = 10;  // 1 = 1000 timeframes
+  public strategy = 'ema';
   public isInvestmentStrategy: boolean;
   public rsiLength = 7;
   public emaPeriodOpen = 80;
