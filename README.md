@@ -28,3 +28,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - npm i, npm start
 - initialize data, e.g. localhost:3000/initKlines?exchange=binance&symbol=BTCUSDT&timeframe=1h (this is also done by the frontend)
 - call algorithm, e.g. localhost:3000/klinesWithAlgorithm?algorithm=deepTrend&symbol=BTCUSDT&timeframe=1h&times=10 (this is also done by the frontend)
+
+## Requirements:
+
+- install or use mongodb web version
