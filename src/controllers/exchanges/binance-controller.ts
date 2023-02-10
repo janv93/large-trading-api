@@ -119,7 +119,7 @@ export default class BinanceController extends BaseController {
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
+  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 100;
     const startTime = Date.now() - timespan;
 
@@ -133,9 +133,14 @@ export default class BinanceController extends BaseController {
       timeframe
     );
 
+    if (!newKlines.length) {
+      return dbKlines;
+    }
+
     if (dbKlines.length === 0) {
       await this.database.writeKlines(symbol, timeframe, newKlines);
-      return { message: `Database initialized with ${newKlines.length} klines` };
+      console.log(`Database initialized with ${newKlines.length} klines`);
+      return newKlines;
     } else {
       newKlines.shift();
       await this.database.writeKlines(symbol, timeframe, newKlines);

@@ -50,8 +50,20 @@ class Database extends BaseController {
   }
 
   public async getKlines(symbol: string, timeframe: string): Promise<Kline[]> {
+    console.log();
+    console.log('Reading klines...');
+    const start = Date.now();
+
     try {
       const klines = await this.Kline.find({ symbol, timeframe }).sort({ openTime: 1 });
+
+      if (klines.length) {
+        const end = Date.now();
+        const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
+        const diffPer10k = diff / (klines.length / 10000);
+        console.log('Read ' + klines.length + '. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.');
+        console.log();
+      }
 
       const mappedKlines: Kline[] = klines.map(kline => ({
         times: {
@@ -71,6 +83,7 @@ class Database extends BaseController {
       return mappedKlines;
     } catch (err) {
       console.error('Failed to retrieve klines:', err);
+      console.log();
       throw new Error(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`);
     }
   }
