@@ -3,11 +3,13 @@ import mongoose from 'mongoose';
 export const KlineSchema = new mongoose.Schema({
   symbol: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   timeframe: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   openPrice: {
     type: Number,
@@ -27,7 +29,8 @@ export const KlineSchema = new mongoose.Schema({
   },
   openTime: {
     type: Number,
-    required: true
+    required: true,
+    index: true
   },
   closeTime: {
     type: Number,
