@@ -100,10 +100,7 @@ export default class AlpacaController extends BaseController {
     } else {
       console.log();
       console.log('Received total of ' + this.klines.length + ' klines');
-      const firstDate = new Date(this.klines[0].times.open);
-      console.log('First date: ' + firstDate);
-      const lastDate = new Date(this.klines[this.klines.length - 1].times.open);
-      console.log('Last date: ' + lastDate);
+      console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
       console.log();
       const finalKlines = [...this.klines];
       this.klines = [];

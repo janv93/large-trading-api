@@ -71,10 +71,7 @@ export default class BinanceController extends BaseController {
 
     console.log();
     console.log('Received total of ' + this.klines.length + ' klines');
-    const firstDate = new Date(this.klines[0].times.open);
-    console.log('First date: ' + firstDate);
-    const lastDate = new Date(this.klines[this.klines.length - 1].times.open);
-    console.log('Last date: ' + lastDate);
+    console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
     console.log();
     const finalKlines = [...this.klines];
     this.klines = [];
@@ -96,8 +93,7 @@ export default class BinanceController extends BaseController {
         return this.getKlinesRecursiveFromStartUntilNow(symbol, nextStart, timeframe);
       } else {
         console.log(`Received total of ${this.klines.length} klines`);
-        console.log(`First date: ${new Date(this.klines[0].times.open)}`);
-        console.log(`Last date: ${new Date(this.klines[this.klines.length - 1].times.open)}`);
+        console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
         const finalKlines = [...this.klines];
         this.klines = [];
         return finalKlines;

@@ -57,8 +57,7 @@ export default class KucoinController extends BaseController {
     }
 
     console.log(`Received a total of ${this.klines.length} klines`);
-    console.log(`First date: ${new Date(this.klines[0].times.open)}`);
-    console.log(`Last date: ${new Date(this.klines[this.klines.length - 1].times.open)}`);
+    console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
 
     const finalKlines = this.klines.slice();
     this.klines.length = 0;
@@ -81,8 +80,7 @@ export default class KucoinController extends BaseController {
     } else {
       console.log();
       console.log(`Received total of ${this.klines.length} klines`);
-      console.log(`First date: ${new Date(this.klines[0].times.open)}`);
-      console.log(`Last date: ${new Date(this.klines[this.klines.length - 1].times.open)}`);
+      console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
       console.log();
       const result = [...this.klines];
       this.klines = [];
