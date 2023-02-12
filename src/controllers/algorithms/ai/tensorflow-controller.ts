@@ -15,7 +15,16 @@ export default class TensorflowController extends BaseController {
     // this.test();
   }
 
-  test() {
+  public setSignals(klines: Kline[]): Kline[] {
+    console.log('Received ' + klines.length + ' klines');
+
+    // this.trainModelPriceToPrice(klines);
+    this.trainModelPriceDiffToPriceDiff(klines);
+
+    return klines;
+  }
+
+  private async test() {
     const dataX: any[] = [];
     const dataY: any[] = [];
 
@@ -57,29 +66,20 @@ export default class TensorflowController extends BaseController {
     const testX = tf.tensor(dataTestX);
 
     // Fitting the model
-    model.fit(x, y, {
+    await model.fit(x, y, {
       batchSize: 100,
       epochs: 1000,
       validationSplit: 0.5
-    }).then((history) => {
-      // printing loss and predictions
-      console.log((model.predict(testX) as any).dataSync())
     });
-  }
 
-  public setSignals(klines: Kline[]): Kline[] {
-    console.log('Received ' + klines.length + ' klines');
-
-    // this.trainModelPriceToPrice(klines);
-    this.trainModelPriceDiffToPriceDiff(klines);
-
-    return klines;
+    // printing loss and predictions
+    console.log((model.predict(testX) as any).dataSync())
   }
 
   /**
    * train model on inputs and outputs as price
    */
-  private trainModelPriceToPrice(klines: Kline[]) {
+  private async trainModelPriceToPrice(klines: Kline[]) {
     const inputCount = 5;
     const outputCount = 1;
     const samples = this.createTrainingDataPriceToPrice(klines, inputCount, outputCount);
@@ -111,22 +111,22 @@ export default class TensorflowController extends BaseController {
     });
 
     // fitting the model
-    model.fit(x, y, {
+    await model.fit(x, y, {
       batchSize: 100,
       epochs: 100,
       validationSplit: 0.9,
       callbacks: tf.node.tensorBoard('log')
-    }).then((history) => {
-      console.log();
-      console.log('### Training finished ###');
-      console.log();
-
-      // printing loss and predictions
-      const predictions = (model.predict(testX) as any).dataSync();
-      testX.print();
-      console.log(predictions);
-      this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
     });
+
+    console.log();
+    console.log('### Training finished ###');
+    console.log();
+
+    // printing loss and predictions
+    const predictions = (model.predict(testX) as any).dataSync();
+    testX.print();
+    console.log(predictions);
+    this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
   }
 
   /**
@@ -167,50 +167,50 @@ export default class TensorflowController extends BaseController {
     });
 
     // fitting the model
-    model.fit(x, y, {
+    await model.fit(x, y, {
       batchSize: 100,
       epochs: 100,
       validationSplit: 0.9,
       callbacks: tf.node.tensorBoard('log')
-    }).then((history) => {
-      console.log();
-      console.log('### Training finished ###');
-      console.log();
-
-      // printing loss and predictions
-      const predictions = (model.predict(testX) as any).dataSync();
-
-      const actual = dataTestX.map((input, i) => {
-        console.log(dataTestX[i + 1])
-        return dataTestX[i + 1] ? dataTestX[i + 1][inputCount - 1] : null;
-      });
-
-      const mappedData = this.mapInputsToPredictions(dataTestX, actual, predictions);
-      console.log(mappedData);
-      // this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
-
-
-      // analyze actual vs prediction
-      let correctPredictions = 0;
-      let incorrectPredictions = 0;
-
-      mappedData.forEach(data => {
-        const overThreshold = data.prediction > 5 || data.prediction < -5;
-        const bothNegative = data.actual < 0 && data.prediction < 0;
-        const bothPositive = data.actual > 0 && data.prediction > 0;
-
-        if (overThreshold) {
-          if (bothNegative || bothPositive) {
-            correctPredictions++;
-          } else {
-            incorrectPredictions++;
-          }
-        }
-      });
-
-      console.log(correctPredictions);
-      console.log(incorrectPredictions);
     });
+
+    console.log();
+    console.log('### Training finished ###');
+    console.log();
+
+    // printing loss and predictions
+    const predictions = (model.predict(testX) as any).dataSync();
+
+    const actual = dataTestX.map((input, i) => {
+      console.log(dataTestX[i + 1])
+      return dataTestX[i + 1] ? dataTestX[i + 1][inputCount - 1] : null;
+    });
+
+    const mappedData = this.mapInputsToPredictions(dataTestX, actual, predictions);
+    console.log(mappedData);
+    // this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
+
+
+    // analyze actual vs prediction
+    let correctPredictions = 0;
+    let incorrectPredictions = 0;
+
+    mappedData.forEach(data => {
+      const overThreshold = data.prediction > 5 || data.prediction < -5;
+      const bothNegative = data.actual < 0 && data.prediction < 0;
+      const bothPositive = data.actual > 0 && data.prediction > 0;
+
+      if (overThreshold) {
+        if (bothNegative || bothPositive) {
+          correctPredictions++;
+        } else {
+          incorrectPredictions++;
+        }
+      }
+    });
+
+    console.log(correctPredictions);
+    console.log(incorrectPredictions);
   }
 
   /**
@@ -249,21 +249,21 @@ export default class TensorflowController extends BaseController {
     });
 
     // fitting the model
-    model.fit(x, y, {
+    await model.fit(x, y, {
       batchSize: 64,
       epochs: 200,
       validationSplit: 0.9,
       callbacks: tf.node.tensorBoard('log')
-    }).then((history) => {
-      console.log();
-      console.log('### Training finished ###');
-      console.log();
-
-      // printing loss and predictions
-      const predictions = (model.predict(testX) as any).dataSync();
-      testX.print();
-      console.log(predictions);
     });
+
+    console.log();
+    console.log('### Training finished ###');
+    console.log();
+
+    // printing loss and predictions
+    const predictions = (model.predict(testX) as any).dataSync();
+    testX.print();
+    console.log(predictions);
   }
 
   private createTrainingDataIndicatorsToPriceDiff(klines: Kline[]): any[] {
