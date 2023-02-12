@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AlpacaResponse, Kline } from '../../interfaces';
+import { Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 import database from '../../data/database';
 
@@ -7,7 +7,7 @@ export default class AlpacaController extends BaseController {
   private database = database;
   private klines: any[] = [];
 
-  public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
+  public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<any> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
 
     const query = {
