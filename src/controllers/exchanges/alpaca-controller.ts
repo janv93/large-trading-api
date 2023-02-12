@@ -34,9 +34,14 @@ export default class AlpacaController extends BaseController {
     };
 
     console.log('GET ' + klineUrl);
-    const res = await axios.get(klineUrl, options);
-    const klines = this.mapKlines(res.data.bars);
-    return { nextPageToken: res.data.next_page_token, klines };
+
+    try {
+      const res = await axios.get(klineUrl, options);
+      const klines = this.mapKlines(res.data.bars);
+      return { nextPageToken: res.data.next_page_token, klines };
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
   /**

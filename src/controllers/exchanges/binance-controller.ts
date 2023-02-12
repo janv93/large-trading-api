@@ -28,9 +28,13 @@ export default class BinanceController extends BaseController {
     const klineUrl = this.createUrl(baseUrl, query);
 
     console.log('GET ' + klineUrl);
-    const response = await axios.get(klineUrl);
-    const result = this.mapKlines(response.data);
-    return result;
+    try {
+      const response = await axios.get(klineUrl);
+      const result = this.mapKlines(response.data);
+      return result;
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
   public async getKlinesUntilNextFullHour(symbol: string, startTime: number): Promise<any> {
