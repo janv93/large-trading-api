@@ -17,7 +17,7 @@ export default class TwitterSentimentController extends BaseController {
   private async processTimelines(timelines: TwitterTimeline[]) {
     const binanceSymbols = await this.binance.getUsdtBusdSymbols();
 
-    const shortBinanceSymbols = binanceSymbols
+    const shortBinanceSymbols = binanceSymbols  // reduce trading pairs to symbol only
       .map(s => s.replace(/USDT|BUSD/g, ''))
       .map(s => s.toLowerCase());
 
@@ -50,10 +50,8 @@ export default class TwitterSentimentController extends BaseController {
 
     const mostTweetedSymbols = accordingBinanceSymbols.slice(0, 10); // 10 most tweeted symbols
 
-    await this.binance.initKlinesDatabase(mostTweetedSymbols[7], '1m');
-    console.log('done');
-    //const responses = await Promise.all(mostTweetedSymbols.map(s => this.binance.initKlinesDatabase(s, '1m')));
+    const responses = await Promise.all(mostTweetedSymbols.map(s => this.binance.initKlinesDatabase(s, '1m')));
 
-    //console.log(responses);
+    console.log(responses);
   }
 }

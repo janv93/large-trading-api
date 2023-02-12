@@ -140,25 +140,6 @@ export default class BinanceController extends BaseController {
     }
   }
 
-  private mapKlines(klines: any): Kline[] {
-    return klines.map(k => {
-      return {
-        times: {
-          open: k[0],
-          close: k[6]
-        },
-        prices: {
-          open: Number(k[1]),
-          high: Number(k[2]),
-          low: Number(k[3]),
-          close: Number(k[4])
-        },
-        volume: Number(k[5]),
-        numberOfTrades: k[8]
-      };
-    });
-  }
-
   public setLeverage(symbol: string, leverage: number): Promise<any> {
     const now = Date.now();
 
@@ -230,10 +211,13 @@ export default class BinanceController extends BaseController {
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res = await axios.get(baseUrl);
 
+    const brokenSymbols = ['LUNAUSDT', 'LUNABUSD', 'USTUSDT', 'USTBUSD'] // API returns some broken symbols
+
     const symbols = res.data.symbols
       .map(s => s.symbol)
       .filter(s => s.includes('USDT') || s.includes('BUSD'))
       .filter(s => (!s.includes('UP') && !s.includes('DOWN')))
+      .filter(s => !brokenSymbols.includes(s))
 
     const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
     uniqueSymbols.sort();
@@ -244,4 +228,22 @@ export default class BinanceController extends BaseController {
     return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex');
   }
 
+  private mapKlines(klines: any): Kline[] {
+    return klines.map(k => {
+      return {
+        times: {
+          open: k[0],
+          close: k[6]
+        },
+        prices: {
+          open: Number(k[1]),
+          high: Number(k[2]),
+          low: Number(k[3]),
+          close: Number(k[4])
+        },
+        volume: Number(k[5]),
+        numberOfTrades: k[8]
+      };
+    });
+  }
 }
