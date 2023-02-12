@@ -14,7 +14,7 @@ class Database extends BaseController {
     this.Kline = mongoose.model('Kline', KlineSchema);
   }
 
-  public async writeKlines(symbol: string, timeframe: string, klines: Kline[]) {
+  public async writeKlines(symbol: string, timeframe: string, klines: Kline[]): Promise<void> {
     console.log();
     console.log('Writing ' + klines.length + ' klines...');
     const start = Date.now();

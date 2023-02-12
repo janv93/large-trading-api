@@ -7,9 +7,9 @@ import database from '../../data/database';
 
 export default class KucoinController extends BaseController {
   private database = database;
-  private klines = [];
+  private klines: Kline[] = [];
 
-  public getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<any> {
+  public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
 
     const query = {
@@ -28,171 +28,108 @@ export default class KucoinController extends BaseController {
     const klineUrl = this.createUrl(baseUrl, query);
 
     console.log('GET ' + klineUrl);
-    return axios.get(klineUrl);
+
+    try {
+      const response = await axios.get(klineUrl);
+      const result = this.mapKlines(response.data.data);
+      return result;
+    } catch (err) {
+      this.handleError(err);
+      return [];
+    }
   }
 
-  public getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.getKlinesRecursive(symbol, -1, times, timeframe, resolve, reject);
-    });
+  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<Kline[]> {
+    return this.getKlinesRecursive(symbol, -1, times, timeframe);
   }
 
   /**
    * get last times * 1000 timeframes
    */
-  public getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string, resolve: Function, reject: Function) {
-    this.getKlines(symbol, timeframe, endTime).then(res => {
-      this.klines = res.data.data.concat(this.klines);
-      const start = this.klines[0][0];
+  public async getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string): Promise<Kline[]> {
+    const res = await this.getKlines(symbol, timeframe, endTime);
+    this.klines.unshift(...res);  // push res to beginning of array
+
+    if (--times > 0) {
+      const start = res[0].times.open;
       const end = start - this.timeframeToMilliseconds(timeframe);
-      times--;
+      return this.getKlinesRecursive(symbol, end, times, timeframe);
+    }
 
-      if (times > 0) {
-        this.getKlinesRecursive(symbol, end, times, timeframe, resolve, reject);
-      } else {
-        console.log();
-        console.log('Received total of ' + this.klines.length + ' klines');
-        const firstDate = new Date(this.klines[0][0]);
-        console.log('First date: ' + firstDate);
-        const lastDate = new Date(this.klines[this.klines.length - 1][0]);
-        console.log('Last date: ' + lastDate);
-        console.log();
-        const binanceKlines = this.mapResult(this.klines);
-        resolve(binanceKlines);
-        this.klines = [];
-      }
+    console.log(`Received a total of ${this.klines.length} klines`);
+    console.log(`First date: ${new Date(this.klines[0].times.open)}`);
+    console.log(`Last date: ${new Date(this.klines[this.klines.length - 1].times.open)}`);
 
-    }).catch(err => {
-      this.handleError(err);
-      reject(err);
-    });
+    const finalKlines = this.klines.slice();
+    this.klines.length = 0;
+    return finalKlines;
   }
 
   /**
    * get startTime to now timeframes
    */
-  public getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, endTime: number, timeframe: string, resolve: Function, reject: Function) {
-    this.getKlines(symbol, timeframe, endTime, startTime).then(res => {
-      this.klines = this.klines.concat(res.data.data);
-      const end: number = this.klines[this.klines.length - 1][0];
-      const newStartTime: number = end + this.timeframeToMilliseconds(timeframe);
-      const newEndTime: number = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
-      const now = Date.now();
+  public async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: string): Promise<Kline[]> {
+    const res = await this.getKlines(symbol, timeframe, endTime, startTime);
+    this.klines.push(...res);
+    const end: number = this.klines[this.klines.length - 1].times.open;
+    const newStartTime: number = end + this.timeframeToMilliseconds(timeframe);
+    const newEndTime: number = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
+    const now = Date.now();
 
-      if (newStartTime < now) {
-        this.getKlinesRecursiveFromDateUntilNow(symbol, newStartTime, newEndTime, timeframe, resolve, reject);
-      } else {
-        console.log();
-        console.log('Received total of ' + this.klines.length + ' klines');
-        const firstDate = new Date(this.klines[0][0]);
-        console.log('First date: ' + firstDate);
-        const lastDate = new Date(this.klines[this.klines.length - 1][0]);
-        console.log('Last date: ' + lastDate);
-        console.log();
-        const binanceKlines = this.mapResult(this.klines);
-        resolve(binanceKlines);
-        this.klines = [];
-      }
-    }).catch(err => {
-      this.handleError(err);
-      reject(err);
-    });
+    if (newStartTime < now) {
+      return this.getKlinesRecursiveFromStartUntilNow(symbol, newStartTime, newEndTime, timeframe);
+    } else {
+      console.log();
+      console.log(`Received total of ${this.klines.length} klines`);
+      console.log(`First date: ${new Date(this.klines[0].times.open)}`);
+      console.log(`Last date: ${new Date(this.klines[this.klines.length - 1].times.open)}`);
+      console.log();
+      const result = [...this.klines];
+      this.klines = [];
+      return result;
+    }
   }
 
   /**
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public initKlinesDatabase(symbol: string, timeframe: string) {
+  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 3;
     const startTime = this.roundTimeToNearestTimeframe(Date.now() - timespan, this.timeframeToMilliseconds(timeframe));
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
+    const dbKlines = await this.database.getKlines(symbol, timeframe);
 
-    return new Promise((resolve, reject) => {
-      this.database.getKlines(symbol, timeframe).then(res => {
-        if (!res) {
-          new Promise<Kline[]>((resolve, reject) => {
-            this.getKlinesRecursiveFromDateUntilNow(symbol, startTime, endTime, timeframe, resolve, reject);
-          }).then(newKlines => {
-            this.database.writeKlines(symbol, timeframe, newKlines);
-            resolve({ message: 'Database initialized with ' + newKlines.length + ' klines' });
-          }).catch(err => {
-            this.handleError(err);
-            reject(err);
-          });
-        } else {
-          const dbKlines = res;
-          const lastKline = dbKlines[dbKlines.length - 1];
-          const endTime = lastKline.times.open + this.timeframeToMilliseconds(timeframe) * 200;
-
-          new Promise<Kline[]>((resolve, reject) => {
-            this.getKlinesRecursiveFromDateUntilNow(symbol, lastKline.times.open, endTime, timeframe, resolve, reject);
-          }).then(newKlines => {
-            newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-            console.log('Added ' + newKlines.length + ' new klines to database');
-            console.log();
-            this.database.writeKlines(symbol, timeframe, newKlines).then(() => {
-              const mergedKlines = dbKlines.concat(newKlines);
-              resolve(mergedKlines);
-            }).catch(err => {
-              this.handleError(err);
-            });
-          }).catch(err => {
-            this.handleError(err);
-          });
-        }
-      }).catch(err => {
-        this.handleError(err);
-      });
-    });
+    if (!dbKlines?.length) {
+      const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, endTime, timeframe);
+      await this.database.writeKlines(symbol, timeframe, newKlines);
+      console.log('Database initialized with ' + newKlines.length + ' klines');
+      return newKlines;
+    } else {
+      const lastKline = dbKlines[dbKlines.length - 1];
+      const endTime = lastKline.times.open + this.timeframeToMilliseconds(timeframe) * 200;
+      const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, lastKline.times.open, endTime, timeframe);
+      newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
+      console.log(`Added ${newKlines.length} new klines to the database`);
+      console.log();
+      await this.database.writeKlines(symbol, timeframe, newKlines);
+      const mergedKlines = dbKlines.concat(newKlines);
+      return mergedKlines;
+    }
   }
 
-  public long(symbol, quantity, leverage): Promise<any> {
-    return this.createOrder(symbol, 'buy', quantity, leverage).then((res) => {
-      console.log(res.data);
-      console.log('LONG position opened');
-    }).catch(err => this.handleError(err));
+  public async long(symbol, quantity, leverage): Promise<any> {
+    const res = await this.createOrder(symbol, 'buy', quantity, leverage);
+    console.log(res.data);
+    console.log('LONG position opened');
+    return res;
   }
 
-  public short(symbol, quantity, leverage): Promise<any> {
-    return this.createOrder(symbol, 'sell', quantity, leverage).then((res) => {
-      console.log(res.data);
-      console.log('SHORT position opened');
-    }).catch(err => this.handleError(err));
-  }
-
-  public createOrder(symbol: string, side: string, quantity: number, leverage: number): Promise<any> {
-    const mappedSymbol = this.mapSymbol(symbol);
-    const now = Date.now();
-
-    const query = {
-      symbol: mappedSymbol,
-      side,
-      leverage,
-      type: 'market',
-      size: this.mapKcLotSize(mappedSymbol, quantity),
-      clientOid: now
-    };
-
-    const kcApiPassphrase = btoa(this.createHmac(process.env.kucoin_api_passphrase));
-    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + this.createQuery(query) + JSON.stringify(query)
-    const kcApiSign = btoa(this.createHmac(kcApiSignContent));
-
-    const options = {
-      headers: {
-        'KC-API-KEY': process.env.kucoin_api_key,
-        'KC-API-SECRET': process.env.kucoin_api_secret,
-        'KC-API-SIGN': kcApiSign,
-        'KC-API-TIMESTAMP': now,
-        'KC-API-PASSPHRASE': kcApiPassphrase,
-        'KC-API-KEY-VERSION': 2
-      }
-    };
-
-    const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
-
-    console.log('POST ' + url);
-    return axios.post(url, query, options);
+  public async short(symbol, quantity, leverage): Promise<any> {
+    const res = await this.createOrder(symbol, 'sell', quantity, leverage);
+    console.log(res.data);
+    console.log('SHORT position opened');
+    return res;
   }
 
   public closeOrder(symbol: string): Promise<any> {
@@ -227,7 +164,41 @@ export default class KucoinController extends BaseController {
     return axios.post(url, query, options);
   }
 
-  public mapResult(klines: any[]): Kline[] {
+  private createOrder(symbol: string, side: string, quantity: number, leverage: number): Promise<any> {
+    const mappedSymbol = this.mapSymbol(symbol);
+    const now = Date.now();
+
+    const query = {
+      symbol: mappedSymbol,
+      side,
+      leverage,
+      type: 'market',
+      size: this.mapKcLotSize(mappedSymbol, quantity),
+      clientOid: now
+    };
+
+    const kcApiPassphrase = btoa(this.createHmac(process.env.kucoin_api_passphrase));
+    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + this.createQuery(query) + JSON.stringify(query)
+    const kcApiSign = btoa(this.createHmac(kcApiSignContent));
+
+    const options = {
+      headers: {
+        'KC-API-KEY': process.env.kucoin_api_key,
+        'KC-API-SECRET': process.env.kucoin_api_secret,
+        'KC-API-SIGN': kcApiSign,
+        'KC-API-TIMESTAMP': now,
+        'KC-API-PASSPHRASE': kcApiPassphrase,
+        'KC-API-KEY-VERSION': 2
+      }
+    };
+
+    const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
+
+    console.log('POST ' + url);
+    return axios.post(url, query, options);
+  }
+
+  private mapKlines(klines: any[]): Kline[] {
     return klines.map(k => {
       return {
         times: {

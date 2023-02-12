@@ -34,6 +34,7 @@ export default class BinanceController extends BaseController {
       return result;
     } catch (err) {
       this.handleError(err);
+      return [];
     }
   }
 
