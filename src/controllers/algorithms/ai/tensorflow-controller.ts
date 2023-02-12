@@ -132,7 +132,7 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs and outputs as price diff to previous kline
    */
-  private trainModelPriceDiffToPriceDiff(klines: Kline[]) {
+  private async trainModelPriceDiffToPriceDiff(klines: Kline[]) {
     const inputCount = 10;
     const outputCount = 1;
     const samples = this.createTrainingDataPriceDiffToPriceDiff(klines, inputCount, outputCount);
@@ -216,7 +216,7 @@ export default class TensorflowController extends BaseController {
   /**
    * train model on inputs as indicators and
    */
-  private trainModelIndicatorsToPriceDiff(klines: Kline[]) {
+  private async trainModelIndicatorsToPriceDiff(klines: Kline[]) {
     const samples = this.createTrainingDataIndicatorsToPriceDiff(klines);
 
     // create inputs and outputs
