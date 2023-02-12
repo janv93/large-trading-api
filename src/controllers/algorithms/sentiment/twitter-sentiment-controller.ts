@@ -50,7 +50,12 @@ export default class TwitterSentimentController extends BaseController {
 
     const mostTweetedSymbols = accordingBinanceSymbols.slice(0, 10); // 10 most tweeted symbols
 
-    const responses = await Promise.all(mostTweetedSymbols.map(s => this.binance.initKlinesDatabase(s, '1m')));
+    const responses: Kline[][] = [];
+
+    for (const symbol of mostTweetedSymbols) {
+      const response = await this.binance.initKlinesDatabase(symbol, '1m');
+      responses.push(response);
+    }
 
     console.log(responses);
   }
