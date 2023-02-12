@@ -191,49 +191,74 @@ export default class EmaController extends BaseController {
   /**
    * run trading algorithm in selected interval
    */
-  private tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
-    this.binanceController.getKlines(symbol, timeframe).then((klines: Kline[]) => {
-      const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
-      klines.splice(-1);  // remove running timeframe
-      console.log(klines.slice(-3))
-      const ema = this.indicatorsController.ema(klines, 80);
-      console.log(ema.slice(-3))
-
-      const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
-      const lastMove = ema[ema.length - 2].ema - ema[ema.length - 3].ema > 0 ? 'up' : 'down';
-      console.log(lastMove);
-      console.log(move);
-
-      const momentumSwitch = move !== lastMove;
-
-      if (!this.tradingPositionOpen.get(symbol)) {
-        if (momentumSwitch) {
-          if (move === 'up') {
-            // open long
-            this.btseController.long(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
-            this.tradingPositionOpen.set(symbol, true);
-          } else {
-            // open short
-            this.btseController.short(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
-            this.tradingPositionOpen.set(symbol, true);
-          }
-        }
-      } else {
-        if (momentumSwitch) {
-          if (move === 'up') {
-            // close short open long
-            this.btseController.closeOrder(symbol).then(() => {
-              this.btseController.long(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
-            }).catch(err => this.handleError(err));
-          } else {
-            // close long open short
-            this.btseController.closeOrder(symbol).then(() => {
-              this.btseController.short(symbol, cryptoQuantity, leverage).catch(err => this.handleError(err));
-            }).catch(err => this.handleError(err));
-          }
+  private async tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
+    const klines = await this.binanceController.getKlines(symbol, timeframe);
+    const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
+    klines.splice(-1);  // remove running timeframe
+    console.log(klines.slice(-3))
+    const ema = this.indicatorsController.ema(klines, 80);
+    console.log(ema.slice(-3))
+  
+    const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
+    const lastMove = ema[ema.length - 2].ema - ema[ema.length - 3].ema > 0 ? 'up' : 'down';
+    console.log(lastMove);
+    console.log(move);
+  
+    const momentumSwitch = move !== lastMove;
+  
+    if (!this.tradingPositionOpen.get(symbol)) {
+      if (momentumSwitch) {
+        if (move === 'up') {
+          await this.openLong(symbol, cryptoQuantity, leverage);
+        } else {
+          await this.openShort(symbol, cryptoQuantity, leverage);
         }
       }
-    });
+    } else {
+      if (momentumSwitch) {
+        if (move === 'up') {
+          await this.closeShortOpenLong(symbol, cryptoQuantity, leverage);
+        } else {
+          await this.closeLongOpenShort(symbol, cryptoQuantity, leverage);
+        }
+      }
+    }
   }
-
+  
+  private async openLong(symbol: string, cryptoQuantity: number, leverage: number) {
+    try {
+      await this.btseController.long(symbol, cryptoQuantity, leverage);
+      this.tradingPositionOpen.set(symbol, true);
+    } catch (err) {
+      this.handleError(err);
+    }
+  }
+  
+  private async openShort(symbol: string, cryptoQuantity: number, leverage: number) {
+    try {
+      await this.btseController.short(symbol, cryptoQuantity, leverage);
+      this.tradingPositionOpen.set(symbol, true);
+    } catch (err) {
+      this.handleError(err);
+    }
+  }
+  
+  private async closeShortOpenLong(symbol: string, cryptoQuantity: number, leverage: number) {
+    try {
+      await this.btseController.closeOrder(symbol);
+      await this.btseController.long(symbol, cryptoQuantity, leverage);
+    } catch (err) {
+      this.handleError(err);
+    }
+  }
+  
+  private async closeLongOpenShort(symbol: string, cryptoQuantity: number, leverage: number) {
+    try {
+      await this.btseController.closeOrder(symbol);
+      await this.btseController.short(symbol, cryptoQuantity, leverage);
+    } catch (err) {
+      this.handleError(err);
+    }
+  }
+  
 }
