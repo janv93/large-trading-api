@@ -26,11 +26,12 @@ export default class TwitterController extends BaseController {
     const finalUrl = this.createUrl(url, query);
     const oauth = this.buildOAuth10A();
 
-    return oauth(
-      finalUrl,
-      process.env.twitter_access_token,
-      process.env.twitter_access_secret
-    ).then(res => {
+    try {
+      const res = await oauth(
+        finalUrl,
+        process.env.twitter_access_token,
+        process.env.twitter_access_secret
+      );
       const parsed = JSON.parse(res);
 
       if (!parsed.data) {
@@ -44,29 +45,39 @@ export default class TwitterController extends BaseController {
           symbols: this.getTweetSymbols(tweet.text)
         }
       });
-    }).catch(err => this.handleError(err));
+    } catch (err) {
+      this.handleError(err);
+      return [];
+    }
   }
 
-  public getUserFriends(user: string): Promise<TwitterUser[]> {
-    const url = this.baseUrl + '/1.1/friends/list.json';
 
+  public async getUserFriends(user: string): Promise<TwitterUser[]> {
+    const url = this.baseUrl + '/1.1/friends/list.json';
+  
     const query = {
       screen_name: user,
       count: 200
     };
-
+  
     const finalUrl = this.createUrl(url, query);
-
-    return axios.get(finalUrl, { headers: this.headers })
-      .then(res => res.data.users.map(user => {
+  
+    try {
+      const res = await axios.get(finalUrl, { headers: this.headers });
+      return res.data.users.map(user => {
         return {
           name: user.screen_name,
           id: user.id_str,
           followers: user.followers_count,
           following: user.friends_count
         }
-      })).catch(err => this.handleError(err));
+      });
+    } catch (err) {
+      this.handleError(err);
+      return [];
+    }
   }
+  
 
   public async getFriendsWithTheirTweets(user: string): Promise<TwitterTimeline[]> {
     const friends = await this.getUserFriends(user);
