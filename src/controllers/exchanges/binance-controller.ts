@@ -81,27 +81,22 @@ export default class BinanceController extends BaseController {
   /**
    * get startTime to now timeframes
    */
-  public async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
-    try {
-      const res = await this.getKlines(symbol, timeframe, undefined, startTime);
-      this.klines = this.klines.concat(res);
-      const end = this.klines[this.klines.length - 1].times.open;
-      const nextStart = end + this.timeframeToMilliseconds(timeframe);
-      const now = Date.now();
+  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
+    const klines: Kline[] = [];
+    let nextStart = startTime;
+    const now = Date.now();
 
-      if (nextStart < now) {
-        return this.getKlinesRecursiveFromStartUntilNow(symbol, nextStart, timeframe);
-      } else {
-        console.log(`Received total of ${this.klines.length} klines`);
-        console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
-        const finalKlines = [...this.klines];
-        this.klines = [];
-        return finalKlines;
-      }
-    } catch (err) {
-      this.handleError(err, symbol);
-      throw err;
+    while (nextStart < now) {
+      const res = await this.getKlines(symbol, timeframe, undefined, nextStart);
+      klines.push(...res);
+      const end = res[res.length - 1].times.open;
+      nextStart = end + this.timeframeToMilliseconds(timeframe);
     }
+
+    console.log(`Received total of ${klines.length} klines`);
+    console.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open));
+
+    return klines;
   }
 
   /**
@@ -116,7 +111,7 @@ export default class BinanceController extends BaseController {
     const dbKlines = res || [];
     const lastKline = dbKlines[dbKlines.length - 1];
 
-    const newKlines = await this.getKlinesRecursiveFromStartUntilNow(
+    const newKlines = await this.getKlinesFromStartUntilNow(
       symbol,
       lastKline?.times.open || startTime,
       timeframe
