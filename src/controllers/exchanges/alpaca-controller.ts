@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Kline } from '../../interfaces';
+import { AlpacaResponse, Kline } from '../../interfaces';
 import BaseController from '../base-controller';
 import database from '../../data/database';
 
@@ -7,7 +7,7 @@ export default class AlpacaController extends BaseController {
   private database = database;
   private klines: any[] = [];
 
-  public getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<any> {
+  public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
 
     const query = {
@@ -34,94 +34,78 @@ export default class AlpacaController extends BaseController {
     };
 
     console.log('GET ' + klineUrl);
-    return axios.get(klineUrl, options);
-  }
-
-  public getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<any> {
-    const start = Date.now() - this.timeframeToMilliseconds(timeframe) * 1000 * times;
-
-    return new Promise((resolve, reject) => {
-      this.getKlinesRecursive(symbol, start, timeframe, resolve, reject);
-    });
+    const res = await axios.get(klineUrl, options);
+    const klines = this.mapKlines(res.data.bars);
+    return { nextPageToken: res.data.next_page_token, klines };
   }
 
   /**
-   * get klines from startTime until now
+   * get last times * 1000 timeframes
    */
-  public getKlinesRecursive(symbol: string, startTime: number, timeframe: string, resolve: Function, reject: Function, pageToken?: string): void {
-    this.getKlines(symbol, timeframe, startTime, pageToken).then(res => {
-      this.klines = this.klines.concat(res.data.bars);
-      const nextPageToken = res.data.next_page_token;
-
-      if (nextPageToken) {
-        this.getKlinesRecursive(symbol, startTime, timeframe, resolve, reject, nextPageToken);
-      } else {
-        console.log();
-        console.log('Received total of ' + this.klines.length + ' klines');
-        const firstDate = new Date(this.klines[0].t);
-        console.log('First date: ' + firstDate);
-        const lastDate = new Date(this.klines[this.klines.length - 1].t);
-        console.log('Last date: ' + lastDate);
-        console.log();
-        const alpacaKlines = this.mapResult(this.klines);
-        resolve(alpacaKlines);
-        this.klines = [];
-      }
-
-    }).catch(err => {
-      this.handleError(err);
-      reject(err);
-    });
+  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<Kline[]> {
+    const start = Date.now() - this.timeframeToMilliseconds(timeframe) * 1000 * times;
+    return this.getKlinesRecursiveFromStartUntilNow(symbol, start, timeframe);
   }
 
   /**
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
+  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 200;
     const startTime = Date.now() - timespan;
 
-    return new Promise((resolve, reject) => {
-      this.database.getKlines(symbol, timeframe).then(res => {
-        if (!res || !res.length) {  // not in database yet
-          new Promise<Kline[]>((resolve, reject) => {
-            this.getKlinesRecursive(symbol, startTime, timeframe, resolve, reject);
-          }).then(newKlines => {
-            this.database.writeKlines(symbol, timeframe, newKlines);
-            resolve({ message: 'Database initialized with ' + newKlines.length + ' klines' });
-          }).catch(err => {
-            this.handleError(err);
-            reject(err);
-          });
-        } else {  // already in database
-          const dbKlines = res;
-          const lastKline = dbKlines[dbKlines.length - 1];
-          const newStart = lastKline.times.open;
+    try {
+      const res = await this.database.getKlines(symbol, timeframe);
 
-          new Promise<Kline[]>((resolve, reject) => {
-            this.getKlinesRecursive(symbol, newStart, timeframe, resolve, reject);
-          }).then(newKlines => {
-            newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-            console.log('Added ' + newKlines.length + ' new klines to database');
-            console.log();
-            this.database.writeKlines(symbol, timeframe, newKlines).then(() => {
-              const mergedKlines = dbKlines.concat(newKlines);
-              resolve(mergedKlines)
-            }).catch(err => {
-              this.handleError(err);
-            });
-          }).catch(err => {
-            this.handleError(err);
-          });
-        }
-      }).catch(err => {
-        this.handleError(err);
-      });
-    });
+      if (!res || !res.length) {  // not in database yet
+        const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, timeframe);
+        await this.database.writeKlines(symbol, timeframe, newKlines);
+        return { message: 'Database initialized with ' + newKlines.length + ' klines' };
+      } else {  // already in database
+        const dbKlines = res;
+        const lastKline = dbKlines[dbKlines.length - 1];
+        const newStart = lastKline.times.open;
+
+        const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, newStart, timeframe);
+        newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
+        console.log('Added ' + newKlines.length + ' new klines to database');
+        console.log();
+        await this.database.writeKlines(symbol, timeframe, newKlines);
+        const mergedKlines = dbKlines.concat(newKlines);
+        return mergedKlines;
+      }
+    } catch (err) {
+      this.handleError(err);
+      throw err;
+    }
   }
 
-  public mapResult(klines: any[]): Kline[] {
+  /**
+   * get klines from startTime until now
+   */
+  private async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, timeframe: string, pageToken?: string): Promise<any> {
+    const res = await this.getKlines(symbol, timeframe, startTime, pageToken);
+    this.klines.push(...res.klines);
+    const nextPageToken = res.nextPageToken;
+
+    if (nextPageToken) {
+      return this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, timeframe, nextPageToken);
+    } else {
+      console.log();
+      console.log('Received total of ' + this.klines.length + ' klines');
+      const firstDate = new Date(this.klines[0].times.open);
+      console.log('First date: ' + firstDate);
+      const lastDate = new Date(this.klines[this.klines.length - 1].times.open);
+      console.log('Last date: ' + lastDate);
+      console.log();
+      const finalKlines = [...this.klines];
+      this.klines = [];
+      return finalKlines;
+    }
+  }
+
+  private mapKlines(klines: any): Kline[] {
     return klines.map(k => {
       return {
         times: {

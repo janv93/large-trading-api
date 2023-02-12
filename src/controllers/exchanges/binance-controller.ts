@@ -6,9 +6,9 @@ import database from '../../data/database';
 
 export default class BinanceController extends BaseController {
   private database = database
-  private klines = [];
+  private klines: Kline[] = [];
 
-  public getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<any> {
+  public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
     const query = {
@@ -28,7 +28,9 @@ export default class BinanceController extends BaseController {
     const klineUrl = this.createUrl(baseUrl, query);
 
     console.log('GET ' + klineUrl);
-    return axios.get(klineUrl);
+    const response = await axios.get(klineUrl);
+    const result = this.mapKlines(response.data);
+    return result;
   }
 
   public async getKlinesUntilNextFullHour(symbol: string, startTime: number): Promise<any> {
@@ -49,65 +51,51 @@ export default class BinanceController extends BaseController {
     return axios.get(klineUrl);
   }
 
-  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<any> {
-    try {
-      const binanceKlines = await this.getKlinesRecursive(symbol, -1, times, timeframe);
-      return binanceKlines;
-    } catch (err) {
-      this.handleError(err, symbol);
-      throw err;
-    }
-  }
-
   /**
    * get last times * 1000 timeframes
    */
-  public async getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string): Promise<Kline[]> {
+  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<Kline[]> {
+    let endTime;
+
     while (times > 0) {
-      try {
-        const res = await this.getKlines(symbol, timeframe, endTime);
-        this.klines = res.data.concat(this.klines);
-        endTime = this.klines[0][0] - this.timeframeToMilliseconds(timeframe);
-        times--;
-      } catch (err) {
-        this.handleError(err, symbol);
-        throw err;
-      }
+      const res = await this.getKlines(symbol, timeframe, endTime);
+      this.klines = res.concat(this.klines);
+      endTime = this.klines[0].times.open - this.timeframeToMilliseconds(timeframe);
+      times--;
     }
 
     console.log();
     console.log('Received total of ' + this.klines.length + ' klines');
-    const firstDate = new Date(this.klines[0][0]);
+    const firstDate = new Date(this.klines[0].times.open);
     console.log('First date: ' + firstDate);
-    const lastDate = new Date(this.klines[this.klines.length - 1][0]);
+    const lastDate = new Date(this.klines[this.klines.length - 1].times.open);
     console.log('Last date: ' + lastDate);
     console.log();
-    const binanceKlines = this.mapResult(this.klines);
+    const finalKlines = [...this.klines];
     this.klines = [];
-    return binanceKlines;
+    return finalKlines;
   }
 
   /**
    * get startTime to now timeframes
    */
-  public async getKlinesRecursiveFromDateUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
+  public async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
     try {
       const res = await this.getKlines(symbol, timeframe, undefined, startTime);
-      this.klines = this.klines.concat(res.data);
-      const end = this.klines[this.klines.length - 1][0];
+      this.klines = this.klines.concat(res);
+      const end = this.klines[this.klines.length - 1].times.open;
       const nextStart = end + this.timeframeToMilliseconds(timeframe);
       const now = Date.now();
 
       if (nextStart < now) {
-        return this.getKlinesRecursiveFromDateUntilNow(symbol, nextStart, timeframe);
+        return this.getKlinesRecursiveFromStartUntilNow(symbol, nextStart, timeframe);
       } else {
         console.log(`Received total of ${this.klines.length} klines`);
-        console.log(`First date: ${new Date(this.klines[0][0])}`);
-        console.log(`Last date: ${new Date(this.klines[this.klines.length - 1][0])}`);
-        const binanceKlines = this.mapResult(this.klines);
+        console.log(`First date: ${new Date(this.klines[0].times.open)}`);
+        console.log(`Last date: ${new Date(this.klines[this.klines.length - 1].times.open)}`);
+        const finalKlines = [...this.klines];
         this.klines = [];
-
-        return binanceKlines;
+        return finalKlines;
       }
     } catch (err) {
       this.handleError(err, symbol);
@@ -127,7 +115,7 @@ export default class BinanceController extends BaseController {
     const dbKlines = res || [];
     const lastKline = dbKlines[dbKlines.length - 1];
 
-    const newKlines = await this.getKlinesRecursiveFromDateUntilNow(
+    const newKlines = await this.getKlinesRecursiveFromStartUntilNow(
       symbol,
       lastKline?.times.open || startTime,
       timeframe
@@ -151,7 +139,7 @@ export default class BinanceController extends BaseController {
     }
   }
 
-  public mapResult(klines: any[]): Kline[] {
+  private mapKlines(klines: any): Kline[] {
     return klines.map(k => {
       return {
         times: {

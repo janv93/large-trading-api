@@ -192,12 +192,11 @@ export default class EmaController extends BaseController {
    * run trading algorithm in selected interval
    */
   private tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
-    this.binanceController.getKlines(symbol, timeframe).then(res => {
-      const mappedKlines: Kline[] = this.binanceController.mapResult(res.data);
-      const cryptoQuantity = Number((quantityUSD / mappedKlines[mappedKlines.length - 1].prices.close)/** .toFixed(2) for binance */);
-      mappedKlines.splice(-1);  // remove running timeframe
-      console.log(mappedKlines.slice(-3))
-      const ema = this.indicatorsController.ema(mappedKlines, 80);
+    this.binanceController.getKlines(symbol, timeframe).then((klines: Kline[]) => {
+      const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
+      klines.splice(-1);  // remove running timeframe
+      console.log(klines.slice(-3))
+      const ema = this.indicatorsController.ema(klines, 80);
       console.log(ema.slice(-3))
 
       const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';

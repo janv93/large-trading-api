@@ -20,6 +20,11 @@ export interface KlinePrices {
   low: number;
 };
 
+export interface AlpacaResponse {
+  nextPageToken: string;
+  klines: Kline[];
+};
+
 export interface Tweet {
   time: number;
   id: number;
