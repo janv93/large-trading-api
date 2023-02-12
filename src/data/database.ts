@@ -15,37 +15,44 @@ class Database extends BaseController {
   }
 
   public async writeKlines(symbol: string, timeframe: string, klines: Kline[]): Promise<void> {
-    console.log();
-    console.log('Writing ' + klines.length + ' klines...');
-    const start = Date.now();
+    if (klines.length === 0) {
+      console.log();
+      console.log(`${klines.length} klines to write. Exiting...`)
+      console.log();
+      return;
+    } else {
+      console.log();
+      console.log(`Writing ${klines.length} klines...`);
+      const start = Date.now();
 
-    const bulkWriteOperations = klines.map(kline => ({
-      insertOne: {
-        document: {
-          symbol,
-          timeframe,
-          openPrice: kline.prices.open,
-          closePrice: kline.prices.close,
-          highPrice: kline.prices.high,
-          lowPrice: kline.prices.low,
-          openTime: kline.times.open,
-          closeTime: kline.times.close,
-          volume: kline.volume,
-          numberOfTrades: kline.numberOfTrades
+      const bulkWriteOperations = klines.map(kline => ({
+        insertOne: {
+          document: {
+            symbol,
+            timeframe,
+            openPrice: kline.prices.open,
+            closePrice: kline.prices.close,
+            highPrice: kline.prices.high,
+            lowPrice: kline.prices.low,
+            openTime: kline.times.open,
+            closeTime: kline.times.close,
+            volume: kline.volume,
+            numberOfTrades: kline.numberOfTrades
+          }
         }
-      }
-    }));
+      }));
 
-    try {
-      await this.Kline.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
-      const end = Date.now();
-      const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
-      const diffPer10k = diff / (klines.length / 10000);
-      console.log('Done writing. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.');
-      console.log();
-    } catch (err) {
-      console.error('Failed to save klines: ', err);
-      console.log();
+      try {
+        await this.Kline.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
+        const end = Date.now();
+        const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
+        const diffPer10k = diff / (klines.length / 10000);
+        console.log('Done writing. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.');
+        console.log();
+      } catch (err) {
+        console.error('Failed to write klines: ', err);
+        console.log();
+      }
     }
   }
 
