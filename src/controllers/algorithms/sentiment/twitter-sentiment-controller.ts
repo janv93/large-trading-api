@@ -2,11 +2,13 @@ import { Kline, TwitterTimeline } from '../../../interfaces';
 import BaseController from '../../base-controller';
 import TwitterController from '../../other-apis/twitter-controller';
 import BinanceController from '../../exchanges/binance-controller';
+import OpenAi from '../../other-apis/openai-controller';
 
 
 export default class TwitterSentimentController extends BaseController {
   private twitter = new TwitterController();
   private binance = new BinanceController();
+  private openai = new OpenAi();
 
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
     const timelines = await this.twitter.getFriendsWithTheirTweets(user);
@@ -23,6 +25,10 @@ export default class TwitterSentimentController extends BaseController {
 
     timelines.forEach(ti => ti.tweets.forEach(tw => tw.symbols = tw.symbols.filter(s => shortBinanceSymbols.includes(s)))); // filter out symbols not on binance
     timelines.forEach(ti => ti.tweets = ti.tweets.filter(tw => tw.symbols.length)); // filter out empty symbols
+    timelines = timelines.filter(ti => ti.tweets.length > 0);
+
+    const exampleTweet = timelines[1].tweets[0].text;
+    this.openai.complete(exampleTweet);
 
     const earliestTime = Date.now() - this.timeframeToMilliseconds('1m') * 100 * 1000;
 
@@ -47,16 +53,5 @@ export default class TwitterSentimentController extends BaseController {
         correspondingBinanceSymbols.push(binanceSymbolBusd);
       }
     });
-
-    const mostTweetedSymbols = correspondingBinanceSymbols.slice(0, 10); // 10 most tweeted symbols
-
-    const responses: Kline[][] = [];  // array of each symbol and its klines
-
-    for (const symbol of mostTweetedSymbols) {
-      const response = await this.binance.initKlinesDatabase(symbol, '1m');
-      responses.push(response);
-    }
-
-    console.log(responses.length);
   }
 }
