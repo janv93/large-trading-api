@@ -14,7 +14,7 @@ export default class OpenAi extends BaseController {
 
     const finalPrompt = `The following tweet will contain one or multiple crypto tokens. 
 I want you to analyze the tweet thoroughly and return a sentiment for each tweeted token. A token is identified by a preceding "$". The tweet may be posted by an experienced trader or an absolute beginner. 
-The sentiment has to be one of the 3 words: "bullish" if the sentiment for the token is bullish, "bearish" if the sentiment is bearish or "neutral" if the tweet does not express a prediction or the direction of the prediction cannot be defined. 
+The sentiment has to be one of the 3 words: "Bullish" if the sentiment for the token is bullish, "Bearish" if the sentiment is bearish or "Neutral" if the tweet does not express a prediction or the direction of the prediction cannot be defined. 
 The format of your response must be:\n\n
 "$[token symbol]: [sentiment]\n
 $[next token symbol]: [sentiment]"\n\n
