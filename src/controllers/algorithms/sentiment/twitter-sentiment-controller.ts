@@ -33,30 +33,30 @@ export default class TwitterSentimentController extends BaseController {
     timelines.forEach(ti => ti.tweets.forEach(tw => tw.symbols.forEach(s => tweetedSymbols[s] ? tweetedSymbols[s]++ : tweetedSymbols[s] = 1))); // create unique list with amount of symbol mentions
 
     const sortedSymbols = Object.keys(tweetedSymbols).sort((a, b) => tweetedSymbols[b] - tweetedSymbols[a]);  // sort by amount of mentions
-    const accordingBinanceSymbols: string[] = [];
+    const correspondingBinanceSymbols: string[] = [];
 
-    sortedSymbols.forEach(s => { // create array with according binance symbols
+    sortedSymbols.forEach(s => { // create array with corresponding binance symbols
       const binanceSymbolUsdt = (s + 'usdt').toUpperCase();
       const binanceSymbolBusd = (s + 'busd').toUpperCase();
       const usdtSymbolExists = binanceSymbols.includes(binanceSymbolUsdt);
       const busdSymbolExists = binanceSymbols.includes(binanceSymbolBusd);
 
       if (usdtSymbolExists) {
-        accordingBinanceSymbols.push(binanceSymbolUsdt);
+        correspondingBinanceSymbols.push(binanceSymbolUsdt);
       } else if (busdSymbolExists) {
-        accordingBinanceSymbols.push(binanceSymbolBusd);
+        correspondingBinanceSymbols.push(binanceSymbolBusd);
       }
     });
 
-    const mostTweetedSymbols = accordingBinanceSymbols.slice(0, 10); // 10 most tweeted symbols
+    const mostTweetedSymbols = correspondingBinanceSymbols.slice(0, 10); // 10 most tweeted symbols
 
-    const responses: Kline[][] = [];
+    const responses: Kline[][] = [];  // array of each symbol and its klines
 
     for (const symbol of mostTweetedSymbols) {
       const response = await this.binance.initKlinesDatabase(symbol, '1m');
       responses.push(response);
     }
 
-    console.log(responses);
+    console.log(responses.length);
   }
 }
