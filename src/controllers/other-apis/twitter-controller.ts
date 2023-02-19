@@ -3,7 +3,7 @@ import OAuth from 'oauth';
 import { promisify } from 'util';
 import BaseController from '../base-controller';
 import CoinmarketcapController from './coinmarketcap-controller';
-import { Tweet, TwitterUser, TwitterTimeline } from '../../interfaces';
+import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline } from '../../interfaces';
 
 
 export default class TwitterController extends BaseController {
@@ -95,18 +95,17 @@ export default class TwitterController extends BaseController {
     const allCryptos = this.cmc.getAllSymbols();
 
     friendTweetsOnlySymbols.forEach(ft => ft.tweets.forEach(tw => tw.symbols = tw.symbols
-      .map(s => allCryptos[s] || s)
-      .filter(symbol => symbol.length >= 3 && symbol.length <= 5)
+      .map(s =>  ({ symbol: allCryptos[s.symbol] || s.symbol, sentiment: undefined }))
+      .filter(symbol => symbol.symbol.length >= 3 && symbol.symbol.length <= 5)
     ));
 
     return friendTweetsOnlySymbols;
   }
 
-  private getTweetSymbols(text: string): string[] {
-    const symbolPattern = /[$#]\w+/g;
+  private getTweetSymbols(text: string): TweetSymbol[] {
+    const symbolPattern = /[$#]\w+/g; // preceeded by # or $
     const symbols = text.match(symbolPattern);
-    return symbols ? symbols
-      .map(symbol => symbol.slice(1).toLowerCase()) : []
+    return symbols ? symbols.map(s => ({ symbol: s.slice(1).toLowerCase()})) : []
   }
 
   private buildOAuth10A(): Function {

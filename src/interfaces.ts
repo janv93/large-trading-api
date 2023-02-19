@@ -29,8 +29,13 @@ export interface Tweet {
   time: number;
   id: number;
   text: string;
-  symbols: string[];
+  symbols: TweetSymbol[];
 };
+
+export interface TweetSymbol {
+  symbol: string;
+  sentiment?: string;
+}
 
 export interface TwitterUser {
   name: string;
@@ -43,3 +48,11 @@ export interface TwitterTimeline {
   name: string;
   tweets: Tweet[];
 };
+
+export interface TweetSentiment {
+  id: number;
+  symbol: string;
+  model: string;
+  sentiment: string;
+  text: string;
+}

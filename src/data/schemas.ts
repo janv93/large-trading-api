@@ -45,3 +45,29 @@ export const KlineSchema = new mongoose.Schema({
     required: false
   }
 });
+
+export const TweetSymbolSentimentSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    required: true,
+    index: true
+  },
+  symbol: {
+    type: String,
+    required: true,
+    index: true
+  },
+  model: {
+    type: String,
+    required: true,
+    index: true
+  },
+  sentiment: {
+    type: String,
+    required: true
+  },
+  text: {
+    type: String,
+    required: true
+  }
+});

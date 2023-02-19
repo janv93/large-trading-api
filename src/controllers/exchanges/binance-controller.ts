@@ -5,7 +5,7 @@ import BaseController from '../base-controller';
 import database from '../../data/database';
 
 export default class BinanceController extends BaseController {
-  private database = database
+  private database = database;
   private klines: Kline[] = [];
 
   public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
@@ -87,9 +87,9 @@ export default class BinanceController extends BaseController {
     const now = Date.now();
 
     while (nextStart < now) {
-      const res = await this.getKlines(symbol, timeframe, undefined, nextStart);
-      klines.push(...res);
-      const end = res[res.length - 1].times.open;
+      const newKlines = await this.getKlines(symbol, timeframe, undefined, nextStart);
+      klines.push(...newKlines);
+      const end = newKlines[newKlines.length - 1].times.open;
       nextStart = end + this.timeframeToMilliseconds(timeframe);
     }
 
