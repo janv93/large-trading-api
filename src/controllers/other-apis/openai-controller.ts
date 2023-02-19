@@ -13,17 +13,15 @@ export default class OpenAi extends BaseController {
     'Authorization': `Bearer ${process.env.openai_secret}`
   };
 
-  public async getSentiments(tweets: Tweet[]) {
-    for (const tweet of tweets) {
-      const promises: Promise<TweetSymbol>[] = tweet.symbols.map((symbol) => this.getSentiment(tweet, symbol));
-      const results = await Promise.all(promises);
-
-      results.forEach((symbol, i) => {
-        tweet.symbols[i] = symbol;
-      });
-    }
-
-    return tweets;
+  public async getSentiments(tweets: Tweet[]): Promise<Tweet[]> {
+    const promises: Promise<Tweet>[] = tweets.map(async (tweet) => {
+      const symbolPromises: Promise<TweetSymbol>[] = tweet.symbols.map((symbol) => this.getSentiment(tweet, symbol));
+      const symbols = await Promise.all(symbolPromises);
+      tweet.symbols = symbols;
+      return tweet;
+    });
+  
+    return Promise.all(promises);
   }
 
   public async getSentiment(tweet: Tweet, symbol: TweetSymbol): Promise<TweetSymbol> {

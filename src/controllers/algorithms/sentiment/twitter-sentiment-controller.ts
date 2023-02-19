@@ -12,11 +12,12 @@ export default class TwitterSentimentController extends BaseController {
 
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
     const timelines = await this.twitter.getFriendsWithTheirTweets(user);
-    await this.processTimelines(timelines);
+    const tweets = await this.getTweetSentiments(timelines);
+
     return klines;
   }
 
-  private async processTimelines(timelines: TwitterTimeline[]) {
+  private async getTweetSentiments(timelines: TwitterTimeline[]): Promise<Tweet[]> {
     const binanceSymbols = await this.binance.getUsdtBusdSymbols();
 
     const shortBinanceSymbols = binanceSymbols  // reduce trading pairs to symbol only
@@ -32,13 +33,8 @@ export default class TwitterSentimentController extends BaseController {
     timelines.forEach(ti => ti.tweets = ti.tweets.filter(tw => tw.time < earliestTime));  // filter out tweets too far in the past
 
     const tweets: Tweet[] = timelines.flatMap(ti => ti.tweets);
-
     const tweetsWithSentiments = await this.openai.getSentiments(tweets);
-    
-    tweetsWithSentiments.forEach(t => {
-      console.log(t.text);
-      console.log(t.symbols);
-    });
+    return tweetsWithSentiments;
 
     /* const tweetedSymbols = {};
 

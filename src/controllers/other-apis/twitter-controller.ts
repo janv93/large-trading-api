@@ -32,11 +32,13 @@ export default class TwitterController extends BaseController {
         process.env.twitter_access_token,
         process.env.twitter_access_secret
       );
+
       const parsed = JSON.parse(res);
 
       if (!parsed.data) {
         return [];
       }
+
       return parsed.data.map(tweet => {
         return {
           time: (new Date(tweet.created_at)).getTime(),
@@ -54,14 +56,14 @@ export default class TwitterController extends BaseController {
 
   public async getUserFriends(user: string): Promise<TwitterUser[]> {
     const url = this.baseUrl + '/1.1/friends/list.json';
-  
+
     const query = {
       screen_name: user,
       count: 200
     };
-  
+
     const finalUrl = this.createUrl(url, query);
-  
+
     try {
       const res = await axios.get(finalUrl, { headers: this.headers });
       return res.data.users.map(user => {
@@ -77,7 +79,7 @@ export default class TwitterController extends BaseController {
       return [];
     }
   }
-  
+
 
   public async getFriendsWithTheirTweets(user: string): Promise<TwitterTimeline[]> {
     const friends = await this.getUserFriends(user);
@@ -95,7 +97,7 @@ export default class TwitterController extends BaseController {
     const allCryptos = this.cmc.getAllSymbols();
 
     friendTweetsOnlySymbols.forEach(ft => ft.tweets.forEach(tw => tw.symbols = tw.symbols
-      .map(s =>  ({ symbol: allCryptos[s.symbol] || s.symbol, sentiment: undefined }))
+      .map(s => ({ symbol: allCryptos[s.symbol] || s.symbol, sentiment: undefined }))
       .filter(symbol => symbol.symbol.length >= 3 && symbol.symbol.length <= 5)
     ));
 
@@ -105,7 +107,7 @@ export default class TwitterController extends BaseController {
   private getTweetSymbols(text: string): TweetSymbol[] {
     const symbolPattern = /[$#]\w+/g; // preceeded by # or $
     const symbols = text.match(symbolPattern);
-    return symbols ? symbols.map(s => ({ symbol: s.slice(1).toLowerCase()})) : []
+    return symbols ? symbols.map(s => ({ symbol: s.slice(1).toLowerCase() })) : []
   }
 
   private buildOAuth10A(): Function {
