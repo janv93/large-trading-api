@@ -12,12 +12,27 @@ export default class TwitterSentimentController extends BaseController {
 
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
     const timelines = await this.twitter.getFriendsWithTheirTweets(user);
-    const tweets = await this.getTweetSentiments(timelines);
+    const tweets = await this.getTweetSentiments(timelines, klines);
+
+    klines.forEach((kline: Kline, i: number) => {
+      const nextKline = klines[i + 1];
+
+      if (nextKline) {
+        const tweetsWithSameTime = tweets.filter(t => t.time >= kline.times.open && t.time < nextKline.times.open);
+        const bullishTweets = tweetsWithSameTime.filter(t => t.symbols.map(s => s.sentiment).includes('bull'));
+        const amountBullishTweets = bullishTweets.length;
+
+        if (amountBullishTweets) {
+          kline.signal = this.buySignal;
+          kline.amount = amountBullishTweets;
+        }
+      }
+    });
 
     return klines;
   }
 
-  private async getTweetSentiments(timelines: TwitterTimeline[]): Promise<Tweet[]> {
+  private async getTweetSentiments(timelines: TwitterTimeline[], klines: Kline[]): Promise<Tweet[]> {
     const binanceSymbols = await this.binance.getUsdtBusdPairs();
     const shortBinanceSymbols = this.binance.pairsToSymbols(binanceSymbols);
 
@@ -25,12 +40,15 @@ export default class TwitterSentimentController extends BaseController {
     timelines.forEach(ti => ti.tweets = ti.tweets.filter(tw => tw.symbols.length)); // filter out empty symbols
     timelines = timelines.filter(ti => ti.tweets.length > 0);
 
-    const earliestTime = Date.now() - this.timeframeToMilliseconds('1m') * 100 * 1000;
-    timelines.forEach(ti => ti.tweets = ti.tweets.filter(tw => tw.time < earliestTime));  // filter out tweets too far in the past
+    const earliestTime = klines[0].times.open;
+    timelines.forEach(ti => ti.tweets = ti.tweets.filter(tw => tw.time > earliestTime));  // filter out tweets too far in the past
 
     const tweets: Tweet[] = timelines.flatMap(ti => ti.tweets);
     const tweetsWithSentiments = await this.openai.getSentiments(tweets);
 
-    return tweetsWithSentiments;
+    const symbol = this.binance.pairToSymbol(klines[0].symbol);
+    const tweetsWithSymbol = tweetsWithSentiments.filter(t => t.symbols.map(s => s.symbol).includes(symbol));
+
+    return tweetsWithSymbol;
   }
 }

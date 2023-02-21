@@ -20,7 +20,7 @@ export default class OpenAi extends BaseController {
       tweet.symbols = symbols;
       return tweet;
     });
-  
+
     return Promise.all(promises);
   }
 
@@ -28,7 +28,7 @@ export default class OpenAi extends BaseController {
     const dbSentiment = await this.database.getTweetSymbolSentiment(tweet.id, symbol.symbol, this.model);
 
     if (dbSentiment.length) { // in database
-      return { symbol: symbol.symbol, sentiment: dbSentiment[0] };
+      return { symbol: symbol.symbol, sentiment: dbSentiment };
     } else {  // not in database, make call
       const sentiment = await this.postCompletion(tweet, symbol.symbol);
       return { symbol: symbol.symbol, sentiment };

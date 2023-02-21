@@ -140,14 +140,16 @@ class Database extends BaseController {
   }
 
   // single sentiment
-  public async getTweetSymbolSentiment(id: number, symbol: string, model: string): Promise<string[]> {
+  public async getTweetSymbolSentiment(id: number, symbol: string, model: string): Promise<string> {
     try {
-      return this.TweetSymbolSentiment.find({ id, symbol, model });
+      const tweetSymbolSentiment = await this.TweetSymbolSentiment.find({ id, symbol, model });
+      const sentiment = tweetSymbolSentiment.map(t => t.sentiment)[0];
+      return sentiment;
     } catch (err) {
       console.error(`Failed to retrieve sentiment for id "${id}", symbol "${symbol}" and model "${model}"`);
       console.error(err);
       console.log();
-      return [];
+      return '';
     }
   }
 
