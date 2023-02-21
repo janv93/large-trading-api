@@ -212,6 +212,14 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           timeframe,
           algorithm: 'flashCrash'
         };
+      case 'twitterSentiment':
+        return {
+          symbol,
+          times,
+          timeframe,
+          algorithm: 'twitterSentiment',
+          user: this.chartService.twitterUser
+        };
     }
   }
 

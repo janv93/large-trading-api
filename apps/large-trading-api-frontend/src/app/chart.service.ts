@@ -6,11 +6,11 @@ import { Subject } from 'rxjs';
 })
 export class ChartService {
   public klinesSubject = new Subject();
-  public exchange = 'alpaca'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
-  public symbol = 'SPY';
-  public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
+  public exchange = 'binance'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
+  public strategy = 'twitterSentiment';
+  public symbol = 'BTCUSDT';
+  public timeframe = '1m';  // 1m, 5m, 15m, 1h... 1d...
   public timeframeMultiplier = 10;  // 1 = 1000 timeframes
-  public strategy = 'ema';
   public isInvestmentStrategy: boolean;
   public rsiLength = 7;
   public emaPeriodOpen = 80;
@@ -19,6 +19,7 @@ export class ChartService {
   public bbPeriod = 21;
   public momentumStreak = 5;
   public martingaleThreshold = 0.01;
+  public twitterUser = process.env.twitterUser;
   public commission = 0.04;
   public baseUrl = 'http://127.0.0.1:3000';
 
