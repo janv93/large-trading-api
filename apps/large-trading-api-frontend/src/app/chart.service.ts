@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,7 @@ export class ChartService {
   public bbPeriod = 21;
   public momentumStreak = 5;
   public martingaleThreshold = 0.01;
-  public twitterUser = process.env.twitterUser;
+  public twitterUser = environment.twitterUser;
   public commission = 0.04;
   public baseUrl = 'http://127.0.0.1:3000';
 
