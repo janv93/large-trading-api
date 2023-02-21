@@ -107,7 +107,15 @@ export default class TwitterController extends BaseController {
   private getTweetSymbols(text: string): TweetSymbol[] {
     const symbolPattern = /[$#]\w+/g; // preceeded by # or $
     const symbols = text.match(symbolPattern);
-    return symbols ? symbols.map(s => ({ symbol: s.slice(1).toLowerCase() })) : []
+
+    if (symbols) {
+      const formattedSymbols = symbols.map(s => s.slice(1).toLowerCase());
+      const noDuplicates = [...new Set(formattedSymbols)];
+      const final = noDuplicates.map(s => ({ symbol: s }));
+      return final;
+    } else {
+      return [];
+    }
   }
 
   private buildOAuth10A(): Function {

@@ -27,7 +27,7 @@ export default class OpenAi extends BaseController {
   public async getSentiment(tweet: Tweet, symbol: TweetSymbol): Promise<TweetSymbol> {
     const dbSentiment = await this.database.getTweetSymbolSentiment(tweet.id, symbol.symbol, this.model);
 
-    if (dbSentiment.length) { // in database
+    if (dbSentiment) { // in database
       return { symbol: symbol.symbol, sentiment: dbSentiment };
     } else {  // not in database, make call
       const sentiment = await this.postCompletion(tweet, symbol.symbol);
