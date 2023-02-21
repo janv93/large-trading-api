@@ -1,3 +1,6 @@
+import { environmentSecrets } from './environment.secrets';
+
 export const environment = {
-  production: true
+  production: true,
+  ...environmentSecrets
 };
