@@ -30,7 +30,7 @@ export default class BinanceController extends BaseController {
     console.log('GET ' + klineUrl);
     try {
       const response = await axios.get(klineUrl);
-      const result = this.mapKlines(response.data);
+      const result = this.mapKlines(symbol, timeframe, response.data);
       return result;
     } catch (err) {
       this.handleError(err);
@@ -122,12 +122,12 @@ export default class BinanceController extends BaseController {
     }
 
     if (dbKlines.length === 0) {
-      await this.database.writeKlines(symbol, timeframe, newKlines);
+      await this.database.writeKlines(newKlines);
       console.log(`Database initialized with ${newKlines.length} klines`);
       return newKlines;
     } else {
       newKlines.shift();
-      await this.database.writeKlines(symbol, timeframe, newKlines);
+      await this.database.writeKlines(newKlines);
       console.log(`Added ${newKlines.length} new klines to database`);
       console.log();
       const mergedKlines = dbKlines.concat(newKlines);
@@ -252,9 +252,11 @@ export default class BinanceController extends BaseController {
     return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex');
   }
 
-  private mapKlines(klines: any): Kline[] {
+  private mapKlines(symbol: string, timeframe: string, klines: any): Kline[] {
     return klines.map(k => {
       return {
+        symbol,
+        timeframe,
         times: {
           open: k[0],
           close: k[6]

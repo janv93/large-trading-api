@@ -16,7 +16,7 @@ class Database extends BaseController {
     this.TweetSymbolSentiment = mongoose.model('TweetSymbolSentiment', TweetSymbolSentimentSchema);
   }
 
-  public async writeKlines(symbol: string, timeframe: string, klines: Kline[]): Promise<void> {
+  public async writeKlines(klines: Kline[]): Promise<void> {
     if (klines.length === 0) {
       console.log();
       console.log('0 klines to write. Exiting...');
@@ -30,8 +30,8 @@ class Database extends BaseController {
       const bulkWriteOperations = klines.map(kline => ({
         insertOne: {
           document: {
-            symbol,
-            timeframe,
+            symbol: kline.symbol,
+            timeframe: kline.timeframe,
             openPrice: kline.prices.open,
             closePrice: kline.prices.close,
             highPrice: kline.prices.high,
@@ -77,6 +77,8 @@ class Database extends BaseController {
       }
 
       const mappedKlines: Kline[] = klines.map(kline => ({
+        symbol: kline.symbol,
+        timeframe: kline.timeframe,
         times: {
           open: kline.openTime,
           close: kline.closeTime

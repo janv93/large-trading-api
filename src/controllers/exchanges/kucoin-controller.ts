@@ -31,7 +31,7 @@ export default class KucoinController extends BaseController {
 
     try {
       const response = await axios.get(klineUrl);
-      const result = this.mapKlines(response.data.data);
+      const result = this.mapKlines(symbol, timeframe, response.data.data);
       return result;
     } catch (err) {
       this.handleError(err);
@@ -100,7 +100,7 @@ export default class KucoinController extends BaseController {
 
     if (!dbKlines?.length) {
       const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, endTime, timeframe);
-      await this.database.writeKlines(symbol, timeframe, newKlines);
+      await this.database.writeKlines(newKlines);
       console.log('Database initialized with ' + newKlines.length + ' klines');
       return newKlines;
     } else {
@@ -110,7 +110,7 @@ export default class KucoinController extends BaseController {
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       console.log(`Added ${newKlines.length} new klines to the database`);
       console.log();
-      await this.database.writeKlines(symbol, timeframe, newKlines);
+      await this.database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
     }
@@ -196,9 +196,11 @@ export default class KucoinController extends BaseController {
     return axios.post(url, query, options);
   }
 
-  private mapKlines(klines: any[]): Kline[] {
+  private mapKlines(symbol: string, timeframe: string, klines: any[]): Kline[] {
     return klines.map(k => {
       return {
+        symbol,
+        timeframe,
         times: {
           open: k[0]
         },

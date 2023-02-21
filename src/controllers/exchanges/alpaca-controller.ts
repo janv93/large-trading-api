@@ -37,7 +37,7 @@ export default class AlpacaController extends BaseController {
 
     try {
       const res = await axios.get(klineUrl, options);
-      const klines = this.mapKlines(res.data.bars);
+      const klines = this.mapKlines(symbol, timeframe, res.data.bars);
       return { nextPageToken: res.data.next_page_token, klines };
     } catch (err) {
       this.handleError(err);
@@ -66,7 +66,7 @@ export default class AlpacaController extends BaseController {
 
       if (!res || !res.length) {  // not in database yet
         const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, timeframe);
-        await this.database.writeKlines(symbol, timeframe, newKlines);
+        await this.database.writeKlines(newKlines);
         return { message: 'Database initialized with ' + newKlines.length + ' klines' };
       } else {  // already in database
         const dbKlines = res;
@@ -77,7 +77,7 @@ export default class AlpacaController extends BaseController {
         newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
         console.log('Added ' + newKlines.length + ' new klines to database');
         console.log();
-        await this.database.writeKlines(symbol, timeframe, newKlines);
+        await this.database.writeKlines(newKlines);
         const mergedKlines = dbKlines.concat(newKlines);
         return mergedKlines;
       }
@@ -108,9 +108,11 @@ export default class AlpacaController extends BaseController {
     }
   }
 
-  private mapKlines(klines: any): Kline[] {
+  private mapKlines(symbol: string, timeframe: string, klines: any): Kline[] {
     return klines.map(k => {
       return {
+        symbol,
+        timeframe,
         times: {
           open: (new Date(k.t)).getTime()
         },

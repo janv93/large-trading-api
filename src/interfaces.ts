@@ -1,4 +1,6 @@
 export interface Kline {
+  symbol: string;
+  timeframe: string;
   times: KlineTimes;
   prices: KlinePrices;
   volume: number;
