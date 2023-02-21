@@ -202,7 +202,7 @@ export default class BinanceController extends BaseController {
     return axios.post(url, null, options);
   }
 
-  public async getUsdtBusdSymbols(): Promise<string[]> {
+  public async getUsdtBusdPairs(): Promise<string[]> {
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res = await axios.get(baseUrl);
 
@@ -217,6 +217,35 @@ export default class BinanceController extends BaseController {
     const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
     uniqueSymbols.sort();
     return uniqueSymbols;
+  }
+
+  public pairsToSymbols(pairs: string[]): string[] {
+    return pairs.map(p => this.pairToSymbol(p));
+  }
+
+  // 'BTCUSDT' to 'btc'
+  public pairToSymbol(pair: string): string {
+    return pair.replace(/USDT|BUSD/g, '').toLowerCase();
+  }
+
+  public symbolsToPairs(symbols: string[], pairList: string[]): string[] {
+    return symbols.map(s => this.symbolToPair(s, pairList));
+  }
+
+  // 'btc' to 'BTCUSDT' or 'BTCBUSD'
+  public symbolToPair(symbol: string, pairList: string[]): string {
+    const binanceSymbolUsdt = (symbol + 'usdt').toUpperCase();
+    const binanceSymbolBusd = (symbol + 'busd').toUpperCase();
+    const usdtSymbolExists = pairList.includes(binanceSymbolUsdt);
+    const busdSymbolExists = pairList.includes(binanceSymbolBusd);
+
+    if (usdtSymbolExists) {
+      return binanceSymbolUsdt;
+    } else if (busdSymbolExists) {
+      return binanceSymbolBusd;
+    } else {
+      throw('Could not map symbol ' + symbol + ' to corresponding pair.');
+    }
   }
 
   private createHmac(query): string {
