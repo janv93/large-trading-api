@@ -12,12 +12,12 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [x] Caching candlesticks in data base
 - [x] Indicators
 - [x] Algorithms setting position signals on past data
+- [x] Sentiment analysis of popular Twitter traders using Twitter API and OpenAI API
 
 ### Todo:
 
 - [ ] AI: Transformer as improvement to standard NNs (position encoding time steps)
 - [ ] Algorithm that builds strategies using multiple indicators and figuring out which combined indicators work the best
-- [ ] Sentiment analysis of popular Twitter traders using Twitter API and ChatGPT API
 
 ## How to use backtests:
 
