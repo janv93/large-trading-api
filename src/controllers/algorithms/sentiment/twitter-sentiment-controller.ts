@@ -13,8 +13,23 @@ export default class TwitterSentimentController extends BaseController {
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
     const timelines = await this.twitter.getFriendsWithTheirTweets(user);
     const tweets = await this.getTweetSentiments(timelines, klines);
+    const entryPrices: number[] = [];
 
     klines.forEach((kline: Kline, i: number) => {
+      let amount = 0;
+      const currentPrice = kline.prices.close;
+
+      for (let i = entryPrices.length - 1; i >= 0; i--) {
+        const p = entryPrices[i];
+        const priceDiffPercent = (currentPrice - p) / p;
+        const tpSlReached = this.isTpSlReached(this.buySignal, priceDiffPercent, 0.002, 0.04);
+      
+        if (tpSlReached) {
+          amount--;
+          entryPrices.splice(i, 1);
+        }
+      }
+
       const nextKline = klines[i + 1];
 
       if (nextKline) {
@@ -23,9 +38,17 @@ export default class TwitterSentimentController extends BaseController {
         const amountBullishTweets = bullishTweets.length;
 
         if (amountBullishTweets) {
-          kline.signal = this.buySignal;
-          kline.amount = amountBullishTweets;
+          amount += amountBullishTweets;
+          entryPrices.push(kline.prices.close);
         }
+      }
+
+      if (amount > 0) {
+        kline.amount = amount;
+        kline.signal = this.buySignal;
+      } else if (amount < 0) {
+        kline.amount = -amount;
+        kline.signal = this.sellSignal;
       }
     });
 

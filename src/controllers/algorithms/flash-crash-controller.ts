@@ -30,9 +30,9 @@ export default class FlashCrashController extends BaseController {
             const percentChangeSinceOpen = this.percentage(openPrice, close);
             const takeProfit = threshold * 3 / 4
             const stopLoss = threshold / 3;
-            const isTpslReached = this.isTpslReached(this.buySignal, percentChangeSinceOpen, stopLoss, takeProfit);
+            const isTpSlReached = this.isTpSlReached(this.buySignal, percentChangeSinceOpen, stopLoss, takeProfit);
 
-            if (isTpslReached) {
+            if (isTpSlReached) {
               kline.signal = this.closeSignal;
               isOpen = false;
               isFlashCrash = false;

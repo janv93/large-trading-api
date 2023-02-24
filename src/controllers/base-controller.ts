@@ -91,7 +91,10 @@ export default class BaseController {
     return values.map(close => (close - minClose) / range);
   }
 
-  protected isTpslReached(entrySignal: string, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
+  /**
+   * takes the difference priceDiffPercent between the open and current price, stopLoss and takeProfit in percent and returns if tp or sl are reached
+   */
+  protected isTpSlReached(entrySignal: string, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
     let slReached: boolean;
     let tpReached: boolean;
 

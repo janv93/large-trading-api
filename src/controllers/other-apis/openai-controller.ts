@@ -7,7 +7,7 @@ import { Tweet, TweetSymbol } from '../../interfaces';
 export default class OpenAi extends BaseController {
   private baseUrl = 'https://api.openai.com/v1';
   private database = database;
-  private model = 'text-davinci-003'; // CAREFUL - high cost - set usage limits
+  private model = 'text-curie-001'; // CAREFUL - high cost - set usage limits
 
   private headers = {
     'Authorization': `Bearer ${process.env.openai_secret}`

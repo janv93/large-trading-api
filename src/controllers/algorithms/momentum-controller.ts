@@ -57,6 +57,6 @@ export default class MomentumController extends BaseController {
     const slRate = 0.003;
     const tpRate = slRate * 2;
 
-    return this.isTpslReached(lastEntrySignal, priceDiffPercent, slRate, tpRate);
+    return this.isTpSlReached(lastEntrySignal, priceDiffPercent, slRate, tpRate);
   }
 }
