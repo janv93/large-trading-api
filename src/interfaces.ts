@@ -47,7 +47,7 @@ export interface TwitterUser {
 };
 
 export interface TwitterTimeline {
-  name: string;
+  id: string;
   tweets: Tweet[];
 };
 

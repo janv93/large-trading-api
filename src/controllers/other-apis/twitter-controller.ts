@@ -2,25 +2,26 @@ import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
 import BaseController from '../base-controller';
+import database from '../../data/database';
 import CoinmarketcapController from './coinmarketcap-controller';
 import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline } from '../../interfaces';
 
-
 export default class TwitterController extends BaseController {
+  private database = database;
   private cmc = new CoinmarketcapController();
   private baseUrl = 'https://api.twitter.com';
   private headers = {
     'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
   };
 
-  public async getUserTweets(user: string): Promise<Tweet[]> {
-    const url = this.baseUrl + '/2/users/' + user + '/tweets';
+  public async getUserTweets(userId: string): Promise<Tweet[]> {
+    const url = this.baseUrl + '/2/users/' + userId + '/tweets';
 
     const query = {
       exclude: 'retweets,replies',
       max_results: 100,
       'tweet.fields': 'created_at',
-      'user.fields': 'name'
+      'user.fields': 'name',
     };
 
     const finalUrl = this.createUrl(url, query);
@@ -33,28 +34,39 @@ export default class TwitterController extends BaseController {
         process.env.twitter_access_secret
       );
 
-      const parsed = JSON.parse(res);
+      const parsed = JSON.parse(res).data || [];
 
-      if (!parsed.data) {
-        return [];
-      }
-
-      return parsed.data.map(tweet => {
+      return parsed.map(tweet => {
         return {
+          id: Number(tweet.id),
           time: (new Date(tweet.created_at)).getTime(),
-          id: tweet.id,
           text: tweet.text,
           symbols: this.getTweetSymbols(tweet.text)
         }
-      });
+      }).sort((a, b) => a.time - b.time);
     } catch (err) {
+      console.log(finalUrl)
       this.handleError(err);
       return [];
     }
   }
 
+  public async getAndSaveUserTweets(timeline: TwitterTimeline, needsUpdate: boolean): Promise<Tweet[]> {
+    const latestTweet = timeline.tweets[timeline!.tweets.length - 1];
 
-  public async getUserFriends(user: string): Promise<TwitterUser[]> {
+    if (needsUpdate) {
+      const newTweets = await this.getUserTweets(timeline.id);
+      const latestTweetIndex = newTweets.findIndex(tweet => tweet.id === latestTweet.id);
+      const newTweetsFromIndex = latestTweetIndex > -1 ? newTweets.slice(latestTweetIndex + 1) : newTweets;
+      const allTweets = [...timeline.tweets, ...newTweetsFromIndex];
+      await this.database.updateTwitterUserTweets(timeline.id, allTweets);
+      return allTweets;
+    } else {
+      return timeline.tweets;
+    }
+  }
+
+  public async getFriends(user: string): Promise<TwitterUser[]> {
     const url = this.baseUrl + '/1.1/friends/list.json';
 
     const query = {
@@ -80,17 +92,26 @@ export default class TwitterController extends BaseController {
     }
   }
 
-
-  public async getFriendsWithTheirTweets(user: string): Promise<TwitterTimeline[]> {
-    const friends = await this.getUserFriends(user);
+  public async getFriendsWithTheirTweets(userName: string): Promise<TwitterTimeline[]> {
+    const friends = await this.getFriends(userName);
+    const latestUpdate = await this.database.getLatestTwitterChangeTime();
+    const needsUpdate = latestUpdate != 0 ? (Date.now() - latestUpdate) / (1000 * 60) > 10 : true;  // latest change in database longer than 10 minutes in the past
 
     const friendTweets = await Promise.all(friends.map(async user => {
-      const tweets = await this.getUserTweets(user.id);
-      return { name: user.name, tweets };
+      const timeline = await this.database.getTwitterUserTimeline(user.id);
+
+      if (timeline) { // user exists: update user
+        const tweets = await this.getAndSaveUserTweets(timeline, needsUpdate);
+        return { id: user.id, tweets };
+      } else {  // user not existing: create user
+        const tweets = await this.getUserTweets(user.id);
+        await this.database.writeTwitterUserTimeline(user.id, tweets);
+        return { id: user.id, tweets };
+      }
     }));
 
     const friendTweetsOnlySymbols = friendTweets.map(t => ({
-      name: t.name,
+      id: t.id,
       tweets: t.tweets.filter(tweet => tweet.symbols && tweet.symbols.length)
     })).filter(t => t.tweets.length);
 

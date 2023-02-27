@@ -12,7 +12,7 @@ export default class TwitterSentimentController extends BaseController {
 
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
     const timelines = await this.twitter.getFriendsWithTheirTweets(user);
-    const tweets = await this.getTweetSentiments(timelines, klines);
+    /*const tweets = await this.getTweetSentiments(timelines, klines);
     const entryPrices: number[] = [];
 
     klines.forEach((kline: Kline, i: number) => {
@@ -50,7 +50,7 @@ export default class TwitterSentimentController extends BaseController {
         kline.amount = -amount;
         kline.signal = this.sellSignal;
       }
-    });
+    });*/
 
     return klines;
   }

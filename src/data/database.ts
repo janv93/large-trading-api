@@ -1,18 +1,20 @@
 import mongoose from 'mongoose';
 import BaseController from '../controllers/base-controller';
-import { Kline, TweetSentiment } from '../interfaces';
-import { KlineSchema, TweetSymbolSentimentSchema } from './schemas';
+import { Kline, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
+import { KlineSchema, TweetSymbolSentimentSchema, TwitterUserTimelineSchema } from './schemas';
 
 mongoose.set('strictQuery', true);
 
 class Database extends BaseController {
   private Kline: mongoose.Model<any>;
+  private TwitterUserTimeline: mongoose.Model<any>;
   private TweetSymbolSentiment: mongoose.Model<any>;
 
   constructor() {
     super();
     this.init();
     this.Kline = mongoose.model('Kline', KlineSchema);
+    this.TwitterUserTimeline = mongoose.model('TwitterUserTimeline', TwitterUserTimelineSchema);
     this.TweetSymbolSentiment = mongoose.model('TweetSymbolSentiment', TweetSymbolSentimentSchema);
   }
 
@@ -111,7 +113,6 @@ class Database extends BaseController {
     } else {
       console.log();
       console.log(`Writing ${sentiments.length} sentiments...`);
-      const start = Date.now();
 
       const bulkWriteOperations = sentiments.map(s => ({
         insertOne: {
@@ -127,10 +128,7 @@ class Database extends BaseController {
 
       try {
         await this.TweetSymbolSentiment.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
-        const end = Date.now();
-        const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
-        const diffPer10k = diff / (sentiments.length / 10000);
-        console.log('Done writing. Speed per 10k sentiments was ' + diffPer10k.toFixed(2) + 's.');
+        console.log('Done writing.');
         console.log();
       } catch (err) {
         console.error('Failed to write sentiments: ', err);
@@ -150,6 +148,116 @@ class Database extends BaseController {
       console.error(err);
       console.log();
       return '';
+    }
+  }
+
+  public async writeTwitterUserTimeline(userId: string, tweets: Tweet[]): Promise<void> {
+    if (tweets.length === 0) {
+      console.log();
+      console.log('0 tweets to write. Exiting...');
+      console.log();
+      return;
+    } else {
+      console.log();
+      console.log(`Writing ${tweets.length} tweets for user ${userId}...`);
+
+      const tweetDocuments = tweets.map(tweet => ({
+        id: tweet.id,
+        time: tweet.time,
+        text: tweet.text,
+        symbols: tweet.symbols
+      }));
+
+      const userDocument = {
+        id: userId,
+        tweets: tweetDocuments
+      };
+
+      try {
+        await this.TwitterUserTimeline.create(userDocument);
+        console.log(`Done writing.`);
+        console.log();
+      } catch (err) {
+        console.error(`Failed to write tweets for user ${userId}: `, err);
+        console.log();
+      }
+    }
+  }
+
+  public async getTwitterUserTimeline(userId: string): Promise<TwitterTimeline | null> {
+    console.log();
+    console.log(`Reading Twitter user ${userId}...`);
+
+    try {
+      const user = await this.TwitterUserTimeline.findOne({ id: userId });
+
+      if (user) {
+        console.log(`Read Twitter user.`);
+        console.log();
+
+        const mappedTweets = user.tweets
+          .map(tweet => ({
+            id: tweet.id,
+            time: tweet.time,
+            text: tweet.text,
+            symbols: tweet.symbols
+          }));
+
+        mappedTweets.sort((a, b) => a.time - b.time);
+        
+        return {
+          id: user.id,
+          tweets: mappedTweets            
+        };
+      } else {
+        console.log(`Twitter user ${userId} not found.`);
+        console.log();
+        return null;
+      }
+    } catch (err) {
+      console.error(`Failed to retrieve Twitter user ${userId}: `, err);
+      console.log();
+      return null;
+    }
+  }
+
+  public async updateTwitterUserTweets(userId: string, newTweets: Tweet[]): Promise<void> {
+    console.log();
+    console.log(`Updating tweets for Twitter user ${userId}...`);
+
+    try {
+      const user = await this.TwitterUserTimeline.findOne({ id: userId });
+
+      if (user) {
+        user.tweets = newTweets.map(tweet => ({
+          id: tweet.id,
+          time: tweet.time,
+          text: tweet.text,
+          symbols: tweet.symbols
+        }));
+
+        await user.save();
+
+        console.log(`Updated tweets for Twitter user ${userId}.`);
+        console.log();
+      } else {
+        console.log(`Twitter user ${userId} not found.`);
+        console.log();
+      }
+    } catch (err) {
+      console.error(`Failed to update tweets for Twitter user ${userId}: `, err);
+      console.log();
+    }
+  }
+
+  public async getLatestTwitterChangeTime(): Promise<number> {
+    const latest = await this.TwitterUserTimeline.findOne().sort({ updatedAt: -1 });
+
+    if (latest) {
+      const latestTimestamp = new Date(latest.updatedAt).getTime();
+      return latestTimestamp;
+    } else {
+      return 0;
     }
   }
 

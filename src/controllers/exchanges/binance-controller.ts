@@ -89,6 +89,7 @@ export default class BinanceController extends BaseController {
     while (nextStart < now) {
       const newKlines = await this.getKlines(symbol, timeframe, undefined, nextStart);
       klines.push(...newKlines);
+      console.log(newKlines[newKlines.length - 1])
       const end = newKlines[newKlines.length - 1].times.open;
       nextStart = end + this.timeframeToMilliseconds(timeframe);
     }
