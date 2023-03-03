@@ -26,8 +26,8 @@ export default class BinanceController extends BaseController {
     }
 
     const klineUrl = this.createUrl(baseUrl, query);
-
     console.log('GET ' + klineUrl);
+
     try {
       const response = await axios.get(klineUrl);
       const result = this.mapKlines(symbol, timeframe, response.data);
@@ -84,12 +84,11 @@ export default class BinanceController extends BaseController {
   public async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
     const klines: Kline[] = [];
     let nextStart = startTime;
-    const now = Date.now();
+    const now = Date.now() - this.timeframeToMilliseconds(timeframe);
 
     while (nextStart < now) {
       const newKlines = await this.getKlines(symbol, timeframe, undefined, nextStart);
       klines.push(...newKlines);
-      console.log(newKlines[newKlines.length - 1])
       const end = newKlines[newKlines.length - 1].times.open;
       nextStart = end + this.timeframeToMilliseconds(timeframe);
     }
