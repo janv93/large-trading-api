@@ -46,32 +46,6 @@ export const KlineSchema = new mongoose.Schema({
   }
 });
 
-export const TweetSymbolSentimentSchema = new mongoose.Schema({
-  id: {
-    type: Number,
-    required: true,
-    index: true
-  },
-  symbol: {
-    type: String,
-    required: true,
-    index: true
-  },
-  model: {
-    type: String,
-    required: true,
-    index: true
-  },
-  sentiment: {
-    type: String,
-    required: true
-  },
-  text: {
-    type: String,
-    required: true
-  }
-});
-
 export const TweetSchema = new mongoose.Schema({
   id: {
     type: Number,
@@ -93,16 +67,18 @@ export const TweetSchema = new mongoose.Schema({
       required: true,
       index: true
     },
-    model: {
-      type: String,
-      required: false,
-      index: true
-    },
-    sentiment: {
-      type: String,
-      required: false,
-      index: true
-    }
+    sentiments: [{
+      sentiment: {
+        type: String,
+        required: false,
+        index: true
+      },
+      model: {
+        type: String,
+        required: false,
+        index: true
+      }
+    }]
   }]
 });
 

@@ -1,21 +1,19 @@
 import mongoose from 'mongoose';
 import BaseController from '../controllers/base-controller';
 import { Kline, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
-import { KlineSchema, TweetSymbolSentimentSchema, TwitterUserTimelineSchema } from './schemas';
+import { KlineSchema, TwitterUserTimelineSchema } from './schemas';
 
 mongoose.set('strictQuery', true);
 
 class Database extends BaseController {
   private Kline: mongoose.Model<any>;
   private TwitterUserTimeline: mongoose.Model<any>;
-  private TweetSymbolSentiment: mongoose.Model<any>;
 
   constructor() {
     super();
     this.init();
     this.Kline = mongoose.model('Kline', KlineSchema);
     this.TwitterUserTimeline = mongoose.model('TwitterUserTimeline', TwitterUserTimelineSchema);
-    this.TweetSymbolSentiment = mongoose.model('TweetSymbolSentiment', TweetSymbolSentimentSchema);
   }
 
   public async writeKlines(klines: Kline[]): Promise<void> {
@@ -104,47 +102,49 @@ class Database extends BaseController {
     }
   }
 
-  public async writeTweetSymbolSentiments(sentiments: TweetSentiment[]): Promise<void> {
-    if (sentiments.length === 0) {
-      console.log();
-      console.log('0 sentiments to write. Exiting...')
-      console.log();
-      return;
-    } else {
-      console.log();
-      console.log(`Writing ${sentiments.length} sentiments...`);
+  public async writeTweetSentiments(sentiments: TweetSentiment[]): Promise<void> {
+    console.log(`Writing up to ${sentiments.length} sentiments...`)
 
-      const bulkWriteOperations = sentiments.map(s => ({
-        insertOne: {
-          document: {
-            id: s.id,
-            symbol: s.symbol,
-            model: s.model,
-            sentiment: s.sentiment,
-            text: s.text
+    try {
+      const timelines = await this.TwitterUserTimeline.find();
+      let newSentiments = 0;
+
+      await Promise.all(timelines.map(async (ti) => {
+        sentiments.forEach((se) => {
+          const tweet = ti.tweets.find((tw) => tw.id === se.id);
+
+          if (tweet) {
+            const symbol = tweet.symbols.find((sy) => sy.symbol === se.symbol);
+            const sentimentAlreadyExists = symbol.sentiments.find(s => s.sentiment === se.sentiment && s.model === se.model);
+
+            if (!sentimentAlreadyExists && se.sentiment) {
+              symbol.sentiments.push({ sentiment: se.sentiment, model: se.model });
+              newSentiments++;
+            }
           }
-        }
+        });
+
+        await ti.save();
       }));
 
-      try {
-        await this.TweetSymbolSentiment.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
-        console.log('Done writing.');
-        console.log();
-      } catch (err) {
-        console.error('Failed to write sentiments: ', err);
-        console.log();
-      }
+      console.log(`Done writing ${newSentiments} sentiments.`);
+    } catch (err) {
+      console.error(`Failed to write sentiments: `, err);
+      console.log();
+      return;
     }
   }
 
   // single sentiment
-  public async getTweetSymbolSentiment(id: number, symbol: string, model: string): Promise<string> {
+  public async getTweetSentiment(tweetId: number, symbol: string, model: string): Promise<string> {
     try {
-      const tweetSymbolSentiment = await this.TweetSymbolSentiment.find({ id, symbol, model });
-      const sentiment = tweetSymbolSentiment.map(t => t.sentiment)[0];
+      const timeline = await this.TwitterUserTimeline.findOne({ 'tweets.id': tweetId });
+      const tweet = timeline.tweets.find((t) => t.id === tweetId);
+      const tweetSymbol = tweet.symbols.find((s) => s.symbol === symbol);
+      const sentiment = tweetSymbol?.sentiments.find(s => s.model === model)?.sentiment || '';
       return sentiment;
     } catch (err) {
-      console.error(`Failed to retrieve sentiment for id "${id}", symbol "${symbol}" and model "${model}"`);
+      console.error(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`);
       console.error(err);
       console.log();
       return '';
@@ -165,7 +165,7 @@ class Database extends BaseController {
         id: tweet.id,
         time: tweet.time,
         text: tweet.text,
-        symbols: tweet.symbols
+        symbols: tweet.symbols.map(s => ({ symbol: s.symbol, sentiments: [] }))
       }));
 
       const userDocument = {
@@ -175,7 +175,7 @@ class Database extends BaseController {
 
       try {
         await this.TwitterUserTimeline.create(userDocument);
-        console.log(`Done writing.`);
+        console.log(`Done writing tweets.`);
         console.log();
       } catch (err) {
         console.error(`Failed to write tweets for user ${userId}: `, err);
@@ -204,10 +204,10 @@ class Database extends BaseController {
           }));
 
         mappedTweets.sort((a, b) => a.time - b.time);
-        
+
         return {
           id: user.id,
-          tweets: mappedTweets            
+          tweets: mappedTweets
         };
       } else {
         console.log(`Twitter user ${userId} not found.`);

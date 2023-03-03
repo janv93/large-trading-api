@@ -7,25 +7,28 @@ import { Tweet, TweetSymbol } from '../../interfaces';
 export default class OpenAi extends BaseController {
   private baseUrl = 'https://api.openai.com/v1';
   private database = database;
-  private model = 'text-curie-001'; // CAREFUL - high cost - set usage limits
+  // CAREFUL - high cost - set usage limits
+  // text-ada-001, text-babbage-001, text-curie-001, text-davinci-003
+  private model = 'text-ada-001';
 
   private headers = {
     'Authorization': `Bearer ${process.env.openai_secret}`
   };
 
   public async getSentiments(tweets: Tweet[]): Promise<Tweet[]> {
-    const promises: Promise<Tweet>[] = tweets.map(async (tweet) => {
-      const symbolPromises: Promise<TweetSymbol>[] = tweet.symbols.map((symbol) => this.getSentiment(tweet, symbol));
-      const symbols = await Promise.all(symbolPromises);
-      tweet.symbols = symbols;
+    const tweetsWithSentiments = await Promise.all(tweets.map(async (tweet) => {
+      tweet.symbols = await Promise.all(tweet.symbols.map((symbol) => this.getSentiment(tweet, symbol)));
       return tweet;
-    });
+    }));
 
-    return Promise.all(promises);
+    const sentiments = tweetsWithSentiments.flatMap(t => t.symbols.map(s => ({ id: t.id, symbol: s.symbol, model: this.model, sentiment: s.sentiment! })));
+    this.database.writeTweetSentiments(sentiments); // bulk write to prevent concurrent writes on same timelines
+
+    return tweetsWithSentiments;
   }
 
   public async getSentiment(tweet: Tweet, symbol: TweetSymbol): Promise<TweetSymbol> {
-    const dbSentiment = await this.database.getTweetSymbolSentiment(tweet.id, symbol.symbol, this.model);
+    const dbSentiment = await this.database.getTweetSentiment(tweet.id, symbol.symbol, this.model);
 
     if (dbSentiment) { // in database
       return { symbol: symbol.symbol, sentiment: dbSentiment };
@@ -54,7 +57,6 @@ export default class OpenAi extends BaseController {
       const sentiment = res.data.choices.map(c => c.text)[0];
       const sentimentFormatted = sentiment.replace(/[\n\s]/g, '').toLowerCase();
       const mappedSentiment = ['bull', 'bear'].includes(sentimentFormatted) ? sentimentFormatted : 'neutral';
-      await this.database.writeTweetSymbolSentiments([{ id: tweet.id, symbol: symbol, model: this.model, sentiment: mappedSentiment, text: tweet.text }]); // save sentiment in database
       return mappedSentiment;
     } catch (err) {
       this.handleError(err);
@@ -67,6 +69,7 @@ export default class OpenAi extends BaseController {
 The goal is to get the sentiment of the author in order to understand where the author sees its value in the future (sentiment analysis). 
 Analyze the tweet and return a sentiment for ${symbol}. 
 The sentiment is a string of either "bull" if the prediction is bullish, "bear" if the prediction is bearish, or "neutral" if the prediction is neutral or a prediction cannot be clearly determined. 
+It is important to return "neutral" when there is uncertainty about a direction. 
 The tweet is:\n\n
 "${tweet}"\n\n
 Sentiment: `;

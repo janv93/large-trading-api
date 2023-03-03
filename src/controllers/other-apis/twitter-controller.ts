@@ -36,14 +36,17 @@ export default class TwitterController extends BaseController {
 
       const parsed = JSON.parse(res).data || [];
 
-      return parsed.map(tweet => {
-        return {
-          id: Number(tweet.id),
-          time: (new Date(tweet.created_at)).getTime(),
-          text: tweet.text,
-          symbols: this.getTweetSymbols(tweet.text)
-        }
-      }).sort((a, b) => a.time - b.time);
+      const mapped = parsed.map(tweet => ({
+        id: Number(tweet.id),
+        time: (new Date(tweet.created_at)).getTime(),
+        text: tweet.text,
+        symbols: this.getTweetSymbols(tweet.text)
+      }));
+
+      const tweetsWithSymbols = mapped.filter(tweet => tweet.symbols.length);
+      tweetsWithSymbols.sort((a, b) => a.time - b.time);
+
+      return tweetsWithSymbols;
     } catch (err) {
       console.log(finalUrl)
       this.handleError(err);
@@ -110,29 +113,20 @@ export default class TwitterController extends BaseController {
       }
     }));
 
-    const friendTweetsOnlySymbols = friendTweets.map(t => ({
-      id: t.id,
-      tweets: t.tweets.filter(tweet => tweet.symbols && tweet.symbols.length)
-    })).filter(t => t.tweets.length);
-
-    const allCryptos = this.cmc.getAllSymbols();
-
-    friendTweetsOnlySymbols.forEach(ft => ft.tweets.forEach(tw => tw.symbols = tw.symbols
-      .map(s => ({ symbol: allCryptos[s.symbol] || s.symbol, sentiment: undefined }))
-      .filter(symbol => symbol.symbol.length >= 3 && symbol.symbol.length <= 5)
-    ));
-
-    return friendTweetsOnlySymbols;
+    return friendTweets;
   }
 
   private getTweetSymbols(text: string): TweetSymbol[] {
+    const allCryptos = this.cmc.getAllSymbols();
     const symbolPattern = /[$#]\w+/g; // preceeded by # or $
     const symbols = text.match(symbolPattern);
 
     if (symbols) {
       const formattedSymbols = symbols.map(s => s.slice(1).toLowerCase());
       const noDuplicates = [...new Set(formattedSymbols)];
-      const final = noDuplicates.map(s => ({ symbol: s }));
+      const shortSymbols = noDuplicates.map(s => allCryptos[s] || s);
+      const specificLength = shortSymbols.filter(s => s.length >= 3 && s.length <= 5);
+      const final = specificLength.map(s => ({ symbol: s }));
       return final;
     } else {
       return [];

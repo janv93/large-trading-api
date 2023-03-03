@@ -56,5 +56,4 @@ export interface TweetSentiment {
   symbol: string;
   model: string;
   sentiment: string;
-  text: string;
 }
