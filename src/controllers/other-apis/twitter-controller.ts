@@ -2,6 +2,7 @@ import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
 import BaseController from '../base-controller';
+import BinanceController from '../exchanges/binance-controller';
 import database from '../../data/database';
 import CoinmarketcapController from './coinmarketcap-controller';
 import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline } from '../../interfaces';
@@ -9,12 +10,13 @@ import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline } from '../../interfac
 export default class TwitterController extends BaseController {
   private database = database;
   private cmc = new CoinmarketcapController();
+  private binance = new BinanceController();
   private baseUrl = 'https://api.twitter.com';
   private headers = {
     'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
   };
 
-  public async getUserTweets(userId: string): Promise<Tweet[]> {
+  public async getUserTweets(userId: string, binanceSymbols: string[]): Promise<Tweet[]> {
     const url = this.baseUrl + '/2/users/' + userId + '/tweets';
 
     const query = {
@@ -40,10 +42,10 @@ export default class TwitterController extends BaseController {
         id: Number(tweet.id),
         time: (new Date(tweet.created_at)).getTime(),
         text: tweet.text,
-        symbols: this.getTweetSymbols(tweet.text)
+        symbols: this.getTweetSymbols(tweet.text, binanceSymbols)
       }));
 
-      const tweetsWithSymbols = mapped.filter(tweet => tweet.symbols.length);
+      const tweetsWithSymbols = mapped.filter(t => t.symbols.length);
       tweetsWithSymbols.sort((a, b) => a.time - b.time);
 
       return tweetsWithSymbols;
@@ -54,11 +56,11 @@ export default class TwitterController extends BaseController {
     }
   }
 
-  public async getAndSaveUserTweets(timeline: TwitterTimeline, needsUpdate: boolean): Promise<Tweet[]> {
+  public async getAndSaveUserTweets(timeline: TwitterTimeline, needsUpdate: boolean, binanceSymbols: string[]): Promise<Tweet[]> {
     const latestTweet = timeline.tweets[timeline!.tweets.length - 1];
 
     if (needsUpdate) {
-      const newTweets = await this.getUserTweets(timeline.id);
+      const newTweets = await this.getUserTweets(timeline.id, binanceSymbols);
       const latestTweetIndex = newTweets.findIndex(tweet => tweet.id === latestTweet.id);
       const newTweetsFromIndex = latestTweetIndex > -1 ? newTweets.slice(latestTweetIndex + 1) : newTweets;
       const allTweets = [...timeline.tweets, ...newTweetsFromIndex];
@@ -96,27 +98,30 @@ export default class TwitterController extends BaseController {
   }
 
   public async getFriendsWithTheirTweets(userName: string): Promise<TwitterTimeline[]> {
+    const binanceSymbols = await this.binance.getUsdtBusdPairs();
+    const shortBinanceSymbols = this.binance.pairsToSymbols(binanceSymbols);
     const friends = await this.getFriends(userName);
     const latestUpdate = await this.database.getLatestTwitterChangeTime();
     const needsUpdate = latestUpdate != 0 ? (Date.now() - latestUpdate) / (1000 * 60) > 10 : true;  // latest change in database longer than 10 minutes in the past
 
-    const friendTweets = await Promise.all(friends.map(async user => {
+    const timelines = await Promise.all(friends.map(async user => {
       const timeline = await this.database.getTwitterUserTimeline(user.id);
 
       if (timeline) { // user exists: update user
-        const tweets = await this.getAndSaveUserTweets(timeline, needsUpdate);
+        const tweets = await this.getAndSaveUserTweets(timeline, needsUpdate, shortBinanceSymbols);
         return { id: user.id, tweets };
       } else {  // user not existing: create user
-        const tweets = await this.getUserTweets(user.id);
+        const tweets = await this.getUserTweets(user.id, shortBinanceSymbols);
         await this.database.writeTwitterUserTimeline(user.id, tweets);
         return { id: user.id, tweets };
       }
     }));
 
-    return friendTweets;
+    const timelinesWithTweets = timelines.filter(ti => ti.tweets.length);
+    return timelinesWithTweets;
   }
 
-  private getTweetSymbols(text: string): TweetSymbol[] {
+  private getTweetSymbols(text: string, binanceSymbols: string[]): TweetSymbol[] {
     const allCryptos = this.cmc.getAllSymbols();
     const symbolPattern = /[$#]\w+/g; // preceeded by # or $
     const symbols = text.match(symbolPattern);
@@ -126,7 +131,8 @@ export default class TwitterController extends BaseController {
       const noDuplicates = [...new Set(formattedSymbols)];
       const shortSymbols = noDuplicates.map(s => allCryptos[s] || s);
       const specificLength = shortSymbols.filter(s => s.length >= 3 && s.length <= 5);
-      const final = specificLength.map(s => ({ symbol: s }));
+      const onlyBinanceSymbols = specificLength.filter(s => binanceSymbols.includes(s));
+      const final = onlyBinanceSymbols.map(s => ({ symbol: s }));
       return final;
     } else {
       return [];

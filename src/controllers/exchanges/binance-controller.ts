@@ -93,8 +93,10 @@ export default class BinanceController extends BaseController {
       nextStart = end + this.timeframeToMilliseconds(timeframe);
     }
 
-    console.log(`Received total of ${klines.length} klines`);
-    console.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open));
+    if (klines.length) {
+      console.log(`Received total of ${klines.length} klines`);
+      console.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open));
+    }
 
     return klines;
   }
@@ -110,12 +112,7 @@ export default class BinanceController extends BaseController {
     const res = await this.database.getKlines(symbol, timeframe);
     const dbKlines = res || [];
     const lastKline = dbKlines[dbKlines.length - 1];
-
-    const newKlines = await this.getKlinesFromStartUntilNow(
-      symbol,
-      lastKline?.times.open || startTime,
-      timeframe
-    );
+    const newKlines = await this.getKlinesFromStartUntilNow(symbol, lastKline?.times.open || startTime, timeframe);
 
     if (!newKlines.length) {
       return dbKlines;
