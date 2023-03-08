@@ -135,9 +135,9 @@ export default class TwitterController extends BaseController {
 
     if (symbols) {
       const formattedSymbols = symbols.map(s => s.slice(1).toLowerCase());
-      const noDuplicates = [...new Set(formattedSymbols)];
-      const shortSymbols = noDuplicates.map(s => allCryptos[s] || s);
-      const specificLength = shortSymbols.filter(s => s.length >= 3 && s.length <= 5);
+      const shortSymbols = formattedSymbols.map(s => allCryptos[s] || s);
+      const noDuplicates = [...new Set(shortSymbols)];
+      const specificLength = noDuplicates.filter(s => s.length >= 3 && s.length <= 5);
       const onlyBinanceSymbols = specificLength.filter(s => binanceSymbols.includes(s));
       const final = onlyBinanceSymbols.map(s => ({ symbol: s }));
       return final;
