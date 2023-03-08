@@ -61,7 +61,8 @@ export default class TwitterSentimentController extends BaseController {
 
     const tweets: Tweet[] = timelines.flatMap(ti => ti.tweets);
     const tweetsInTimeRange = tweets.filter(t => t.time > earliestTime);
-    const tweetsWithSymbol = tweetsInTimeRange.filter(t => t.symbols.map(s => s.symbol).includes(symbol))
+    const tweetsWithSymbol = tweetsInTimeRange.filter(t => t.symbols.map(s => s.symbol).includes(symbol));
+    tweetsWithSymbol.forEach(t => t.symbols = t.symbols.filter(s => s.symbol === symbol));
     const tweetsWithSentiments = await this.openai.getSentiments(tweetsWithSymbol);
 
     return tweetsWithSentiments;
