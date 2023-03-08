@@ -16,7 +16,7 @@ export default class TwitterController extends BaseController {
     'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
   };
 
-  public async getUserTweets(userId: string, binanceSymbols: string[]): Promise<Tweet[]> {
+  public async getUserTweets(userId: string, binanceSymbols: string[], startTime: number): Promise<Tweet[]> {
     const url = this.baseUrl + '/2/users/' + userId + '/tweets';
 
     const query = {
@@ -24,33 +24,40 @@ export default class TwitterController extends BaseController {
       max_results: 100,
       'tweet.fields': 'created_at',
       'user.fields': 'name',
+      start_time: new Date(startTime).toISOString().slice(0, -5) + 'Z'
     };
 
     const finalUrl = this.createUrl(url, query);
-    const oauth = this.buildOAuth10A();
+    const oauth = this.buildOAuth2();
+    const accessToken = await this.getOAuth2Token();
 
     try {
-      const res = await oauth(
-        finalUrl,
-        process.env.twitter_access_token,
-        process.env.twitter_access_secret
-      );
+      const allTweets: Tweet[] = [];
+      let nextToken: string | undefined = undefined;
 
-      const parsed = JSON.parse(res).data || [];
+      do {
+        const tokenUrl = finalUrl + (nextToken ? `&pagination_token=${nextToken}` : '');
+        const res = await oauth(tokenUrl, accessToken);
+        const parsed = res.data || [];
 
-      const mapped = parsed.map(tweet => ({
-        id: Number(tweet.id),
-        time: (new Date(tweet.created_at)).getTime(),
-        text: tweet.text,
-        symbols: this.getTweetSymbols(tweet.text, binanceSymbols)
-      }));
+        const mapped = parsed.map((tweet) => ({
+          id: Number(tweet.id),
+          time: new Date(tweet.created_at).getTime(),
+          text: tweet.text,
+          symbols: this.getTweetSymbols(tweet.text, binanceSymbols),
+        }));
 
-      const tweetsWithSymbols = mapped.filter(t => t.symbols.length);
-      tweetsWithSymbols.sort((a, b) => a.time - b.time);
+        const tweetsWithSymbols = mapped.filter((t) => t.symbols.length);
+        allTweets.push(...tweetsWithSymbols);
+        nextToken = res.meta?.next_token;
+      } while (nextToken);
 
-      return tweetsWithSymbols;
+      const filteredTweets = allTweets.filter((t) => t.time >= startTime);
+      filteredTweets.sort((a, b) => a.time - b.time);
+
+      return filteredTweets;
     } catch (err) {
-      console.log(finalUrl)
+      console.log(finalUrl);
       this.handleError(err);
       return [];
     }
@@ -60,7 +67,7 @@ export default class TwitterController extends BaseController {
     const latestTweet = timeline.tweets[timeline!.tweets.length - 1];
 
     if (needsUpdate) {
-      const newTweets = await this.getUserTweets(timeline.id, binanceSymbols);
+      const newTweets = await this.getUserTweets(timeline.id, binanceSymbols, timeline.tweets[timeline.tweets.length - 1].time);
       const latestTweetIndex = newTweets.findIndex(tweet => tweet.id === latestTweet.id);
       const newTweetsFromIndex = latestTweetIndex > -1 ? newTweets.slice(latestTweetIndex + 1) : newTweets;
       const allTweets = [...timeline.tweets, ...newTweetsFromIndex];
@@ -97,7 +104,7 @@ export default class TwitterController extends BaseController {
     }
   }
 
-  public async getFriendsWithTheirTweets(userName: string): Promise<TwitterTimeline[]> {
+  public async getFriendsWithTheirTweets(userName: string, startTime: number): Promise<TwitterTimeline[]> {
     const binanceSymbols = await this.binance.getUsdtBusdPairs();
     const shortBinanceSymbols = this.binance.pairsToSymbols(binanceSymbols);
     const friends = await this.getFriends(userName);
@@ -111,7 +118,7 @@ export default class TwitterController extends BaseController {
         const tweets = await this.getAndSaveUserTweets(timeline, needsUpdate, shortBinanceSymbols);
         return { id: user.id, tweets };
       } else {  // user not existing: create user
-        const tweets = await this.getUserTweets(user.id, shortBinanceSymbols);
+        const tweets = await this.getUserTweets(user.id, shortBinanceSymbols, startTime);
         await this.database.writeTwitterUserTimeline(user.id, tweets);
         return { id: user.id, tweets };
       }
@@ -149,5 +156,34 @@ export default class TwitterController extends BaseController {
     );
 
     return promisify(oauth.get.bind(oauth))
+  }
+
+  private async getOAuth2Token(): Promise<string> {
+    const response = await axios.post('https://api.twitter.com/oauth2/token', {},
+      {
+        auth: {
+          username: process.env.twitter_api_key!,
+          password: process.env.twitter_api_secret!,
+        },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
+        params: {
+          grant_type: 'client_credentials',
+        },
+      }
+    );
+    return response.data.access_token;
+  }
+
+  private buildOAuth2(): Function {
+    return async (url: string, accessToken: string) => {
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    };
   }
 }

@@ -11,7 +11,7 @@ export default class TwitterSentimentController extends BaseController {
   private binance = new BinanceController();
 
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
-    const timelines = await this.twitter.getFriendsWithTheirTweets(user);
+    const timelines = await this.twitter.getFriendsWithTheirTweets(user, klines[0].times.open);
     const tweets = await this.getTweetSentiments(timelines, klines);
     const entryPrices: number[] = [];
 
