@@ -36,7 +36,8 @@ export interface Tweet {
 
 export interface TweetSymbol {
   symbol: string;
-  sentiment?: string;
+  originalSymbol: string;
+  sentiment?: number;
 }
 
 export interface TwitterUser {
@@ -55,5 +56,5 @@ export interface TweetSentiment {
   id: number;
   symbol: string;
   model: string;
-  sentiment: string;
+  sentiment: number;
 }

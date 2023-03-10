@@ -136,18 +136,18 @@ class Database extends BaseController {
   }
 
   // single sentiment
-  public async getTweetSentiment(tweetId: number, symbol: string, model: string): Promise<string> {
+  public async getTweetSentiment(tweetId: number, symbol: string, model: string): Promise<number> {
     try {
       const timeline = await this.TwitterUserTimeline.findOne({ 'tweets.id': tweetId });
       const tweet = timeline.tweets.find((t) => t.id === tweetId);
       const tweetSymbol = tweet.symbols.find((s) => s.symbol === symbol);
-      const sentiment = tweetSymbol?.sentiments.find(s => s.model === model)?.sentiment || '';
+      const sentiment = tweetSymbol?.sentiments.find(s => s.model === model)?.sentiment || 0;
       return sentiment;
     } catch (err) {
       console.error(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`);
       console.error(err);
       console.log();
-      return '';
+      return 0;
     }
   }
 
@@ -165,7 +165,7 @@ class Database extends BaseController {
         id: tweet.id,
         time: tweet.time,
         text: tweet.text,
-        symbols: tweet.symbols.map(s => ({ symbol: s.symbol, sentiments: [] }))
+        symbols: tweet.symbols.map(s => ({ symbol: s.symbol, originalSymbol: s.originalSymbol, sentiments: [] }))
       }));
 
       const userDocument = {

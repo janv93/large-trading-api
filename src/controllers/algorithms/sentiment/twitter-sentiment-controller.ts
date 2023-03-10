@@ -23,7 +23,7 @@ export default class TwitterSentimentController extends BaseController {
         const p = entryPrices[i];
         const priceDiffPercent = (currentPrice - p) / p;
         const tpSlReached = this.isTpSlReached(this.buySignal, priceDiffPercent, 0.002, 0.04);
-      
+
         if (tpSlReached) {
           amount--;
           entryPrices.splice(i, 1);
@@ -34,7 +34,12 @@ export default class TwitterSentimentController extends BaseController {
 
       if (nextKline) {
         const tweetsWithSameTime = tweets.filter(t => t.time >= kline.times.open && t.time < nextKline.times.open);
-        const bullishTweets = tweetsWithSameTime.filter(t => t.symbols.map(s => s.sentiment).includes('bull'));
+
+        const bullishTweets = tweetsWithSameTime.filter(t => {
+          const sentiment = t.symbols.map(s => s.sentiment)[0];
+          return sentiment && sentiment > 7;
+        });
+
         const amountBullishTweets = bullishTweets.length;
 
         if (amountBullishTweets) {

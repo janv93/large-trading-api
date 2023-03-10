@@ -9,7 +9,7 @@ export default class OpenAi extends BaseController {
   private database = database;
   // CAREFUL - high cost - set usage limits
   // text-ada-001, text-babbage-001, text-curie-001, text-davinci-003
-  private model = 'text-ada-001';
+  private model = 'text-curie-001';
 
   private headers = {
     'Authorization': `Bearer ${process.env.openai_secret}`
@@ -31,19 +31,19 @@ export default class OpenAi extends BaseController {
     const dbSentiment = await this.database.getTweetSentiment(tweet.id, symbol.symbol, this.model);
 
     if (dbSentiment) { // in database
-      return { symbol: symbol.symbol, sentiment: dbSentiment };
+      return { symbol: symbol.symbol, originalSymbol: symbol.originalSymbol, sentiment: dbSentiment };
     } else {  // not in database, make call
-      const sentiment = await this.postCompletion(tweet, symbol.symbol);
-      return { symbol: symbol.symbol, sentiment };
+      const sentiment = await this.postCompletion(tweet, symbol.originalSymbol);
+      return { symbol: symbol.symbol, originalSymbol: symbol.originalSymbol, sentiment };
     }
   }
 
   // https://platform.openai.com/docs/api-reference/completions
-  public async postCompletion(tweet: Tweet, symbol: string): Promise<string> {
+  public async postCompletion(tweet: Tweet, symbol: string): Promise<number> {
     const url = this.baseUrl + '/completions';
     const body = {
       model: this.model, // https://platform.openai.com/docs/models/gpt-3
-      prompt: this.createSentimentPrompt(tweet.text, symbol), // single string or array of strings
+      prompt: this.createSentimentPromptScale(tweet.text, symbol), // single string or array of strings
       max_tokens: 10, // max response tokens
       temperature: 0, // randomness, 0 = none, 2 = max
       top_p: 1, // alternative to temperature, filters output tokens by probability, 0.1 = only top 10% of tokens
@@ -55,16 +55,17 @@ export default class OpenAi extends BaseController {
     try {
       const res = await axios.post(url, body, { headers: this.headers });
       const sentiment = res.data.choices.map(c => c.text)[0];
-      const sentimentFormatted = sentiment.replace(/[\n\s]/g, '').toLowerCase();
-      const mappedSentiment = ['bull', 'bear'].includes(sentimentFormatted) ? sentimentFormatted : 'neutral';
-      return mappedSentiment;
+      const numbers = sentiment.match(/\d+/g);
+      const sentimentNumber = numbers?.length && numbers?.length === 1 ? parseInt(numbers[0]) : -1;
+      const sentimentInRange = 0 < sentimentNumber && sentimentNumber < 11 ? sentimentNumber : 5;
+      return sentimentInRange;
     } catch (err) {
       this.handleError(err);
-      return '';
+      return 0;
     }
   }
 
-  private createSentimentPrompt(tweet: string, symbol: string): string {
+  private createSentimentPromptClassify(tweet: string, symbol: string): string {
     return `The following tweet contains the crypto currency symbol ${symbol}. 
 The goal is to get the sentiment of the author in order to understand where the author sees its value in the future (sentiment analysis). 
 Analyze the tweet and return a sentiment for ${symbol}. 
@@ -73,5 +74,16 @@ It is important to return "neutral" when there is uncertainty about a direction.
 The tweet is:\n\n
 "${tweet}"\n\n
 Sentiment: `;
+  }
+
+  private createSentimentPromptScale(tweet: string, symbol: string): string {
+    return `The following tweet contains the crypto currency symbol ${symbol}.
+The goal is to get the sentiment of the author in order to understand where the author sees its value in the future (sentiment analysis).
+The tweet is:\n\n
+"${tweet}"\n\n
+Analyze the tweet and return a sentiment for ${symbol}.
+The sentiment is a number from 1 to 10 where 1 is the most bearish and 10 is the most bullish. If a prediction cannot be determined or the sentiment is neutral, return 5.
+Only output the number from 1 to 10.
+Number: `
   }
 }

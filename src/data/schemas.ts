@@ -67,9 +67,14 @@ export const TweetSchema = new mongoose.Schema({
       required: true,
       index: true
     },
+    originalSymbol: {
+      type: String,
+      required: true,
+      index: true
+    },
     sentiments: [{
       sentiment: {
-        type: String,
+        type: mongoose.Schema.Types.Mixed,  // number or string, depending on algo
         required: false,
         index: true
       },
