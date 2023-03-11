@@ -54,6 +54,7 @@ export default class OpenAi extends BaseController {
     };
 
     try {
+      console.log('POST ' + url);
       const res = await axios.post(url, body, { headers: this.headers });
       const sentiment = res.data.choices[0].text;
       const numbers = sentiment.match(/\d+/g);
