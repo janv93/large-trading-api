@@ -52,7 +52,7 @@ export default class BinanceController extends BaseController {
 
     const klineUrl = this.createUrl(baseUrl, query);
 
-    console.log('GET' + 'klineUrl');
+    console.log('GET ' + klineUrl);
     return axios.get(klineUrl);
   }
 

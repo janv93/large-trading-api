@@ -12,11 +12,22 @@ export default class TwitterController extends BaseController {
   private cmc = new CoinmarketcapController();
   private binance = new BinanceController();
   private baseUrl = 'https://api.twitter.com';
+  private callCounter = 0;
+
   private headers = {
     'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
   };
 
   public async getUserTweets(userId: string, binanceSymbols: string[], startTime: number): Promise<Tweet[]> {
+    if (this.callCounter > 2900) {
+      console.log('Waiting 1 minute, call limit reached...');
+      await new Promise(resolve => setTimeout(resolve, 60000));  // wait 1 minute after ~3000 call limit
+      console.log('...Continue');
+      this.callCounter = 0;
+    }
+
+    this.callCounter++;
+
     const url = this.baseUrl + '/2/users/' + userId + '/tweets';
 
     const query = {
