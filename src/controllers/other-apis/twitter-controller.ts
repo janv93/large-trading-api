@@ -67,7 +67,7 @@ export default class TwitterController extends BaseController {
     const latestTweet = timeline.tweets[timeline!.tweets.length - 1];
 
     if (needsUpdate) {
-      const newTweets = await this.getUserTweets(timeline.id, binanceSymbols, timeline.tweets[timeline.tweets.length - 1].time);
+      const newTweets = await this.getUserTweets(timeline.id, binanceSymbols, latestTweet.time);
       const latestTweetIndex = newTweets.findIndex(tweet => tweet.id === latestTweet.id);
       const newTweetsFromIndex = latestTweetIndex > -1 ? newTweets.slice(latestTweetIndex + 1) : newTweets;
       const allTweets = [...timeline.tweets, ...newTweetsFromIndex];
