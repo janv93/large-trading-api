@@ -34,18 +34,18 @@ export default class OpenAi extends BaseController {
     if (dbSentiment) { // in database
       return { symbol: symbol.symbol, originalSymbol: symbol.originalSymbol, sentiment: dbSentiment };
     } else {  // not in database, make call
-      const sentiment = await this.postCompletionChat(tweet, symbol.originalSymbol);
+      const sentiment = await this.postCompletionChat(tweet, symbol.originalSymbol, symbol.price!);
       return { symbol: symbol.symbol, originalSymbol: symbol.originalSymbol, sentiment };
     }
   }
 
   // https://platform.openai.com/docs/api-reference/completions
-  public async postCompletion(tweet: Tweet, symbol: string): Promise<number> {
+  public async postCompletion(tweet: Tweet, symbol: string, price): Promise<number> {
     const url = this.baseUrl + '/completions';
 
     const body = {
       model: this.model, // https://platform.openai.com/docs/models/gpt-3
-      prompt: this.createSentimentPromptScale(tweet.text, symbol), // single string or array of strings
+      prompt: this.createSentimentPromptScale(tweet.text, symbol, price), // single string or array of strings
       max_tokens: 10, // max response tokens
       temperature: 0, // randomness, 0 = none, 2 = max
       top_p: 1, // alternative to temperature, filters output tokens by probability, 0.1 = only top 10% of tokens
@@ -69,13 +69,13 @@ export default class OpenAi extends BaseController {
   }
 
   // https://platform.openai.com/docs/api-reference/chat
-  public async postCompletionChat(tweet: Tweet, symbol: string): Promise<number> {
+  public async postCompletionChat(tweet: Tweet, symbol: string, price: number): Promise<number> {
     const url = this.baseUrl + '/chat/completions';
 
     const messages = [
       { role: 'system', content: 'You are an AI language model that specializes in sentiment analysis of crypto twitter.' },
-      { role: 'user', content: this.createSentimentPromptScale(tweet.text, symbol) },
-    ]
+      { role: 'user', content: this.createSentimentPromptScale(tweet.text, symbol, price) },
+    ];
 
     const body = {
       model: this.model,
@@ -102,25 +102,13 @@ export default class OpenAi extends BaseController {
     }
   }
 
-  private createSentimentPromptClassify(tweet: string, symbol: string): string {
-    return `The following tweet contains the crypto currency symbol ${symbol}. 
-The goal is to get the sentiment of the author in order to understand where the author sees its value in the future (sentiment analysis). 
-Analyze the tweet and return a sentiment for ${symbol}. 
-The sentiment is a string of either "bull" if the prediction is bullish, "bear" if the prediction is bearish, or "neutral" if the prediction is neutral or a prediction cannot be clearly determined. 
-It is important to return "neutral" when there is uncertainty about a direction. 
-The tweet is:\n\n
-"${tweet}"\n\n
+  private createSentimentPromptScale(tweet: string, symbol: string, price: number): string {
+    return `Analyze the sentiment of a tweet for the cryptocurrency symbol ${symbol}, priced at ${Math.floor(price)}$, assessing the author's view of ${symbol}'s short-term future value. 
+If there are multiple predictions, only consider the soonest. 
+The tweet reads:\n
+"${tweet}"\n
+Assign a sentiment score to ${symbol} on a 1-10 scale, where 1 is highly bearish and 10 is highly bullish. If you're unable to determine a perfectly clear direction, return a score of 5. 
+Only output the number.\n
 Sentiment: `;
-  }
-
-  private createSentimentPromptScale(tweet: string, symbol: string): string {
-    return `The following tweet contains the crypto currency symbol ${symbol}.
-The goal is to get the sentiment of the author in order to understand where the author sees its value in the future (sentiment analysis).
-The tweet is:\n\n
-"${tweet}"\n\n
-Analyze the tweet and return a sentiment for ${symbol}.
-The sentiment is a number from 1 to 10 where 1 is the most bearish and 10 is the most bullish. If a prediction cannot be determined or the sentiment is neutral, return 5.
-Only output the number from 1 to 10.
-Sentiment: `
   }
 }

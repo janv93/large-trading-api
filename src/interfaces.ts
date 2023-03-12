@@ -37,6 +37,7 @@ export interface Tweet {
 export interface TweetSymbol {
   symbol: string;
   originalSymbol: string;
+  price?: number; // price at time of tweet
   sentiment?: number;
 }
 

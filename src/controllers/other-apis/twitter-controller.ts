@@ -5,7 +5,7 @@ import BaseController from '../base-controller';
 import BinanceController from '../exchanges/binance-controller';
 import database from '../../data/database';
 import CoinmarketcapController from './coinmarketcap-controller';
-import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline } from '../../interfaces';
+import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '../../interfaces';
 
 export default class TwitterController extends BaseController {
   private database = database;
@@ -133,6 +133,29 @@ export default class TwitterController extends BaseController {
 
     const timelinesWithTweets = timelines.filter(ti => ti.tweets.length);
     return timelinesWithTweets;
+  }
+
+  public addPriceToTweetSymbols(tweets: Tweet[], klines: Kline[]): Tweet[] {
+    tweets.forEach(t => {
+      const priceKline = klines.find((k, i) => {
+        const nextKline = klines[i + 1];
+
+        if (nextKline) {
+          return k.times.open <= t.time && nextKline.times.open > t.time;
+        }
+
+        return false;
+      });
+
+      const klineSymbol = this.binance.pairToSymbol(klines[0].symbol);
+      const symbol = t.symbols.find(s => s.symbol === klineSymbol);
+
+      if (symbol && priceKline) {
+        symbol.price = priceKline.prices.close;
+      }
+    });
+
+    return tweets;
   }
 
   private getTweetSymbols(text: string, binanceSymbols: string[]): TweetSymbol[] {

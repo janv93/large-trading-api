@@ -65,13 +65,12 @@ export default class TwitterSentimentController extends BaseController {
   private async getTweetSentiments(timelines: TwitterTimeline[], klines: Kline[]): Promise<Tweet[]> {
     const earliestTime = klines[0].times.open;
     const symbol = this.binance.pairToSymbol(klines[0].symbol);
-
     const tweets: Tweet[] = timelines.flatMap(ti => ti.tweets);
     const tweetsInTimeRange = tweets.filter(t => t.time > earliestTime);
     const tweetsWithSymbol = tweetsInTimeRange.filter(t => t.symbols.map(s => s.symbol).includes(symbol));
     tweetsWithSymbol.forEach(t => t.symbols = t.symbols.filter(s => s.symbol === symbol));
-    const tweetsWithSentiments = await this.openai.getSentiments(tweetsWithSymbol);
-
+    const tweetsWithPrice = this.twitter.addPriceToTweetSymbols(tweetsWithSymbol, klines);
+    const tweetsWithSentiments = await this.openai.getSentiments(tweetsWithPrice);
     return tweetsWithSentiments;
   }
 }
