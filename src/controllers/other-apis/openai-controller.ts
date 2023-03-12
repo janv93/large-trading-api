@@ -8,8 +8,9 @@ export default class OpenAi extends BaseController {
   private baseUrl = 'https://api.openai.com/v1';
   private database = database;
   // CAREFUL - high cost - set usage limits
-  // text-ada-001, text-babbage-001, text-curie-001, text-davinci-003
-  private model = 'text-curie-001';
+  // completion: text-ada-001, text-babbage-001, text-curie-001, text-davinci-003
+  // chat completion: gpt-3.5-turbo
+  private model = 'gpt-3.5-turbo';
 
   private headers = {
     'Authorization': `Bearer ${process.env.openai_secret}`
@@ -77,7 +78,7 @@ export default class OpenAi extends BaseController {
     ]
 
     const body = {
-      model: 'gpt-3.5-turbo', // https://platform.openai.com/docs/models/gpt-3
+      model: this.model,
       messages, // single string or array of strings
       max_tokens: 10, // max response tokens
       temperature: 0, // randomness, 0 = none, 2 = max
