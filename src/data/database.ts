@@ -185,7 +185,6 @@ class Database extends BaseController {
 
       if (user) {
         console.log(`Read Twitter user.`);
-        console.log();
 
         const mappedTweets = user.tweets
           .map(tweet => ({
