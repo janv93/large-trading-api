@@ -74,19 +74,15 @@ export default class TwitterController extends BaseController {
     }
   }
 
-  public async getAndSaveUserTweets(timeline: TwitterTimeline, needsUpdate: boolean, binanceSymbols: string[]): Promise<Tweet[]> {
+  public async getAndSaveUserTweets(timeline: TwitterTimeline, binanceSymbols: string[], startTime: number): Promise<Tweet[]> {
     const latestTweet = timeline.tweets[timeline!.tweets.length - 1];
-
-    if (needsUpdate) {
-      const newTweets = await this.getUserTweets(timeline.id, binanceSymbols, latestTweet.time);
-      const latestTweetIndex = newTweets.findIndex(tweet => tweet.id === latestTweet.id);
-      const newTweetsFromIndex = latestTweetIndex > -1 ? newTweets.slice(latestTweetIndex + 1) : newTweets;
-      const allTweets = [...timeline.tweets, ...newTweetsFromIndex];
-      await this.database.updateTwitterUserTweets(timeline.id, allTweets);
-      return allTweets;
-    } else {
-      return timeline.tweets;
-    }
+    const newTweets = await this.getUserTweets(timeline.id, binanceSymbols, latestTweet.time);
+    const latestTweetIndex = newTweets.findIndex(tweet => tweet.id === latestTweet.id);
+    const newTweetsFromIndex = latestTweetIndex > -1 ? newTweets.slice(latestTweetIndex + 1) : newTweets;
+    const allTweets = [...timeline.tweets, ...newTweetsFromIndex];
+    await this.database.updateTwitterUserTweets(timeline.id, allTweets);
+    const tweetsFromStartTime = allTweets.filter(t => t.time >= startTime);
+    return tweetsFromStartTime;
   }
 
   public async getFriends(user: string): Promise<TwitterUser[]> {
@@ -126,7 +122,7 @@ export default class TwitterController extends BaseController {
       const timeline = await this.database.getTwitterUserTimeline(user.id);
 
       if (timeline) { // user exists: update user
-        const tweets = await this.getAndSaveUserTweets(timeline, needsUpdate, shortBinanceSymbols);
+        const tweets = needsUpdate ? await this.getAndSaveUserTweets(timeline, shortBinanceSymbols, startTime) : timeline.tweets.filter(t => t.time >= startTime);
         return { id: user.id, tweets };
       } else {  // user not existing: create user
         const tweets = await this.getUserTweets(user.id, shortBinanceSymbols, startTime);

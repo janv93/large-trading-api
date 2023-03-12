@@ -130,7 +130,6 @@ class Database extends BaseController {
       console.log(`Done writing ${newSentiments} sentiments.`);
     } catch (err) {
       console.error(`Failed to write sentiments: `, err);
-      console.log();
       return;
     }
   }
@@ -146,19 +145,15 @@ class Database extends BaseController {
     } catch (err) {
       console.error(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`);
       console.error(err);
-      console.log();
       return 0;
     }
   }
 
   public async writeTwitterUserTimeline(userId: string, tweets: Tweet[]): Promise<void> {
     if (tweets.length === 0) {
-      console.log();
       console.log('0 tweets to write. Exiting...');
-      console.log();
       return;
     } else {
-      console.log();
       console.log(`Writing ${tweets.length} tweets for user ${userId}...`);
 
       const tweetDocuments = tweets.map(tweet => ({
@@ -176,16 +171,13 @@ class Database extends BaseController {
       try {
         await this.TwitterUserTimeline.create(userDocument);
         console.log(`Done writing tweets.`);
-        console.log();
       } catch (err) {
         console.error(`Failed to write tweets for user ${userId}: `, err);
-        console.log();
       }
     }
   }
 
   public async getTwitterUserTimeline(userId: string): Promise<TwitterTimeline | null> {
-    console.log();
     console.log(`Reading Twitter user ${userId}...`);
 
     try {
@@ -211,18 +203,15 @@ class Database extends BaseController {
         };
       } else {
         console.log(`Twitter user ${userId} not found.`);
-        console.log();
         return null;
       }
     } catch (err) {
       console.error(`Failed to retrieve Twitter user ${userId}: `, err);
-      console.log();
       return null;
     }
   }
 
   public async updateTwitterUserTweets(userId: string, newTweets: Tweet[]): Promise<void> {
-    console.log();
     console.log(`Updating tweets for Twitter user ${userId}...`);
 
     try {
@@ -239,14 +228,11 @@ class Database extends BaseController {
         await user.save();
 
         console.log(`Updated tweets for Twitter user ${userId}.`);
-        console.log();
       } else {
         console.log(`Twitter user ${userId} not found.`);
-        console.log();
       }
     } catch (err) {
       console.error(`Failed to update tweets for Twitter user ${userId}: `, err);
-      console.log();
     }
   }
 
