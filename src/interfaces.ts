@@ -8,6 +8,7 @@ export interface Kline {
   signal?: string;
   percentProfit?: number;
   amount?: number;
+  tweets?: Tweet[];
 };
 
 export interface KlineTimes {

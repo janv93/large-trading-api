@@ -105,10 +105,10 @@ export default class OpenAi extends BaseController {
   private createSentimentPromptScale(tweet: string, symbol: string, price: number): string {
     return `Analyze the sentiment of a tweet for the cryptocurrency symbol ${symbol}, priced at ${Math.floor(price)}$, assessing the author's view of ${symbol}'s short-term future value. 
 If there are multiple predictions, only consider the soonest. 
-The tweet reads:\n
-"${tweet}"\n
+The tweet reads:
+"${tweet}"
 Assign a sentiment score to ${symbol} on a 1-10 scale, where 1 is highly bearish and 10 is highly bullish. If you're unable to determine a perfectly clear direction, return a score of 5. 
-Only output the number.\n
+Only output the number.
 Sentiment: `;
   }
 }

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { Kline } from '../../interfaces';
+import { Kline, Tweet } from '../../interfaces';
 import BaseController from '../base-controller';
 import database from '../../data/database';
 
@@ -243,6 +243,18 @@ export default class BinanceController extends BaseController {
     } else {
       throw('Could not map symbol ' + symbol + ' to corresponding pair.');
     }
+  }
+
+  // add all tweets with same time to their klines
+  public addTweetsToKlines(klines: Kline[], tweets: Tweet[]): void {
+    klines.forEach((k, i) => {
+      const nextKlineTime = klines[i + 1]?.times?.open;
+
+      if (nextKlineTime) {
+        const tweetsWithSameTime = tweets.filter(t => t.time >= k.times.open && t.time < nextKlineTime);
+        k.tweets = tweetsWithSameTime;
+      }
+    });
   }
 
   private createHmac(query): string {
