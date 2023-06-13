@@ -11,6 +11,7 @@
   "private": true,
   "dependencies": {
     "@angular/animations": "~12.0.3",
+    "@angular/cli": "^16.1.0",
     "@angular/common": "~12.0.3",
     "@angular/compiler": "~12.0.3",
     "@angular/core": "~12.0.3",
@@ -26,7 +27,6 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~12.0.3",
-    "@angular/cli": "~12.0.3",
     "@angular/compiler-cli": "~12.0.3",
     "@types/jasmine": "~3.6.0",
     "@types/node": "^12.11.1",
