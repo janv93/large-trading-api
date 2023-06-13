@@ -16,12 +16,13 @@ export class IndicatorChartComponent implements AfterViewInit {
   public chart: string;
 
   private options: any;
-  private baseUrl = this.chartService.baseUrl + '/indicators';
+  private baseUrl: string;
 
   constructor(
     private http: HttpClient,
     private chartService: ChartService
   ) {
+    this.baseUrl = this.chartService.baseUrl + '/indicators';
   }
 
   ngAfterViewInit(): void {
