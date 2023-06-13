@@ -1,7 +1,7 @@
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 
-export default class MomentumController extends BaseController {
+export default class Momentum extends Base {
   public setSignals(klines: Kline[], streak: number): Kline[] {
     const colors: number[] = klines.map(kline => this.getKlineColor(kline));
 

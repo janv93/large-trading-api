@@ -1,7 +1,7 @@
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 
-export default class BacktestController extends BaseController {
+export default class Backtest extends Base {
   public calcBacktestPerformance(klines: Kline[], commission: number, flowingProfit: boolean): Kline[] {
     let percentProfit = 0;
     let lastSignalKline: Kline;

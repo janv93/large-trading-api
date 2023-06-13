@@ -1,11 +1,11 @@
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
-import BinanceController from '../exchanges/binance-controller';
+import Base from '../base';
+import Binance from '../exchanges/binance';
 
 // WIP
 
-export default class MtfController extends BaseController {
-  private binanceController = new BinanceController();
+export default class Mtf extends Base {
+  private binance = new Binance();
 
   private timeframesInOrder = [
     '1m',

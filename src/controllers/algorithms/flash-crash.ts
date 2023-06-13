@@ -1,7 +1,7 @@
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 
-export default class FlashCrashController extends BaseController {
+export default class FlashCrash extends Base {
   public setSignals(klines: Kline[]): Kline[] {
     // WIP: react to rapid price decrease in short time interval
     // idea: use martingale at resistances / max % drop

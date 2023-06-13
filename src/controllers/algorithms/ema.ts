@@ -1,21 +1,21 @@
-import IndicatorsController from '../technical-analysis/indicators-controller';
+import Indicators from '../technical-analysis/indicators';
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
-import BinanceController from '../exchanges/binance-controller';
-import BtseController from '../exchanges/btse-controller';
+import Base from '../base';
+import Binance from '../exchanges/binance';
+import Btse from '../exchanges/btse';
 
-export default class EmaController extends BaseController {
-  private indicatorsController = new IndicatorsController();
-  private binanceController = new BinanceController();
-  private btseController = new BtseController();
+export default class Ema extends Base {
+  private indicators = new Indicators();
+  private binance = new Binance();
+  private btse = new Btse();
   private tradingPositionOpen = new Map();
 
   /**
    * sets position signals depending on emas going up or down
    */
   public setSignals(klines: Kline[], periodOpen: number, periodClose: number): Kline[] {
-    const emaOpenFull = this.indicatorsController.ema(klines, periodOpen);
-    const emaCloseFull = this.indicatorsController.ema(klines, periodClose);
+    const emaOpenFull = this.indicators.ema(klines, periodOpen);
+    const emaCloseFull = this.indicators.ema(klines, periodClose);
     const maxLength = Math.min(emaOpenFull.length, emaCloseFull.length);
     const emaOpen = emaOpenFull.slice(-maxLength);
     const emaClose = emaCloseFull.slice(-maxLength);
@@ -84,7 +84,7 @@ export default class EmaController extends BaseController {
   }
 
   public setSignalsSL(klines: Kline[], period: number): Kline[] {
-    const ema = this.indicatorsController.ema(klines, period);
+    const ema = this.indicators.ema(klines, period);
     const klinesWithEma = klines.slice(-ema.length);
 
     let lastMove: string;
@@ -192,11 +192,11 @@ export default class EmaController extends BaseController {
    * run trading algorithm in selected interval
    */
   private async tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
-    const klines = await this.binanceController.getKlines(symbol, timeframe);
+    const klines = await this.binance.getKlines(symbol, timeframe);
     const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
     klines.splice(-1);  // remove running timeframe
     console.log(klines.slice(-3))
-    const ema = this.indicatorsController.ema(klines, 80);
+    const ema = this.indicators.ema(klines, 80);
     console.log(ema.slice(-3))
   
     const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
@@ -227,7 +227,7 @@ export default class EmaController extends BaseController {
   
   private async openLong(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
-      await this.btseController.long(symbol, cryptoQuantity, leverage);
+      await this.btse.long(symbol, cryptoQuantity, leverage);
       this.tradingPositionOpen.set(symbol, true);
     } catch (err) {
       this.handleError(err);
@@ -236,7 +236,7 @@ export default class EmaController extends BaseController {
   
   private async openShort(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
-      await this.btseController.short(symbol, cryptoQuantity, leverage);
+      await this.btse.short(symbol, cryptoQuantity, leverage);
       this.tradingPositionOpen.set(symbol, true);
     } catch (err) {
       this.handleError(err);
@@ -245,8 +245,8 @@ export default class EmaController extends BaseController {
   
   private async closeShortOpenLong(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
-      await this.btseController.closeOrder(symbol);
-      await this.btseController.long(symbol, cryptoQuantity, leverage);
+      await this.btse.closeOrder(symbol);
+      await this.btse.long(symbol, cryptoQuantity, leverage);
     } catch (err) {
       this.handleError(err);
     }
@@ -254,8 +254,8 @@ export default class EmaController extends BaseController {
   
   private async closeLongOpenShort(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
-      await this.btseController.closeOrder(symbol);
-      await this.btseController.short(symbol, cryptoQuantity, leverage);
+      await this.btse.closeOrder(symbol);
+      await this.btse.short(symbol, cryptoQuantity, leverage);
     } catch (err) {
       this.handleError(err);
     }

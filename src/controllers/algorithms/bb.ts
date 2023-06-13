@@ -1,12 +1,12 @@
-import IndicatorsController from '../technical-analysis/indicators-controller';
+import Indicators from '../technical-analysis/indicators';
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 
-export default class BbController extends BaseController {
-  private indicatorsController = new IndicatorsController();;
+export default class Bb extends Base {
+  private indicators = new Indicators();;
 
   public setSignals(klines: Kline[], period: number): Kline[] {
-    const bb = this.indicatorsController.bb(klines, period);
+    const bb = this.indicators.bb(klines, period);
     const klinesWithBb = klines.slice(-bb.length);
 
     const threshold = 0.003; // percent that the price has fall below lower band / rise above upper band for position to open

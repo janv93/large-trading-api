@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { AlpacaResponse, Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 import database from '../../data/database';
 
-export default class AlpacaController extends BaseController {
+export default class Alpaca extends Base {
   private database = database;
   private klines: any[] = [];
 

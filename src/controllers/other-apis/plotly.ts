@@ -1,7 +1,7 @@
-import BaseController from '../base-controller';
+import Base from '../base';
 import plotly from 'plotly';
 
-export default class PlotlyController extends BaseController {
+export default class Plotly extends Base {
   private _plotly = new plotly(process.env.plotly_username, process.env.plotly_api_key);
 
   public plot(sequence: number[]) {

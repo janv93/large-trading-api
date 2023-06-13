@@ -1,14 +1,14 @@
-import BaseController from '../../base-controller';
+import Base from '../../base';
 import { Kline } from '../../../interfaces';
-import PlotlyController from '../../other-apis/plotly-controller';
-import IndicatorsController from '../../technical-analysis/indicators-controller';
+import Plotly from '../../other-apis/plotly';
+import Indicators from '../../technical-analysis/indicators';
 
 // import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
 import * as tf from '@tensorflow/tfjs-node';   // CPU
 
-export default class TensorflowController extends BaseController {
-  private plotlyController = new PlotlyController();
-  private indicatorsController = new IndicatorsController();
+export default class Tensorflow extends Base {
+  private plotly = new Plotly();
+  private indicators = new Indicators();
 
   constructor() {
     super();
@@ -126,7 +126,7 @@ export default class TensorflowController extends BaseController {
     const predictions = (model.predict(testX) as any).dataSync();
     testX.print();
     console.log(predictions);
-    this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
+    this.plotly.plotPredictions(dataTestX, predictions, outputCount);
   }
 
   /**
@@ -188,7 +188,7 @@ export default class TensorflowController extends BaseController {
 
     const mappedData = this.mapInputsToPredictions(dataTestX, actual, predictions);
     console.log(mappedData);
-    // this.plotlyController.plotPredictions(dataTestX, predictions, outputCount);
+    // this.plotly.plotPredictions(dataTestX, predictions, outputCount);
 
 
     // analyze actual vs prediction
@@ -270,12 +270,12 @@ export default class TensorflowController extends BaseController {
     // btc dominance?
     // fear and greed index?
 
-    const rsiFull = this.indicatorsController.rsi(klines, 7);
-    const macdFull = this.createDiffs(this.indicatorsController.macd(klines, 12, 26, 9).map(macd => macd.histogram), false, 0.1);
-    const bbFull = this.indicatorsController.bb(klines, 21);
-    const ema20Full = this.createDiffs(this.indicatorsController.ema(klines, 20).map(ema => ema.ema), true, 100);
-    const ema50Full = this.createDiffs(this.indicatorsController.ema(klines, 50).map(ema => ema.ema), true, 100);
-    const ema100Full = this.createDiffs(this.indicatorsController.ema(klines, 100).map(ema => ema.ema), true, 100);
+    const rsiFull = this.indicators.rsi(klines, 7);
+    const macdFull = this.createDiffs(this.indicators.macd(klines, 12, 26, 9).map(macd => macd.histogram), false, 0.1);
+    const bbFull = this.indicators.bb(klines, 21);
+    const ema20Full = this.createDiffs(this.indicators.ema(klines, 20).map(ema => ema.ema), true, 100);
+    const ema50Full = this.createDiffs(this.indicators.ema(klines, 50).map(ema => ema.ema), true, 100);
+    const ema100Full = this.createDiffs(this.indicators.ema(klines, 100).map(ema => ema.ema), true, 100);
 
     const maxLength = Math.min(rsiFull.length, macdFull.length, bbFull.length, ema20Full.length, ema50Full.length, ema100Full.length);
 

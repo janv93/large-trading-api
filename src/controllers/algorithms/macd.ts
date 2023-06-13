@@ -1,12 +1,12 @@
-import IndicatorsController from '../technical-analysis/indicators-controller';
+import Indicators from '../technical-analysis/indicators';
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 
-export default class MacdController extends BaseController {
-  private indicatorsController = new IndicatorsController();
+export default class Macd extends Base {
+  private indicators = new Indicators();
 
   public setSignals(klines: Kline[], fast: number, slow: number, signal: number): Kline[] {
-    const histogram = this.indicatorsController.macd(klines, fast, slow, signal);
+    const histogram = this.indicators.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
 
     let lastHistogram: number;

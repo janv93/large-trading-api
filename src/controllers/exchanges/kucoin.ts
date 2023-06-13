@@ -2,10 +2,10 @@ import axios from 'axios';
 import crypto from 'crypto';
 import btoa from 'btoa';
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 import database from '../../data/database';
 
-export default class KucoinController extends BaseController {
+export default class Kucoin extends Base {
   private database = database;
   private klines: Kline[] = [];
 

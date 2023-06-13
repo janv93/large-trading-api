@@ -1,8 +1,8 @@
 import { Kline } from '../../../interfaces';
-import BaseController from '../../base-controller';
+import Base from '../../base';
 
 
-export default class MartingaleController extends BaseController {
+export default class Martingale extends Base {
   public setSignals(klines: Kline[], threshold: number): Kline[] {
     let streak = 0;
     let lastClose;

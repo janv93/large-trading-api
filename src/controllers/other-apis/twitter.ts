@@ -1,16 +1,16 @@
 import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
-import BaseController from '../base-controller';
-import BinanceController from '../exchanges/binance-controller';
+import Base from '../base';
+import Binance from '../exchanges/binance';
 import database from '../../data/database';
-import CoinmarketcapController from './coinmarketcap-controller';
+import Coinmarketcap from './coinmarketcap';
 import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '../../interfaces';
 
-export default class TwitterController extends BaseController {
+export default class Twitter extends Base {
   private database = database;
-  private cmc = new CoinmarketcapController();
-  private binance = new BinanceController();
+  private cmc = new Coinmarketcap();
+  private binance = new Binance();
   private baseUrl = 'https://api.twitter.com';
   private callCounter = 0;
 

@@ -1,8 +1,8 @@
 import { Kline } from '../../../interfaces';
-import BaseController from '../../base-controller';
+import Base from '../../base';
 
 
-export default class DcaController extends BaseController {
+export default class Dca extends Base {
   public setSignals(klines: Kline[]): Kline[] {
     klines.forEach((kline: Kline, i: number) => {
       if (i % 10 === 0) {

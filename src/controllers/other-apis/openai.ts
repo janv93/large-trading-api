@@ -1,10 +1,10 @@
 import axios from 'axios';
-import BaseController from '../base-controller';
+import Base from '../base';
 import database from '../../data/database';
 import { Tweet, TweetSymbol } from '../../interfaces';
 
 
-export default class OpenAi extends BaseController {
+export default class OpenAi extends Base {
   private baseUrl = 'https://api.openai.com/v1';
   private database = database;
   // CAREFUL - high cost - set usage limits

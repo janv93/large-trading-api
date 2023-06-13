@@ -1,12 +1,12 @@
-import IndicatorsController from '../technical-analysis/indicators-controller';
+import Indicators from '../technical-analysis/indicators';
 import { Kline } from '../../interfaces';
-import BaseController from '../base-controller';
+import Base from '../base';
 
-export default class RsiController extends BaseController {
-  private indicatorsController = new IndicatorsController();
+export default class Rsi extends Base {
+  private indicators = new Indicators();
 
   public setSignals(klines: Kline[], length: number): Kline[] {
-    const rsi = this.indicatorsController.rsi(klines, length);
+    const rsi = this.indicators.rsi(klines, length);
     const klinesWithRsi = klines.slice(-rsi.length);
     this.setOverBoughtOverSoldSignals(klinesWithRsi, rsi);
 

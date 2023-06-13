@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
-import BaseController from '../controllers/base-controller';
+import Base from '../controllers/base';
 import { Kline, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
 import { KlineSchema, TwitterUserTimelineSchema } from './schemas';
 
 mongoose.set('strictQuery', true);
 
-class Database extends BaseController {
+class Database extends Base {
   private Kline: mongoose.Model<any>;
   private TwitterUserTimeline: mongoose.Model<any>;
 

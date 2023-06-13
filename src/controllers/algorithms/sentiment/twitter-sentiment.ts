@@ -1,16 +1,16 @@
 import { Kline, Tweet, TwitterTimeline } from '../../../interfaces';
-import BaseController from '../../base-controller';
-import TwitterController from '../../other-apis/twitter-controller';
-import OpenAi from '../../other-apis/openai-controller';
-import BinanceController from '../../exchanges/binance-controller';
-import BacktestController from '../backtest-controller';
+import Base from '../../base';
+import Twitter from '../../other-apis/twitter';
+import OpenAi from '../../other-apis/openai';
+import Binance from '../../exchanges/binance';
+import Backtest from '../backtest';
 
 
-export default class TwitterSentimentController extends BaseController {
-  private twitter = new TwitterController();
+export default class TwitterSentiment extends Base {
+  private twitter = new Twitter();
   private openai = new OpenAi();
-  private binance = new BinanceController();
-  private backtest = new BacktestController();
+  private binance = new Binance();
+  private backtest = new Backtest();
 
   public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
     const initTime = Date.now() - this.timeframeToMilliseconds('1m') * 100 * 1000;  // init with 100k minutes, so that there are no conflicts in future calls

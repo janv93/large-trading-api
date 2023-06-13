@@ -1,9 +1,8 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import btoa from 'btoa';
-import BaseController from '../base-controller';
+import Base from '../base';
 
-export default class BtseController extends BaseController {
+export default class Btse extends Base {
   public setLeverage(symbol: string, leverage: number): Promise<any> {
     const now = Date.now();
 

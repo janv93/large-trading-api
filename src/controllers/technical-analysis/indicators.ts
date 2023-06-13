@@ -2,7 +2,7 @@ import * as TA from 'technicalindicators';
 import * as TACopy from '../../utilities/technicalindicators-copy/index';
 import { Kline } from '../../interfaces';
 
-export default class IndicatorsController {
+export default class Indicators {
   constructor() {
   }
 

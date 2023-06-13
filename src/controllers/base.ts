@@ -1,6 +1,6 @@
 import { Kline } from '../interfaces';
 
-export default class BaseController {
+export default class Base {
   protected buySignal = 'BUY';
   protected closeBuySignal = 'CLOSEBUY';
   protected sellSignal = 'SELL';

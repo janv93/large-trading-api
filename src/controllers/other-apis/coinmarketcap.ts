@@ -1,9 +1,9 @@
 import axios from 'axios';
-import BaseController from '../base-controller';
+import Base from '../base';
 import cryptos from './coinmarketcap-all-cryptos';
 
 
-export default class CoinmarketcapController extends BaseController {
+export default class Coinmarketcap extends Base {
   private baseUrl = 'https://pro-api.coinmarketcap.com/v1';
 
   private headers = {
