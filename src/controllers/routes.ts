@@ -76,11 +76,7 @@ export default class Routes extends Base {
     try {
       const response = await this.database.getKlines(query.symbol, query.timeframe);
       const responseInRange = response.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
-      let klinesWithSignals = this.handleAlgoSync(responseInRange, query);
-
-      if (!klinesWithSignals || !klinesWithSignals.length) {
-        klinesWithSignals = await this.handleAlgoAsync(responseInRange, req.query);
-      }
+      let klinesWithSignals = await this.handleAlgo(responseInRange, query);
 
       res.send(klinesWithSignals);
     } catch (err: any) {
@@ -122,50 +118,32 @@ export default class Routes extends Base {
     res.send(indicatorChart);
   }
 
-  private handleAlgoSync(responseInRange: Kline[], query): Kline[] {
-    let klinesWithSignals: Kline[] = [];
-    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, streak } = query;
+  private async handleAlgo(responseInRange: Kline[], query): Promise<Kline[]> {
+    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, streak, user } = query;
 
     switch (algorithm) {
       case 'momentum':
-        klinesWithSignals = this.momentum.setSignals(responseInRange, streak);
-        break;
+        return this.momentum.setSignals(responseInRange, streak);
       case 'macd':
-        klinesWithSignals = this.macd.setSignals(responseInRange, fast, slow, signal);
-        break;
+        return this.macd.setSignals(responseInRange, fast, slow, signal);
       case 'rsi':
-        klinesWithSignals = this.rsi.setSignals(responseInRange, Number(length));
-        break;
+        return this.rsi.setSignals(responseInRange, Number(length));
       case 'ema':
-        klinesWithSignals = this.ema.setSignals(responseInRange, Number(periodOpen), Number(periodClose));
-        break;
+        return this.ema.setSignals(responseInRange, Number(periodOpen), Number(periodClose));
       case 'emasl':
-        klinesWithSignals = this.ema.setSignalsSL(responseInRange, Number(periodClose));
-        break;
+        return this.ema.setSignalsSL(responseInRange, Number(periodClose));
       case 'bb':
-        klinesWithSignals = this.bb.setSignals(responseInRange, Number(length));
-        break;
+        return this.bb.setSignals(responseInRange, Number(length));
       case 'deepTrend':
-        klinesWithSignals = this.tensorflow.setSignals(responseInRange);
-        break;
+        return this.tensorflow.setSignals(responseInRange);
       case 'flashCrash':
-        klinesWithSignals = this.flashCrash.setSignals(responseInRange);
-        break;
+        return this.flashCrash.setSignals(responseInRange);
       case 'dca':
-        klinesWithSignals = this.dca.setSignals(responseInRange);
-        break;
+        return this.dca.setSignals(responseInRange);
       case 'martingale':
-        klinesWithSignals = this.martingale.setSignals(responseInRange, Number(threshold));
-        break;
-    }
-
-    return klinesWithSignals;
-  }
-
-  private async handleAlgoAsync(responseInRange, query): Promise<Kline[]> {
-    switch (query.algorithm) {
+        return this.martingale.setSignals(responseInRange, Number(threshold));
       case 'twitterSentiment':
-        return await this.twitterSentiment.setSignals(responseInRange, query.user);
+        return await this.twitterSentiment.setSignals(responseInRange, user);
       default: throw 'invalid';
     }
   }
