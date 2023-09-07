@@ -57,9 +57,16 @@ export default class Alpaca extends Base {
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<any> {
-    const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 200;
-    const startTime = Date.now() - timespan;
+  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
+    let startTime;
+
+    if (timeframe.includes('w')) {
+      const timespan = this.timeframeToMilliseconds(timeframe) * 1000;
+      startTime = Date.now() - timespan;
+    } else {
+      const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 200;
+      startTime = Date.now() - timespan;
+    }
 
     try {
       const res = await this.database.getKlines(symbol, timeframe);
@@ -67,7 +74,9 @@ export default class Alpaca extends Base {
       if (!res || !res.length) {  // not in database yet
         const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, timeframe);
         await this.database.writeKlines(newKlines);
-        return { message: 'Database initialized with ' + newKlines.length + ' klines' };
+        console.log('Database initialized with ' + newKlines.length + ' klines');
+        console.log();
+        return newKlines;
       } else {  // already in database
         const dbKlines = res;
         const lastKline = dbKlines[dbKlines.length - 1];
@@ -108,6 +117,20 @@ export default class Alpaca extends Base {
     }
   }
 
+  public async getAssets(): Promise<string[]> {
+    let res;
+
+    const options = {
+      headers: {
+        'APCA-API-KEY-ID': process.env.alpaca_api_key,
+        'APCA-API-SECRET-KEY': process.env.alpaca_api_secret
+      }
+    };
+
+    res = await axios.get('https://api.alpaca.markets/v2/assets', options);
+    return res.data.map(s => s.symbol);
+  }
+
   private mapKlines(symbol: string, timeframe: string, klines: any): Kline[] {
     return klines.map(k => {
       return {
@@ -136,6 +159,7 @@ export default class Alpaca extends Base {
       case 'm': return amount + 'Minute';
       case 'h': return amount + 'Hour';
       case 'd': return amount + 'Day';
+      case 'w': return amount + 'Week';
       default: return 'incorrect timeframe';
     }
   }

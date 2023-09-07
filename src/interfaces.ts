@@ -60,3 +60,10 @@ export interface TweetSentiment {
   model: string;
   sentiment: number;
 }
+
+export interface StockInfo {
+  symbol: string;
+  country: string;
+  sector: string;
+  cap: number;
+}

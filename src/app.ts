@@ -30,6 +30,11 @@ app.get('/klinesWithAlgorithm', (req, res) => {
   routes.getKlinesWithAlgorithm(req, res);
 });
 
+app.get('/multi', (req, res) => {
+  console.log('/multi');
+  routes.runMultiTicker(req, res);
+});
+
 app.get('/trade', (req, res) => {
   console.log('/trade');
   routes.tradeStrategy(req, res);

@@ -77,7 +77,6 @@ export default class Btse extends Base {
     }
   }
 
-
   public closeOrder(symbol: string): Promise<any> {
     const mappedSymbol = this.mapSymbol(symbol);
     const now = Date.now();

@@ -1,5 +1,6 @@
 import database from '../data/database';
 import Base from './base';
+import { Kline } from '../interfaces';
 import Alpaca from './exchanges/alpaca';
 import Binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
@@ -15,7 +16,8 @@ import FlashCrash from './algorithms/flash-crash';
 import Dca from './algorithms/investing/dca';
 import Martingale from './algorithms/investing/martingale';
 import TwitterSentiment from './algorithms/sentiment/twitter-sentiment';
-import { Kline } from '../interfaces';
+import MultiTicker from './algorithms/multi-ticker';
+
 
 export default class Routes extends Base {
   private database = database;
@@ -34,6 +36,7 @@ export default class Routes extends Base {
   private dca = new Dca();
   private martingale = new Martingale();
   private twitterSentiment = new TwitterSentiment();
+  private multiTicker = new MultiTicker();
 
   public async initKlines(req, res): Promise<void> {
     let exchange;
@@ -87,6 +90,11 @@ export default class Routes extends Base {
         res.status(500).json({ error: err.message });
       }
     }
+  }
+
+  public async runMultiTicker(req, res): Promise<void> {
+    const ret = await this.multiTicker.setSignals();
+    res.send(ret);
   }
 
   public postBacktestData(req, res): void {
