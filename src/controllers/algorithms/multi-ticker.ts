@@ -15,12 +15,6 @@ export default class MultiTicker extends Base {
   }
 
   public async initStocks(stocks: string[]) {
-    const tickers = await Promise.all(stocks.map(s => this.alpaca.initKlinesDatabase(s, '1w')));
-    const symbols = tickers.map(t => {
-      console.log(t[0])
-      return t[0].symbol
-    });
-    console.log(stocks)
-    console.log(symbols)
+    const tickers: Kline[][] = await Promise.all(stocks.map(s => this.alpaca.initKlinesDatabase(s, '1w')));
   }
 }
