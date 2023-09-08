@@ -13,6 +13,7 @@ export class ChartService {
   public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
   public times = 100;  // 1 = 1000 timeframes
   public isInvestmentStrategy: boolean;
+  public commission = 0.04;
   public rsiLength = 7;
   public emaPeriodOpen = 80;
   public emaPeriodClose = 80;
@@ -21,7 +22,6 @@ export class ChartService {
   public momentumStreak = 5;
   public martingaleThreshold = 0.01;
   public twitterUser = environment.twitterUser;
-  public commission = 0.04;
   public baseUrl = 'http://127.0.0.1:3000';
 
   constructor() {
