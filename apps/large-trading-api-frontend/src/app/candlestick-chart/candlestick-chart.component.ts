@@ -28,7 +28,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
 
   ngAfterViewInit(): void {
     this.initChart(this.chartService.symbol);
-    this.getKlines(this.chartService.symbol, this.chartService.timeframeMultiplier, this.chartService.strategy, this.chartService.timeframe);
+    this.getKlines();
   }
 
   private initChart(symbol): void {
@@ -92,39 +92,27 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
     };
   }
 
-  private getKlines(symbol: string, times: number, strategy: string, timeframe: string) {
-    this.initKlines(symbol, timeframe).subscribe(() => {
-      const query = this.getStrategyQuery(strategy, symbol, times, timeframe);
-      const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
-      const url = this.chartService.createUrl(baseUrl, query);
+  private getKlines() {
+    const query = this.getStrategyQuery();
+    const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
+    const url = this.chartService.createUrl(baseUrl, query);
 
-      this.http.get(url).subscribe((res: any) => {
-        this.setSignals(res);
-        const klines = this.mapKlines(res);
-        this.options.series[0].data = klines;
-        this.renderChart();
-        this.chartService.klinesSubject.next(res);
-      });
+    this.http.get(url).subscribe((res: any) => {
+      this.setSignals(res);
+      const klines = this.mapKlines(res);
+      this.options.series[0].data = klines;
+      this.renderChart();
+      this.chartService.klinesSubject.next(res);
     });
   }
 
-  private initKlines(symbol: string, timeframe: string): Observable<any> {
-    const query = {
-      symbol,
-      timeframe,
-      exchange: this.chartService.exchange
-    };
+  private getStrategyQuery(): any {
+    const { exchange, strategy, symbol, times, timeframe } = this.chartService;
 
-    const baseUrl = this.baseUrl + '/initKlines';
-    const url = this.chartService.createUrl(baseUrl, query);
-
-    return this.http.get(url);
-  }
-
-  private getStrategyQuery(strategy: string, symbol: string, times: number, timeframe: string): any {
     switch (strategy) {
       case 'pivotReversal':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -134,6 +122,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'momentum':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -142,6 +131,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'macd':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -152,6 +142,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'rsi':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -160,6 +151,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'ema':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -169,6 +161,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'emasl':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -177,6 +170,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'bb':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -185,6 +179,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'deepTrend':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -192,6 +187,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'dca':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -199,6 +195,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'martingale':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -207,6 +204,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'flashCrash':
         return {
+          exchange,
           symbol,
           times,
           timeframe,
@@ -214,6 +212,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
         };
       case 'twitterSentiment':
         return {
+          exchange,
           symbol,
           times,
           timeframe,

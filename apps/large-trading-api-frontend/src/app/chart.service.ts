@@ -7,11 +7,11 @@ import { environment } from '../environments/environment';
 })
 export class ChartService {
   public klinesSubject = new Subject();
-  public exchange = 'binance'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
-  public strategy = 'twitterSentiment';
-  public symbol = 'BTCUSDT';
-  public timeframe = '1m';  // 1m, 5m, 15m, 1h... 1d...
-  public timeframeMultiplier = 10;  // 1 = 1000 timeframes
+  public exchange = 'alpaca'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
+  public strategy = 'ema';
+  public symbol = 'SPY';
+  public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
+  public times = 100;  // 1 = 1000 timeframes
   public isInvestmentStrategy: boolean;
   public rsiLength = 7;
   public emaPeriodOpen = 80;
