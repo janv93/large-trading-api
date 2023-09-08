@@ -58,15 +58,7 @@ export default class Alpaca extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
-    let startTime;
-
-    if (timeframe.includes('w')) {
-      const timespan = this.timeframeToMilliseconds(timeframe) * 1000;
-      startTime = Date.now() - timespan;
-    } else {
-      const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 200;
-      startTime = Date.now() - timespan;
-    }
+    const startTime = this.calcStartTime(timeframe);
 
     try {
       const res = await this.database.getKlines(symbol, timeframe);

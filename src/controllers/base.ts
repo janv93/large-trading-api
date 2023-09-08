@@ -146,4 +146,18 @@ export default class Base {
   protected timestampsToDateRange(timestampStart: number, timestampEnd: number): string {
     return `From ${this.timestampToDate(timestampStart)} to ${this.timestampToDate(timestampEnd)}`;
   }
+
+  protected calcStartTime(timeframe: string): number {
+    const timeframeChar = timeframe.replace(/\d+/g, '');
+    const ms = this.timeframeToMilliseconds(timeframe);
+    const now = Date.now();
+
+    switch (timeframeChar) {
+      case 'm': return now - ms * 200 * 1000; // 200k minutes = 138 days
+      case 'h': return now - ms * 100 * 1000; // 100k hours = 4k days
+      case 'd': return now - ms * 10 * 1000; // 10k days = 27 years
+      case 'w': return now - ms * 2 * 1000; // 1k weeks = 38 years
+      default: throw `timeframe ${timeframe} does not exist`;
+    }
+  }
 }

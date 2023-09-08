@@ -15,11 +15,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/initKlines', (req, res) => {
-  console.log('/initKlines');
-  routes.initKlines(req, res);
-});
-
 app.get('/klines', (req, res) => {
   console.log('/klines');
   routes.getKlines(req, res);

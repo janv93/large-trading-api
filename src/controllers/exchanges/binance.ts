@@ -106,8 +106,8 @@ export default class Binance extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
-    const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 100;
-    const startTime = Date.now() - timespan;
+    const startTime = this.calcStartTime(timeframe);
+    console.log(startTime)
 
     const res = await this.database.getKlines(symbol, timeframe);
     const dbKlines = res || [];

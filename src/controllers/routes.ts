@@ -38,19 +38,6 @@ export default class Routes extends Base {
   private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
 
-  public async initKlines(req, res): Promise<void> {
-    let exchange;
-
-    switch (req.query.exchange) {
-      case 'binance': exchange = this.binance; break;
-      case 'kucoin': exchange = this.kucoin; break;
-      case 'alpaca': exchange = this.alpaca; break;
-    }
-
-    const response = await exchange.initKlinesDatabase(req.query.symbol, req.query.timeframe);
-    res.send(response);
-  }
-
   /**
    * get list of klines / candlesticks from binance
    */
@@ -68,19 +55,19 @@ export default class Routes extends Base {
   }
 
   /**
-   * get list of klines / candlesticks from binance and add buy and sell signals
+   * get list of klines / candlesticks and add buy and sell signals
    * 
-   * algorithm is delivered through query parameter 'algorithm'
+   * algorithm is passed through query parameter 'algorithm'
    * depending on algorithm, additional query params may be necessary
    */
   public async getKlinesWithAlgorithm(req, res): Promise<void> {
     const query = req.query;
 
-    try {
-      const response = await this.database.getKlines(query.symbol, query.timeframe);
-      const responseInRange = response.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
-      let klinesWithSignals = await this.handleAlgo(responseInRange, query);
+    const allKlines = await this.initKlines(query.exchange, query.symbol, query.timeframe);
 
+    try {
+      const klinesInRange = allKlines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
+      let klinesWithSignals = await this.handleAlgo(klinesInRange, query);
       res.send(klinesWithSignals);
     } catch (err: any) {
       if (err === 'invalid') {
@@ -124,6 +111,18 @@ export default class Routes extends Base {
     }
 
     res.send(indicatorChart);
+  }
+
+  private async initKlines(exchange: string, symbol: string, timeframe: string): Promise<Kline[]> {
+    let exchangeObj;
+
+    switch (exchange) {
+      case 'binance': exchangeObj = this.binance; break;
+      case 'kucoin': exchangeObj = this.kucoin; break;
+      case 'alpaca': exchangeObj = this.alpaca; break;
+    }
+
+    return exchangeObj.initKlinesDatabase(symbol, timeframe);
   }
 
   private async handleAlgo(responseInRange: Kline[], query): Promise<Kline[]> {
