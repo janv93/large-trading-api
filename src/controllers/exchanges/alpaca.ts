@@ -5,7 +5,7 @@ import database from '../../data/database';
 
 export default class Alpaca extends Base {
   private database = database;
-  private klines: any[] = [];
+  private klines: Kline[] = [];
 
   public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
@@ -99,7 +99,7 @@ export default class Alpaca extends Base {
   /**
    * get klines from startTime until now
    */
-  private async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, timeframe: string, pageToken?: string): Promise<any> {
+  private async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, timeframe: string, pageToken?: string): Promise<Kline[]> {
     const res = await this.getKlines(symbol, timeframe, startTime, pageToken);
     this.klines.push(...res.klines);
     const nextPageToken = res.nextPageToken;
