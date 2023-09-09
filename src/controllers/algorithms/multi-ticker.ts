@@ -7,14 +7,8 @@ export default class MultiTicker extends Base {
   private nasdaq = new Nasdaq();
   private alpaca = new Alpaca();
 
-  public async setSignals() {
-    const capStocks = this.nasdaq.getStocksByMarketCap(3 * 10 ** 11).map(s => s.symbol);
-    const alpacaStocks = await this.alpaca.getAssets();
-    const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
-    this.initStocks(stocksFiltered);
-  }
-
-  public async initStocks(stocks: string[]) {
-    const tickers: Kline[][] = await Promise.all(stocks.map(s => this.alpaca.initKlinesDatabase(s, '1w')));
+  public async setSignals(klines: Kline[]): Promise<any> {
+    console.log(klines[0].symbol)
+    return;
   }
 }

@@ -17,10 +17,10 @@ import Dca from './algorithms/investing/dca';
 import Martingale from './algorithms/investing/martingale';
 import TwitterSentiment from './algorithms/sentiment/twitter-sentiment';
 import MultiTicker from './algorithms/multi-ticker';
+import Nasdaq from './other-apis/nasdaq';
 
 
 export default class Routes extends Base {
-  private database = database;
   private alpaca = new Alpaca();
   private binance = new Binance();
   private kucoin = new Kucoin();
@@ -37,6 +37,7 @@ export default class Routes extends Base {
   private martingale = new Martingale();
   private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
+  private nasdaq = new Nasdaq();
 
   /**
    * get list of klines / candlesticks from binance
@@ -80,7 +81,12 @@ export default class Routes extends Base {
   }
 
   public async runMultiTicker(req, res): Promise<void> {
-    const ret = await this.multiTicker.setSignals();
+    const query = req.query;
+    const capStocks = this.nasdaq.getStocksByMarketCap(3 * 10 ** 11).map(s => s.symbol);
+    const alpacaStocks = await this.alpaca.getAssets();
+    const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
+    const tickers: Kline[][] = await Promise.all(stocksFiltered.map(s => this.alpaca.initKlinesDatabase(s, query.timeframe)));
+    const ret = Promise.all(tickers.map(t => this.multiTicker.setSignals(t)));
     res.send(ret);
   }
 
