@@ -160,4 +160,8 @@ export default class Base {
       default: throw `timeframe ${timeframe} does not exist`;
     }
   }
+
+  protected sleep(ms: number): Promise<void> {
+    return new Promise<void>(r => setTimeout(r, ms));
+  }
 }

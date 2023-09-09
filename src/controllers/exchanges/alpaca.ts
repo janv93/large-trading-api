@@ -2,10 +2,13 @@ import axios from 'axios';
 import { AlpacaResponse, Kline } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
+import stateService from '../state-service';
 
 export default class Alpaca extends Base {
   private database = database;
+  private stateService = stateService;
   private klines: Kline[] = [];
+  private rateLimitPerMinute = 200;
 
   public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
@@ -36,6 +39,7 @@ export default class Alpaca extends Base {
     console.log('GET ' + klineUrl);
 
     try {
+      await this.waitIfRateLimitReached();
       const res = await axios.get(klineUrl, options);
       const klines = this.mapKlines(symbol, timeframe, res.data.bars);
       return { nextPageToken: res.data.next_page_token, klines };
@@ -154,5 +158,16 @@ export default class Alpaca extends Base {
       case 'w': return amount + 'Week';
       default: return 'incorrect timeframe';
     }
+  }
+
+  private async waitIfRateLimitReached(): Promise<void> {
+    this.stateService.alpacaRequestsSentThisMinute++;
+
+    // wait at rate limit
+    if (this.stateService.alpacaRequestsSentThisMinute >= this.rateLimitPerMinute) {
+      await this.sleep(60000);
+      this.stateService.alpacaRequestsSentThisMinute = 0;
+    }
+    // continue
   }
 }

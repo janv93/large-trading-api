@@ -27,20 +27,26 @@ class Database extends Base {
       console.log(`Writing ${klines.length} klines...`);
       const start = Date.now();
 
+      // check if doc with "filter" props exists. if not, adds doc with "filter" and "$setOnInsert" properties combined
       const bulkWriteOperations = klines.map(kline => ({
-        insertOne: {
-          document: {
+        updateOne: {
+          filter: {
             symbol: kline.symbol,
             timeframe: kline.timeframe,
-            openPrice: kline.prices.open,
-            closePrice: kline.prices.close,
-            highPrice: kline.prices.high,
-            lowPrice: kline.prices.low,
             openTime: kline.times.open,
-            closeTime: kline.times.close,
-            volume: kline.volume,
-            numberOfTrades: kline.numberOfTrades
-          }
+            closeTime: kline.times.close
+          },
+          update: {
+            $setOnInsert: {
+              openPrice: kline.prices.open,
+              closePrice: kline.prices.close,
+              highPrice: kline.prices.high,
+              lowPrice: kline.prices.low,
+              volume: kline.volume,
+              numberOfTrades: kline.numberOfTrades
+            }
+          },
+          upsert: true
         }
       }));
 
