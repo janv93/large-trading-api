@@ -7,7 +7,7 @@ export default class MultiTicker extends Base {
   private ema = new Ema();
   private backtest = new Backtest();
 
-  public async setSignals(klines: Kline[]): Promise<any> {
+  public setSignals(klines: Kline[]): any {
     const klinesWithSignals = this.ema.setSignals(klines, 80, 80);
     const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, 0, true);
     console.log(klines[0].symbol, klinesWithBacktest.at(-1)?.percentProfit);
