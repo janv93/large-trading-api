@@ -32,7 +32,7 @@ export default class Binance extends Base {
       const result = this.mapKlines(symbol, timeframe, response.data);
       return result;
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol);
       return [];
     }
   }
@@ -85,8 +85,6 @@ export default class Binance extends Base {
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
-    console.log(startTime)
-
     const res = await this.database.getKlines(symbol, timeframe);
     const dbKlines = res || [];
     const lastKline = dbKlines[dbKlines.length - 1];
@@ -181,7 +179,7 @@ export default class Binance extends Base {
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res = await axios.get(baseUrl);
 
-    const brokenSymbols = ['LUNAUSDT', 'LUNABUSD', 'USTUSDT', 'USTBUSD'] // API returns some broken symbols
+    const brokenSymbols = ['LUNAUSDT', 'LUNABUSD', 'USTUSDT', 'USTBUSD', 'WBTCUSDT', 'WBTCBUSD', 'SHIBUSDT', 'SHIBBUSD', 'DAIUSDT', 'DAIBUSD'] // API returns some broken symbols
 
     const symbols = res.data.symbols
       .map(s => s.symbol)

@@ -18,6 +18,7 @@ import Martingale from './algorithms/investing/martingale';
 import TwitterSentiment from './algorithms/sentiment/twitter-sentiment';
 import MultiTicker from './algorithms/multi-ticker';
 import Nasdaq from './other-apis/nasdaq';
+import Coinmarketcap from './other-apis/coinmarketcap';
 
 
 export default class Routes extends Base {
@@ -38,6 +39,7 @@ export default class Routes extends Base {
   private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
   private nasdaq = new Nasdaq();
+  private cmc = new Coinmarketcap();
 
   /**
    * get list of klines / candlesticks and add buy and sell signals
@@ -65,16 +67,28 @@ export default class Routes extends Base {
   }
 
   public async runMultiTicker(req, res): Promise<void> {
-    // get all stocks above certain market cap
     const query = req.query;
-    const capStocks = this.nasdaq.getStocksByMarketCap(3 * 10 ** 11).map(s => s.symbol);
-    const alpacaStocks = await this.alpaca.getAssets();
-    const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
+    const timeframe = query.timeframe;
 
-    // fetch stock klines and run algo
-    const tickers: Kline[][] = await Promise.all(stocksFiltered.map(s => this.alpaca.initKlinesDatabase(s, query.timeframe)));
-    const ret = tickers.map(t => this.multiTicker.setSignals(t));
-    res.send(ret);
+    // stocks
+    const stocks = await this.getMultiStocks(timeframe);
+    const stocksBacktests = stocks.map(t => this.multiTicker.setSignals(t));
+
+    // indexes
+    const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'];
+    const indexes = await this.initKlinesMulti('alpaca', indexSymbols, timeframe);
+    const indexesBacktests = indexes.map(t => this.multiTicker.setSignals(t));
+
+    // commodities
+    const commoditySymbols = ['GLD', 'UNG', 'USO', 'COPX']; // gold, gas, oil, copper
+    const commodities = await this.initKlinesMulti('alpaca', commoditySymbols, timeframe);
+    const commodityBacktests = commodities.map(t => this.multiTicker.setSignals(t));
+
+    // crypto
+    const cryptos = await this.getMultiCryptos(timeframe);
+    const cryptosBacktests = cryptos.map(c => this.multiTicker.setSignals(c));
+
+    res.send();
   }
 
   public postBacktestData(req, res): void {
@@ -106,18 +120,6 @@ export default class Routes extends Base {
     res.send(indicatorChart);
   }
 
-  private async initKlines(exchange: string, symbol: string, timeframe: string): Promise<Kline[]> {
-    let exchangeObj;
-
-    switch (exchange) {
-      case 'binance': exchangeObj = this.binance; break;
-      case 'kucoin': exchangeObj = this.kucoin; break;
-      case 'alpaca': exchangeObj = this.alpaca; break;
-    }
-
-    return exchangeObj.initKlinesDatabase(symbol, timeframe);
-  }
-
   private async handleAlgo(responseInRange: Kline[], query): Promise<Kline[]> {
     const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, streak, user } = query;
 
@@ -146,5 +148,42 @@ export default class Routes extends Base {
         return await this.twitterSentiment.setSignals(responseInRange, user);
       default: throw 'invalid';
     }
+  }
+
+  private async initKlines(exchange: string, symbol: string, timeframe: string): Promise<Kline[]> {
+    let exchangeObj;
+
+    switch (exchange) {
+      case 'binance': exchangeObj = this.binance; break;
+      case 'kucoin': exchangeObj = this.kucoin; break;
+      case 'alpaca': exchangeObj = this.alpaca; break;
+    }
+
+    return exchangeObj.initKlinesDatabase(symbol, timeframe);
+  }
+
+  private async initKlinesMulti(exchange: string, symbols: string[], timeframe: string): Promise<Kline[][]> {
+    return Promise.all(symbols.map(symbol => this.initKlines(exchange, symbol, timeframe)));
+  }
+
+  private async getMultiStocks(timeframe: string): Promise<Kline[][]> {
+    const capStocks = this.nasdaq.getStocksByMarketCapRank(20).map(s => s.symbol);
+    const alpacaStocks = await this.alpaca.getAssets();
+    const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
+    return this.initKlinesMulti('alpaca', stocksFiltered, timeframe);
+  }
+
+  private async getMultiCryptos(timeframe: string): Promise<Kline[][]> {
+    const capCryptos = await this.cmc.getCryptosByMarketCapRank(20);
+    const binanceCryptos = await this.binance.getUsdtBusdPairs();
+
+    const binanceEquivalents = capCryptos.map(c => {
+      const usdtSymbol = binanceCryptos.find(v => v === c + 'USDT');
+      const busdSymbol = binanceCryptos.find(v => v === c + 'BUSD');
+      return usdtSymbol || busdSymbol;
+    });
+
+    const cryptosFiltered = binanceEquivalents.filter(c => c !== undefined);
+    return this.initKlinesMulti('binance', cryptosFiltered, timeframe);
   }
 }
