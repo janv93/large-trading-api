@@ -108,6 +108,7 @@ export default class Alpaca extends Base {
       console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
       console.log();
       const finalKlines = [...this.klines];
+      finalKlines.sort((a, b) => a.times.open - b.times.open);
       this.klines = [];
       return finalKlines;
     }

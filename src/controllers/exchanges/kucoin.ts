@@ -83,6 +83,7 @@ export default class Kucoin extends Base {
       console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
       console.log();
       const result = [...this.klines];
+      result.sort((a, b) => a.times.open - b.times.open);
       this.klines = [];
       return result;
     }

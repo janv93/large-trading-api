@@ -98,6 +98,7 @@ export default class Binance extends Base {
       console.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open));
     }
 
+    klines.sort((a, b) => a.times.open - b.times.open);
     return klines;
   }
 
