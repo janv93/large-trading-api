@@ -73,7 +73,6 @@ export default class Routes extends Base {
 
     // fetch stock klines and run algo
     const tickers: Kline[][] = await Promise.all(stocksFiltered.map(s => this.alpaca.initKlinesDatabase(s, query.timeframe)));
-    console.log(tickers.find(t => t[0].symbol === 'TSM')?.length)
     const ret = tickers.map(t => this.multiTicker.setSignals(t));
     res.send(ret);
   }
