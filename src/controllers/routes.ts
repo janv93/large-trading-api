@@ -40,22 +40,6 @@ export default class Routes extends Base {
   private nasdaq = new Nasdaq();
 
   /**
-   * get list of klines / candlesticks from binance
-   */
-  public async getKlines(req, res): Promise<void> {
-    let exchange;
-
-    switch (req.query.exchange) {
-      case 'binance': exchange = this.binance; break;
-      case 'kucoin': exchange = this.kucoin; break;
-      case 'alpaca': exchange = this.alpaca; break;
-    }
-
-    const response = await exchange.getKlinesMultiple(req.query.symbol, req.query.times, req.query.timeframe);
-    res.send(response);
-  }
-
-  /**
    * get list of klines / candlesticks and add buy and sell signals
    * 
    * algorithm is passed through query parameter 'algorithm'
@@ -89,6 +73,7 @@ export default class Routes extends Base {
 
     // fetch stock klines and run algo
     const tickers: Kline[][] = await Promise.all(stocksFiltered.map(s => this.alpaca.initKlinesDatabase(s, query.timeframe)));
+    console.log(tickers.find(t => t[0].symbol === 'TSM')?.length)
     const ret = tickers.map(t => this.multiTicker.setSignals(t));
     res.send(ret);
   }

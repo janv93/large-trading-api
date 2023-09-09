@@ -15,11 +15,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/klines', (req, res) => {
-  console.log('/klines');
-  routes.getKlines(req, res);
-});
-
 app.get('/klinesWithAlgorithm', (req, res) => {
   console.log('/klinesWithAlgorithm');
   routes.getKlinesWithAlgorithm(req, res);

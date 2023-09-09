@@ -50,14 +50,6 @@ export default class Alpaca extends Base {
   }
 
   /**
-   * get last times * 1000 timeframes
-   */
-  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<Kline[]> {
-    const start = Date.now() - this.timeframeToMilliseconds(timeframe) * 1000 * times;
-    return this.getKlinesRecursiveFromStartUntilNow(symbol, start, timeframe);
-  }
-
-  /**
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
@@ -68,7 +60,7 @@ export default class Alpaca extends Base {
       const res = await this.database.getKlines(symbol, timeframe);
 
       if (!res || !res.length) {  // not in database yet
-        const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, timeframe);
+        const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
         await this.database.writeKlines(newKlines);
         console.log('Database initialized with ' + newKlines.length + ' klines');
         console.log();
@@ -78,7 +70,7 @@ export default class Alpaca extends Base {
         const lastKline = dbKlines[dbKlines.length - 1];
         const newStart = lastKline.times.open;
 
-        const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, newStart, timeframe);
+        const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
         newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
         console.log('Added ' + newKlines.length + ' new klines to database');
         console.log();
@@ -95,24 +87,28 @@ export default class Alpaca extends Base {
   /**
    * get klines from startTime until now
    */
-  private async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, timeframe: string, pageToken?: string): Promise<Kline[]> {
-    const res = await this.getKlines(symbol, timeframe, startTime, pageToken);
-    this.klines.push(...res.klines);
-    const nextPageToken = res.nextPageToken;
+  private async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
+    let finalKlines: Kline[] = [];
+    let pageToken: string | undefined;
 
-    if (nextPageToken) {
-      return this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, timeframe, nextPageToken);
-    } else {
-      console.log();
-      console.log('Received total of ' + this.klines.length + ' klines');
-      console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
-      console.log();
-      const finalKlines = [...this.klines];
-      finalKlines.sort((a, b) => a.times.open - b.times.open);
-      this.klines = [];
-      return finalKlines;
+    while (true) {
+      const res = await this.getKlines(symbol, timeframe, startTime, pageToken);
+      finalKlines.push(...res.klines);
+      pageToken = res.nextPageToken;
+
+      if (!pageToken) {
+        break;
+      }
     }
-  }
+
+    console.log();
+    console.log(`Received total of ${finalKlines.length} klines`);
+    console.log(this.timestampsToDateRange(finalKlines[0].times.open, finalKlines[finalKlines.length - 1].times.open));
+    console.log();
+
+    finalKlines.sort((a, b) => a.times.open - b.times.open);
+    return finalKlines;
+}
 
   public async getAssets(): Promise<string[]> {
     let res;

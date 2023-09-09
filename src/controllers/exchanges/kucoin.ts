@@ -7,7 +7,6 @@ import database from '../../data/database';
 
 export default class Kucoin extends Base {
   private database = database;
-  private klines: Kline[] = [];
 
   public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
@@ -39,54 +38,35 @@ export default class Kucoin extends Base {
     }
   }
 
-  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<Kline[]> {
-    return this.getKlinesRecursive(symbol, -1, times, timeframe);
-  }
-
-  /**
-   * get last times * 1000 timeframes
-   */
-  public async getKlinesRecursive(symbol: string, endTime: number, times: number, timeframe: string): Promise<Kline[]> {
-    const res = await this.getKlines(symbol, timeframe, endTime);
-    this.klines.unshift(...res);  // push res to beginning of array
-
-    if (--times > 0) {
-      const start = res[0].times.open;
-      const end = start - this.timeframeToMilliseconds(timeframe);
-      return this.getKlinesRecursive(symbol, end, times, timeframe);
-    }
-
-    console.log(`Received a total of ${this.klines.length} klines`);
-    console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
-
-    const finalKlines = this.klines.slice();
-    this.klines.length = 0;
-    return finalKlines;
-  }
-
   /**
    * get startTime to now timeframes
    */
-  public async getKlinesRecursiveFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: string): Promise<Kline[]> {
-    const res = await this.getKlines(symbol, timeframe, endTime, startTime);
-    this.klines.push(...res);
-    const end: number = this.klines[this.klines.length - 1].times.open;
-    const newStartTime: number = end + this.timeframeToMilliseconds(timeframe);
-    const newEndTime: number = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
-    const now = Date.now();
+  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: string): Promise<Kline[]> {
+    let newStartTime = startTime;
+    let newEndTime = endTime;
+    let klines: Kline[] = [];
 
-    if (newStartTime < now) {
-      return this.getKlinesRecursiveFromStartUntilNow(symbol, newStartTime, newEndTime, timeframe);
-    } else {
-      console.log();
-      console.log(`Received total of ${this.klines.length} klines`);
-      console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
-      console.log();
-      const result = [...this.klines];
-      result.sort((a, b) => a.times.open - b.times.open);
-      this.klines = [];
-      return result;
+    while (true) {
+      const res = await this.getKlines(symbol, timeframe, newEndTime, newStartTime);
+      klines.push(...res);
+
+      const end: number = klines[klines.length - 1].times.open;
+      newStartTime = end + this.timeframeToMilliseconds(timeframe);
+      newEndTime = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
+      const now = Date.now();
+
+      if (newStartTime >= now) {
+        break;
+      }
     }
+
+    console.log();
+    console.log(`Received total of ${klines.length} klines`);
+    console.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open));
+    console.log();
+
+    klines.sort((a, b) => a.times.open - b.times.open);
+    return klines;
   }
 
   /**
@@ -100,14 +80,14 @@ export default class Kucoin extends Base {
     const dbKlines = await this.database.getKlines(symbol, timeframe);
 
     if (!dbKlines?.length) {
-      const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, startTime, endTime, timeframe);
+      const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, endTime, timeframe);
       await this.database.writeKlines(newKlines);
       console.log('Database initialized with ' + newKlines.length + ' klines');
       return newKlines;
     } else {
       const lastKline = dbKlines[dbKlines.length - 1];
       const endTime = lastKline.times.open + this.timeframeToMilliseconds(timeframe) * 200;
-      const newKlines = await this.getKlinesRecursiveFromStartUntilNow(symbol, lastKline.times.open, endTime, timeframe);
+      const newKlines = await this.getKlinesFromStartUntilNow(symbol, lastKline.times.open, endTime, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       console.log(`Added ${newKlines.length} new klines to the database`);
       console.log();

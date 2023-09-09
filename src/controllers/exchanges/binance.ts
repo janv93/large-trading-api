@@ -6,7 +6,6 @@ import database from '../../data/database';
 
 export default class Binance extends Base {
   private database = database;
-  private klines: Kline[] = [];
 
   public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
@@ -54,28 +53,6 @@ export default class Binance extends Base {
 
     console.log('GET ' + klineUrl);
     return axios.get(klineUrl);
-  }
-
-  /**
-   * get last times * 1000 timeframes
-   */
-  public async getKlinesMultiple(symbol: string, times: number, timeframe: string): Promise<Kline[]> {
-    let endTime;
-
-    while (times > 0) {
-      const res = await this.getKlines(symbol, timeframe, endTime);
-      this.klines = res.concat(this.klines);
-      endTime = this.klines[0].times.open - this.timeframeToMilliseconds(timeframe);
-      times--;
-    }
-
-    console.log();
-    console.log('Received total of ' + this.klines.length + ' klines');
-    console.log(this.timestampsToDateRange(this.klines[0].times.open, this.klines[this.klines.length - 1].times.open));
-    console.log();
-    const finalKlines = [...this.klines];
-    this.klines = [];
-    return finalKlines;
   }
 
   /**
