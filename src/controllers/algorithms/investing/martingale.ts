@@ -9,7 +9,7 @@ export default class Martingale extends Base {
   public setSignals(klines: Kline[], threshold: number): Kline[] {
     let streak = 0;
     let lastClose = klines[0].prices.close;
-    let totalAmount = 0;
+    let isOpen = false;
 
     klines.forEach((kline: Kline) => {
       const close = kline.prices.close;
@@ -19,7 +19,7 @@ export default class Martingale extends Base {
         if (streak > 0) {   // if sufficient amount of consecutive drops, start buying
           kline.signal = this.buySignal;
           kline.amount = Math.pow(2, streak - 1);
-          totalAmount += kline.amount;
+          isOpen = true;
         }
 
         streak++;
@@ -27,9 +27,11 @@ export default class Martingale extends Base {
       } else if (streak > 0 && percentDiff < -threshold * 2) {  // if price increase sufficient, reset streak and restart from here
         streak = 0;
         lastClose = close;
-        kline.signal = this.sellSignal;
-        kline.amount = totalAmount;
-        totalAmount = 0;
+
+        if (isOpen) {
+          kline.signal = this.closeSignal;
+          isOpen = false;
+        }
       } else if (streak === 0 && close > lastClose) {   // new high reached
         lastClose = close;
       }
