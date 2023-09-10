@@ -12,5 +12,8 @@ export default class MultiTicker extends Base {
     const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, 0, true);
     console.log(klines[0].symbol, klinesWithBacktest.at(-1)?.percentProfit);
     return;
+    // all time high 20% above old -> scale into short
+    // only set signal if n klines before now
+    // then: only set signal if rsi high
   }
 }
