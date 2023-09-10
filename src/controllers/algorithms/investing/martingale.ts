@@ -29,6 +29,7 @@ export default class Martingale extends Base {
         lastClose = close;
         kline.signal = this.sellSignal;
         kline.amount = totalAmount;
+        totalAmount = 0;
       } else if (streak === 0 && close > lastClose) {   // new high reached
         lastClose = close;
       }
