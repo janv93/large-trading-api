@@ -38,7 +38,7 @@ export default class Logger {
       case 'Binance':
       case 'Kucoin':
       case 'Btse':
-        paddedName = 'BINANCE'.padEnd(maxLength);
+        paddedName = caller.constructor.name.toUpperCase().padEnd(maxLength);
         return `${this.colors.magenta}${paddedName}|${this.colors.reset}`;
     }
   }
