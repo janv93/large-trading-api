@@ -21,9 +21,6 @@ class Database extends Base {
       this.log('0 klines to write. Exiting...', this);
       return;
     } else {
-      this.log(`Writing ${klines.length} klines...`, this);
-      const start = Date.now();
-
       // check if doc with "filter" props exists. if not, adds doc with "filter" and "$setOnInsert" properties combined
       const bulkWriteOperations = klines.map(kline => ({
         updateOne: {
@@ -49,10 +46,7 @@ class Database extends Base {
 
       try {
         await this.Kline.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
-        const end = Date.now();
-        const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
-        const diffPer10k = diff / (klines.length / 10000);
-        this.log('Done writing. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.', this);
+        this.log(`Wrote <= ${klines.length} klines`, this);
       } catch (err) {
         this.logErr('Failed to write klines: ', err, this);
       }
@@ -60,16 +54,11 @@ class Database extends Base {
   }
 
   public async getKlines(symbol: string, timeframe: string): Promise<Kline[]> {
-    const start = Date.now();
-
     try {
       const klines = await this.Kline.find({ symbol, timeframe }).sort({ openTime: 1 });
 
       if (klines.length) {
-        const end = Date.now();
-        const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
-        const diffPer10k = diff / (klines.length / 10000);
-        this.log('Read ' + klines.length + ' klines. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.', this);
+        this.log(`Read ${klines.length} klines.`, this);
       } else {
         this.log('No klines found.', this);
       }
