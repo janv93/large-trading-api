@@ -30,7 +30,7 @@ export default class Logger {
         paddedName = 'APP'.padEnd(maxLength);
         return `${this.colors.blue}${paddedName}|${this.colors.reset}`;
       case 'Database':
-        paddedName = 'DB'.padEnd(maxLength);
+        paddedName = 'DATABASE'.padEnd(maxLength);
         return `${this.colors.yellow}${paddedName}|${this.colors.reset}`;
       case 'Alpaca':
         paddedName = 'ALPACA'.padEnd(maxLength);

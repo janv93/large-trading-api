@@ -69,7 +69,7 @@ class Database extends Base {
         const end = Date.now();
         const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
         const diffPer10k = diff / (klines.length / 10000);
-        this.log('Read ' + klines.length + 'klines. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.', this);
+        this.log('Read ' + klines.length + ' klines. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.', this);
       } else {
         this.log('No klines found.', this);
       }
