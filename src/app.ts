@@ -52,6 +52,7 @@ class App extends Base {
 
   public start(): void {
     this.app.listen(config.port, () => {
+      console.log();
       this.log(`Server is listening on port ${config.port}`, this);
     });
   }
