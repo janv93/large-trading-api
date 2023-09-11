@@ -22,24 +22,31 @@ export default class Logger {
   }
 
   private getParentLog(caller: object) {
-    let paddedName: string;
-    const maxLength = 10; // Maximum length for caller name padding
-
-    switch (caller.constructor.name) {
+    const maxLength = 10;
+    const callerName = caller.constructor.name;
+    let color: string;
+  
+    switch (callerName) {
       case 'App':
-        paddedName = 'APP'.padEnd(maxLength);
-        return `${this.colors.blue}${paddedName}|${this.colors.reset}`;
+        color = this.colors.blue;
+        break;
       case 'Database':
-        paddedName = 'DATABASE'.padEnd(maxLength);
-        return `${this.colors.yellow}${paddedName}|${this.colors.reset}`;
+        color = this.colors.yellow;
+        break;
       case 'Alpaca':
-        paddedName = 'ALPACA'.padEnd(maxLength);
-        return `${this.colors.cyan}${paddedName}|${this.colors.reset}`;
+        color = this.colors.cyan;
+        break;
       case 'Binance':
       case 'Kucoin':
       case 'Btse':
-        paddedName = caller.constructor.name.toUpperCase().padEnd(maxLength);
-        return `${this.colors.magenta}${paddedName}|${this.colors.reset}`;
+        color = this.colors.magenta;
+        break;
+      default:
+        color = this.colors.reset;
+        break;
     }
+  
+    const paddedName = callerName.toUpperCase().padEnd(maxLength);
+    return `${color}${paddedName}|${this.colors.reset}`;
   }
 }
