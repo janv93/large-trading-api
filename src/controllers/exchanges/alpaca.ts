@@ -36,7 +36,7 @@ export default class Alpaca extends Base {
       }
     };
 
-    console.log('GET ' + klineUrl);
+    this.log('GET ' + klineUrl, this);
 
     try {
       await this.waitIfRateLimitReached();
@@ -44,7 +44,7 @@ export default class Alpaca extends Base {
       const klines = this.mapKlines(symbol, timeframe, res.data.bars);
       return { nextPageToken: res.data.next_page_token, klines };
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol, this);
       return { nextPageToken: '', klines: [] };
     }
   }
@@ -61,8 +61,7 @@ export default class Alpaca extends Base {
     if (!dbKlines || !dbKlines.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
       await this.database.writeKlines(newKlines);
-      console.log('Database initialized with ' + newKlines.length + ' klines');
-      console.log();
+      this.log('Database initialized with ' + newKlines.length + ' klines', this);
       return newKlines;
     }
 
@@ -73,8 +72,7 @@ export default class Alpaca extends Base {
     if (this.klineOutdated(timeframe, newStart)) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      console.log('Added ' + newKlines.length + ' new klines to database');
-      console.log();
+      this.log('Added ' + newKlines.length + ' new klines to database', this);
       await this.database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
@@ -100,10 +98,8 @@ export default class Alpaca extends Base {
       }
     }
 
-    console.log();
-    console.log(`Received total of ${finalKlines.length} klines`);
-    console.log(this.timestampsToDateRange(finalKlines[0].times.open, finalKlines[finalKlines.length - 1].times.open));
-    console.log();
+    this.log(`Received total of ${finalKlines.length} klines`, this);
+    this.log(this.timestampsToDateRange(finalKlines[0].times.open, finalKlines[finalKlines.length - 1].times.open), this);
 
     finalKlines.sort((a, b) => a.times.open - b.times.open);
     return finalKlines;

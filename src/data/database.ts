@@ -18,13 +18,10 @@ class Database extends Base {
 
   public async writeKlines(klines: Kline[]): Promise<void> {
     if (klines.length === 0) {
-      console.log();
-      console.log('0 klines to write. Exiting...');
-      console.log();
+      this.log('0 klines to write. Exiting...', this);
       return;
     } else {
-      console.log();
-      console.log(`Writing ${klines.length} klines...`);
+      this.log(`Writing ${klines.length} klines...`, this);
       const start = Date.now();
 
       // check if doc with "filter" props exists. if not, adds doc with "filter" and "$setOnInsert" properties combined
@@ -55,18 +52,15 @@ class Database extends Base {
         const end = Date.now();
         const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
         const diffPer10k = diff / (klines.length / 10000);
-        console.log('Done writing. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.');
-        console.log();
+        this.log('Done writing. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.', this);
       } catch (err) {
-        console.error('Failed to write klines: ', err);
-        console.log();
+        this.logErr('Failed to write klines: ', err, this);
       }
     }
   }
 
   public async getKlines(symbol: string, timeframe: string): Promise<Kline[]> {
-    console.log();
-    console.log('Reading klines...');
+    this.log('Reading klines...', this);
     const start = Date.now();
 
     try {
@@ -76,10 +70,9 @@ class Database extends Base {
         const end = Date.now();
         const diff = ((end - start) % (1000 * 60)) / 1000; // in seconds
         const diffPer10k = diff / (klines.length / 10000);
-        console.log('Read ' + klines.length + 'klines. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.');
-        console.log();
+        this.log('Read ' + klines.length + 'klines. Speed per 10k klines was ' + diffPer10k.toFixed(2) + 's.', this);
       } else {
-        console.log('No klines found.');
+        this.log('No klines found.', this);
       }
 
       const mappedKlines: Kline[] = klines.map(kline => ({
@@ -101,15 +94,13 @@ class Database extends Base {
 
       return mappedKlines;
     } catch (err) {
-      console.error(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`);
-      console.error(err);
-      console.log();
+      this.logErr(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`, err, this);
       return [];
     }
   }
 
   public async writeTweetSentiments(sentiments: TweetSentiment[]): Promise<void> {
-    console.log(`Writing up to ${sentiments.length} sentiments...`)
+    this.log(`Writing up to ${sentiments.length} sentiments...`, this);
 
     try {
       const timelines = await this.TwitterUserTimeline.find();
@@ -133,9 +124,9 @@ class Database extends Base {
         await ti.save();
       }));
 
-      console.log(`Done writing ${newSentiments} sentiments.`);
+      this.log(`Done writing ${newSentiments} sentiments.`, this);
     } catch (err) {
-      console.error(`Failed to write sentiments: `, err);
+      this.logErr(`Failed to write sentiments: `, err, this);
       return;
     }
   }
@@ -149,18 +140,17 @@ class Database extends Base {
       const sentiment = tweetSymbol?.sentiments.find(s => s.model === model)?.sentiment || 0;
       return sentiment;
     } catch (err) {
-      console.error(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`);
-      console.error(err);
+      this.logErr(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`, err, this);
       return 0;
     }
   }
 
   public async writeTwitterUserTimeline(userId: string, tweets: Tweet[]): Promise<void> {
     if (tweets.length === 0) {
-      console.log('0 tweets to write. Exiting...');
+      this.log('0 tweets to write. Exiting...', this);
       return;
     } else {
-      console.log(`Writing ${tweets.length} tweets for user ${userId}...`);
+      this.log(`Writing ${tweets.length} tweets for user ${userId}...`, this);
 
       const tweetDocuments = tweets.map(tweet => ({
         id: tweet.id,
@@ -176,21 +166,21 @@ class Database extends Base {
 
       try {
         await this.TwitterUserTimeline.create(userDocument);
-        console.log(`Done writing tweets.`);
+        this.log(`Done writing tweets.`, this);
       } catch (err) {
-        console.error(`Failed to write tweets for user ${userId}: `, err);
+        this.logErr(`Failed to write tweets for user ${userId}: `, err, this);
       }
     }
   }
 
   public async getTwitterUserTimeline(userId: string): Promise<TwitterTimeline | null> {
-    console.log(`Reading Twitter user ${userId}...`);
+    this.log(`Reading Twitter user ${userId}...`, this);
 
     try {
       const user = await this.TwitterUserTimeline.findOne({ id: userId });
 
       if (user) {
-        console.log(`Read Twitter user.`);
+        this.log(`Read Twitter user.`, this);
 
         const mappedTweets = user.tweets
           .map(tweet => ({
@@ -207,17 +197,17 @@ class Database extends Base {
           tweets: mappedTweets
         };
       } else {
-        console.log(`Twitter user ${userId} not found.`);
+        this.log(`Twitter user ${userId} not found.`, this);
         return null;
       }
     } catch (err) {
-      console.error(`Failed to retrieve Twitter user ${userId}: `, err);
+      this.logErr(`Failed to retrieve Twitter user ${userId}: `, err, this);
       return null;
     }
   }
 
   public async updateTwitterUserTweets(userId: string, newTweets: Tweet[]): Promise<void> {
-    console.log(`Updating tweets for Twitter user ${userId}...`);
+    this.log(`Updating tweets for Twitter user ${userId}...`, this);
 
     try {
       const user = await this.TwitterUserTimeline.findOne({ id: userId });
@@ -232,12 +222,12 @@ class Database extends Base {
 
         await user.save();
 
-        console.log(`Updated tweets for Twitter user ${userId}.`);
+        this.log(`Updated tweets for Twitter user ${userId}.`, this);
       } else {
-        console.log(`Twitter user ${userId} not found.`);
+        this.log(`Twitter user ${userId} not found.`, this);
       }
     } catch (err) {
-      console.error(`Failed to update tweets for Twitter user ${userId}: `, err);
+      this.logErr(`Failed to update tweets for Twitter user ${userId}: `, err, this);
     }
   }
 
@@ -255,9 +245,9 @@ class Database extends Base {
   private async init() {
     try {
       await mongoose.connect(process.env.mongo_connection_string as string);
-      console.log('Mongo connected');
+      this.log('Mongo connected', this);
     } catch (err) {
-      console.error(err);
+      this.logErr(err, this);
     }
   }
 }

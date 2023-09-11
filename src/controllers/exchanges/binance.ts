@@ -25,14 +25,14 @@ export default class Binance extends Base {
     }
 
     const klineUrl = this.createUrl(baseUrl, query);
-    console.log('GET ' + klineUrl);
+    this.log('GET ' + klineUrl, this);
 
     try {
       const response = await axios.get(klineUrl);
       const result = this.mapKlines(symbol, timeframe, response.data);
       return result;
     } catch (err) {
-      this.handleError(err, symbol);
+      this.handleError(err, symbol, this);
       return [];
     }
   }
@@ -51,7 +51,7 @@ export default class Binance extends Base {
 
     const klineUrl = this.createUrl(baseUrl, query);
 
-    console.log('GET ' + klineUrl);
+    this.log('GET ' + klineUrl, this);
     return axios.get(klineUrl);
   }
 
@@ -80,8 +80,8 @@ export default class Binance extends Base {
     }
 
     if (klines.length) {
-      console.log(`Received total of ${klines.length} klines`);
-      console.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open));
+      this.log(`Received total of ${klines.length} klines`, this);
+      this.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open), this);
     }
 
     klines.sort((a, b) => a.times.open - b.times.open);
@@ -100,8 +100,7 @@ export default class Binance extends Base {
     if (!dbKlines || !dbKlines.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
       await this.database.writeKlines(newKlines);
-      console.log('Database initialized with ' + newKlines.length + ' klines');
-      console.log();
+      this.log('Database initialized with ' + newKlines.length + ' klines', this);
       return newKlines;
     }
 
@@ -112,8 +111,7 @@ export default class Binance extends Base {
     if (this.klineOutdated(timeframe, newStart)) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      console.log('Added ' + newKlines.length + ' new klines to database');
-      console.log();
+      this.log('Added ' + newKlines.length + ' new klines to database', this);
       await this.database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
@@ -146,9 +144,9 @@ export default class Binance extends Base {
   public async short(symbol: string, quantity: number): Promise<void> {
     try {
       await this.createOrder(symbol, 'SELL', quantity);
-      console.log('SHORT position opened');
+      this.log('SHORT position opened', this);
     } catch (err) {
-      this.handleError(err, symbol);
+      this.handleError(err, symbol, this);
       throw err;
     }
   }
@@ -156,9 +154,9 @@ export default class Binance extends Base {
   public async long(symbol: string, quantity: number): Promise<void> {
     try {
       await this.createOrder(symbol, 'BUY', quantity);
-      console.log('LONG position opened');
+      this.log('LONG position opened', this);
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol, this);
       throw err;
     }
   }

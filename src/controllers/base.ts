@@ -1,6 +1,8 @@
 import { Kline } from '../interfaces';
+import Logger from './logger';
 
 export default class Base {
+  private logger = new Logger();
   protected buySignal = 'BUY';
   protected closeBuySignal = 'CLOSEBUY';
   protected sellSignal = 'SELL';
@@ -15,15 +17,15 @@ export default class Base {
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }
 
-  protected handleError(err: any, symbol?: string) {
+  protected handleError(err: any, symbol?: string, caller?: any) {
     if (symbol) {
-      console.log('Error received for symbol ' + symbol + ':');
+      this.log('Error received for symbol ' + symbol + ':', this);
     }
 
     if (err.response && err.response.data) {
-      console.log(err.response.data);
+      this.log(err.response.data, this);
     } else {
-      console.log(err);
+      this.log(err, this);
     }
   }
 
@@ -178,5 +180,13 @@ export default class Base {
 
   protected sleep(ms: number): Promise<void> {
     return new Promise<void>(r => setTimeout(r, ms));
+  }
+
+  protected log(...args: any[]) {
+    this.logger.log(...args);
+  }
+
+  protected logErr(...args: any[]) {
+    this.logger.logErr(...args);
   }
 }

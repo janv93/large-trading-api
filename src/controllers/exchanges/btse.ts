@@ -29,15 +29,15 @@ export default class Btse extends Base {
 
   public async long(symbol, quantity, leverage): Promise<any> {
     const res = await this.createOrder(symbol, 'BUY', quantity, leverage);
-    console.log(res.data);
-    console.log('LONG position opened');
+    this.log(res.data, this);
+    this.log('LONG position opened', this);
     return res;
   }
 
   public async short(symbol, quantity, leverage): Promise<any> {
     const res = await this.createOrder(symbol, 'SELL', quantity, leverage);
-    console.log(res.data);
-    console.log('SHORT position opened');
+    this.log(res.data, this);
+    this.log('SHORT position opened', this);
     return res;
   }
 
@@ -67,13 +67,13 @@ export default class Btse extends Base {
 
       const url = 'https://api.btse.com/futures/api/v2.1/order';
 
-      console.log('POST ' + url);
-      console.log('Body: ' + JSON.stringify(body));
+      this.log('POST ' + url, this);
+      this.log('Body: ' + JSON.stringify(body), this);
 
       const res = await axios.post(url, body, options);
       return res;
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol, this);
     }
   }
 
@@ -99,8 +99,8 @@ export default class Btse extends Base {
 
     const url = 'https://api.btse.com/futures/api/v2.1/order/close_position';
 
-    console.log('POST ' + url);
-    console.log('Body: ' + JSON.stringify(body));
+    this.log('POST ' + url, this);
+    this.log('Body: ' + JSON.stringify(body), this);
 
     return axios.post(url, body, options);
   }

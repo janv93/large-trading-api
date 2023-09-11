@@ -26,14 +26,14 @@ export default class Kucoin extends Base {
 
     const klineUrl = this.createUrl(baseUrl, query);
 
-    console.log('GET ' + klineUrl);
+    this.log('GET ' + klineUrl, this);
 
     try {
       const response = await axios.get(klineUrl);
       const result = this.mapKlines(symbol, timeframe, response.data.data);
       return result;
     } catch (err) {
-      this.handleError(err);
+      this.handleError(err, symbol, this);
       return [];
     }
   }
@@ -60,10 +60,8 @@ export default class Kucoin extends Base {
       }
     }
 
-    console.log();
-    console.log(`Received total of ${klines.length} klines`);
-    console.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open));
-    console.log();
+    this.log(`Received total of ${klines.length} klines`, this);
+    this.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open), this);
 
     klines.sort((a, b) => a.times.open - b.times.open);
     return klines;
@@ -82,15 +80,14 @@ export default class Kucoin extends Base {
     if (!dbKlines?.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, endTime, timeframe);
       await this.database.writeKlines(newKlines);
-      console.log('Database initialized with ' + newKlines.length + ' klines');
+      this.log('Database initialized with ' + newKlines.length + ' klines', this);
       return newKlines;
     } else {
       const lastKline = dbKlines[dbKlines.length - 1];
       const endTime = lastKline.times.open + this.timeframeToMilliseconds(timeframe) * 200;
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, lastKline.times.open, endTime, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      console.log(`Added ${newKlines.length} new klines to the database`);
-      console.log();
+      this.log(`Added ${newKlines.length} new klines to the database`, this);
       await this.database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
@@ -99,15 +96,15 @@ export default class Kucoin extends Base {
 
   public async long(symbol, quantity, leverage): Promise<any> {
     const res = await this.createOrder(symbol, 'buy', quantity, leverage);
-    console.log(res.data);
-    console.log('LONG position opened');
+    this.log(res.data, this);
+    this.log('LONG position opened', this);
     return res;
   }
 
   public async short(symbol, quantity, leverage): Promise<any> {
     const res = await this.createOrder(symbol, 'sell', quantity, leverage);
-    console.log(res.data);
-    console.log('SHORT position opened');
+    this.log(res.data, this);
+    this.log('SHORT position opened', this);
     return res;
   }
 
@@ -139,7 +136,7 @@ export default class Kucoin extends Base {
 
     const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
 
-    console.log('POST ' + url);
+    this.log('POST ' + url, this);
     return axios.post(url, query, options);
   }
 
@@ -173,7 +170,7 @@ export default class Kucoin extends Base {
 
     const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
 
-    console.log('POST ' + url);
+    this.log('POST ' + url, this);
     return axios.post(url, query, options);
   }
 
