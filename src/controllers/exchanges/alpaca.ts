@@ -7,7 +7,6 @@ import stateService from '../state-service';
 export default class Alpaca extends Base {
   private database = database;
   private stateService = stateService;
-  private klines: Kline[] = [];
   private rateLimitPerMinute = 200;
 
   public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
