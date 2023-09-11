@@ -60,7 +60,7 @@ class Database extends Base {
       if (klines.length) {
         this.log(`Read ${klines.length} klines`, this);
       } else {
-        this.log('No klines found.', this);
+        this.log('No klines found', this);
       }
 
       const mappedKlines: Kline[] = klines.map(kline => ({
@@ -112,7 +112,7 @@ class Database extends Base {
         await ti.save();
       }));
 
-      this.log(`Done writing ${newSentiments} sentiments.`, this);
+      this.log(`Done writing ${newSentiments} sentiments`, this);
     } catch (err) {
       this.logErr(`Failed to write sentiments: `, err, this);
       return;
@@ -154,7 +154,7 @@ class Database extends Base {
 
       try {
         await this.TwitterUserTimeline.create(userDocument);
-        this.log(`Done writing tweets.`, this);
+        this.log(`Done writing tweets`, this);
       } catch (err) {
         this.logErr(`Failed to write tweets for user ${userId}: `, err, this);
       }
@@ -168,7 +168,7 @@ class Database extends Base {
       const user = await this.TwitterUserTimeline.findOne({ id: userId });
 
       if (user) {
-        this.log(`Read Twitter user.`, this);
+        this.log(`Read Twitter user`, this);
 
         const mappedTweets = user.tweets
           .map(tweet => ({
@@ -185,7 +185,7 @@ class Database extends Base {
           tweets: mappedTweets
         };
       } else {
-        this.log(`Twitter user ${userId} not found.`, this);
+        this.log(`Twitter user ${userId} not found`, this);
         return null;
       }
     } catch (err) {
@@ -210,9 +210,9 @@ class Database extends Base {
 
         await user.save();
 
-        this.log(`Updated tweets for Twitter user ${userId}.`, this);
+        this.log(`Updated tweets for Twitter user ${userId}`, this);
       } else {
-        this.log(`Twitter user ${userId} not found.`, this);
+        this.log(`Twitter user ${userId} not found`, this);
       }
     } catch (err) {
       this.logErr(`Failed to update tweets for Twitter user ${userId}: `, err, this);
