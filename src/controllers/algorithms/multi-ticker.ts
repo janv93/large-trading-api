@@ -12,7 +12,7 @@ export default class MultiTicker extends Base {
   public setSignals(klines: Kline[]): any {
     const klinesWithSignals = this.martingale.setSignals(klines, 0.1);
     const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, 0, true);
-    console.log(klines.length, klines[0].symbol, klinesWithBacktest.at(-1)?.percentProfit);
+    console.log(klines.length, klines[0].symbol, Math.round(klinesWithBacktest.at(-1)?.percentProfit as number));
     return;
     // todo algo: all time high 20% above old -> scale into short
     // only set signal if n klines before now
