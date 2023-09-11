@@ -94,26 +94,31 @@ export default class Binance extends Base {
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
-    const res = await this.database.getKlines(symbol, timeframe);
-    const dbKlines = res || [];
-    const lastKline = dbKlines[dbKlines.length - 1];
-    const newKlines = await this.getKlinesFromStartUntilNow(symbol, lastKline?.times.open || startTime, timeframe);
+    const dbKlines = await this.database.getKlines(symbol, timeframe);
 
-    if (!newKlines.length) {
-      return dbKlines;
+    // not in database yet
+    if (!dbKlines || !dbKlines.length) {
+      const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
+      await this.database.writeKlines(newKlines);
+      console.log('Database initialized with ' + newKlines.length + ' klines');
+      console.log();
+      return newKlines;
     }
 
-    if (dbKlines.length === 0) {
-      await this.database.writeKlines(newKlines);
-      console.log(`Database initialized with ${newKlines.length} klines`);
-      return newKlines;
-    } else {
-      newKlines.shift();
-      await this.database.writeKlines(newKlines);
-      console.log(`Added ${newKlines.length} new klines to database`);
+    // already in database
+    const lastKline = dbKlines[dbKlines.length - 1];
+    const newStart = lastKline.times.open;
+
+    if (this.klineOutdated(timeframe, newStart)) {
+      const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
+      newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
+      console.log('Added ' + newKlines.length + ' new klines to database');
       console.log();
+      await this.database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
+    } else {
+      return dbKlines;
     }
   }
 

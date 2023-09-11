@@ -168,7 +168,7 @@ export default class Routes extends Base {
   }
 
   private async getMultiStocks(timeframe: string): Promise<Kline[][]> {
-    const capStocks = this.nasdaq.getStocksByMarketCapRank(100).map(s => s.symbol);
+    const capStocks = this.nasdaq.getStocksByMarketCapRank(300).map(s => s.symbol);
     const alpacaStocks = await this.alpaca.getAssets();
     const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
     return this.initKlinesMulti('alpaca', stocksFiltered, timeframe);

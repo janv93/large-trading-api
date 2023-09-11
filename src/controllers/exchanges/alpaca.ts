@@ -55,32 +55,31 @@ export default class Alpaca extends Base {
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
+    const dbKlines = await this.database.getKlines(symbol, timeframe);
 
-    try {
-      const res = await this.database.getKlines(symbol, timeframe);
+    // not in database yet
+    if (!dbKlines || !dbKlines.length) {
+      const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
+      await this.database.writeKlines(newKlines);
+      console.log('Database initialized with ' + newKlines.length + ' klines');
+      console.log();
+      return newKlines;
+    }
 
-      if (!res || !res.length) {  // not in database yet
-        const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
-        await this.database.writeKlines(newKlines);
-        console.log('Database initialized with ' + newKlines.length + ' klines');
-        console.log();
-        return newKlines;
-      } else {  // already in database
-        const dbKlines = res;
-        const lastKline = dbKlines[dbKlines.length - 1];
-        const newStart = lastKline.times.open;
+    // already in database
+    const lastKline = dbKlines[dbKlines.length - 1];
+    const newStart = lastKline.times.open;
 
-        const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
-        newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-        console.log('Added ' + newKlines.length + ' new klines to database');
-        console.log();
-        await this.database.writeKlines(newKlines);
-        const mergedKlines = dbKlines.concat(newKlines);
-        return mergedKlines;
-      }
-    } catch (err) {
-      this.handleError(err);
-      throw err;
+    if (this.klineOutdated(timeframe, newStart)) {
+      const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
+      newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
+      console.log('Added ' + newKlines.length + ' new klines to database');
+      console.log();
+      await this.database.writeKlines(newKlines);
+      const mergedKlines = dbKlines.concat(newKlines);
+      return mergedKlines;
+    } else {
+      return dbKlines;
     }
   }
 
@@ -108,7 +107,7 @@ export default class Alpaca extends Base {
 
     finalKlines.sort((a, b) => a.times.open - b.times.open);
     return finalKlines;
-}
+  }
 
   public async getAssets(): Promise<string[]> {
     let res;

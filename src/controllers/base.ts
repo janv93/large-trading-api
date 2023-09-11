@@ -148,16 +148,31 @@ export default class Base {
   }
 
   protected calcStartTime(timeframe: string): number {
-    const timeframeChar = timeframe.replace(/\d+/g, '');
+    const unit = timeframe.slice(-1);
+    const value = Number(timeframe.slice(0, timeframe.length - 1));
     const ms = this.timeframeToMilliseconds(timeframe);
     const now = Date.now();
 
-    switch (timeframeChar) {
-      case 'm': return now - ms * 200 * 1000; // 200k minutes = 138 days
-      case 'h': return now - ms * 100 * 1000; // 100k hours = 4k days
-      case 'd': return now - ms * 10 * 1000; // 10k days = 27 years
+    switch (unit) {
+      case 'm': return now - ms * 200 * 1000; // 200k * 1 min = 138 days - 200k * 15 min = 2k days
+      case 'h': return now - ms * Math.round(100 / value) * 1000; // 100k hours = 4k days
+      case 'd': return now - ms * Math.round(10 / value) * 1000; // 10k days = 27 years
       case 'w': return now - ms * 2 * 1000; // 1k weeks = 38 years
       default: throw `timeframe ${timeframe} does not exist`;
+    }
+  }
+
+  /**
+   * check if last kline in db is too far in the past
+   */
+  protected klineOutdated(timeframe: string, lastOpen: number): boolean {
+    const unit = timeframe.slice(-1);
+    const now = Date.now();
+    const diff = now - lastOpen;
+
+    switch (unit) {
+      case 'm': return diff > 15 * 60 * 1000; // 15 min
+      default: return diff > 3 * this.timeframeToMilliseconds(timeframe); // 3 timeframes for anything > minutes
     }
   }
 

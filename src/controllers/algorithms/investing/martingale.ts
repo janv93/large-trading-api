@@ -16,7 +16,7 @@ export default class Martingale extends Base {
       const percentDiff = (lastClose - close) / lastClose;
 
       if (percentDiff > threshold) {  // if price drop sufficient, scale into long position
-        if (streak > 0) {   // if sufficient amount of consecutive drops, start buying
+        if (streak > 1) {   // if sufficient amount of consecutive drops, start buying
           kline.signal = this.buySignal;
           kline.amount = Math.pow(2, streak - 1);
           isOpen = true;
