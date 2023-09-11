@@ -188,8 +188,6 @@ export default class Binance extends Base {
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res = await axios.get(baseUrl);
 
-    //const brokenSymbols = ['LUNAUSDT', 'LUNABUSD', 'USTUSDT', 'USTBUSD', 'WBTCUSDT', 'WBTCBUSD', 'SHIBUSDT', 'SHIBBUSD', 'DAIUSDT', 'DAIBUSD', 'BUSDUSDT', 'XECUSDT', 'PAXGUSDT', 'RPLUSDT'] // API returns some broken symbols
-
     const symbols = res.data.symbols
       .map(s => s.symbol)
       .filter(s => s.includes('USDT') || s.includes('BUSD'))
@@ -225,7 +223,7 @@ export default class Binance extends Base {
     } else if (busdSymbolExists) {
       return binanceSymbolBusd;
     } else {
-      throw('Could not map symbol ' + symbol + ' to corresponding pair.');
+      throw ('Could not map symbol ' + symbol + ' to corresponding pair.');
     }
   }
 
