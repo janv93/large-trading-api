@@ -163,18 +163,19 @@ export default class Routes extends Base {
   }
 
   private async initKlinesMulti(exchange: string, symbols: string[], timeframe: string): Promise<Kline[][]> {
-    return Promise.all(symbols.map(symbol => this.initKlines(exchange, symbol, timeframe)));
+    const klines: Kline[][] = await Promise.all(symbols.map(symbol => this.initKlines(exchange, symbol, timeframe)));
+    return klines.filter(k => k.length);  // filter out not found symbols
   }
 
   private async getMultiStocks(timeframe: string): Promise<Kline[][]> {
-    const capStocks = this.nasdaq.getStocksByMarketCapRank(20).map(s => s.symbol);
+    const capStocks = this.nasdaq.getStocksByMarketCapRank(100).map(s => s.symbol);
     const alpacaStocks = await this.alpaca.getAssets();
     const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
     return this.initKlinesMulti('alpaca', stocksFiltered, timeframe);
   }
 
   private async getMultiCryptos(timeframe: string): Promise<Kline[][]> {
-    const capCryptos = await this.cmc.getCryptosByMarketCapRank(20);
+    const capCryptos = await this.cmc.getCryptosByMarketCapRank(100);
     const binanceCryptos = await this.binance.getUsdtBusdPairs();
 
     const binanceEquivalents = capCryptos.map(c => {

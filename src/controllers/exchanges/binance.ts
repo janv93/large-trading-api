@@ -66,8 +66,17 @@ export default class Binance extends Base {
     while (nextStart < now) {
       const newKlines = await this.getKlines(symbol, timeframe, undefined, nextStart);
       klines.push(...newKlines);
-      const end = newKlines[newKlines.length - 1].times.open;
-      nextStart = end + this.timeframeToMilliseconds(timeframe);
+
+      if (newKlines.length) {
+        const end = newKlines[newKlines.length - 1].times.open;
+        nextStart = end + this.timeframeToMilliseconds(timeframe);
+      } else {
+        nextStart = now;  // no klines found
+      }
+    }
+
+    if (klines.length === 0) {
+      return [];
     }
 
     if (klines.length) {
@@ -179,13 +188,12 @@ export default class Binance extends Base {
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res = await axios.get(baseUrl);
 
-    const brokenSymbols = ['LUNAUSDT', 'LUNABUSD', 'USTUSDT', 'USTBUSD', 'WBTCUSDT', 'WBTCBUSD', 'SHIBUSDT', 'SHIBBUSD', 'DAIUSDT', 'DAIBUSD'] // API returns some broken symbols
+    //const brokenSymbols = ['LUNAUSDT', 'LUNABUSD', 'USTUSDT', 'USTBUSD', 'WBTCUSDT', 'WBTCBUSD', 'SHIBUSDT', 'SHIBBUSD', 'DAIUSDT', 'DAIBUSD', 'BUSDUSDT', 'XECUSDT', 'PAXGUSDT', 'RPLUSDT'] // API returns some broken symbols
 
     const symbols = res.data.symbols
       .map(s => s.symbol)
       .filter(s => s.includes('USDT') || s.includes('BUSD'))
-      .filter(s => (!s.includes('UP') && !s.includes('DOWN')))
-      .filter(s => !brokenSymbols.includes(s))
+      .filter(s => (!s.includes('UP') && !s.includes('DOWN')));
 
     const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
     uniqueSymbols.sort();
