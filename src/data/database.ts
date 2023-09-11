@@ -60,7 +60,6 @@ class Database extends Base {
   }
 
   public async getKlines(symbol: string, timeframe: string): Promise<Kline[]> {
-    this.log('Reading klines...', this);
     const start = Date.now();
 
     try {
