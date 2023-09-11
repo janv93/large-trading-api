@@ -18,7 +18,7 @@ export default class Logger {
 
   public logErr(...args: any[]) {
     const caller = args.pop();
-    console.error(this.getParentLog(caller), ...args);
+    console.error(`${this.getParentLog(caller)} ${this.colors.red}ERR${this.colors.reset}`, ...args);
   }
 
   private getParentLog(caller: object) {
@@ -28,7 +28,7 @@ export default class Logger {
     switch (caller.constructor.name) {
       case 'App':
         paddedName = 'APP'.padEnd(maxLength);
-        return `${this.colors.red}${paddedName}|${this.colors.reset}`;
+        return `${this.colors.blue}${paddedName}|${this.colors.reset}`;
       case 'Database':
         paddedName = 'DB'.padEnd(maxLength);
         return `${this.colors.yellow}${paddedName}|${this.colors.reset}`;
