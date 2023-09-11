@@ -23,7 +23,7 @@ export default class Logger {
 
   private getParentLog(caller: object) {
     let paddedName: string;
-    const maxLength = 7; // Maximum length for caller name padding
+    const maxLength = 10; // Maximum length for caller name padding
 
     switch (caller.constructor.name) {
       case 'App':
