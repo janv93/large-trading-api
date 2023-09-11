@@ -19,13 +19,13 @@ export default class Base {
 
   protected handleError(err: any, symbol?: string, caller?: any) {
     if (symbol) {
-      this.log('Error received for symbol ' + symbol + ':', this);
+      this.logErr('Error received for symbol ' + symbol + ':', this);
     }
 
     if (err.response && err.response.data) {
-      this.log(err.response.data, this);
+      this.logErr(err.response.data, this);
     } else {
-      this.log(err, this);
+      this.logErr(err, this);
     }
   }
 
