@@ -28,6 +28,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - when adding new algorithm, add settings for algorithm to frontend code
 - npm i, npm start
 - call algorithm, e.g. localhost:3000/klinesWithAlgorithm?exchange=binance&algorithm=ema&symbol=BTCUSDT&timeframe=1h&times=10 (this is also done by the frontend)
+- take response from klinesWithAlgorithm and POST it to localhost:3000/backtest?commission=0&flowingProfit=false
 
 ## Requirements:
 
