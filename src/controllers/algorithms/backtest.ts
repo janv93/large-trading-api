@@ -2,6 +2,12 @@ import { Kline } from '../../interfaces';
 import Base from '../base';
 
 export default class Backtest extends Base {
+  /**
+   * @param klines the klines returned from /klinesWithAlgorithm
+   * @param commission commission of exchange, e.g. 0.04
+   * @param flowingProfit when true, calculates profit for every kline (false calculates only at signals)
+   * @returns the klines with profits
+   */
   public calcBacktestPerformance(klines: Kline[], commission: number, flowingProfit: boolean): Kline[] {
     let percentProfit = 0;
     let lastSignalKline: Kline;
