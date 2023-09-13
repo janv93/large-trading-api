@@ -22,12 +22,14 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 ## How to use backtests:
 
-- either start the frontend project [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer) or call manually
-- add credentials file (.env) to call APIs (most importantly binance or alpaca for ticker retrieval)
-- add or use existing algorithms in src/controllers/algorithms/
-- when adding new algorithm, add settings for algorithm to frontend code
-- npm i, npm start
-- call algorithm, e.g. localhost:3000/klinesWithAlgorithm?exchange=binance&algorithm=ema&symbol=BTCUSDT&timeframe=1h&times=10 (this is also done by the frontend)
+1. either start the [frontend](https://github.com/janv93/trading-chart-visualizer) project or call manually
+2. add credentials file (.env) to call APIs (most importantly binance or alpaca for ticker retrieval)
+3. add or use existing algorithms in src/controllers/algorithms/
+4. when adding new algorithm, add settings for algorithm to frontend code
+5. npm i, npm start
+6. call algorithm, e.g. localhost:3000/klinesWithAlgorithm?exchange=binance&algorithm=ema&symbol=BTCUSDT&timeframe=1h&times=10 (also done by frontend)
+7. take response from klinesWithAlgorithm and POST it to localhost:3000/backtest?commission=0&flowingProfit=false (also done by frontend
+8. response of /backtest contains the klines with with calculated profits
 
 ## Requirements:
 
