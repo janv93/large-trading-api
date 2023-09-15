@@ -72,21 +72,20 @@ export default class Routes extends Base {
 
     // stocks
     const stocks = await this.getMultiStocks(timeframe);
-    const stocksBacktests = stocks.map(t => this.multiTicker.setSignals(t));
 
     // indexes
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'];
     const indexes = await this.initKlinesMulti('alpaca', indexSymbols, timeframe);
-    const indexesBacktests = indexes.map(t => this.multiTicker.setSignals(t));
 
     // commodities
     const commoditySymbols = ['GLD', 'UNG', 'USO', 'COPX']; // gold, gas, oil, copper
     const commodities = await this.initKlinesMulti('alpaca', commoditySymbols, timeframe);
-    const commodityBacktests = commodities.map(t => this.multiTicker.setSignals(t));
 
     // crypto
     const cryptos = await this.getMultiCryptos(timeframe);
-    const cryptosBacktests = cryptos.map(c => this.multiTicker.setSignals(c));
+
+    const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
+    const ret = this.multiTicker.setSignals(allTickers);
 
     res.send();
   }
