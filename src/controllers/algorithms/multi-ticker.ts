@@ -36,10 +36,12 @@ export default class MultiTicker extends Base {
       while (exitMultiplier <= exitMultiplierMax) {
         const tickers = this.runMartingale(klines, threshold, exitMultiplier);
         const tickersProfits: number[] = tickers.map(t => this.getLastProfit(t)).filter((t): t is number => t !== undefined);
+        const average = tickersProfits.reduce((a, v) => a + v) / tickersProfits.length;
 
         benchmarks.push({
           klines: tickers,
-          averageProfit: this.calcAverageLogarithmicProfit(tickersProfits),
+          averageProfit: average,
+          score: this.calcAverageLogarithmicProfit(tickersProfits),
           params: {
             threshold,
             exitMultiplier
@@ -55,7 +57,7 @@ export default class MultiTicker extends Base {
     benchmarks.sort((a, b) => a.averageProfit - b.averageProfit);
 
     benchmarks.slice(-10).forEach(b => {
-      console.log(b.params?.threshold, b.params?.exitMultiplier, b.averageProfit);
+      console.log(b.params?.threshold, b.params?.exitMultiplier, Math.round(b.averageProfit), Math.round(b.score));
     });
 
     return benchmarks.at(-1)?.klines ?? [];
