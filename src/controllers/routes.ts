@@ -69,6 +69,7 @@ export default class Routes extends Base {
   public async runMultiTicker(req, res): Promise<void> {
     const query = req.query;
     const timeframe = query.timeframe;
+    const algorithm = query.algorithm;
 
     // stocks
     const stocks = await this.getMultiStocks(timeframe);
@@ -85,7 +86,7 @@ export default class Routes extends Base {
     const cryptos = await this.getMultiCryptos(timeframe);
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
-    const ret = this.multiTicker.setSignals(allTickers);
+    const ret = this.multiTicker.setSignals(allTickers, algorithm);
 
     res.send();
   }
@@ -120,7 +121,7 @@ export default class Routes extends Base {
   }
 
   private async handleAlgo(responseInRange: Kline[], query): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, streak, user } = query;
+    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, exitMultiplier, streak, user } = query;
 
     switch (algorithm) {
       case 'momentum':
@@ -142,7 +143,7 @@ export default class Routes extends Base {
       case 'dca':
         return this.dca.setSignals(responseInRange);
       case 'martingale':
-        return this.martingale.setSignals(responseInRange, Number(threshold));
+        return this.martingale.setSignals(responseInRange, Number(threshold), Number(exitMultiplier));
       case 'twitterSentiment':
         return await this.twitterSentiment.setSignals(responseInRange, user);
       default: throw 'invalid';

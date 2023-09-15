@@ -6,7 +6,7 @@ export default class Martingale extends Base {
   /**
    * scales into long position. the more price drops, the exponentially larger the position grows
    */
-  public setSignals(klines: Kline[], threshold: number): Kline[] {
+  public setSignals(klines: Kline[], threshold: number, exitMultiplier: number): Kline[] {
     let streak = 0;
     let lastClose = klines[0].prices.close;
     let isOpen = false;
@@ -24,7 +24,7 @@ export default class Martingale extends Base {
 
         streak++;
         lastClose = close;
-      } else if (streak > 0 && percentDiff < -threshold * 2) {  // if price increase sufficient, reset streak and restart from here
+      } else if (streak > 0 && percentDiff < -threshold * exitMultiplier) {  // if price increase sufficient, reset streak and restart from here
         streak = 0;
         lastClose = close;
 

@@ -156,9 +156,9 @@ export default class Alpaca extends Base {
 
     // wait at rate limit
     if (this.stateService.alpacaRequestsSentThisMinute >= this.rateLimitPerMinute) {
+      this.log('Rate limit reached, waiting', this);
       await this.sleep(60000);
       this.stateService.alpacaRequestsSentThisMinute = 0;
     }
-    // continue
   }
 }

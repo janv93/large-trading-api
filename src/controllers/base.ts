@@ -189,4 +189,42 @@ export default class Base {
   protected logErr(...args: any[]) {
     this.logger.logErr(...args);
   }
+
+  /**
+   * (positive - negative klines) * profit
+   */
+  protected calcPerformanceSteadyAscent(klines: Kline[]): number {
+    let positiveKlines = 0;
+    let negativeKlines = 0;
+    let lastProfit = 0;
+
+    for (const kline of klines) {
+      if (kline.percentProfit) {
+        lastProfit = kline.percentProfit;
+
+        if (lastProfit > 0) {
+          positiveKlines++;
+        } else if (lastProfit < 0) {
+          negativeKlines++;
+        }
+      }
+    }
+
+    const balance = positiveKlines - negativeKlines;
+    const performance = balance * lastProfit;
+    return performance;
+  }
+
+  /**
+   * normalize profits logarithmically and calc average
+   * useful when large profits are similarly valueable as small profits
+   */
+  protected calcAverageLogarithmicProfit(profits: number[]): number {
+    const total = profits.reduce((acc, p) => acc + (Math.sign(p) * Math.log(Math.abs(p) + 1) ** 4), 0);  // exponent means logarithm stretches out and doesn't max as early
+    return total / profits.length;
+  }
+
+  protected getLastProfit(klines: Kline[]): number | undefined {
+    return klines.findLast(k => k.percentProfit)?.percentProfit;
+  }
 }

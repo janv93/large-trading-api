@@ -23,6 +23,18 @@ export interface KlinePrices {
   low: number;
 };
 
+export interface MultiBenchmark {
+  klines: Kline[][];
+  averageProfit: number;
+  params?: MultiBenchmarkParams;
+}
+
+// custom params for each algorithm
+export interface MultiBenchmarkParams {
+  threshold?: number;
+  exitMultiplier?: number;
+}
+
 export interface AlpacaResponse {
   nextPageToken: string;
   klines: Kline[];
