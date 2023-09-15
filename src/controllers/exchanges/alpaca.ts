@@ -59,8 +59,12 @@ export default class Alpaca extends Base {
     // not in database yet
     if (!dbKlines || !dbKlines.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
-      await this.database.writeKlines(newKlines);
-      this.log('Database initialized with ' + newKlines.length + ' klines', this);
+
+      if (newKlines.length) {
+        await this.database.writeKlines(newKlines);
+        this.log('Database initialized with ' + newKlines.length + ' klines', this);
+      }
+
       return newKlines;
     }
 
@@ -97,8 +101,8 @@ export default class Alpaca extends Base {
       }
     }
 
-    this.log(`Received total of ${finalKlines.length} klines`, this);
-    this.log(this.timestampsToDateRange(finalKlines[0].times.open, finalKlines[finalKlines.length - 1].times.open), this);
+    const dateRange = this.timestampsToDateRange(finalKlines[0].times.open, finalKlines[finalKlines.length - 1].times.open)
+    this.log(`Received total of ${finalKlines.length} klines: ${dateRange}`, this);
 
     finalKlines.sort((a, b) => a.times.open - b.times.open);
     return finalKlines;

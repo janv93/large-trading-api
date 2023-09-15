@@ -60,8 +60,8 @@ export default class Kucoin extends Base {
       }
     }
 
-    this.log(`Received total of ${klines.length} klines`, this);
-    this.log(this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open), this);
+    const dateRange = this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
+    this.log(`Received total of ${klines.length} klines: ${dateRange}`, this);
 
     klines.sort((a, b) => a.times.open - b.times.open);
     return klines;
@@ -79,8 +79,12 @@ export default class Kucoin extends Base {
 
     if (!dbKlines?.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, endTime, timeframe);
-      await this.database.writeKlines(newKlines);
-      this.log('Database initialized with ' + newKlines.length + ' klines', this);
+
+      if (newKlines.length) {
+        await this.database.writeKlines(newKlines);
+        this.log('Database initialized with ' + newKlines.length + ' klines', this);
+      }
+
       return newKlines;
     } else {
       const lastKline = dbKlines[dbKlines.length - 1];
