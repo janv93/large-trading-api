@@ -2,4 +2,3 @@ dist
 node_modules
 .env
 log
-src/controllers/exchanges/alpaca-all-tickers.json
