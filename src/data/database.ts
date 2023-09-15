@@ -58,7 +58,7 @@ class Database extends Base {
       const klines = await this.Kline.find({ symbol, timeframe }).sort({ openTime: 1 });
 
       if (klines.length) {
-        this.log(`Read ${klines.length} klines`, this);
+        this.log(`Read ${klines.length} klines for symbol ${symbol}`, this);
       } else {
         this.log('No klines found', this);
       }
