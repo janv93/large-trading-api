@@ -54,7 +54,7 @@ export default class MultiTicker extends Base {
       threshold += thresholdStep;
     }
 
-    benchmarks.sort((a, b) => a.averageProfit - b.averageProfit);
+    benchmarks.sort((a, b) => a.score - b.score);
 
     benchmarks.slice(-10).forEach(b => {
       console.log(b.params?.threshold, b.params?.exitMultiplier, Math.round(b.averageProfit), Math.round(b.score));
