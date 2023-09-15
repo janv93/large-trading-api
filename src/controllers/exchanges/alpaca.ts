@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import axios from 'axios';
 import { AlpacaResponse, Kline } from '../../interfaces';
 import Base from '../base';
@@ -109,7 +111,18 @@ export default class Alpaca extends Base {
   }
 
   public async getAssets(): Promise<string[]> {
-    let res;
+    const cachedFile = 'src/controllers/exchanges/alpaca-all-tickers.json';
+
+    if (fs.existsSync(cachedFile)) {
+      const cachedData = JSON.parse(fs.readFileSync(cachedFile, 'utf8'));
+      const currentTime = new Date().getTime();
+      const oneWeek = 7 * 24 * 60 * 60 * 1000;
+
+      // If cache is newer than one week, return it
+      if (currentTime - cachedData.timestamp < oneWeek) {
+        return cachedData.symbols;
+      }
+    }
 
     const options = {
       headers: {
@@ -118,8 +131,16 @@ export default class Alpaca extends Base {
       }
     };
 
-    res = await axios.get('https://api.alpaca.markets/v2/assets', options);
-    return res.data.map(s => s.symbol);
+    const res = await axios.get('https://api.alpaca.markets/v2/assets', options);
+    const symbols = res.data.map(s => s.symbol);
+
+    const cacheData = {
+      timestamp: new Date().getTime(),
+      symbols: symbols,
+    };
+
+    fs.writeFileSync(cachedFile, JSON.stringify(cacheData));
+    return symbols;
   }
 
   private mapKlines(symbol: string, timeframe: string, klines: any): Kline[] {
