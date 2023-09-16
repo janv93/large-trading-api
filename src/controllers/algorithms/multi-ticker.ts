@@ -19,7 +19,7 @@ export default class MultiTicker extends Base {
   }
 
   private setSignalsMartingale(tickers: Kline[][]): Kline[][] {
-    let threshold = 0.05;
+    let threshold = 0.2;
     const thresholdMax = 0.5;
     const thresholdStep = 0.05;
     let exitMultiplier = 1;
