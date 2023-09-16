@@ -225,6 +225,6 @@ export default class Base {
   }
 
   protected getLastProfit(klines: Kline[]): number | undefined {
-    return klines.findLast(k => k.percentProfit)?.percentProfit;
+    return klines.at(-1)?.percentProfit;
   }
 }

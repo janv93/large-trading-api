@@ -1,11 +1,10 @@
 import { Kline, MultiBenchmark } from '../../interfaces';
 import Base from '../base';
 import Backtest from './backtest';
-import Ema from './ema';
 import Martingale from './investing/martingale';
+import deepmerge from 'deepmerge';
 
 export default class MultiTicker extends Base {
-  private ema = new Ema();
   private backtest = new Backtest();
   private martingale = new Martingale();
 
@@ -19,7 +18,7 @@ export default class MultiTicker extends Base {
     // then: only set signal if rsi high
   }
 
-  private setSignalsMartingale(klines: Kline[][]): Kline[][] {
+  private setSignalsMartingale(tickers: Kline[][]): Kline[][] {
     let threshold = 0.05;
     const thresholdMax = 0.5;
     const thresholdStep = 0.05;
@@ -34,12 +33,13 @@ export default class MultiTicker extends Base {
       exitMultiplier = 1;
 
       while (exitMultiplier <= exitMultiplierMax) {
-        const tickers = this.runMartingale(klines, threshold, exitMultiplier);
-        const tickersProfits: number[] = tickers.map(t => this.getLastProfit(t)).filter((t): t is number => t !== undefined);
+        console.log(threshold, exitMultiplier)
+        const tickersWithBacktest = this.runMartingale(tickers, threshold, exitMultiplier);
+        const tickersProfits: number[] = tickersWithBacktest.map(t => this.getLastProfit(t)).filter((t): t is number => t !== undefined);
         const average = tickersProfits.reduce((a, v) => a + v) / tickersProfits.length;
 
         benchmarks.push({
-          klines: tickers,
+          tickers: tickersWithBacktest,
           averageProfit: average,
           score: this.calcAverageLogarithmicProfit(tickersProfits),
           params: {
@@ -60,12 +60,19 @@ export default class MultiTicker extends Base {
       console.log(b.params?.threshold, b.params?.exitMultiplier, Math.round(b.averageProfit), Math.round(b.score));
     });
 
-    return benchmarks.at(-1)?.klines ?? [];
+    benchmarks.at(-1)?.tickers.forEach((t: Kline[]) => {
+      const profit = this.getLastProfit(t);
+      console.log(t.length, t[0].symbol, profit);
+    });
+
+    return benchmarks.at(-1)?.tickers ?? [];
   }
 
-  private runMartingale(klines: Kline[][], threshold: number, exitMultiplier: number): Kline[][] {
-    return klines.map((currentKlines: Kline[]) => {
-      const klinesWithSignals = this.martingale.setSignals(currentKlines, threshold, exitMultiplier);
+  private runMartingale(tickers: Kline[][], threshold: number, exitMultiplier: number): Kline[][] {
+    const clonedTickers = deepmerge({}, tickers);
+
+    return clonedTickers.map((currentTicker: Kline[]) => {
+      const klinesWithSignals = this.martingale.setSignals(currentTicker, threshold, exitMultiplier);
       const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, 0, true);
       return klinesWithBacktest;
     });

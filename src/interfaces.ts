@@ -24,7 +24,7 @@ export interface KlinePrices {
 };
 
 export interface MultiBenchmark {
-  klines: Kline[][];
+  tickers: Kline[][];
   score: number;
   averageProfit: number;
   params?: MultiBenchmarkParams;

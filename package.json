@@ -4,7 +4,7 @@
   "description": "WIP",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node --max-old-space-size=4096 dist/app.js",
+    "start": "tsc && node --max-old-space-size=16384 dist/app.js",
     "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log"
   },
   "repository": {
@@ -34,6 +34,7 @@
     "btoa": "^1.2.1",
     "config": "^3.3.6",
     "crypto": "^1.0.1",
+    "deepmerge": "^4.3.1",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "mongoose": "^6.9.1",
