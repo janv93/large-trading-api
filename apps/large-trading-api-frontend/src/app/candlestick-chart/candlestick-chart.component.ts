@@ -200,7 +200,8 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           times,
           timeframe,
           algorithm: 'martingale',
-          threshold: this.chartService.martingaleThreshold
+          threshold: this.chartService.martingaleThreshold,
+          exitMultiplier: this.chartService.martingaleExitMultiplier
         };
       case 'flashCrash':
         return {
