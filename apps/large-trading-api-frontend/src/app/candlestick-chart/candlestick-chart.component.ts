@@ -317,27 +317,51 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
       switch (signal) {
         case 'CLOSE':
           closeTemplate['x'] = Number(openTime);
-          buyTemplate.label['text'] = ['CLOSE', amount];
+          closeTemplate.label['text'] = 'CLOSE';
           xaxis.push(deepmerge({}, closeTemplate));
           break;
         case 'BUY':
           buyTemplate['x'] = Number(openTime);
-          buyTemplate.label['text'] = ['BUY', amount];
+          
+          if (amount) {
+            buyTemplate.label['text'] = ['BUY', amount];
+          } else {
+            buyTemplate.label['text'] = 'BUY';
+          }
+
           xaxis.push(deepmerge({}, buyTemplate));
           break;
         case 'SELL':
           sellTemplate['x'] = Number(openTime);
-          buyTemplate.label['text'] = ['SELL', amount];
+          
+          if (amount) {
+            sellTemplate.label['text'] = ['SELL', amount];
+          } else {
+            sellTemplate.label['text'] = 'SELL';
+          }
+
           xaxis.push(deepmerge({}, sellTemplate));
           break;
         case 'CLOSEBUY':
           closeBuyTemplate['x'] = Number(openTime);
-          buyTemplate.label['text'] = ['CLOSEBUY', amount];
+          
+          if (amount) {
+            closeBuyTemplate.label['text'] = ['CBUY', amount];
+          } else {
+            closeBuyTemplate.label['text'] = 'CBUY';
+          }
+
           xaxis.push(deepmerge({}, closeBuyTemplate));
           break;
         case 'CLOSESELL':
           closeSellTemplate['x'] = Number(openTime);
-          buyTemplate.label['text'] = ['CLOSESELL', amount];
+          
+          if (amount) {
+            closeSellTemplate.label['text'] = ['CSELL', amount];
+          } else {
+            closeSellTemplate.label['text'] = 'CSELL';
+          }
+
           xaxis.push(deepmerge({}, closeSellTemplate));
           break;
       }
@@ -352,5 +376,4 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
     const chart = new ApexCharts(this.apexChart.nativeElement, this.options);
     chart.render();
   }
-
 }

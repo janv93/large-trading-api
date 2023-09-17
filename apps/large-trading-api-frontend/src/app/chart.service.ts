@@ -15,7 +15,7 @@ export class ChartService {
   public strategy = 'martingale';
   public symbol = 'DOTUSDT';
   public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
-  public times = 100;  // 1 = 1000 timeframes
+  public times = 20;  // 1 = 1000 timeframes
   public commission = 0.04;
 
   public rsiLength = 7;
