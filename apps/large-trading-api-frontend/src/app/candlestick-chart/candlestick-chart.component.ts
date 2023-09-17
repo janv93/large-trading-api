@@ -243,8 +243,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           background: '#00b746'
         },
         orientation: 'horizontal',
-        offsetY: 7,
-        text: 'BUY'
+        offsetY: 7
       }
     };
 
@@ -258,8 +257,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           background: '#00b746'
         },
         orientation: 'horizontal',
-        offsetY: 7,
-        text: 'CBUY'
+        offsetY: 7
       }
     };
 
@@ -273,8 +271,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           background: '#FF0000'
         },
         orientation: 'horizontal',
-        offsetY: 260,
-        text: 'SELL'
+        offsetY: 260
       }
     };
 
@@ -288,8 +285,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           background: '#FF0000'
         },
         orientation: 'horizontal',
-        offsetY: 260,
-        text: 'CSELL'
+        offsetY: 260
       }
     };
 
@@ -303,8 +299,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           background: '#000000'
         },
         orientation: 'horizontal',
-        offsetY: 130,
-        text: 'CLOSE'
+        offsetY: 130
       }
     };
 
@@ -317,37 +312,32 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
     signalKlines.forEach(kline => {
       const openTime = kline.times.open;
       const signal = kline.signal;
-
-      if (signal === 'BUY') {
-        buyTemplate['x'] = Number(openTime);
-        xaxis.push(deepmerge({}, buyTemplate));
-      } else if (signal === 'SELL') {
-        sellTemplate['x'] = Number(openTime);
-        xaxis.push(deepmerge({}, sellTemplate));
-      } else if (signal === 'CLOSE') {
-        closeTemplate['x'] = Number(openTime);
-        xaxis.push(deepmerge({}, closeTemplate));
-      }
+      const amount = kline.amount;
 
       switch (signal) {
         case 'CLOSE':
           closeTemplate['x'] = Number(openTime);
+          buyTemplate.label['text'] = ['CLOSE', amount];
           xaxis.push(deepmerge({}, closeTemplate));
           break;
         case 'BUY':
           buyTemplate['x'] = Number(openTime);
+          buyTemplate.label['text'] = ['BUY', amount];
           xaxis.push(deepmerge({}, buyTemplate));
           break;
         case 'SELL':
           sellTemplate['x'] = Number(openTime);
+          buyTemplate.label['text'] = ['SELL', amount];
           xaxis.push(deepmerge({}, sellTemplate));
           break;
         case 'CLOSEBUY':
           closeBuyTemplate['x'] = Number(openTime);
+          buyTemplate.label['text'] = ['CLOSEBUY', amount];
           xaxis.push(deepmerge({}, closeBuyTemplate));
           break;
         case 'CLOSESELL':
           closeSellTemplate['x'] = Number(openTime);
+          buyTemplate.label['text'] = ['CLOSESELL', amount];
           xaxis.push(deepmerge({}, closeSellTemplate));
           break;
       }
