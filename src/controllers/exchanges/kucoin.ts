@@ -6,8 +6,6 @@ import Base from '../base';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {
-  private database = database;
-
   public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
 
@@ -75,13 +73,13 @@ export default class Kucoin extends Base {
     const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 3;
     const startTime = this.roundTimeToNearestTimeframe(Date.now() - timespan, this.timeframeToMilliseconds(timeframe));
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
-    const dbKlines = await this.database.getKlines(symbol, timeframe);
+    const dbKlines = await database.getKlines(symbol, timeframe);
 
     if (!dbKlines?.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, endTime, timeframe);
 
       if (newKlines.length) {
-        await this.database.writeKlines(newKlines);
+        await database.writeKlines(newKlines);
         this.log('Database initialized with ' + newKlines.length + ' klines', this);
       }
 
@@ -92,7 +90,7 @@ export default class Kucoin extends Base {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, lastKline.times.open, endTime, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log(`Added ${newKlines.length} new klines to the database`, this);
-      await this.database.writeKlines(newKlines);
+      await database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
     }

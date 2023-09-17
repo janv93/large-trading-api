@@ -5,8 +5,6 @@ import Base from '../base';
 import database from '../../data/database';
 
 export default class Binance extends Base {
-  private database = database;
-
   public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
@@ -92,14 +90,14 @@ export default class Binance extends Base {
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
-    const dbKlines = await this.database.getKlines(symbol, timeframe);
+    const dbKlines = await database.getKlines(symbol, timeframe);
 
     // not in database yet
     if (!dbKlines || !dbKlines.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
 
       if (newKlines.length) {
-        await this.database.writeKlines(newKlines);
+        await database.writeKlines(newKlines);
         this.log('Database initialized with ' + newKlines.length + ' klines', this);
       }
 
@@ -114,7 +112,7 @@ export default class Binance extends Base {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log('Added ' + newKlines.length + ' new klines to database', this);
-      await this.database.writeKlines(newKlines);
+      await database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
     } else {

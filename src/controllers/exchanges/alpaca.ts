@@ -1,15 +1,12 @@
 import fs from 'fs';
-import path from 'path';
 import axios from 'axios';
 import { AlpacaResponse, Kline } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
-import stateService from '../state-service';
 
-export default class Alpaca extends Base {
-  private database = database;
-  private stateService = stateService;
+class Alpaca extends Base {
   private rateLimitPerMinute = 190;
+  private requestsSentThisMinute = 0;
 
   public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
@@ -56,14 +53,14 @@ export default class Alpaca extends Base {
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
-    const dbKlines = await this.database.getKlines(symbol, timeframe);
+    const dbKlines = await database.getKlines(symbol, timeframe);
 
     // not in database yet
     if (!dbKlines || !dbKlines.length) {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
 
       if (newKlines.length) {
-        await this.database.writeKlines(newKlines);
+        await database.writeKlines(newKlines);
         this.log('Database initialized with ' + newKlines.length + ' klines', this);
       }
 
@@ -78,7 +75,7 @@ export default class Alpaca extends Base {
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log('Added ' + newKlines.length + ' new klines to database', this);
-      await this.database.writeKlines(newKlines);
+      await database.writeKlines(newKlines);
       const mergedKlines = dbKlines.concat(newKlines);
       return mergedKlines;
     } else {
@@ -177,13 +174,15 @@ export default class Alpaca extends Base {
   }
 
   private async waitIfRateLimitReached(): Promise<void> {
-    this.stateService.alpacaRequestsSentThisMinute++;
+    this.requestsSentThisMinute++;
 
     // wait at rate limit
-    if (this.stateService.alpacaRequestsSentThisMinute >= this.rateLimitPerMinute) {
+    if (this..requestsSentThisMinute >= this.rateLimitPerMinute) {
       this.log('Rate limit reached, waiting', this);
       await this.sleep(60000);
-      this.stateService.alpacaRequestsSentThisMinute = 0;
+      this.requestsSentThisMinute = 0;
     }
   }
 }
+
+export default new Alpaca();
