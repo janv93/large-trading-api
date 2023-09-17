@@ -1,7 +1,6 @@
-import database from '../data/database';
 import Base from './base';
 import { Kline } from '../interfaces';
-import Alpaca from './exchanges/alpaca';
+import alpaca from './exchanges/alpaca';
 import Binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Momentum from './algorithms/momentum';
@@ -22,7 +21,6 @@ import Coinmarketcap from './other-apis/coinmarketcap';
 
 
 export default class Routes extends Base {
-  private alpaca = new Alpaca();
   private binance = new Binance();
   private kucoin = new Kucoin();
   private indicators = new Indicators();
@@ -155,7 +153,7 @@ export default class Routes extends Base {
     switch (exchange) {
       case 'binance': exchangeObj = this.binance; break;
       case 'kucoin': exchangeObj = this.kucoin; break;
-      case 'alpaca': exchangeObj = this.alpaca; break;
+      case 'alpaca': exchangeObj = alpaca; break;
     }
 
     return exchangeObj.initKlinesDatabase(symbol, timeframe);
@@ -168,7 +166,7 @@ export default class Routes extends Base {
 
   private async getMultiStocks(timeframe: string, rank: number): Promise<Kline[][]> {
     const capStocks = this.nasdaq.getStocksByMarketCapRank(rank).map(s => s.symbol);
-    const alpacaStocks = await this.alpaca.getAssets();
+    const alpacaStocks = await alpaca.getAssets();
     const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
     return this.initKlinesMulti('alpaca', stocksFiltered, timeframe);
   }
