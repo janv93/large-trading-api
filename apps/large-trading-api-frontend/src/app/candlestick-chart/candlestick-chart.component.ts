@@ -233,143 +233,54 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
   }
 
   private setSignals(klines: Array<any>): void {
-    const buyTemplate = {
-      borderColor: '#00b746',
-      label: {
-        borderColor: '#00b746',
-        style: {
-          fontSize: '12px',
-          color: '#fff',
-          background: '#00b746'
-        },
-        orientation: 'horizontal',
-        offsetY: 7
-      }
+    const setTemplate = (openTime: number, signal: string, amount: any, offsetY: number, color: string) => {
+      return {
+        borderColor: color,
+        x: Number(openTime),
+        label: {
+          borderColor: color,
+          style: {
+            fontSize: '12px',
+            color: '#fff',
+            background: color
+          },
+          orientation: 'horizontal',
+          offsetY: offsetY,
+          text: amount ? [signal, amount] : signal
+        }
+      };
     };
-
-    const closeBuyTemplate = {
-      borderColor: '#00b746',
-      label: {
-        borderColor: '#00b746',
-        style: {
-          fontSize: '12px',
-          color: '#fff',
-          background: '#00b746'
-        },
-        orientation: 'horizontal',
-        offsetY: 7
-      }
-    };
-
-    const sellTemplate = {
-      borderColor: '#FF0000',
-      label: {
-        borderColor: '#FF0000',
-        style: {
-          fontSize: '12px',
-          color: '#fff',
-          background: '#FF0000'
-        },
-        orientation: 'horizontal',
-        offsetY: 260
-      }
-    };
-
-    const closeSellTemplate = {
-      borderColor: '#FF0000',
-      label: {
-        borderColor: '#FF0000',
-        style: {
-          fontSize: '12px',
-          color: '#fff',
-          background: '#FF0000'
-        },
-        orientation: 'horizontal',
-        offsetY: 260
-      }
-    };
-
-    const closeTemplate = {
-      borderColor: '#000000',
-      label: {
-        borderColor: '#000000',
-        style: {
-          fontSize: '12px',
-          color: '#fff',
-          background: '#000000'
-        },
-        orientation: 'horizontal',
-        offsetY: 130
-      }
-    };
-
-    const signalKlines = klines.filter(kline => {
-      return kline.signal ? true : false;
-    });
 
     const xaxis: Array<any> = [];
+    const signalKlines = klines.filter(kline => kline.signal);
 
     signalKlines.forEach(kline => {
-      const openTime = kline.times.open;
-      const signal = kline.signal;
-      const amount = kline.amount;
+      const { times: { open: openTime }, signal, amount } = kline;
+
+      let template;
 
       switch (signal) {
         case 'CLOSE':
-          closeTemplate['x'] = Number(openTime);
-          closeTemplate.label['text'] = 'CLOSE';
-          xaxis.push(deepmerge({}, closeTemplate));
+          template = setTemplate(openTime, 'CLOSE', null, 130, '#000000');
           break;
         case 'BUY':
-          buyTemplate['x'] = Number(openTime);
-          
-          if (amount) {
-            buyTemplate.label['text'] = ['BUY', amount];
-          } else {
-            buyTemplate.label['text'] = 'BUY';
-          }
-
-          xaxis.push(deepmerge({}, buyTemplate));
+          template = setTemplate(openTime, 'BUY', amount, 7, '#00b746');
           break;
         case 'SELL':
-          sellTemplate['x'] = Number(openTime);
-          
-          if (amount) {
-            sellTemplate.label['text'] = ['SELL', amount];
-          } else {
-            sellTemplate.label['text'] = 'SELL';
-          }
-
-          xaxis.push(deepmerge({}, sellTemplate));
+          template = setTemplate(openTime, 'SELL', amount, 260, '#FF0000');
           break;
         case 'CLOSEBUY':
-          closeBuyTemplate['x'] = Number(openTime);
-          
-          if (amount) {
-            closeBuyTemplate.label['text'] = ['CBUY', amount];
-          } else {
-            closeBuyTemplate.label['text'] = 'CBUY';
-          }
-
-          xaxis.push(deepmerge({}, closeBuyTemplate));
+          template = setTemplate(openTime, 'CBUY', amount, 7, '#00b746');
           break;
         case 'CLOSESELL':
-          closeSellTemplate['x'] = Number(openTime);
-          
-          if (amount) {
-            closeSellTemplate.label['text'] = ['CSELL', amount];
-          } else {
-            closeSellTemplate.label['text'] = 'CSELL';
-          }
-
-          xaxis.push(deepmerge({}, closeSellTemplate));
+          template = setTemplate(openTime, 'CSELL', amount, 260, '#FF0000');
           break;
       }
+
+      xaxis.push(template);
     });
 
-    this.options.annotations = {
-      xaxis: xaxis
-    };
+    this.options.annotations = { xaxis };
   }
 
   private renderChart() {
