@@ -4,38 +4,54 @@ import Base from '../../base';
 
 export default class Martingale extends Base {
   /**
-   * scales into long position. the more price drops, the exponentially larger the position grows
+   * 1. wait until drop of minDrop, then buy
+   * 2. if further drops, buy exponentially more
+   * 3. if increase from lowest drop sufficient, close position
+   * 4. back to 1.
    */
   public setSignals(klines: Kline[], threshold: number, exitMultiplier: number): Kline[] {
+    const initialClose = klines[0].prices.close;
+    const minDrop = 0.4;
     let streak = 0;
-    let lastClose = klines[0].prices.close;
+    let peak = 0;
+    let low = initialClose;
     let isOpen = false;
 
-    klines.forEach((kline: Kline) => {
+    for (const kline of klines) {
       const close = kline.prices.close;
-      const percentDiff = (lastClose - close) / lastClose;
+      const diffFromLow = (close - low) / low;
+      const diffFromPeak = (peak - close) / peak;
 
-      if (percentDiff > threshold) {  // if price drop sufficient, scale into long position
-        if (streak > 1) {   // if sufficient amount of consecutive drops, start buying
+      // buy condition
+      if (diffFromPeak > minDrop) {
+        const excess = diffFromPeak - minDrop;
+        const thresholdMultiple = excess / threshold;
+
+        if (thresholdMultiple > streak) {
           kline.signal = this.buySignal;
-          kline.amount = Math.pow(2, streak - 1);
+          streak++;
+          kline.amount = Math.pow(2, streak - 1); // start at 2^0
           isOpen = true;
+          low = close;
         }
 
-        streak++;
-        lastClose = close;
-      } else if (streak > 0 && percentDiff < -threshold * exitMultiplier) {  // if price increase sufficient, reset streak and restart from here
-        streak = 0;
-        lastClose = close;
-
-        if (isOpen) {
-          kline.signal = this.closeSignal;
-          isOpen = false;
-        }
-      } else if (streak === 0 && close > lastClose) {   // new high reached
-        lastClose = close;
+        continue;
       }
-    });
+
+      // close condition
+      if (isOpen && diffFromLow > threshold * exitMultiplier) {
+        kline.signal = this.closeSignal;
+        streak = 0;
+        isOpen = false;
+        peak = close;
+        continue;
+      }
+
+      // new high
+      if (!isOpen && close > peak) {
+        peak = close;
+      }
+    }
 
     return klines;
   }
