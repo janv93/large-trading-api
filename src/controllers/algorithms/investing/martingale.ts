@@ -13,7 +13,7 @@ export default class Martingale extends Base {
     const initialClose = klines[0].prices.close;
     const minDrop = 0.4;
     let streak = 0;
-    let peak = 0;
+    let peak = initialClose;
     let low = initialClose;
     let isOpen = false;
 
