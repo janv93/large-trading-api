@@ -33,8 +33,6 @@ export default class Martingale extends Base {
         case Action.Buy: this.buy(kline, state); break;
         case Action.Close: this.close(kline, state); break;
         case Action.SetNewHigh: state.peak = kline.prices.close; break;
-        case Action.Skip:
-        default: break;
       }
     }
 
