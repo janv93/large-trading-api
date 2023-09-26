@@ -50,8 +50,6 @@ export default class Martingale extends Base {
 
       if (thresholdMultiple > state.streak) {
         return Action.Buy;
-      } else {
-        return Action.Skip;
       }
     }
 
