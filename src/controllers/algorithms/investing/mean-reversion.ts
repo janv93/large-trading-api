@@ -9,7 +9,7 @@ enum Action {
   Skip
 }
 
-export default class Martingale extends Base {
+export default class MeanReversion extends Base {
   /**
    * 1. wait until drop of minDrop, then buy
    * 2. if further drops, buy exponentially more

@@ -13,7 +13,7 @@ import Bb from './algorithms/bb';
 import Tensorflow from './algorithms/ai/tensorflow';
 import FlashCrash from './algorithms/flash-crash';
 import Dca from './algorithms/investing/dca';
-import Martingale from './algorithms/investing/martingale';
+import MeanReversion from './algorithms/investing/mean-reversion';
 import TwitterSentiment from './algorithms/sentiment/twitter-sentiment';
 import MultiTicker from './algorithms/multi-ticker';
 import Nasdaq from './other-apis/nasdaq';
@@ -33,7 +33,7 @@ export default class Routes extends Base {
   private tensorflow = new Tensorflow();
   private flashCrash = new FlashCrash();
   private dca = new Dca();
-  private martingale = new Martingale();
+  private meanReversion = new MeanReversion();
   private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
   private nasdaq = new Nasdaq();
@@ -139,8 +139,8 @@ export default class Routes extends Base {
         return this.flashCrash.setSignals(responseInRange);
       case 'dca':
         return this.dca.setSignals(responseInRange);
-      case 'martingale':
-        return this.martingale.setSignals(responseInRange, Number(threshold), Number(exitMultiplier));
+      case 'meanReversion':
+        return this.meanReversion.setSignals(responseInRange, Number(threshold), Number(exitMultiplier));
       case 'twitterSentiment':
         return await this.twitterSentiment.setSignals(responseInRange, user);
       default: throw 'invalid';
