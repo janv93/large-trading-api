@@ -69,7 +69,6 @@ export default class Martingale extends Base {
     const thresholdMultiple = excess / state.threshold;
     const minDropReached = diffFromPeak > state.minDrop;  // minimum drop to start buying
     const isBuy = thresholdMultiple > state.streak; // e.g. multiple of threshold = 2, streak = 1 -> buy again
-    if (minDropReached && isBuy) console.log(1, close);
     return minDropReached && isBuy;
   }
 
@@ -82,8 +81,7 @@ export default class Martingale extends Base {
   private isClose(kline: Kline, state: any): boolean {
     const close = kline.prices.close;
     const diffFromPeak = (state.peak - close) / state.peak;
-    if (state.isTrailing && diffFromPeak > 0.1) console.log(2, close)
-    return state.isTrailing && diffFromPeak > 0.1;  // trailing stop loss of 10%
+    return state.isTrailing && diffFromPeak > state.threshold * state.exitMultiplier;  // trailing stop loss of 10%
   }
 
   private isSetHigh(kline: Kline, state: any): boolean {
