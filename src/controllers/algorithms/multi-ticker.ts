@@ -19,11 +19,11 @@ export default class MultiTicker extends Base {
   }
 
   private setSignalsMartingale(tickers: Kline[][]): Kline[][] {
-    let threshold = 0.05;
+    let threshold = 0.1;
     const thresholdMax = 0.2;
     const thresholdStep = 0.05;
     let exitMultiplier = 1;
-    const exitMultiplierMax = 4;
+    const exitMultiplierMax = 2;
     const exitMultiplierStep = 0.5;
 
     let benchmarks: MultiBenchmark[] = [];
@@ -56,10 +56,12 @@ export default class MultiTicker extends Base {
 
     benchmarks.sort((a, b) => a.score - b.score);
 
+    // log top 10 performers
     benchmarks.slice(-10).forEach(b => {
       console.log(b.params?.threshold, b.params?.exitMultiplier, Math.round(b.averageProfit), Math.round(b.score));
     });
 
+    // log stats of best performer
     benchmarks.at(-1)?.tickers.forEach((t: Kline[]) => {
       const profit = this.getLastProfit(t);
       console.log(t.length, t[0].symbol, profit);
