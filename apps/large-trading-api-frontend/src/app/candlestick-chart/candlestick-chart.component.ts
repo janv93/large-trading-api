@@ -193,15 +193,15 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
           timeframe,
           algorithm: 'dca'
         };
-      case 'martingale':
+      case 'meanReversion':
         return {
           exchange,
           symbol,
           times,
           timeframe,
-          algorithm: 'martingale',
-          threshold: this.chartService.martingaleThreshold,
-          exitMultiplier: this.chartService.martingaleExitMultiplier
+          algorithm: 'meanReversion',
+          threshold: this.chartService.meanReversionThreshold,
+          exitMultiplier: this.chartService.meanReversionExitMultiplier
         };
       case 'flashCrash':
         return {

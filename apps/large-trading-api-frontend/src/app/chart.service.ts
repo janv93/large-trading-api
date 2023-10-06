@@ -12,10 +12,10 @@ export class ChartService {
   public twitterUser = environment.twitterUser;
 
   public exchange = 'binance'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
-  public strategy = 'martingale';
-  public symbol = 'DOTUSDT';
-  public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
-  public times = 20;  // 1 = 1000 timeframes
+  public strategy = 'meanReversion';
+  public symbol = 'BNBUSDT';
+  public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
+  public times = 100;  // 1 = 1000 timeframes
   public commission = 0.04;
 
   public rsiLength = 7;
@@ -24,8 +24,8 @@ export class ChartService {
   public emaPeriodSL = 80;
   public bbPeriod = 21;
   public momentumStreak = 5;
-  public martingaleThreshold = 0.2;
-  public martingaleExitMultiplier = 3;
+  public meanReversionThreshold = 0.2;
+  public meanReversionExitMultiplier = 2;
 
   constructor() {
     this.checkIsInvestmentStrategy();
@@ -46,7 +46,7 @@ export class ChartService {
   }
 
   private checkIsInvestmentStrategy() {
-    const investmentStrategies = ['dca', 'martingale'];
+    const investmentStrategies = ['dca', 'meanReversion'];
     this.isInvestmentStrategy = investmentStrategies.includes(this.strategy);
   }
 }
