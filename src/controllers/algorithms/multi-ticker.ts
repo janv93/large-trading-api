@@ -25,7 +25,7 @@ export default class MultiTicker extends Base {
     const thresholdStep = 0.05;
     const exitMultiplierMin = 0.1
     let exitMultiplier = exitMultiplierMin;
-    const exitMultiplierMax = 0.5;
+    const exitMultiplierMax = 0.3;
     const exitMultiplierStep = 0.05;
 
     let benchmarks: MultiBenchmark[] = [];
