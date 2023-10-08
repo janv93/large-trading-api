@@ -23,7 +23,8 @@ export default class MultiTicker extends Base {
     let threshold = 0.1;
     const thresholdMax = 0.2;
     const thresholdStep = 0.05;
-    let exitMultiplier = 0.1;
+    const exitMultiplierMin = 0.1
+    let exitMultiplier = exitMultiplierMin;
     const exitMultiplierMax = 0.5;
     const exitMultiplierStep = 0.05;
 
@@ -31,7 +32,7 @@ export default class MultiTicker extends Base {
 
     // run all combinations of params
     while (threshold <= thresholdMax) {
-      exitMultiplier = 0.1;
+      exitMultiplier = exitMultiplierMin;
 
       while (exitMultiplier <= exitMultiplierMax) {
         console.log(threshold, exitMultiplier)
