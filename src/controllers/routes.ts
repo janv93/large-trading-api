@@ -85,7 +85,7 @@ export default class Routes extends Base {
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
     const ret = this.multiTicker.setSignals(allTickers, algorithm);
 
-    res.send();
+    res.send(ret);
   }
 
   public postBacktestData(req, res): void {

@@ -10,7 +10,8 @@ export default class MultiTicker extends Base {
 
   public setSignals(klines: Kline[][], algorithm: string): any {
     switch (algorithm) {
-      case 'meanReversion': return this.setSignalsMeanReversion(klines);
+      case 'meanReversion': this.setSignalsMeanReversion(klines); return 'done';
+      default: return 'invalid algorithm';
     }
 
     // todo algo: all time high 20% above old -> scale into short
@@ -22,15 +23,15 @@ export default class MultiTicker extends Base {
     let threshold = 0.1;
     const thresholdMax = 0.2;
     const thresholdStep = 0.05;
-    let exitMultiplier = 1;
-    const exitMultiplierMax = 2;
-    const exitMultiplierStep = 0.5;
+    let exitMultiplier = 0.1;
+    const exitMultiplierMax = 0.5;
+    const exitMultiplierStep = 0.05;
 
     let benchmarks: MultiBenchmark[] = [];
 
     // run all combinations of params
     while (threshold <= thresholdMax) {
-      exitMultiplier = 1;
+      exitMultiplier = 0.1;
 
       while (exitMultiplier <= exitMultiplierMax) {
         console.log(threshold, exitMultiplier)

@@ -73,15 +73,23 @@ export default class MeanReversion extends Base {
   }
 
   private isStartTrail(kline: Kline, state: any): boolean {
+    if (state.isTrailing) return false;
+
     const close = kline.prices.close;
     const diffFromLow = (close - state.low) / state.low;
-    return !state.isTrailing && state.isOpen && diffFromLow > 2 * state.threshold;
+    const diffFromLowSufficient = diffFromLow > 2 * state.threshold;
+    return state.isOpen && diffFromLowSufficient;
   }
 
   private isClose(kline: Kline, state: any): boolean {
+    if (!state.isOpen || !state.isTrailing) return false;
+
     const close = kline.prices.close;
     const diffFromPeak = (state.peak - close) / state.peak;
-    return state.isTrailing && diffFromPeak > state.threshold * state.exitMultiplier;  // trailing stop loss of 10%
+    const diffPeakLow = (state.peak - state.low) / state.low;
+    const stopLossReached = diffFromPeak / diffPeakLow > state.exitMultiplier; // stop loss as percentage of current profit
+    if (stopLossReached) console.log(diffFromPeak, diffPeakLow)
+    return stopLossReached;
   }
 
   private isSetHigh(kline: Kline, state: any): boolean {
