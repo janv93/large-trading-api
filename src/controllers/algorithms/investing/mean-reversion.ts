@@ -88,7 +88,6 @@ export default class MeanReversion extends Base {
     const diffFromPeak = (state.peak - close) / state.peak;
     const diffPeakLow = (state.peak - state.low) / state.low;
     const stopLossReached = diffFromPeak / diffPeakLow > state.exitMultiplier; // stop loss as percentage of current profit
-    if (stopLossReached) console.log(diffFromPeak, diffPeakLow)
     return stopLossReached;
   }
 
