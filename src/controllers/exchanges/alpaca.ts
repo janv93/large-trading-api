@@ -87,12 +87,12 @@ class Alpaca extends Base {
    * get klines from startTime until now
    */
   private async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
-    let finalKlines: Kline[] = [];
+    let klines: Kline[] = [];
     let pageToken: string | undefined;
 
     while (true) {
       const res = await this.getKlines(symbol, timeframe, startTime, pageToken);
-      finalKlines.push(...res.klines);
+      klines.push(...res.klines);
       pageToken = res.nextPageToken;
 
       if (!pageToken) {
@@ -100,11 +100,11 @@ class Alpaca extends Base {
       }
     }
 
-    const dateRange = this.timestampsToDateRange(finalKlines[0].times.open, finalKlines[finalKlines.length - 1].times.open)
-    this.log(`Received total of ${finalKlines.length} klines: ${dateRange}`, this);
+    const dateRange = this.timestampsToDateRange(klines[0]?.times.open, klines[klines.length - 1]?.times.open)
+    this.log(`Received total of ${klines.length} klines: ${dateRange}`, this);
 
-    finalKlines.sort((a, b) => a.times.open - b.times.open);
-    return finalKlines;
+    klines.sort((a, b) => a.times.open - b.times.open);
+    return klines;
   }
 
   public async getAssets(): Promise<string[]> {
