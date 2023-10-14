@@ -20,7 +20,7 @@ export default class MeanReversion extends Base {
     const state = {
       threshold,
       exitMultiplier,
-      minDrop: 0.4,
+      minDrop: 0.25,
       streak: 0,
       peak: klines[0].prices.close,
       low: klines[0].prices.close,
