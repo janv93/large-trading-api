@@ -37,8 +37,8 @@ export default class MultiTicker extends Base {
       while (exitMultiplier <= exitMultiplierMax) {
         console.log(threshold, exitMultiplier)
         const tickersWithBacktest = this.runMeanReversion(tickers, threshold, exitMultiplier);
-        const tickersProfits: number[] = tickersWithBacktest.map(t => this.getLastProfit(t)).filter((t): t is number => t !== undefined);
-        const average = tickersProfits.reduce((a, v) => a + v) / tickersProfits.length;
+        const tickersProfits: number[] = tickersWithBacktest.map(t => this.calcProfitPerAmount(t)).filter((t): t is number => t !== undefined);
+        const average = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
 
         benchmarks.push({
           tickers: tickersWithBacktest,
@@ -58,10 +58,12 @@ export default class MultiTicker extends Base {
 
     benchmarks.sort((a, b) => a.score - b.score);
 
+    console.log();
     // log top 10 performers
     benchmarks.slice(-10).forEach(b => {
       console.log(b.params?.threshold, b.params?.exitMultiplier, Math.round(b.averageProfit), Math.round(b.score));
     });
+    console.log();
 
     // log stats of best performer
     benchmarks.at(-1)?.tickers.forEach((t: Kline[]) => {

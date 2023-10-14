@@ -311,7 +311,7 @@ export default class Tensorflow extends Base {
     const transformedSamples = this.transformIndicatorsSamples(samples);
 
     const s = transformedSamples.map(sample => Math.abs(sample.outputs[0]));
-    const sum = s.reduce((a, b) => a + b, 0);
+    const sum = s.reduce((a, c) => a + c, 0);
     const avg = (sum / s.length) || 0;
 
     console.log(avg);

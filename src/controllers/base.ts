@@ -220,11 +220,21 @@ export default class Base {
    * useful when large profits are similarly valueable as small profits
    */
   protected calcAverageLogarithmicProfit(profits: number[]): number {
-    const total = profits.reduce((acc, p) => acc + (Math.sign(p) * Math.log(Math.abs(p) + 1) ** 4), 0);  // exponent means logarithm stretches out and doesn't max as early
+    const total = profits.reduce((a, c) => a + (Math.sign(c) * Math.log(Math.abs(c) + 1) ** 4), 0);  // exponent means logarithm stretches out and doesn't max as early
     return total / profits.length;
   }
 
   protected getLastProfit(klines: Kline[]): number | undefined {
     return klines.at(-1)?.percentProfit;
+  }
+
+  protected getTotalAmount(klines: Kline[]): number {
+    return klines.reduce((a, c) => a + (c.amount || 0), 0);
+  }
+
+  protected calcProfitPerAmount(klines: Kline[]): number {
+    const lastProfit = this.getLastProfit(klines) || 0;
+    const totalAmount = this.getTotalAmount(klines);
+    return totalAmount === 0 ? 0 : lastProfit / totalAmount;
   }
 }
