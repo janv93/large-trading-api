@@ -11,9 +11,9 @@ export class ChartService {
   public isInvestmentStrategy: boolean;
   public twitterUser = environment.twitterUser;
 
-  public exchange = 'binance'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
+  public exchange = 'alpaca'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
   public strategy = 'meanReversion';
-  public symbol = 'BNBUSDT';
+  public symbol = 'GOOG';
   public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
   public times = 100;  // 1 = 1000 timeframes
   public commission = 0.04;
@@ -25,7 +25,7 @@ export class ChartService {
   public bbPeriod = 21;
   public momentumStreak = 5;
   public meanReversionThreshold = 0.2;
-  public meanReversionExitMultiplier = 2;
+  public meanReversionExitMultiplier = 0.3;
 
   constructor() {
     this.checkIsInvestmentStrategy();

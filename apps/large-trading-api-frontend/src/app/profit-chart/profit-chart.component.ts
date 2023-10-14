@@ -124,7 +124,7 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
       profit: percentages[percentages.length - 1].y.toFixed(2) + '%',
       trades: tradesCount,
       positiveNegative: this.calcPositiveNegative(percentages),
-      drawbackProfitRatio: (this.calcMaxDrawback(percentages) / percentages[percentages.length - 1].y).toFixed(2) + '%',
+      drawbackProfitRatio: ((this.calcMaxDrawback(percentages) / percentages[percentages.length - 1].y) * 100).toFixed(2) + '%',
       maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%',
     };
   }
