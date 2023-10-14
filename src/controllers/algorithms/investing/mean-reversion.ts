@@ -86,7 +86,7 @@ export default class MeanReversion extends Base {
 
     const close = kline.prices.close;
     const diffFromPeak = (state.peak - close) / state.peak;
-    const diffPeakLow = (state.peak - state.low) / state.low;
+    const diffPeakLow = (state.peak - state.low) / state.peak;
     const stopLossReached = diffFromPeak / diffPeakLow > state.exitMultiplier; // stop loss as percentage of current profit
     return stopLossReached;
   }
