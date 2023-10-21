@@ -1,9 +1,3 @@
-<div class="charts-wrapper">
-  <candlestick-chart></candlestick-chart>
-  <!--<indicator-chart chart="ema"></indicator-chart>
-  <indicator-chart chart="rsi"></indicator-chart>
-  <indicator-chart chart="macd"></indicator-chart>-->
-  <profit-chart [commission]="0.0" title="Flowing profit without commission" [flowingProfit]="true"></profit-chart>
-  <profit-chart *ngIf="!this.chartService.isInvestmentStrategy" [commission]="0.0" title="Profit without commission" [flowingProfit]="false"></profit-chart>
-  <profit-chart *ngIf="!this.chartService.isInvestmentStrategy" [commission]="chartService.commission" title="Profit with commission" [flowingProfit]="false"></profit-chart>
+<div class="app">
+  <multi-chart class="app__multi-chart" *ngIf="klines" [klines]="klines"></multi-chart>
 </div>

@@ -1,11 +1,9 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
-import deepmerge from 'deepmerge';
 import { BaseComponent } from '../base-component';
 import { ChartService } from '../chart.service';
-import { BinanceKline } from '../interfaces';
-import { Observable } from 'rxjs';
+import { Kline } from '../interfaces';
+import { HttpService } from '../http.service';
 
 @Component({
   selector: 'candlestick-chart',
@@ -17,11 +15,10 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
   public apexChart: ElementRef;
 
   private options: any;
-  private baseUrl = 'http://127.0.0.1:3000';
 
   constructor(
-    private http: HttpClient,
-    private chartService: ChartService
+    private chartService: ChartService,
+    private httpService: HttpService
   ) {
     super();
   }
@@ -93,11 +90,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
   }
 
   private getKlines() {
-    const query = this.getStrategyQuery();
-    const baseUrl = this.baseUrl + '/klinesWithAlgorithm';
-    const url = this.chartService.createUrl(baseUrl, query);
-
-    this.http.get(url).subscribe((res: any) => {
+    this.httpService.getKlines().subscribe((res: Kline[]) => {
       this.setSignals(res);
       const klines = this.mapKlines(res);
       this.options.series[0].data = klines;
@@ -106,124 +99,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
     });
   }
 
-  private getStrategyQuery(): any {
-    const { exchange, strategy, symbol, times, timeframe } = this.chartService;
-
-    switch (strategy) {
-      case 'pivotReversal':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'pivotReversal',
-          leftBars: 4,
-          rightBars: 1
-        };
-      case 'momentum':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'momentum',
-          streak: this.chartService.momentumStreak
-        };
-      case 'macd':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'macd',
-          fast: 12,
-          slow: 26,
-          signal: 9
-        };
-      case 'rsi':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'rsi',
-          length: this.chartService.rsiLength
-        };
-      case 'ema':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'ema',
-          periodOpen: this.chartService.emaPeriodOpen,
-          periodClose: this.chartService.emaPeriodClose
-        };
-      case 'emasl':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'emasl',
-          period: this.chartService.emaPeriodSL
-        };
-      case 'bb':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'bb',
-          period: this.chartService.bbPeriod
-        };
-      case 'deepTrend':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'deepTrend'
-        };
-      case 'dca':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'dca'
-        };
-      case 'meanReversion':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'meanReversion',
-          threshold: this.chartService.meanReversionThreshold,
-          exitMultiplier: this.chartService.meanReversionExitMultiplier
-        };
-      case 'flashCrash':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'flashCrash'
-        };
-      case 'twitterSentiment':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'twitterSentiment',
-          user: this.chartService.twitterUser
-        };
-    }
-  }
-
-  private mapKlines(klines: Array<BinanceKline>) {
+  private mapKlines(klines: Kline[]) {
     return klines.map(kline => {
       return {
         x: new Date(kline.times.open),
@@ -232,7 +108,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
     });
   }
 
-  private setSignals(klines: Array<any>): void {
+  private setSignals(klines: Kline[]): void {
     const setTemplate = (openTime: number, signal: string, amount: any, offsetY: number, color: string) => {
       return {
         borderColor: color,
@@ -251,7 +127,7 @@ export class CandlestickChartComponent extends BaseComponent implements AfterVie
       };
     };
 
-    const xaxis: Array<any> = [];
+    const xaxis: any[] = [];
     const signalKlines = klines.filter(kline => kline.signal);
 
     signalKlines.forEach(kline => {

@@ -1,0 +1,29 @@
+<div #container class="w-100 h-100 position-relative chart-container">
+  <div #legend class="position-absolute legend">
+    <div *ngIf="ohlc">
+      <span>O</span>
+      <span class="text-info">{{ ohlc.open }}</span>
+      <span> H</span>
+      <span class="text-info">{{ ohlc.high }}</span>
+      <span> L</span>
+      <span class="text-info">{{ ohlc.low }}</span>
+      <span> C</span>
+      <span class="text-info">{{ ohlc.close }}</span>
+      <span> {{ profit }}</span>
+    </div>
+    <div *ngIf="stats">
+      <p>Profit per amount: {{ stats?.ppa }}</p>
+      <p>Profit: {{ stats?.profit }}</p>
+      <p>Trades: {{ stats?.trades }}</p>
+      <p *ngIf="!chartService.isInvestmentStrategy">Positive/Negative: {{ stats?.positiveNegative }}</p>
+      <p>Max drawback/Profit: {{ stats?.drawbackProfitRatio }}</p>
+      <p>Max drawback: {{ stats?.maxDrawback }}</p>
+    </div>
+  </div>
+  <div class="position-absolute checkboxes">
+    <label class="mr-2">commission</label>
+    <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
+    <label class="ml-5 mr-2">flowing profit</label>
+    <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
+  </div>
+</div>

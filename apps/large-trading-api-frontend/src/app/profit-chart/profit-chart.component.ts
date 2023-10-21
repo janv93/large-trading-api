@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ElementRef, ViewChild, Input } from '@angular
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import { ChartService } from '../chart.service';
-import { BinanceKline } from '../interfaces';
+import { Kline } from '../interfaces';
 import { BaseComponent } from '../base-component';
 
 @Component({
@@ -88,7 +88,7 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
     };
   }
 
-  private postBacktest(klines: Array<BinanceKline>): void {
+  private postBacktest(klines: Array<Kline>): void {
     const query = {
       commission: this.commission,
       flowingProfit: this.flowingProfit
@@ -116,7 +116,7 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
     chart.render();
   }
 
-  private calcStats(klines: Array<BinanceKline>, percentages: Array<any>): void {
+  private calcStats(klines: Array<Kline>, percentages: Array<any>): void {
     const tradesCount = klines.filter(kline => kline.signal !== undefined).length;
 
     this.stats = {
@@ -166,10 +166,10 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
     return pos + ' / ' + neg;
   }
 
-  private calcProfitPerAmount(klines: Array<BinanceKline>, percentages: Array<any>): number {
+  private calcProfitPerAmount(klines: Array<Kline>, percentages: Array<any>): number {
     let totalAmount = 0;
 
-    klines.forEach((kline: BinanceKline) => {
+    klines.forEach((kline: Kline) => {
       if (kline.signal) {
         totalAmount += kline.amount ?? 1;
       }
@@ -177,5 +177,4 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
 
     return totalAmount === 0 ? 0 : percentages[percentages.length - 1].y / totalAmount;
   }
-
 }

@@ -12,10 +12,10 @@ export class ChartService {
   public twitterUser = environment.twitterUser;
 
   public exchange = 'alpaca'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
-  public strategy = 'meanReversion';
-  public symbol = 'GOOG';
+  public strategy = 'ema';
+  public symbol = 'SPY';
   public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
-  public times = 100;  // 1 = 1000 timeframes
+  public times = 1;  // 1 = 1000 timeframes
   public commission = 0.04;
 
   public rsiLength = 7;
@@ -24,7 +24,7 @@ export class ChartService {
   public emaPeriodSL = 80;
   public bbPeriod = 21;
   public momentumStreak = 5;
-  public meanReversionThreshold = 0.2;
+  public meanReversionThreshold = 0.15;
   public meanReversionExitMultiplier = 0.3;
 
   constructor() {

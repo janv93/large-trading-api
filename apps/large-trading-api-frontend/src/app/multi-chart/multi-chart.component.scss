@@ -1,0 +1,25 @@
+:host {
+  display: block;
+}
+
+.chart-container {
+  width: 100%;
+
+  .legend {
+    top: 20px;
+    left: 70px;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .checkboxes {
+    top: 20px;
+    right: 100px;
+    z-index: 10;
+
+    input {
+      width: 15px;
+      height: 15px;
+    }
+  }
+}
