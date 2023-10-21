@@ -21,8 +21,13 @@
     <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
     <div *ngIf="stats" class="text-right mt-4 stats">
       <div>
-        <span>ROI: </span>
-        <span [ngClass]="{'green': stats.returnOnInvestment > 0, 'red': stats.returnOnInvestment < 0 }">{{ stats.returnOnInvestment }}</span>
+        <span>profit: </span>
+        <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>
+        <span>%</span>
+      </div>
+      <div>
+        <span>max drawback: </span>
+        <span [style.color]="getColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
         <span>%</span>
       </div>
       <div *ngIf="!chartService.isInvestmentStrategy">
@@ -30,11 +35,6 @@
         <span class="green">{{ stats.positive }}</span>
         <span>/</span>
         <span class="red">{{ stats.negative }}</span>
-      </div>
-      <div>
-        <span>max drawback: </span>
-        <span [style.color]="getColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
-        <span>%</span>
       </div>
       <p>trades: {{ stats.numberOfTrades }}</p>
     </div>

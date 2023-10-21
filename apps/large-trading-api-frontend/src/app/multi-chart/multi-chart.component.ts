@@ -251,24 +251,12 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     const posNeg = this.calcPositiveNegative();
 
     this.stats = {
-      returnOnInvestment: Number(this.calcProfitPerAmount().toFixed(2)),
+      profit: Number(this.finalProfit.toFixed(2)),
       numberOfTrades: tradesCount,
       positive: posNeg[0],
       negative: posNeg[1],
       maxDrawback: Number(this.calcMaxDrawback().toFixed(2)),
     };
-  }
-
-  private calcProfitPerAmount(): number {
-    let totalAmount = 0;
-
-    this.currentKlines.forEach((kline: Kline) => {
-      if (kline.signal) {
-        totalAmount += kline.amount ?? 1;
-      }
-    });
-
-    return totalAmount === 0 ? 0 : this.finalProfit / totalAmount;
   }
 
   private calcPositiveNegative(): number[] {
@@ -292,22 +280,35 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   }
 
   private calcMaxDrawback(): number {
-    let high = 0;
-    let maxDrawback = 0;
-
+    let high: number | null = null;
+    let maxDrawback: number | null = null;
+  
     this.currentKlines.forEach(kline => {
       const profit = kline.percentProfit || 0;
-
-      if (profit < high) {
-        if (high - profit > maxDrawback) {
-          maxDrawback = (high - profit) / high * 100;
+  
+      if (high === null) {
+        high = profit;
+      }
+  
+      if (maxDrawback === null) {
+        maxDrawback = 0;
+      }
+  
+      // Only update maxDrawback if profit is less than the current high and high is not zero
+      if (profit < high && high !== 0) { 
+        const drawback = ((high - profit) / high) * 100;
+        if (drawback > maxDrawback) {
+          maxDrawback = drawback;
         }
-      } else {
+      } 
+      
+      // Update high only if the profit is greater than the current high
+      if (profit > high) {
         high = profit;
       }
     });
-
-    return maxDrawback;
+  
+    return maxDrawback || 0;
   }
 }
 
