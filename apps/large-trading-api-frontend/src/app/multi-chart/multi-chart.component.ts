@@ -279,6 +279,10 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     return [pos, neg];
   }
 
+  /**
+   * example: profit falls from 300% to 100% -> max drawback = 66%
+   * example 2: profit falls from 20% to -10% -> max drawback = 150%
+   */
   private calcMaxDrawback(): number {
     let high: number | null = null;
     let maxDrawback: number | null = null;
