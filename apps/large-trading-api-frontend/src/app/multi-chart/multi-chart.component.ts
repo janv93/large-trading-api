@@ -302,7 +302,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
 
       if (profit < high) {
         if (high - profit > maxDrawback) {
-          maxDrawback = high - profit;
+          maxDrawback = (high - profit) / high * 100;
         }
       } else {
         high = profit;
