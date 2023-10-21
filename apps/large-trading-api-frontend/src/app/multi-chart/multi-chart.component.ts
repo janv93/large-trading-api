@@ -254,7 +254,7 @@ export class MultiChartComponent extends BaseComponent implements OnInit, OnDest
   private calcStats(): void {
     this.finalProfit = this.currentKlines.at(-1)!.percentProfit || 0;
     const tradesCount = this.currentKlines.filter(kline => kline.signal !== undefined && kline.signal !== this.closeSignal).length;
-    const posNeg = this.calcPositiveNegative();
+    const posNeg = this.calcPositiveNegativeTrades();
 
     this.stats = {
       profit: Number(this.finalProfit.toFixed(2)),
@@ -265,7 +265,7 @@ export class MultiChartComponent extends BaseComponent implements OnInit, OnDest
     };
   }
 
-  private calcPositiveNegative(): number[] {
+  private calcPositiveNegativeTrades(): number[] {
     let pos = 0;
     let neg = 0;
     let lastPercentage;
