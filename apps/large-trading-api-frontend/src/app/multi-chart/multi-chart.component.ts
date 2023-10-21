@@ -270,17 +270,23 @@ export class MultiChartComponent extends BaseComponent implements OnInit, OnDest
     let neg = 0;
     let lastPercentage;
 
-    this.currentKlines.map(p => p.percentProfit || 0).forEach(percentage => {
-      if (lastPercentage !== undefined) {
-        if (percentage > lastPercentage) {
-          pos++;
-        } else if (percentage < lastPercentage) {
-          neg++;
-        }
-      }
+    this.currentKlines
+      .filter(kline => kline.signal)
+      .map(p => p.percentProfit || 0)
+      .forEach(percentage => {
+        if (lastPercentage !== undefined) {
+          const diff = Math.abs(percentage - lastPercentage);
+          const isEqual = diff < this.chartService.commission;
 
-      lastPercentage = percentage;
-    });
+          if (!isEqual && percentage > lastPercentage) {
+            pos++;
+          } else if (!isEqual && percentage < lastPercentage) {
+            neg++;
+          }
+        }
+
+        lastPercentage = percentage;
+      });
 
     return [pos, neg];
   }
