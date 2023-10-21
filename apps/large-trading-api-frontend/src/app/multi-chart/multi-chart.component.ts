@@ -1,5 +1,5 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, Time } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
 import { BacktestStats, Kline, Klines } from '../interfaces';
 import { ChartService } from '../chart.service';
 
@@ -48,7 +48,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
         height: container.clientHeight,
         leftPriceScale: {
           visible: true
-        }
+        },
       });
 
       this.applyDarkTheme(this.chart);
@@ -122,7 +122,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   private setCandlestickSeriesData(): void {
     const mapped = this.klines[0].klines.map((kline: Kline) => {
       return {
-        time: kline.times.open as Time,
+        time: kline.times.open / 1000 as Time,
         open: kline.prices.open,
         high: kline.prices.high,
         low: kline.prices.low,
@@ -138,18 +138,18 @@ export class MultiChartComponent implements OnInit, OnDestroy {
 
     this.klines[0].klines.forEach((kline: Kline) => {
       if (kline.signal) {
-        markers.push(this.setTemplate(kline));
+        markers.push(this.getTemplate(kline));
       }
     });
 
     this.candlestickSeries.setMarkers(markers);
   }
 
-  private setTemplate(kline: Kline): any {
+  private getTemplate(kline: Kline): SeriesMarker<Time> {
     const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.signal!) ? kline.signal!.replace('LOSE', '') : kline.signal;
 
     return {
-      time: kline.times.open as Time,
+      time: kline.times.open / 1000 as Time,
       position: ['BUY', 'CBUY'].includes(signal!) ? 'belowBar' : 'aboveBar',
       color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.signal === 'CLOSE' ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(signal!) ? 'arrowUp' : 'arrowDown',
@@ -160,7 +160,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   private setProfitSeriesData() {
     const mapped = this.currentKlines.map((kline: Kline) => {
       return {
-        time: kline.times.open as Time,
+        time: kline.times.open / 1000 as Time,
         value: kline.percentProfit
       }
     });
