@@ -1,8 +1,8 @@
 export interface Kline {
   symbol: string;
   timeframe: string;
-  times: Times;
-  prices: Prices;
+  times: KlineTimes;
+  prices: KlinePrices;
   volume: number;
   numberOfTrades?: number;
   signal?: string;
@@ -11,12 +11,12 @@ export interface Kline {
   tweets?: Tweet[];
 };
 
-export interface Times {
+export interface KlineTimes {
   open: number;
-  close: number;
+  close?: number;
 };
 
-export interface Prices {
+export interface KlinePrices {
   open: number;
   close: number;
   high: number;
