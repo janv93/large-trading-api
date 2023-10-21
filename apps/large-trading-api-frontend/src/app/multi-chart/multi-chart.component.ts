@@ -251,7 +251,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     const posNeg = this.calcPositiveNegative();
 
     this.stats = {
-      profitPerAmount: Number(this.calcProfitPerAmount().toFixed(2)),
+      returnOnInvestment: Number(this.calcProfitPerAmount().toFixed(2)),
       profit: Number(this.finalProfit.toFixed(2)),
       numberOfTrades: tradesCount,
       positive: posNeg[0],

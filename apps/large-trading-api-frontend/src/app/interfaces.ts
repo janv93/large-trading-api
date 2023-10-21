@@ -44,7 +44,7 @@ export interface Klines {
 };
 
 export interface BacktestStats {
-  profitPerAmount: number;
+  returnOnInvestment: number;
   profit: number;
   numberOfTrades: number;
   positive: number;

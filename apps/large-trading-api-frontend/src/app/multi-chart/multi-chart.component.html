@@ -21,8 +21,8 @@
     <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
     <div *ngIf="stats" class="text-right mt-4 stats">
       <div>
-        <span>profit per amount: </span>
-        <span [ngClass]="{'green': stats.profitPerAmount > 0, 'red': stats.profitPerAmount < 0 }">{{ stats.profitPerAmount }}</span>
+        <span>ROI: </span>
+        <span [ngClass]="{'green': stats.returnOnInvestment > 0, 'red': stats.returnOnInvestment < 0 }">{{ stats.returnOnInvestment }}</span>
         <span>%</span>
       </div>
       <div>
