@@ -25,7 +25,7 @@ export class ChartService {
   public bbPeriod = 21;
   public momentumStreak = 5;
   public meanReversionThreshold = 0.15;
-  public meanReversionExitMultiplier = 0.3;
+  public meanReversionProfitBasedTrailingStopLoss  = 0.3;
 
   constructor() {
     this.checkIsInvestmentStrategy();

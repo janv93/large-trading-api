@@ -126,7 +126,7 @@ export class HttpService {
           timeframe,
           algorithm: 'meanReversion',
           threshold: this.chartService.meanReversionThreshold,
-          exitMultiplier: this.chartService.meanReversionExitMultiplier
+          exitMultiplier: this.chartService.meanReversionProfitBasedTrailingStopLoss 
         };
       case 'flashCrash':
         return {
