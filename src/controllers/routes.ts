@@ -122,27 +122,27 @@ export default class Routes extends Base {
 
     switch (algorithm) {
       case 'momentum':
-        return this.momentum.setSignals(responseInRange, streak);
+        return this[algorithm].setSignals(responseInRange, streak);
       case 'macd':
-        return this.macd.setSignals(responseInRange, fast, slow, signal);
+        return this[algorithm].setSignals(responseInRange, fast, slow, signal);
       case 'rsi':
-        return this.rsi.setSignals(responseInRange, Number(length));
+        return this[algorithm].setSignals(responseInRange, Number(length));
       case 'ema':
-        return this.ema.setSignals(responseInRange, Number(periodOpen), Number(periodClose));
+        return this[algorithm].setSignals(responseInRange, Number(periodOpen), Number(periodClose));
       case 'emasl':
-        return this.ema.setSignalsSL(responseInRange, Number(periodClose));
+        return this[algorithm].setSignalsSL(responseInRange, Number(periodClose));
       case 'bb':
-        return this.bb.setSignals(responseInRange, Number(length));
+        return this[algorithm].setSignals(responseInRange, Number(length));
       case 'deepTrend':
         return this.tensorflow.setSignals(responseInRange);
       case 'flashCrash':
-        return this.flashCrash.setSignals(responseInRange);
+        return this[algorithm].setSignals(responseInRange);
       case 'dca':
-        return this.dca.setSignals(responseInRange);
+        return this[algorithm].setSignals(responseInRange);
       case 'meanReversion':
-        return this.meanReversion.setSignals(responseInRange, Number(threshold), Number(profitBasedTrailingStopLoss));
+        return this[algorithm].setSignals(responseInRange, Number(threshold), Number(profitBasedTrailingStopLoss));
       case 'twitterSentiment':
-        return await this.twitterSentiment.setSignals(responseInRange, user);
+        return await this[algorithm].setSignals(responseInRange, user);
       default: throw 'invalid';
     }
   }
