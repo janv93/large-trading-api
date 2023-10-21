@@ -12,12 +12,12 @@
       <span> {{ profit }}</span>
     </div>
     <div *ngIf="stats">
-      <p>Profit per amount: {{ stats?.ppa }}</p>
-      <p>Profit: {{ stats?.profit }}</p>
-      <p>Trades: {{ stats?.trades }}</p>
-      <p *ngIf="!chartService.isInvestmentStrategy">Positive/Negative: {{ stats?.positiveNegative }}</p>
-      <p>Max drawback/Profit: {{ stats?.drawbackProfitRatio }}</p>
-      <p>Max drawback: {{ stats?.maxDrawback }}</p>
+      <p>Profit per amount: {{ stats.ppa }}</p>
+      <p>Profit: {{ stats.profit }}</p>
+      <p>Trades: {{ stats.trades }}</p>
+      <p *ngIf="!chartService.isInvestmentStrategy">Positive/Negative: {{ stats.positiveNegative }}</p>
+      <p>Max drawback/Profit: {{ stats.drawbackProfitRatio }}</p>
+      <p>Max drawback: {{ stats.maxDrawback }}</p>
     </div>
   </div>
   <div class="position-absolute checkboxes">
