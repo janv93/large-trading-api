@@ -33,7 +33,7 @@ export interface MultiBenchmark {
 // custom params for each algorithm
 export interface MultiBenchmarkParams {
   threshold?: number;
-  exitMultiplier?: number;
+  profitBasedTrailingStopLoss?: number;
 };
 
 export interface AlpacaResponse {

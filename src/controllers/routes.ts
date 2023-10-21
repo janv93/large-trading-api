@@ -118,7 +118,7 @@ export default class Routes extends Base {
   }
 
   private async handleAlgo(responseInRange: Kline[], query): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, exitMultiplier, streak, user } = query;
+    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, user } = query;
 
     switch (algorithm) {
       case 'momentum':
@@ -140,7 +140,7 @@ export default class Routes extends Base {
       case 'dca':
         return this.dca.setSignals(responseInRange);
       case 'meanReversion':
-        return this.meanReversion.setSignals(responseInRange, Number(threshold), Number(exitMultiplier));
+        return this.meanReversion.setSignals(responseInRange, Number(threshold), Number(profitBasedTrailingStopLoss));
       case 'twitterSentiment':
         return await this.twitterSentiment.setSignals(responseInRange, user);
       default: throw 'invalid';

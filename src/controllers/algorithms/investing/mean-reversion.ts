@@ -16,10 +16,10 @@ export default class MeanReversion extends Base {
    * 3. if increase from lowest drop sufficient, close position
    * 4. back to 1.
    */
-  public setSignals(klines: Kline[], threshold: number, exitMultiplier: number): Kline[] {
+  public setSignals(klines: Kline[], threshold: number, profitBasedTrailingStopLoss: number): Kline[] {
     const state = {
       threshold,
-      exitMultiplier,
+      profitBasedTrailingStopLoss,
       minDrop: 0.25,
       streak: 0,
       peak: klines[0].prices.close,
@@ -87,7 +87,7 @@ export default class MeanReversion extends Base {
     const close = kline.prices.close;
     const diffFromPeak = (state.peak - close) / state.peak;
     const diffPeakLow = (state.peak - state.low) / state.peak;
-    const stopLossReached = diffFromPeak / diffPeakLow > state.exitMultiplier; // stop loss as percentage of current profit
+    const stopLossReached = diffFromPeak / diffPeakLow > state.profitBasedTrailingStopLoss; // stop loss as percentage of current profit
     return stopLossReached;
   }
 
