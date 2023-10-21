@@ -11,9 +11,9 @@ export class ChartService {
   public isInvestmentStrategy: boolean;
   public twitterUser = environment.twitterUser;
 
-  public exchange = 'alpaca'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
+  public exchange = 'binance'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
   public strategy = 'ema';
-  public symbol = 'SPY';
+  public symbol = 'ETHUSDT';
   public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
   public times = 1;  // 1 = 1000 timeframes
   public commission = 0.04;

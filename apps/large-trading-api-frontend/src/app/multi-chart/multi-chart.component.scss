@@ -7,9 +7,18 @@
 
   .legend {
     top: 20px;
-    left: 70px;
+    left: 100px;
     z-index: 10;
     pointer-events: none;
+  }
+
+  .symbol {
+    font-size: 200px;
+    left: 50%;
+    top: -5%;
+    transform: translateX(-50%);
+    z-index: 10;
+    opacity: 0.08;
   }
 
   .checkboxes {

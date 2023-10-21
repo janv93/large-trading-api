@@ -1,18 +1,24 @@
 <div #container class="w-100 h-100 position-relative chart-container">
-  <div #legend class="position-absolute legend">
-    <span>{{ currentKlines[0].symbol }}</span>
-    <div *ngIf="ohlc">
-      <span>O</span>
-      <span class="text-info">{{ ohlc.open }}</span>
-      <span> H</span>
-      <span class="text-info">{{ ohlc.high }}</span>
-      <span> L</span>
-      <span class="text-info">{{ ohlc.low }}</span>
-      <span> C</span>
-      <span class="text-info">{{ ohlc.close }}</span>
-      <span> {{ profit }}</span>
-    </div>
-    <div *ngIf="stats">
+  <div *ngIf="ohlc" #legend class="position-absolute legend">
+    <span>O</span>
+    <span class="text-info">{{ ohlc.open }}</span>
+    <span> H</span>
+    <span class="text-info">{{ ohlc.high }}</span>
+    <span> L</span>
+    <span class="text-info">{{ ohlc.low }}</span>
+    <span> C</span>
+    <span class="text-info">{{ ohlc.close }}</span>
+    <span> {{ profit }}</span>
+  </div>
+  <p *ngIf="currentKlines" class="position-absolute font-weight-bold symbol">
+    {{ currentKlines[0].symbol }}
+  </p>
+  <div class="position-absolute checkboxes">
+    <label class="mr-2">commission</label>
+    <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
+    <label class="ml-5 mr-2">flowing profit</label>
+    <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
+    <div *ngIf="stats" class="text-right mt-4">
       <p>Profit per amount: {{ stats.profitPerAmount }}</p>
       <p>Profit: {{ stats.profit }}</p>
       <p>Trades: {{ stats.numberOfTrades }}</p>
@@ -20,11 +26,5 @@
       <p>Max drawback/Profit: {{ stats.drawbackProfitRatio }}</p>
       <p>Max drawback: {{ stats.maxDrawback }}</p>
     </div>
-  </div>
-  <div class="position-absolute checkboxes">
-    <label class="mr-2">commission</label>
-    <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
-    <label class="ml-5 mr-2">flowing profit</label>
-    <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
   </div>
 </div>
