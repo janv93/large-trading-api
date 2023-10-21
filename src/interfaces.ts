@@ -28,18 +28,18 @@ export interface MultiBenchmark {
   score: number;
   averageProfit: number;
   params?: MultiBenchmarkParams;
-}
+};
 
 // custom params for each algorithm
 export interface MultiBenchmarkParams {
   threshold?: number;
   exitMultiplier?: number;
-}
+};
 
 export interface AlpacaResponse {
   nextPageToken: string;
   klines: Kline[];
-}
+};
 
 export interface Tweet {
   time: number;
@@ -53,7 +53,7 @@ export interface TweetSymbol {
   originalSymbol: string;
   price?: number; // price at time of tweet
   sentiment?: number;
-}
+};
 
 export interface TwitterUser {
   name: string;
@@ -72,11 +72,11 @@ export interface TweetSentiment {
   symbol: string;
   model: string;
   sentiment: number;
-}
+};
 
 export interface StockInfo {
   symbol: string;
   country: string;
   sector: string;
   cap: number;
-}
+};
