@@ -1,5 +1,5 @@
 <div #container class="w-100 h-100 position-relative chart-container">
-  <div *ngIf="ohlc" #legend class="position-absolute legend">
+  <div *ngIf="ohlc" #legend class="position-absolute legend-left">
     <span>O</span>
     <span class="text-info">{{ ohlc.open }}</span>
     <span> H</span>
@@ -13,12 +13,12 @@
   <p *ngIf="currentKlines" class="position-absolute font-weight-bold symbol">
     {{ currentKlines[0].symbol }}
   </p>
-  <div class="position-absolute checkboxes">
+  <div class="position-absolute legend-right">
     <label class="mr-2">commission</label>
     <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
     <label class="ml-5 mr-2">flowing profit</label>
     <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
-    <div *ngIf="stats" class="text-right mt-4">
+    <div *ngIf="stats" class="text-right mt-4 stats">
       <p>profit per amount: {{ stats.profitPerAmount }}%</p>
       <p>profit: {{ stats.profit }}%</p>
       <p>trades: {{ stats.numberOfTrades }}</p>
