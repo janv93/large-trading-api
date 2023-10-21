@@ -21,8 +21,8 @@ export class MultiChartComponent extends BaseComponent implements OnInit, OnDest
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
   private profitSeries: ISeriesApi<'Line'>;
-  private commissionChecked;
-  private flowingProfitChecked;
+  private commissionChecked = false;
+  private flowingProfitChecked = true;
   private finalProfit: number;
 
   constructor(
@@ -35,7 +35,7 @@ export class MultiChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   ngOnInit(): void {
-    this.currentKlines = this.klines[0].klines;
+    this.currentKlines = this.klines[2].klines; // default: no commission, flowing profit
     this.calcStats();
     this.handleResize();
   }
