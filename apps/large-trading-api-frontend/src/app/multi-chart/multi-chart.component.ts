@@ -122,7 +122,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   private setCandlestickSeriesData(): void {
     const mapped = this.klines[0].klines.map((kline: Kline) => {
       return {
-        time: new Date(kline.times.open).toISOString().slice(0, 10),
+        time: kline.times.open as Time,
         open: kline.prices.open,
         high: kline.prices.high,
         low: kline.prices.low,
@@ -145,28 +145,28 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     this.candlestickSeries.setMarkers(markers);
   }
 
+  private setTemplate(kline: Kline): any {
+    const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.signal!) ? kline.signal!.replace('LOSE', '') : kline.signal;
+
+    return {
+      time: kline.times.open as Time,
+      position: ['BUY', 'CBUY'].includes(signal!) ? 'belowBar' : 'aboveBar',
+      color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.signal === 'CLOSE' ? 'white' : '#ff4d4d',
+      shape: ['BUY', 'CBUY'].includes(signal!) ? 'arrowUp' : 'arrowDown',
+      text: signal + (kline.amount ? ` ${kline.amount}` : '')
+    };
+  }
+
   private setProfitSeriesData() {
     const mapped = this.currentKlines.map((kline: Kline) => {
       return {
-        time: new Date(kline.times.open).toISOString().slice(0, 10),
+        time: kline.times.open as Time,
         value: kline.percentProfit
       }
     });
 
     this.profitSeries.setData(mapped);
     this.calcStats();
-  }
-
-  private setTemplate(kline: Kline): any {
-    const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.signal!) ? kline.signal!.replace('LOSE', '') : kline.signal;
-
-    return {
-      time: new Date(kline.times.open).toISOString().slice(0, 10),
-      position: ['BUY', 'CBUY'].includes(signal!) ? 'belowBar' : 'aboveBar',
-      color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.signal === 'CLOSE' ? 'white' : '#ff4d4d',
-      shape: ['BUY', 'CBUY'].includes(signal!) ? 'arrowUp' : 'arrowDown',
-      text: signal + (kline.amount ? ` ${kline.amount}` : '')
-    };
   }
 
   private applyDarkTheme(chart: IChartApi) {
@@ -215,14 +215,16 @@ export class MultiChartComponent implements OnInit, OnDestroy {
 
   private calcStats(): void {
     const tradesCount = this.currentKlines.filter(kline => kline.signal !== undefined).length;
+    const posNeg = this.calcPositiveNegative();
 
     this.stats = {
-      profitPerAmount: this.calcProfitPerAmount().toFixed(2) + '%',
-      profit: this.finalProfit.toFixed(2) + '%',
+      profitPerAmount: Number(this.calcProfitPerAmount().toFixed(2)),
+      profit: Number(this.finalProfit.toFixed(2)),
       numberOfTrades: tradesCount,
-      positiveNegative: this.calcPositiveNegative(),
-      drawbackProfitRatio: ((this.calcMaxDrawback() / this.finalProfit)).toFixed(2) + 'x',
-      maxDrawback: this.calcMaxDrawback().toFixed(2) + '%',
+      positive: posNeg[0],
+      negative: posNeg[1],
+      drawbackProfitRatio: Number(((this.calcMaxDrawback() / this.finalProfit)).toFixed(2)),
+      maxDrawback: Number(this.calcMaxDrawback().toFixed(2)),
     };
   }
 
@@ -238,7 +240,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     return totalAmount === 0 ? 0 : this.finalProfit / totalAmount;
   }
 
-  private calcPositiveNegative(): string {
+  private calcPositiveNegative(): number[] {
     let pos = 0;
     let neg = 0;
     let lastPercentage;
@@ -255,7 +257,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
       lastPercentage = percentage;
     });
 
-    return pos + ' / ' + neg;
+    return [pos, neg];
   }
 
   private calcMaxDrawback(): number {

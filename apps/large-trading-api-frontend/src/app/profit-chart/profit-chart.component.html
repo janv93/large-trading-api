@@ -1,9 +1,0 @@
-<div #apexChart class="apex-chart"></div>
-<div *ngIf="stats" class="d-flex justify-content-between ml-5">
-  <p>Profit per single trading amount (average profit per invested dollar): {{ stats.profitPerAmount }}</p>
-  <p>Cumulative total profit: {{ stats.profit }}</p>
-  <p>Number of trades: {{ stats.numberOfTrades }}</p>
-  <p *ngIf="!chartService.isInvestmentStrategy">Positive / Negative: {{ stats.positiveNegative }}</p>
-  <p>Percentage max drawback / profit: {{ stats.drawbackProfitRatio }}</p>
-  <p>Cumulative max drawback: {{ stats.maxDrawback }}</p>
-</div>
