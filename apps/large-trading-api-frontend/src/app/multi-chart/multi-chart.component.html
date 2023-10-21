@@ -25,11 +25,6 @@
         <span [ngClass]="{'green': stats.returnOnInvestment > 0, 'red': stats.returnOnInvestment < 0 }">{{ stats.returnOnInvestment }}</span>
         <span>%</span>
       </div>
-      <div>
-        <span>profit: </span>
-        <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>
-        <span>%</span>
-      </div>
       <div *ngIf="!chartService.isInvestmentStrategy">
         <span >positive/negative: </span>
         <span class="green">{{ stats.positive }}</span>

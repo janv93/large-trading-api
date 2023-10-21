@@ -252,7 +252,6 @@ export class MultiChartComponent implements OnInit, OnDestroy {
 
     this.stats = {
       returnOnInvestment: Number(this.calcProfitPerAmount().toFixed(2)),
-      profit: Number(this.finalProfit.toFixed(2)),
       numberOfTrades: tradesCount,
       positive: posNeg[0],
       negative: posNeg[1],
