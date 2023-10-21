@@ -37,8 +37,16 @@
         <span>/</span>
         <span class="red">{{ stats.negative }}</span>
       </div>
-      <p>max drawback: {{ stats.maxDrawback }}%</p>
-      <p>max drawback/profit: {{ stats.drawbackProfitRatio }}x</p>
+      <div>
+        <span>max drawback: </span>
+        <span [style.color]="getColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
+        <span>%</span>
+      </div>
+      <div>
+        <span>drawback/profit: </span>
+        <span [style.color]="getColor(stats.drawbackProfitRatio, 0, 0.7)">{{ stats.drawbackProfitRatio }}</span>
+        <span>x</span>
+      </div>
     </div>
   </div>
 </div>

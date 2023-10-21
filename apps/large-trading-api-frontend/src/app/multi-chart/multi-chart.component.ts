@@ -66,6 +66,36 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * interpolates the color between red and green, depending on value
+   */
+  getColor(value: number, maxGreen: number, maxRed: number): string {
+    // negative value means negative profit
+    if (value < 0) {
+      return 'rgb(255, 77, 77)';
+    }
+
+    let red, green, blue;
+    let range = maxRed - maxGreen;
+
+    if (value <= maxGreen) {
+      red = 0;
+      green = 255;
+      blue = 0;
+    } else if (value >= maxRed) {
+      red = 255;
+      green = 77;
+      blue = 77;
+    } else {
+      const t = (value - maxGreen) / range;
+      red = Math.floor(255 * t);
+      green = Math.floor(255 * (1 - t) + 77 * t);
+      blue = Math.floor(77 * t);
+    }
+
+    return `rgb(${red}, ${green}, ${blue})`;
+  }
+
   public onCommissionChange(event: Event) {
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.commissionChecked = checked;
