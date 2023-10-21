@@ -1,5 +1,5 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LastPriceAnimationMode, LineData, LineStyle, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
 import { BacktestStats, Kline, Klines } from '../interfaces';
 import { ChartService } from '../chart.service';
 
@@ -53,10 +53,10 @@ export class MultiChartComponent implements OnInit, OnDestroy {
         }
       });
 
+      this.addLegend();
       this.applyDarkTheme(this.chart);
       this.drawSeries();
       this.chart.timeScale().fitContent();
-      this.addLegend();
     });
   }
 
@@ -149,6 +149,10 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   private drawProfitSeries(): void {
     this.profitSeries = this.chart.addLineSeries({ priceScaleId: 'left' });
     this.setProfitSeriesData();  // init with no commission/flowing profit
+
+    this.profitSeries.applyOptions({
+      color: this.finalProfit > 0 ? 'rgba(0,255,0,0.3)' : 'rgba(255,77,77,0.3)'
+    });
   }
 
   private setCandlestickSeriesData(): void {
@@ -284,15 +288,15 @@ export class MultiChartComponent implements OnInit, OnDestroy {
    */
   private calcMaxDrawback(): number {
     let high = 0, maxDrawback = 0, highestProfit = 0;
-  
+
     this.currentKlines.forEach(kline => {
       const profit = kline.percentProfit || 0;
       highestProfit = Math.max(highestProfit, profit);
       high = Math.max(high, profit);
-  
+
       maxDrawback = Math.max(maxDrawback, high - profit);
     });
-  
+
     return highestProfit === 0 ? 100 : (maxDrawback / highestProfit * 100);
   }
 }
