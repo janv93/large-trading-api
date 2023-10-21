@@ -27,9 +27,9 @@ export interface Klines {
 }
 
 export interface BacktestStats {
-  ppa: string;
+  profitPerAmount: string;
   profit: string;
-  trades: number;
+  numberOfTrades: number;
   positiveNegative: string;
   drawbackProfitRatio: string;
   maxDrawback: string;

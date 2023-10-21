@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ElementRef, ViewChild, Input } from '@angular
 import { HttpClient } from '@angular/common/http';
 import ApexCharts from 'apexcharts/dist/apexcharts.common.js';
 import { ChartService } from '../chart.service';
-import { Kline } from '../interfaces';
+import { BacktestStats, Kline } from '../interfaces';
 import { BaseComponent } from '../base-component';
 
 @Component({
@@ -23,7 +23,7 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
   @Input()
   public flowingProfit: boolean;
 
-  public stats: any;
+  public stats: BacktestStats;
   private options: any;
 
   constructor(
@@ -120,9 +120,9 @@ export class ProfitChartComponent extends BaseComponent implements AfterViewInit
     const tradesCount = klines.filter(kline => kline.signal !== undefined).length;
 
     this.stats = {
-      ppa: this.calcProfitPerAmount(klines, percentages).toFixed(2) + '%',
+      profitPerAmount: this.calcProfitPerAmount(klines, percentages).toFixed(2) + '%',
       profit: percentages[percentages.length - 1].y.toFixed(2) + '%',
-      trades: tradesCount,
+      numberOfTrades: tradesCount,
       positiveNegative: this.calcPositiveNegative(percentages),
       drawbackProfitRatio: ((this.calcMaxDrawback(percentages) / percentages[percentages.length - 1].y) * 100).toFixed(2) + '%',
       maxDrawback: this.calcMaxDrawback(percentages).toFixed(2) + '%',

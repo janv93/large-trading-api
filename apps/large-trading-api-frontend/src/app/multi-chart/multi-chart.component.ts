@@ -217,9 +217,9 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     const tradesCount = this.currentKlines.filter(kline => kline.signal !== undefined).length;
 
     this.stats = {
-      ppa: this.calcProfitPerAmount().toFixed(2) + '%',
+      profitPerAmount: this.calcProfitPerAmount().toFixed(2) + '%',
       profit: this.finalProfit.toFixed(2) + '%',
-      trades: tradesCount,
+      numberOfTrades: tradesCount,
       positiveNegative: this.calcPositiveNegative(),
       drawbackProfitRatio: ((this.calcMaxDrawback() / this.finalProfit)).toFixed(2) + 'x',
       maxDrawback: this.calcMaxDrawback().toFixed(2) + '%',
