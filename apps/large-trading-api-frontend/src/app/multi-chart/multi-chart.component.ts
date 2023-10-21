@@ -280,39 +280,20 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * example: profit falls from 300% to 100% -> max drawback = 66%
-   * example 2: profit falls from 20% to -10% -> max drawback = 150%
+   * max drawback = max percentage drop of profit / highest profit
    */
   private calcMaxDrawback(): number {
-    let high: number | null = null;
-    let maxDrawback: number | null = null;
+    let high = 0, maxDrawback = 0, highestProfit = 0;
   
     this.currentKlines.forEach(kline => {
       const profit = kline.percentProfit || 0;
+      highestProfit = Math.max(highestProfit, profit);
+      high = Math.max(high, profit);
   
-      if (high === null) {
-        high = profit;
-      }
-  
-      if (maxDrawback === null) {
-        maxDrawback = 0;
-      }
-  
-      // Only update maxDrawback if profit is less than the current high and high is not zero
-      if (profit < high && high !== 0) { 
-        const drawback = ((high - profit) / high) * 100;
-        if (drawback > maxDrawback) {
-          maxDrawback = drawback;
-        }
-      } 
-      
-      // Update high only if the profit is greater than the current high
-      if (profit > high) {
-        high = profit;
-      }
+      maxDrawback = Math.max(maxDrawback, high - profit);
     });
   
-    return maxDrawback || 0;
+    return highestProfit === 0 ? 100 : (maxDrawback / highestProfit * 100);
   }
 }
 
