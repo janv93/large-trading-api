@@ -256,7 +256,6 @@ export class MultiChartComponent implements OnInit, OnDestroy {
       numberOfTrades: tradesCount,
       positive: posNeg[0],
       negative: posNeg[1],
-      drawbackProfitRatio: Number(((this.calcMaxDrawback() / this.finalProfit)).toFixed(2)),
       maxDrawback: Number(this.calcMaxDrawback().toFixed(2)),
     };
   }

@@ -48,7 +48,6 @@ export interface BacktestStats {
   profit: number;
   numberOfTrades: number;
   positive: number;
-  negative: number
-  drawbackProfitRatio: number;
+  negative: number;
   maxDrawback: number;
 };
