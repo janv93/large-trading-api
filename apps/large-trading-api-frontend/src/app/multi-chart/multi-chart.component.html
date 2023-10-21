@@ -19,12 +19,12 @@
     <label class="ml-5 mr-2">flowing profit</label>
     <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
     <div *ngIf="stats" class="text-right mt-4">
-      <p>Profit per amount: {{ stats.profitPerAmount }}</p>
-      <p>Profit: {{ stats.profit }}</p>
-      <p>Trades: {{ stats.numberOfTrades }}</p>
-      <p *ngIf="!chartService.isInvestmentStrategy">Positive/Negative: {{ stats.positiveNegative }}</p>
-      <p>Max drawback/Profit: {{ stats.drawbackProfitRatio }}</p>
-      <p>Max drawback: {{ stats.maxDrawback }}</p>
+      <p>profit per amount: {{ stats.profitPerAmount }}</p>
+      <p>profit: {{ stats.profit }}</p>
+      <p>trades: {{ stats.numberOfTrades }}</p>
+      <p *ngIf="!chartService.isInvestmentStrategy">positive/negative: {{ stats.positiveNegative }}</p>
+      <p>max drawback/profit: {{ stats.drawbackProfitRatio }}</p>
+      <p>max drawback: {{ stats.maxDrawback }}</p>
     </div>
   </div>
 </div>
