@@ -34,7 +34,6 @@ export class MultiChartComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentKlines = this.klines[0].klines;
-    this.finalProfit = this.currentKlines.at(-1)!.percentProfit || 0;
     this.calcStats();
     this.handleResize();
   }
@@ -214,6 +213,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   }
 
   private calcStats(): void {
+    this.finalProfit = this.currentKlines.at(-1)!.percentProfit || 0;
     const tradesCount = this.currentKlines.filter(kline => kline.signal !== undefined).length;
     const posNeg = this.calcPositiveNegative();
 
