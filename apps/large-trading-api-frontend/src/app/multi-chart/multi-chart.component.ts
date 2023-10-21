@@ -48,6 +48,9 @@ export class MultiChartComponent implements OnInit, OnDestroy {
         leftPriceScale: {
           visible: true
         },
+        timeScale: {
+          minBarSpacing: 0.001
+        }
       });
 
       this.applyDarkTheme(this.chart);
