@@ -2,13 +2,14 @@ import { Component, ChangeDetectorRef, ElementRef, Input, NgZone, OnDestroy, OnI
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LastPriceAnimationMode, LineData, LineStyle, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
 import { BacktestStats, Kline, Klines } from '../interfaces';
 import { ChartService } from '../chart.service';
+import { BaseComponent } from '../base-component';
 
 @Component({
   selector: 'multi-chart',
   templateUrl: './multi-chart.component.html',
   styleUrls: ['./multi-chart.component.scss']
 })
-export class MultiChartComponent implements OnInit, OnDestroy {
+export class MultiChartComponent extends BaseComponent implements OnInit, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;
   @ViewChild('legend') legend: ElementRef;
   @Input() klines: Klines[];
@@ -30,6 +31,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
     private renderer: Renderer2,
     private cd: ChangeDetectorRef
   ) {
+    super();
   }
 
   ngOnInit(): void {
@@ -251,7 +253,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
 
   private calcStats(): void {
     this.finalProfit = this.currentKlines.at(-1)!.percentProfit || 0;
-    const tradesCount = this.currentKlines.filter(kline => kline.signal !== undefined).length;
+    const tradesCount = this.currentKlines.filter(kline => kline.signal !== undefined && kline.signal !== this.closeSignal).length;
     const posNeg = this.calcPositiveNegative();
 
     this.stats = {

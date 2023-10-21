@@ -30,13 +30,13 @@
         <span [style.color]="getColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
         <span>%</span>
       </div>
-      <div *ngIf="!chartService.isInvestmentStrategy">
-        <span >positive/negative: </span>
+      <div>
+        <span>trades: </span>
+        <span>{{ stats.numberOfTrades }} </span>
         <span class="green">{{ stats.positive }}</span>
         <span>/</span>
         <span class="red">{{ stats.negative }}</span>
       </div>
-      <p>trades: {{ stats.numberOfTrades }}</p>
     </div>
   </div>
 </div>
