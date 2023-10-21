@@ -1,4 +1,4 @@
 # Trading Chart Visualizer
-A minimal charting tool for [LargeTradingAPI](https://github.com/janv93/LargeTradingAPI) project
+Charting tool for [LargeTradingAPI](https://github.com/janv93/LargeTradingAPI)
 
-![not available](https://i.gyazo.com/7d183c6f75376510295936ff78f0f475.jpg)
+![not available](https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/chart-example.png)
