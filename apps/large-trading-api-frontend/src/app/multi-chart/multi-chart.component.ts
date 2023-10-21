@@ -14,7 +14,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   @Input() klines: Klines[];
 
   public ohlc: CandlestickData;
-  public profit: string;
+  public currentProfit: number;
   public stats: BacktestStats;
   public currentKlines: Kline[];
   private chart: IChartApi;
@@ -207,7 +207,7 @@ export class MultiChartComponent implements OnInit, OnDestroy {
         }
 
         this.ohlc = ohlc;
-        this.profit = profit.value.toFixed(2) + '%';
+        this.currentProfit = Number(profit.value.toFixed(2));
         this.cd.detectChanges();
       }
     });

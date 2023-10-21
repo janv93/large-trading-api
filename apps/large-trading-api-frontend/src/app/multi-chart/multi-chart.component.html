@@ -8,7 +8,8 @@
     <span class="text-info">{{ ohlc.low }}</span>
     <span> C</span>
     <span class="text-info">{{ ohlc.close }}</span>
-    <span> {{ profit }}</span>
+    <span [ngClass]="{'green': currentProfit > 0, 'red': currentProfit < 0 }"> {{ currentProfit }}</span>
+    <span>%</span>
   </div>
   <p *ngIf="currentKlines" class="position-absolute font-weight-bold symbol">
     {{ currentKlines[0].symbol }}
@@ -19,12 +20,25 @@
     <label class="ml-5 mr-2">flowing profit</label>
     <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)">
     <div *ngIf="stats" class="text-right mt-4 stats">
-      <p>profit per amount: {{ stats.profitPerAmount }}%</p>
-      <p>profit: {{ stats.profit }}%</p>
+      <div>
+        <span>profit per amount: </span>
+        <span [ngClass]="{'green': stats.profitPerAmount > 0, 'red': stats.profitPerAmount < 0 }">{{ stats.profitPerAmount }}</span>
+        <span>%</span>
+      </div>
+      <div>
+        <span>profit: </span>
+        <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>
+        <span>%</span>
+      </div>
       <p>trades: {{ stats.numberOfTrades }}</p>
-      <p *ngIf="!chartService.isInvestmentStrategy">positive/negative: {{ stats.positive }}/{{ stats.negative }}</p>
-      <p>max drawback/profit: {{ stats.drawbackProfitRatio }}x</p>
+      <div *ngIf="!chartService.isInvestmentStrategy">
+        <span >positive/negative: </span>
+        <span class="green">{{ stats.positive }}</span>
+        <span>/</span>
+        <span class="red">{{ stats.negative }}</span>
+      </div>
       <p>max drawback: {{ stats.maxDrawback }}%</p>
+      <p>max drawback/profit: {{ stats.drawbackProfitRatio }}x</p>
     </div>
   </div>
 </div>
