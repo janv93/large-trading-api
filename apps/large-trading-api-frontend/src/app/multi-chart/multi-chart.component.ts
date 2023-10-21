@@ -16,12 +16,12 @@ export class MultiChartComponent implements OnInit, OnDestroy {
   public ohlc: CandlestickData;
   public profit: string;
   public stats: BacktestStats;
+  public currentKlines: Kline[];
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
   private profitSeries: ISeriesApi<'Line'>;
   private commissionChecked;
   private flowingProfitChecked;
-  private currentKlines: Kline[];
   private finalProfit: number;
 
   constructor(

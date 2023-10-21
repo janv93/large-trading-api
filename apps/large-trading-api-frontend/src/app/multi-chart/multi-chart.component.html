@@ -1,5 +1,6 @@
 <div #container class="w-100 h-100 position-relative chart-container">
   <div #legend class="position-absolute legend">
+    <span>{{ currentKlines[0].symbol }}</span>
     <div *ngIf="ohlc">
       <span>O</span>
       <span class="text-info">{{ ohlc.open }}</span>
