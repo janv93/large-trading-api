@@ -276,11 +276,13 @@ export class MultiChartComponent extends BaseComponent implements OnInit, OnDest
       .forEach(percentage => {
         if (lastPercentage !== undefined) {
           const diff = Math.abs(percentage - lastPercentage);
-          const isEqual = diff < this.chartService.commission;
+          const isEqual = diff <= this.chartService.commission + 0.001; // 0.001 prevents floating point error
 
           if (!isEqual && percentage > lastPercentage) {
             pos++;
           } else if (!isEqual && percentage < lastPercentage) {
+          console.log(lastPercentage, percentage)
+
             neg++;
           }
         }
