@@ -22,14 +22,21 @@
   }
 
   .symbol {
-    font-size: 200px;
-    left: 50%;
+    width: 100%;
     top: -5%;
-    transform: translateX(-50%);
     z-index: 10;
     opacity: 0.08;
     user-select: none;
     pointer-events: none;
+
+    img {
+      height: 140px;
+      width: 140px;
+    }
+
+    .symbol-text {
+      font-size: 200px;
+    }
   }
 
   .legend-right {
@@ -42,7 +49,8 @@
       height: 15px;
     }
 
-    label, .stats {
+    label,
+    .stats {
       user-select: none;
       pointer-events: none;
     }

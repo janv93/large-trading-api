@@ -11,7 +11,7 @@ export class ChartService {
   public isInvestmentStrategy: boolean;
   public twitterUser = environment.twitterUser;
 
-  public exchange = 'binance'; // binance, alpaca or kucoin; binance: spot - BTCUSDT, kucoin: futures - XBTUSDTM, alpaca: SPY
+  public exchange = 'binance'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
   public strategy = 'meanReversion';
   public symbol = 'BTCUSDT';
   public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...

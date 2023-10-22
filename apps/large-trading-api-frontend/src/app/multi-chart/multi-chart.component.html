@@ -11,9 +11,10 @@
     <span [ngClass]="{'green': currentProfit > 0, 'red': currentProfit < 0 }"> {{ currentProfit }}</span>
     <span>%</span>
   </div>
-  <p *ngIf="currentKlines" class="position-absolute font-weight-bold symbol">
-    {{ currentKlines[0].symbol }}
-  </p>
+  <div *ngIf="currentKlines" class="position-absolute d-flex justify-content-center align-items-center symbol">
+    <img class="d-inline-block mr-4 mt-4" [src]="'assets/images/' + chartService.exchange + '.png'">
+    <p class="d-inline-block font-weight-bold symbol-text">{{ chartService.symbol }}</p>
+  </div>
   <div class="position-absolute legend-right">
     <label class="mr-2">commission</label>
     <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">

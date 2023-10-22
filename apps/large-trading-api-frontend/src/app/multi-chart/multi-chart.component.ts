@@ -281,8 +281,6 @@ export class MultiChartComponent extends BaseComponent implements OnInit, OnDest
           if (!isEqual && percentage > lastPercentage) {
             pos++;
           } else if (!isEqual && percentage < lastPercentage) {
-          console.log(lastPercentage, percentage)
-
             neg++;
           }
         }
