@@ -5,11 +5,11 @@ import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 
 @Component({
-  selector: 'multi-chart',
-  templateUrl: './multi-chart.component.html',
-  styleUrls: ['./multi-chart.component.scss']
+  selector: 'mixed-chart',
+  templateUrl: './mixed-chart.component.html',
+  styleUrls: ['./mixed-chart.component.scss']
 })
-export class MultiChartComponent extends BaseComponent implements OnInit, OnDestroy {
+export class MixedChartComponent extends BaseComponent implements OnInit, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;
   @ViewChild('legend') legend: ElementRef;
   @Input() klines: Klines[];
