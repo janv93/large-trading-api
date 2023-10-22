@@ -4,7 +4,6 @@ import btoa from 'btoa';
 import { Kline } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
-import e from 'express';
 
 export default class Kucoin extends Base {
   public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
