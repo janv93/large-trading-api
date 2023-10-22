@@ -4,6 +4,7 @@ import btoa from 'btoa';
 import { Kline } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
+import e from 'express';
 
 export default class Kucoin extends Base {
   public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
@@ -70,7 +71,7 @@ export default class Kucoin extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
-    const timespan = this.timeframeToMilliseconds(timeframe) * 1000 * 3;
+    const timespan = this.timeframeToMilliseconds(timeframe) * 1000;  // TODO: further into past for all timeframes
     const startTime = this.roundTimeToNearestTimeframe(Date.now() - timespan, this.timeframeToMilliseconds(timeframe));
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
     const dbKlines = await database.getKlines(symbol, timeframe);
