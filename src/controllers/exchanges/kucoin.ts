@@ -29,8 +29,14 @@ export default class Kucoin extends Base {
 
     try {
       const response = await axios.get(klineUrl);
-      const result = this.mapKlines(symbol, timeframe, response.data.data);
-      return result;
+      const data = response.data.data;
+
+      if (data) {
+        const result = this.mapKlines(symbol, timeframe, response.data.data);
+        return result;
+      } else {
+        return [];
+      }
     } catch (err) {
       this.handleError(err, symbol, this);
       return [];
@@ -76,8 +82,7 @@ export default class Kucoin extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
-    const timespan = this.timeframeToMilliseconds(timeframe) * 20 * 1000;  // TODO: further into past for all timeframes
-    const startTime = this.roundTimeToNearestTimeframe(Date.now() - timespan, this.timeframeToMilliseconds(timeframe));
+    const startTime = this.calcStartTime(timeframe);
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
     const dbKlines = await database.getKlines(symbol, timeframe);
 
