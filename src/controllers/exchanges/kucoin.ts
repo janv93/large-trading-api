@@ -47,10 +47,15 @@ export default class Kucoin extends Base {
 
     while (true) {
       const res = await this.getKlines(symbol, timeframe, newEndTime, newStartTime);
-      klines.push(...res);
 
-      const end: number = klines[klines.length - 1].times.open;
-      newStartTime = end + this.timeframeToMilliseconds(timeframe);
+      if (res && res.length) {
+        klines.push(...res);
+        const end: number = klines[klines.length - 1].times.open;
+        newStartTime = end + this.timeframeToMilliseconds(timeframe);
+      } else {
+        newStartTime = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
+      }
+
       newEndTime = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
       const now = Date.now();
 
@@ -71,7 +76,7 @@ export default class Kucoin extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
-    const timespan = this.timeframeToMilliseconds(timeframe) * 1000;  // TODO: further into past for all timeframes
+    const timespan = this.timeframeToMilliseconds(timeframe) * 20 * 1000;  // TODO: further into past for all timeframes
     const startTime = this.roundTimeToNearestTimeframe(Date.now() - timespan, this.timeframeToMilliseconds(timeframe));
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
     const dbKlines = await database.getKlines(symbol, timeframe);
