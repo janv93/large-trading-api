@@ -10,7 +10,7 @@ import Macd from './algorithms/macd';
 import Rsi from './algorithms/rsi';
 import Ema from './algorithms/ema';
 import Bb from './algorithms/bb';
-import Tensorflow from './algorithms/ai/tensorflow';
+// import Tensorflow from './algorithms/ai/tensorflow';
 import FlashCrash from './algorithms/flash-crash';
 import Dca from './algorithms/investing/dca';
 import MeanReversion from './algorithms/investing/mean-reversion';
@@ -30,7 +30,7 @@ export default class Routes extends Base {
   private rsi = new Rsi();
   private ema = new Ema();
   private bb = new Bb();
-  private tensorflow = new Tensorflow();
+ // private tensorflow = new Tensorflow();
   private flashCrash = new FlashCrash();
   private dca = new Dca();
   private meanReversion = new MeanReversion();
@@ -133,8 +133,8 @@ export default class Routes extends Base {
         return this[algorithm].setSignalsSL(responseInRange, Number(periodClose));
       case 'bb':
         return this[algorithm].setSignals(responseInRange, Number(length));
-      case 'deepTrend':
-        return this.tensorflow.setSignals(responseInRange);
+      // case 'deepTrend':
+      //   return this.tensorflow.setSignals(responseInRange);
       case 'flashCrash':
         return this[algorithm].setSignals(responseInRange);
       case 'dca':
