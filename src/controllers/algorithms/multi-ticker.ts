@@ -1,16 +1,18 @@
+import path from 'path';
+import { Worker } from 'worker_threads';
+import deepmerge from 'deepmerge';
 import { Kline, MultiBenchmark } from '../../interfaces';
 import Base from '../base';
 import Backtest from './backtest';
 import MeanReversion from './investing/mean-reversion';
-import deepmerge from 'deepmerge';
 
 export default class MultiTicker extends Base {
   private backtest = new Backtest();
   private meanReversion = new MeanReversion();
 
-  public setSignals(klines: Kline[][], algorithm: string): any {
+  public async setSignals(klines: Kline[][], algorithm: string): Promise<any> {
     switch (algorithm) {
-      case 'meanReversion': this.setSignalsMeanReversion(klines); return 'done';
+      case 'meanReversion': await this.setSignalsMeanReversion(klines); return 'done';
       default: return 'invalid algorithm';
     }
 
@@ -19,7 +21,7 @@ export default class MultiTicker extends Base {
     // then: only set signal if rsi high
   }
 
-  private setSignalsMeanReversion(tickers: Kline[][]): Kline[][] {
+  private async setSignalsMeanReversion(tickers: Kline[][]): Promise<Kline[][]> {
     let threshold = 0.1;
     const thresholdMax = 0.2;
     const thresholdStep = 0.05;
@@ -36,7 +38,7 @@ export default class MultiTicker extends Base {
 
       while (profitBasedTrailingStopLoss <= profitBasedTrailingStopLossMax) {
         console.log(threshold, profitBasedTrailingStopLoss)
-        const tickersWithBacktest = this.runMeanReversion(tickers, threshold, profitBasedTrailingStopLoss);
+        const tickersWithBacktest = await this.runMeanReversion(tickers, threshold, profitBasedTrailingStopLoss);
         const tickersProfits: number[] = tickersWithBacktest.map(t => this.calcProfitPerAmount(t)).filter((t): t is number => t !== undefined);
         const average = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
 
@@ -74,13 +76,36 @@ export default class MultiTicker extends Base {
     return benchmarks.at(-1)?.tickers ?? [];
   }
 
-  private runMeanReversion(tickers: Kline[][], threshold: number, profitBasedTrailingStopLoss: number): Kline[][] {
+  private async runMeanReversion(tickers: Kline[][], threshold: number, profitBasedTrailingStopLoss: number): Promise<Kline[][]> {
     const clonedTickers = deepmerge({}, tickers);
-
-    return clonedTickers.map((currentTicker: Kline[]) => {
+    const cloned2 = deepmerge({}, tickers);
+    cloned2.map((currentTicker: Kline[]) => {
       const klinesWithSignals = this.meanReversion.setSignals(currentTicker, threshold, profitBasedTrailingStopLoss);
       const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, 0, true);
       return klinesWithBacktest;
     });
+
+    const workerPromises = clonedTickers.map((currentTicker: Kline[]) => {
+      return new Promise<Kline[]>((resolve, reject) => {
+        const worker = new Worker(path.join(__dirname, 'workers/multi-ticker-worker.js'));
+
+        worker.on('message', (klinesWithBacktest: Kline[]) => {
+          const end = performance.now();
+          worker.terminate();
+          resolve(klinesWithBacktest);
+        });
+
+        worker.on('error', reject);
+
+        worker.postMessage({
+          tickers: currentTicker,
+          threshold,
+          profitBasedTrailingStopLoss
+        });
+      });
+    });
+
+    const results: Kline[][] = await Promise.all(workerPromises);
+    return results;
   }
 }
