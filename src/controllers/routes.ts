@@ -83,7 +83,7 @@ export default class Routes extends Base {
     const cryptos = await this.getMultiCryptos(timeframe, Number(rank));
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
-    const ret = await this.multiTicker.setSignals(allTickers, algorithm);
+    const ret = this.multiTicker.setSignals(allTickers, algorithm);
 
     res.send(ret);
   }
