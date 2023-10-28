@@ -13,6 +13,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [x] Indicators
 - [x] Algorithms setting position signals on past data
 - [x] Sentiment analysis of popular Twitter traders using Twitter API and OpenAI API
+- [x] Backtesting multiple tickers at once
 
 ### Todo:
 
