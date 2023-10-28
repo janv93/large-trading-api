@@ -30,7 +30,7 @@ export default class Routes extends Base {
   private rsi = new Rsi();
   private ema = new Ema();
   private bb = new Bb();
- // private tensorflow = new Tensorflow();
+  // private tensorflow = new Tensorflow();
   private flashCrash = new FlashCrash();
   private dca = new Dca();
   private meanReversion = new MeanReversion();
@@ -66,10 +66,11 @@ export default class Routes extends Base {
 
   public async runMultiTicker(req, res): Promise<void> {
     const query = req.query;
-    const { timeframe, algorithm, rank } = query;
+    const { timeframe, algorithm, rank, autoParams } = query;
 
     // stocks
-    const stocks = await this.getMultiStocks(timeframe, Number(rank));
+    const stocksSymbols = await this.getMultiStocks(Number(rank));
+    const stocks = await this.initKlinesMulti('alpaca', stocksSymbols, timeframe);
 
     // indexes
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'];
@@ -80,12 +81,22 @@ export default class Routes extends Base {
     const commodities = await this.initKlinesMulti('alpaca', commoditySymbols, timeframe);
 
     // crypto
-    const cryptos = await this.getMultiCryptos(timeframe, Number(rank));
+    const cryptosSymbols = await this.getMultiCryptos(Number(rank));
+    const cryptos = await this.initKlinesMulti('binance', cryptosSymbols, timeframe);
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
-    const ret = this.multiTicker.setSignals(allTickers, algorithm);
+    let tickersWithSignals: Kline[][];
 
-    res.send(ret);
+    if (this.stringToBoolean(autoParams)) {
+      tickersWithSignals = this.multiTicker.setSignals(allTickers, algorithm);
+    } else {
+      tickersWithSignals = await Promise.all(allTickers.map(async (klines: Kline[]) => {
+        const klinesWithSignals: Kline[] = await this.handleAlgo(klines, query);
+        return this.backtest.calcBacktestPerformance(klinesWithSignals, 0, true);
+      }));
+    }
+
+    res.send(tickersWithSignals);
   }
 
   public postBacktestData(req, res): void {
@@ -122,27 +133,27 @@ export default class Routes extends Base {
 
     switch (algorithm) {
       case 'momentum':
-        return this[algorithm].setSignals(responseInRange, streak);
+        return this.momentum.setSignals(responseInRange, streak);
       case 'macd':
-        return this[algorithm].setSignals(responseInRange, fast, slow, signal);
+        return this.macd.setSignals(responseInRange, fast, slow, signal);
       case 'rsi':
-        return this[algorithm].setSignals(responseInRange, Number(length));
+        return this.rsi.setSignals(responseInRange, Number(length));
       case 'ema':
-        return this[algorithm].setSignals(responseInRange, Number(periodOpen), Number(periodClose));
+        return this.ema.setSignals(responseInRange, Number(periodOpen), Number(periodClose));
       case 'emasl':
-        return this[algorithm].setSignalsSL(responseInRange, Number(periodClose));
+        return this.ema.setSignalsSL(responseInRange, Number(periodClose));
       case 'bb':
-        return this[algorithm].setSignals(responseInRange, Number(length));
+        return this.bb.setSignals(responseInRange, Number(length));
       // case 'deepTrend':
       //   return this.tensorflow.setSignals(responseInRange);
       case 'flashCrash':
-        return this[algorithm].setSignals(responseInRange);
+        return this.flashCrash.setSignals(responseInRange);
       case 'dca':
-        return this[algorithm].setSignals(responseInRange);
+        return this.dca.setSignals(responseInRange);
       case 'meanReversion':
-        return this[algorithm].setSignals(responseInRange, Number(threshold), Number(profitBasedTrailingStopLoss));
+        return this.meanReversion.setSignals(responseInRange, Number(threshold), Number(profitBasedTrailingStopLoss));
       case 'twitterSentiment':
-        return await this[algorithm].setSignals(responseInRange, user);
+        return await this.twitterSentiment.setSignals(responseInRange, user);
       default: throw 'invalid';
     }
   }
@@ -164,24 +175,25 @@ export default class Routes extends Base {
     return klines.filter(k => k.length);  // filter out not found symbols
   }
 
-  private async getMultiStocks(timeframe: string, rank: number): Promise<Kline[][]> {
+  private async getMultiStocks(rank: number): Promise<string[]> {
     const capStocks = this.nasdaq.getStocksByMarketCapRank(rank).map(s => s.symbol);
     const alpacaStocks = await alpaca.getAssets();
     const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
-    return this.initKlinesMulti('alpaca', stocksFiltered, timeframe);
+    return stocksFiltered;
   }
 
-  private async getMultiCryptos(timeframe: string, rank: number): Promise<Kline[][]> {
+  private async getMultiCryptos(rank: number): Promise<string[]> {
     const capCryptos = await this.cmc.getCryptosByMarketCapRank(rank);
+    const capCryptosFiltered = capCryptos.filter((c: string) => !['USDC', 'USDT'].includes(c));
     const binanceCryptos = await this.binance.getUsdtBusdPairs();
 
-    const binanceEquivalents = capCryptos.map(c => {
+    const binanceEquivalents = capCryptosFiltered.map((c: string) => {
       const usdtSymbol = binanceCryptos.find(v => v === c + 'USDT');
       const busdSymbol = binanceCryptos.find(v => v === c + 'BUSD');
       return usdtSymbol || busdSymbol;
     });
 
-    const cryptosFiltered = binanceEquivalents.filter(c => c !== undefined);
-    return this.initKlinesMulti('binance', cryptosFiltered, timeframe);
+    const cryptosFiltered = binanceEquivalents.filter((c: string) => c !== undefined);
+    return cryptosFiltered;
   }
 }

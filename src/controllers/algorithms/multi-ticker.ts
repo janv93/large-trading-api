@@ -8,18 +8,16 @@ export default class MultiTicker extends Base {
   private backtest = new Backtest();
   private meanReversion = new MeanReversion();
 
-  public setSignals(klines: Kline[][], algorithm: string): any {
+  public setSignals(tickers: Kline[][], algorithm: string): Kline[][] {
     switch (algorithm) {
-      case 'meanReversion': this.setSignalsMeanReversion(klines); return 'done';
-      default: return 'invalid algorithm';
+      case 'meanReversion': tickers = this.setSignalsMeanReversionAutoParams(tickers);
+      default: tickers = [];
     }
 
-    // todo algo: all time high 20% above old -> scale into short
-    // only set signal if n klines before now
-    // then: only set signal if rsi high
+    return tickers;
   }
 
-  private setSignalsMeanReversion(tickers: Kline[][]): Kline[][] {
+  private setSignalsMeanReversionAutoParams(tickers: Kline[][]): Kline[][] {
     let threshold = 0.1;
     const thresholdMax = 0.2;
     const thresholdStep = 0.05;
