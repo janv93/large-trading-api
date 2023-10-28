@@ -31,8 +31,8 @@ export class ChartService {
 
   // multi
   public isMulti = true;
-  public multiAutoParams = false;
-  public multiRank = 1;
+  public multiAutoParams = true;
+  public multiRank = 10;
 
   constructor() {
     this.checkIsInvestmentAlgorithm();

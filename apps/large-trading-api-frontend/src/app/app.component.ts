@@ -51,13 +51,19 @@ export class AppComponent {
 
   private backtestMulti() {
     this.httpService.getMulti().subscribe((tickers: Kline[][]) => {
-      this.tickers = tickers.map((klines: Kline[]) => {
+      const tickersMapped: Klines[][] = tickers.map((klines: Kline[]) => {
         return [{
           klines,
           commission: 0,
           flowingProfit: true
         }];
       });
+
+      tickersMapped.sort((a: Klines[], b: Klines[]) => {
+        return (a[0].klines.at(-1)?.percentProfit || 0) - (b[0].klines.at(-1)?.percentProfit || 0);
+      });
+
+      this.tickers = tickersMapped;
     });
   }
 }
