@@ -11,11 +11,20 @@ import { ChartService } from './chart.service';
 })
 export class AppComponent {
   public klines: Klines[];
+  public tickers: Klines[][];
 
   constructor(
     public chartService: ChartService,
     private httpService: HttpService
   ) {
+    if (this.chartService.isMulti) {
+      this.backtestMulti();
+    } else {
+      this.backtestSingle();
+    }
+  }
+
+  private backtestSingle() {
     this.httpService.getKlines().subscribe((klines: Kline[]) => {
       const params = [
         { commission: 0, flowingProfit: false },
@@ -30,8 +39,24 @@ export class AppComponent {
 
       forkJoin(requests).subscribe((klinesList: Kline[][]) => {
         this.klines = params.map((param: any, i: number) => {
-          return { klines: klinesList[i], commission: param.commission, flowingProfit: param.flowingProfit };
+          return {
+            klines: klinesList[i],
+            commission: param.commission,
+            flowingProfit: param.flowingProfit
+          };
         });
+      });
+    });
+  }
+
+  private backtestMulti() {
+    this.httpService.getMulti().subscribe((tickers: Kline[][]) => {
+      this.tickers = tickers.map((klines: Kline[]) => {
+        return [{
+          klines,
+          commission: 0,
+          flowingProfit: true
+        }];
       });
     });
   }

@@ -11,12 +11,15 @@ import { Kline } from './interfaces';
 export class HttpService {
   private baseUrl = 'http://127.0.0.1:3000';
 
-  constructor(private chartService: ChartService, private http: HttpClient) { }
+  constructor(
+    private chartService: ChartService,
+    private http: HttpClient
+  ) { }
 
   public getKlines(): Observable<Kline[]> {
-    const query = this.getStrategyQuery();
+    const query = this.getAlgorithmQuery();
     const url = this.baseUrl + '/klinesWithAlgorithm';
-    const urlWithQuery = this.chartService.createUrl(url, query);
+    const urlWithQuery = this.createUrl(url, query);
     return this.http.get<Kline[]>(urlWithQuery);
   }
 
@@ -31,10 +34,26 @@ export class HttpService {
     return this.http.post<Kline[]>(urlWithQuery, klines);
   }
 
-  private getStrategyQuery(): any {
-    const { exchange, strategy, symbol, times, timeframe } = this.chartService;
+  public getMulti(): Observable<Kline[][]> {
+    const multiQuery = {
+      timeframe: this.chartService.timeframe,
+      algorithm: this.chartService.algorithm,
+      rank: this.chartService.multiRank,
+      autoParams: this.chartService.multiAutoParams
+    };
 
-    switch (strategy) {
+    const algorithmQuery = this.getAlgorithmQuery();
+    const query = { ...multiQuery, ...algorithmQuery };
+
+    const url = this.baseUrl + '/multi';
+    const urlWithQuery = this.createUrl(url, query);
+    return this.http.get<Kline[][]>(urlWithQuery);
+  }
+
+  private getAlgorithmQuery(): any {
+    const { exchange, algorithm, symbol, times, timeframe } = this.chartService;
+
+    switch (algorithm) {
       case 'pivotReversal':
         return {
           exchange,
@@ -126,7 +145,7 @@ export class HttpService {
           timeframe,
           algorithm: 'meanReversion',
           threshold: this.chartService.meanReversionThreshold,
-          profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss 
+          profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss
         };
       case 'flashCrash':
         return {

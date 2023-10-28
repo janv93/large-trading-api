@@ -12,15 +12,17 @@
     <span>%</span>
   </div>
   <div *ngIf="currentKlines" class="position-absolute d-flex justify-content-center align-items-center symbol">
-    <img class="d-inline-block mr-4 mt-4" [src]="'assets/images/' + chartService.exchange + '.png'">
-    <p class="d-inline-block font-weight-bold symbol-text">{{ chartService.symbol }}</p>
+    <img *ngIf="!chartService.isMulti" class="d-inline-block mr-4 mt-4" [src]="'assets/images/' + chartService.exchange + '.png'">
+    <p class="d-inline-block font-weight-bold" [ngStyle]="{'font-size': chartService.isMulti ? '100px' : '200px'}">{{ currentKlines[0].symbol }}</p>
   </div>
   <div class="position-absolute legend-right">
-    <label class="mr-2">commission</label>
-    <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
-    <label class="ml-3 mr-2">flowing profit</label>
-    <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)" checked>
-    <div *ngIf="stats" class="text-right mt-4 stats">
+    <div *ngIf="!chartService.isMulti">
+      <label class="mr-2">commission</label>
+      <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
+      <label class="ml-3 mr-2">flowing profit</label>
+      <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)" checked>
+    </div>
+    <div *ngIf="stats" class="text-right stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
       <div>
         <span>profit: </span>
         <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>

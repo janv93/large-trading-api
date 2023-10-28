@@ -8,16 +8,18 @@ import { environment } from '../environments/environment';
 export class ChartService {
   public klinesSubject = new Subject();
   public baseUrl = 'http://127.0.0.1:3000';
-  public isInvestmentStrategy: boolean;
+  public isInvestmentAlgorithm: boolean;
   public twitterUser = environment.twitterUser;
 
+  // general
   public exchange = 'binance'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
-  public strategy = 'meanReversion';
+  public algorithm = 'dca';
   public symbol = 'BTCUSDT';
   public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
-  public times = 10;  // 1 = 1000 timeframes
+  public times = 100;  // 1 = 1000 timeframes
   public commission = 0.04;
 
+  // algorithms
   public rsiLength = 7;
   public emaPeriodOpen = 80;
   public emaPeriodClose = 80;
@@ -27,26 +29,17 @@ export class ChartService {
   public meanReversionThreshold = 0.15;
   public meanReversionProfitBasedTrailingStopLoss  = 0.3;
 
+  // multi
+  public isMulti = true;
+  public multiAutoParams = false;
+  public multiRank = 10;
+
   constructor() {
-    this.checkIsInvestmentStrategy();
+    this.checkIsInvestmentAlgorithm();
   }
 
-  public createUrl(baseUrl: string, queryObj: any): string {
-    let url = baseUrl;
-    let firstParam = true;
-
-    Object.keys(queryObj).forEach(param => {
-      const query = param + '=' + queryObj[param];
-      firstParam ? url += '?' : url += '&';
-      url += query;
-      firstParam = false;
-    });
-
-    return url;
-  }
-
-  private checkIsInvestmentStrategy() {
+  private checkIsInvestmentAlgorithm() {
     const investmentStrategies = ['dca', 'meanReversion'];
-    this.isInvestmentStrategy = investmentStrategies.includes(this.strategy);
+    this.isInvestmentAlgorithm = investmentStrategies.includes(this.algorithm);
   }
 }

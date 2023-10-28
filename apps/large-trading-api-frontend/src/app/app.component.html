@@ -1,1 +1,4 @@
-<mixed-chart class="mixed-chart" *ngIf="klines" [klines]="klines"></mixed-chart>
+<mixed-chart class="mixed-chart" *ngIf="!chartService.isMulti && klines" [klines]="klines"></mixed-chart>
+<div class="mixed-chart-multi-container" *ngIf="chartService.isMulti && tickers">
+  <mixed-chart class="mixed-chart-multi" *ngFor="let ticker of tickers" [klines]="ticker"></mixed-chart>
+</div>

@@ -35,7 +35,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   ngOnInit(): void {
-    this.currentKlines = this.klines[2].klines; // default: no commission, flowing profit
+    if (this.chartService.isMulti) {
+      this.currentKlines = this.klines[0].klines; // in case of multi, only 1 available
+      console.log(this.currentKlines)
+    } else {
+      this.currentKlines = this.klines[2].klines; // default: no commission, flowing profit
+    }
+
     this.calcStats();
     this.handleResize();
   }
@@ -308,5 +314,3 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     return highestProfit === 0 ? 100 : (maxDrawback / highestProfit * 100);
   }
 }
-
-

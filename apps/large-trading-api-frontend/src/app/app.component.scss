@@ -6,3 +6,12 @@
 .mixed-chart {
   height: 100%;
 }
+
+.mixed-chart-multi-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  .mixed-chart-multi {
+    height: 500px;
+  }
+}
