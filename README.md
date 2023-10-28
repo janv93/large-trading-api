@@ -39,6 +39,6 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 ## Notes/Learnings:
 
-- Tensorflow code commented out because of extra requirements
+- Tensorflow code commented out because of software requirements
 - Tried C++ NAPI addons for calculations (backtest) - Much slower than typescript because of serialization
 - Tried worker threads - Much slower because of serialization between main thread and worker
