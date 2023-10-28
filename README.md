@@ -37,7 +37,8 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - install or use mongodb web version
 - get api keys and secret of one of 3 exchanges: binance, kucoin, alpaca
 
-## Notes:
+## Notes/Learnings:
 
+- Tensorflow code commented out because of extra requirements
 - Tried C++ NAPI addons for calculations (backtest) - Much slower than typescript because of serialization
 - Tried worker threads - Much slower because of serialization between main thread and worker
