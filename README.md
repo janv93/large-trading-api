@@ -4,10 +4,10 @@ A backtest is a test of an algorithm on historical data.\
 The code provides an infrastructure for backtesting. You may then add your own custom algorithms. Have fun!
 
 Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
-<p float="left">
+<div float="left">
   <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/chart.png" width="400" />
   <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/multi-chart.png" width="400" /> 
-</p>
+</div>
 
 ## Status:
 
