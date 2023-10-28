@@ -10,10 +10,10 @@ export default class MultiTicker extends Base {
 
   public setSignals(tickers: Kline[][], algorithm: string): Kline[][] {
     switch (algorithm) {
-      case 'meanReversion': tickers = this.setSignalsMeanReversionAutoParams(tickers);
+      case 'meanReversion': tickers = this.setSignalsMeanReversionAutoParams(tickers); break;
       default: tickers = [];
     }
-
+    console.log(tickers)
     return tickers;
   }
 
