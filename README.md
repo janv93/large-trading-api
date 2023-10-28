@@ -5,8 +5,8 @@ The code provides an infrastructure for backtesting. You may then add your own c
 
 Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-visualizer)
 <div float="left">
-  <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/chart.png" width="400" />
-  <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/multi-chart.png" width="400" /> 
+  <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/chart.png" width="50%" />
+  <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/multi-chart.png" width="50%" /> 
 </div>
 
 ## Status:
