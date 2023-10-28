@@ -13,7 +13,7 @@ export class ChartService {
 
   // general
   public exchange = 'binance'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
-  public algorithm = 'dca';
+  public algorithm = 'meanReversion';
   public symbol = 'BTCUSDT';
   public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
   public times = 100;  // 1 = 1000 timeframes

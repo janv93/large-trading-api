@@ -36,8 +36,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   ngOnInit(): void {
     if (this.chartService.isMulti) {
-      this.currentKlines = this.klines[0].klines; // in case of multi, only 1 available
-      console.log(this.currentKlines)
+      this.currentKlines = this.klines[0].klines; // in case of multi, only 1 available for now
     } else {
       this.currentKlines = this.klines[2].klines; // default: no commission, flowing profit
     }

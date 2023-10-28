@@ -13,7 +13,7 @@
   </div>
   <div *ngIf="currentKlines" class="position-absolute d-flex justify-content-center align-items-center symbol">
     <img *ngIf="!chartService.isMulti" class="d-inline-block mr-4 mt-4" [src]="'assets/images/' + chartService.exchange + '.png'">
-    <p class="d-inline-block font-weight-bold" [ngStyle]="{'font-size': chartService.isMulti ? '100px' : '200px'}">{{ currentKlines[0].symbol }}</p>
+    <p class="d-inline-block font-weight-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">{{ currentKlines[0].symbol }}</p>
   </div>
   <div class="position-absolute legend-right">
     <div *ngIf="!chartService.isMulti">
