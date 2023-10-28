@@ -13,7 +13,7 @@ export default class MultiTicker extends Base {
       case 'meanReversion': tickers = this.setSignalsMeanReversionAutoParams(tickers); break;
       default: tickers = [];
     }
-    console.log(tickers)
+
     return tickers;
   }
 
