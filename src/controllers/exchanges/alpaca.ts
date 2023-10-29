@@ -12,7 +12,7 @@ class Alpaca extends Base {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
 
     const query = {
-      timeframe: timeframe ? this.mapTimeframe(timeframe) : '1Minute',
+      timeframe: timeframe ? this.mapTimeframe(timeframe) : '1Min',
       end: new Date(Date.now() - 15000000).toISOString(),
       adjustment: 'split'
     };
@@ -165,7 +165,7 @@ class Alpaca extends Base {
     const unit = timeframe.replace(/[0-9]/g, '');
 
     switch (unit) {
-      case 'm': return amount + 'Minute';
+      case 'm': return amount + 'Min';
       case 'h': return amount + 'Hour';
       case 'd': return amount + 'Day';
       case 'w': return amount + 'Week';
