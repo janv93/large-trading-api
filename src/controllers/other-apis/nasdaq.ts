@@ -1,7 +1,5 @@
-import axios from 'axios';
 import Base from '../base';
 import fs from 'fs';
-import { join } from 'path';
 import { StockInfo } from '../../interfaces';
 
 
@@ -14,8 +12,13 @@ export default class Nasdaq extends Base {
   // stocks #1 to #rank in market cap
   public getStocksByMarketCapRank(rank: number): StockInfo[] {
     const stocks = this.readStocks();
-    stocks.sort((a, b) => a.cap - b.cap);
-    return stocks.slice(-rank);
+
+    const stocksFiltered = stocks.filter((stock: StockInfo) => {
+      return !['GOOGL'].includes(stock.symbol);   // remove GOOG since duplicate of GOOGL
+    });
+
+    stocksFiltered.sort((a, b) => a.cap - b.cap);
+    return stocksFiltered.slice(-rank);
   }
 
   private readStocks(): StockInfo[] {
