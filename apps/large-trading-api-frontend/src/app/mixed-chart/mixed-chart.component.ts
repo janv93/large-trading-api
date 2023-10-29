@@ -53,11 +53,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         width: container.clientWidth,
         height: container.clientHeight,
         leftPriceScale: {
-          visible: true
+          visible: !this.chartService.isMulti
+        },
+        rightPriceScale: {
+          visible: !this.chartService.isMulti
         },
         timeScale: {
           minBarSpacing: 0.001
-        }
+        },
+        
       });
 
       this.addLegend();

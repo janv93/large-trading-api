@@ -31,7 +31,7 @@ export class ChartService {
 
   // multi
   public isMulti = true;
-  public multiAutoParams = true;
+  public multiAutoParams = false;
   public multiRank = 10;
 
   constructor() {

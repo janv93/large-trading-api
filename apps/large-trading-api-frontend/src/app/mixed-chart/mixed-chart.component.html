@@ -1,5 +1,5 @@
 <div #container class="w-100 h-100 position-relative chart-container">
-  <div *ngIf="ohlc" #legend class="position-absolute legend-left">
+  <div *ngIf="ohlc" #legend class="position-absolute legend-left" [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
     <span>O</span>
     <span class="text-info">{{ ohlc.open }}</span>
     <span> H</span>
@@ -15,7 +15,7 @@
     <img *ngIf="!chartService.isMulti" class="d-inline-block mr-4 mt-4" [src]="'assets/images/' + chartService.exchange + '.png'">
     <p class="d-inline-block font-weight-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">{{ currentKlines[0].symbol }}</p>
   </div>
-  <div class="position-absolute legend-right">
+  <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
     <div *ngIf="!chartService.isMulti">
       <label class="mr-2">commission</label>
       <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
