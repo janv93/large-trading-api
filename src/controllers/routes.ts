@@ -85,6 +85,7 @@ export default class Routes extends Base {
     const cryptos = await this.initKlinesMulti('binance', cryptosSymbols, timeframe);
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
+    this.reduceTickersToLimit(allTickers);
     let tickersWithSignals: Kline[][];
 
     if (this.stringToBoolean(autoParams)) {
@@ -195,5 +196,44 @@ export default class Routes extends Base {
 
     const cryptosFiltered = binanceEquivalents.filter((c: string) => c !== undefined);
     return cryptosFiltered;
+  }
+
+  /**
+   * express has a limit for max response length
+   */
+  private reduceTickersToLimit(tickers: Kline[][]) {
+    const klineLimit = 2 * 10 ** 6; // 2 million rough limit
+    const totalKlinesLength = tickers.reduce((acc, curr) => acc + curr.length, 0);
+    let diff = totalKlinesLength - klineLimit;
+    if (diff <= 0) return;
+
+    while (diff > 0) {
+      const maxLength = Math.max(...tickers.map(t => t.length));
+      const allEqualLength = tickers.every(t => t.length === maxLength);
+
+      if (allEqualLength) {
+        const subAmountPerTicker = diff / tickers.length;
+        tickers.forEach((t, i) => tickers[i] = t.slice(subAmountPerTicker));
+        break;  // done
+      }
+
+      const numTickersWithMaxLength = tickers.filter(t => t.length === maxLength).length;
+
+      if (diff < numTickersWithMaxLength) break;  // done
+
+      const unique = Array.from(new Set(tickers.map(t => t.length)));
+      const sorted = unique.sort((a, b) => a - b);
+      const secondLongest = sorted[sorted.length - 2];
+      const subAmount = maxLength - secondLongest;
+      const diffPerTickerWithMaxLength = diff / numTickersWithMaxLength;
+      const finalSubAmount = Math.min(subAmount, diffPerTickerWithMaxLength);
+
+      for (let i = 0; i < tickers.length; i++) {
+        if (tickers[i].length === maxLength) {
+          tickers[i] = tickers[i].slice(finalSubAmount);
+          diff -= finalSubAmount;
+        }
+      }
+    }
   }
 }
