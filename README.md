@@ -24,6 +24,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 - [ ] AI: Transformer as improvement to standard NNs (position encoding time steps)
 - [ ] Algorithm that builds strategies using multiple indicators and figuring out which combined indicators work the best
+- [ ] Charting tools, e.g. backtests that test trend lines
 
 ## How to use backtests:
 
