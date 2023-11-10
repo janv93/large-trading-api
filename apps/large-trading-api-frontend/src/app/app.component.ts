@@ -60,7 +60,7 @@ export class AppComponent {
       });
 
       tickersMapped.sort((a: Klines[], b: Klines[]) => {
-        return (a[0].klines.at(-1)?.percentProfit || 0) - (b[0].klines.at(-1)?.percentProfit || 0);
+        return (a[0].klines.at(-1)?.algorithms[this.chartService.algorithm].percentProfit || 0) - (b[0].klines.at(-1)?.algorithms[this.chartService.algorithm].percentProfit || 0);
       });
 
       this.tickers = tickersMapped;

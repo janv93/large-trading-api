@@ -25,6 +25,7 @@ export class HttpService {
 
   public postBacktest(klines: Array<Kline>, commission: number, flowingProfit: boolean): Observable<Kline[]> {
     const query = {
+      algorithm: this.chartService.algorithm,
       commission: commission,
       flowingProfit: flowingProfit
     };

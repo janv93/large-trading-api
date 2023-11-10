@@ -12,11 +12,11 @@ export class ChartService {
   public twitterUser = environment.twitterUser;
 
   // general
-  public exchange = 'binance'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
+  public exchange = 'alpaca'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
   public algorithm = 'meanReversion';
-  public symbol = 'BTCUSDT';
-  public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
-  public times = 100;  // 1 = 1000 timeframes
+  public symbol = 'AI';
+  public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
+  public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;
 
   // algorithms
@@ -30,9 +30,9 @@ export class ChartService {
   public meanReversionProfitBasedTrailingStopLoss  = 0.3;
 
   // multi
-  public isMulti = true;
+  public isMulti = false;
   public multiAutoParams = false;
-  public multiRank = 10;
+  public multiRank = 30;
 
   constructor() {
     this.checkIsInvestmentAlgorithm();

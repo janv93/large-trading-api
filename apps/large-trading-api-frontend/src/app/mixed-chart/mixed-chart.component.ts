@@ -184,7 +184,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const markers: any[] = [];
 
     this.klines[0].klines.forEach((kline: Kline) => {
-      if (kline.signal) {
+      if (kline.algorithms[this.chartService.algorithm].signal) {
         markers.push(this.getTemplate(kline));
       }
     });
@@ -193,14 +193,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private getTemplate(kline: Kline): SeriesMarker<Time> {
-    const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.signal!) ? kline.signal!.replace('LOSE', '') : kline.signal;
+    const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.algorithms[this.chartService.algorithm].signal!) ? kline.algorithms[this.chartService.algorithm].signal!.replace('LOSE', '') : kline.algorithms[this.chartService.algorithm].signal;
 
     return {
       time: kline.times.open / 1000 as Time,
       position: ['BUY', 'CBUY'].includes(signal!) ? 'belowBar' : 'aboveBar',
-      color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.signal === 'CLOSE' ? 'white' : '#ff4d4d',
+      color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.algorithms[this.chartService.algorithm].signal === 'CLOSE' ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(signal!) ? 'arrowUp' : 'arrowDown',
-      text: signal + (kline.amount ? ` ${kline.amount}` : '')
+      text: signal + (kline.algorithms[this.chartService.algorithm].amount ? ` ${kline.algorithms[this.chartService.algorithm].amount}` : '')
     };
   }
 
@@ -208,7 +208,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const mapped = this.currentKlines.map((kline: Kline) => {
       return {
         time: kline.times.open / 1000 as Time,
-        value: kline.percentProfit
+        value: kline.algorithms[this.chartService.algorithm].percentProfit
       }
     });
 
@@ -261,8 +261,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private calcStats(): void {
-    this.finalProfit = this.currentKlines.at(-1)!.percentProfit || 0;
-    const tradesCount = this.currentKlines.filter(kline => kline.signal !== undefined && kline.signal !== this.closeSignal).length;
+    this.finalProfit = this.currentKlines.at(-1)!.algorithms[this.chartService.algorithm].percentProfit || 0;
+    const tradesCount = this.currentKlines.filter(kline => kline.algorithms[this.chartService.algorithm].signal !== undefined && kline.algorithms[this.chartService.algorithm].signal !== this.closeSignal).length;
     const posNeg = this.calcPositiveNegativeTrades();
 
     this.stats = {
@@ -280,8 +280,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     let lastPercentage;
 
     this.currentKlines
-      .filter(kline => kline.signal)
-      .map(p => p.percentProfit || 0)
+      .filter(kline => kline.algorithms[this.chartService.algorithm].signal)
+      .map(p => p.algorithms[this.chartService.algorithm].percentProfit || 0)
       .forEach(percentage => {
         if (lastPercentage !== undefined) {
           const diff = Math.abs(percentage - lastPercentage);
@@ -307,7 +307,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     let high = 0, maxDrawback = 0, highestProfit = 0;
 
     this.currentKlines.forEach(kline => {
-      const profit = kline.percentProfit || 0;
+      const profit = kline.algorithms[this.chartService.algorithm].percentProfit || 0;
       highestProfit = Math.max(highestProfit, profit);
       high = Math.max(high, profit);
 
