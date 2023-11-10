@@ -2,7 +2,7 @@ import { Kline } from '../../interfaces';
 import Base from '../base';
 
 export default class Momentum extends Base {
-  public setSignals(klines: Kline[], streak: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: string, streak: number): Kline[] {
     const colors: number[] = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;
@@ -14,7 +14,7 @@ export default class Momentum extends Base {
         const entry = this.isEntry(colors, index, streak);
 
         if (entry) {
-          kline.signal = entry;
+          kline.algorithms[algorithm].signal = entry;
           positionOpen = true;
           lastEntrySignal = entry;
           lastEntryIndex = index;
@@ -23,7 +23,7 @@ export default class Momentum extends Base {
         const close = this.isClose(klines, colors, index, streak, lastEntrySignal, lastEntryIndex);
 
         if (close) {
-          kline.signal = this.closeSignal;
+          kline.algorithms[algorithm].signal = this.closeSignal;
           positionOpen = false;
         }
       }

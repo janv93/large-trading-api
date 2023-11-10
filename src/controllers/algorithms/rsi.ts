@@ -5,15 +5,15 @@ import Base from '../base';
 export default class Rsi extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], length: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: string, length: number): Kline[] {
     const rsi = this.indicators.rsi(klines, length);
     const klinesWithRsi = klines.slice(-rsi.length);
-    this.setOverBoughtOverSoldSignals(klinesWithRsi, rsi);
+    this.setSignalsOverBoughtOverSold(klinesWithRsi, algorithm, rsi);
 
     return klines;
   }
 
-  private setOverBoughtOverSoldSignals(klines: Kline[], rsi: any[]): Kline[] {
+  private setSignalsOverBoughtOverSold(klines: Kline[], algorithm: string, rsi: any[]): Kline[] {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 
@@ -24,20 +24,20 @@ export default class Rsi extends Base {
 
       if (lastSignal === this.closeBuySignal) {
         if (r > rsiThresholdHigh) {
-          kline.signal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = this.closeSellSignal;
           lastSignal = this.closeSellSignal;
         }
       } else if (lastSignal === this.closeSellSignal) {
         if (r < rsiThresholdLow) {
-          kline.signal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = this.closeBuySignal;
           lastSignal = this.closeBuySignal;
         }
       } else {
         if (r > rsiThresholdHigh) {
-          kline.signal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = this.closeSellSignal;
           lastSignal = this.closeSellSignal;
         } else if (r < rsiThresholdLow) {
-          kline.signal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = this.closeBuySignal;
           lastSignal = this.closeBuySignal;
         }
       }

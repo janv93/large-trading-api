@@ -200,7 +200,8 @@ export default class Kucoin extends Base {
           low: Number(k[3]),
           close: Number(k[4])
         },
-        volume: Number(k[5])
+        volume: Number(k[5]),
+        algorithms: {}
       };
     });
   }

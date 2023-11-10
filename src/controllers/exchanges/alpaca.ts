@@ -155,7 +155,8 @@ class Alpaca extends Base {
           close: k.c
         },
         volume: k.v,
-        numberOfTrades: k.n
+        numberOfTrades: k.n,
+        algorithms: {}
       };
     });
   }

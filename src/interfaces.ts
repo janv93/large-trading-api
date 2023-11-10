@@ -4,10 +4,8 @@ export interface Kline {
   times: KlineTimes;
   prices: KlinePrices;
   volume: number;
+  algorithms: Algorithms;
   numberOfTrades?: number;
-  signal?: string;
-  percentProfit?: number;
-  amount?: number;
   tweets?: Tweet[];
 };
 
@@ -21,6 +19,25 @@ export interface KlinePrices {
   close: number;
   high: number;
   low: number;
+};
+
+export interface Algorithms {
+  momentum?: Backtest;
+  macd?: Backtest;
+  rsi?: Backtest;
+  ema?: Backtest;
+  emaSl?: Backtest;
+  bb?: Backtest;
+  flashCrash?: Backtest;
+  dca?: Backtest;
+  meanReversion?: Backtest;
+  twitterSentiment?: Backtest;
+};
+
+export interface Backtest {
+  signal?: string;
+  percentProfit?: number;
+  amount?: number;
 };
 
 export interface MultiBenchmark {

@@ -8,7 +8,7 @@ export default class Backtest extends Base {
    * @param flowingProfit when true, calculates profit for every kline (false calculates only at signals)
    * @returns the klines with profits
    */
-  public calcBacktestPerformance(klines: Kline[], commission: number, flowingProfit: boolean): Kline[] {
+  public calcBacktestPerformance(klines: Kline[], algorithm: string, commission: number, flowingProfit: boolean): Kline[] {
     let percentProfit = 0;
     let lastSignalKline: Kline;
     let currentAmount = 0;
@@ -19,20 +19,20 @@ export default class Backtest extends Base {
           const profitChange = this.calcProfitChange(kline, klines[i - 1], lastSignalKline);
           percentProfit += profitChange * currentAmount;
         } else {  // recalculate profit only on signal
-          if (kline.signal && lastSignalKline.signal !== this.closeSignal) {
+          if (kline.algorithms[algorithm].signal && lastSignalKline.algorithms[algorithm].signal !== this.closeSignal) {
             const profitChange = this.calcProfitChange(kline, lastSignalKline);
             percentProfit += profitChange * currentAmount;
           }
         }
       }
 
-      if (kline.signal) {
-        percentProfit -= this.calcCommission(commission, kline, currentAmount);
-        currentAmount = this.calcAmount(currentAmount, kline);
+      if (kline.algorithms[algorithm].signal) {
+        percentProfit -= this.calcCommission(kline, algorithm, commission, currentAmount);
+        currentAmount = this.calcAmount(kline, algorithm, currentAmount);
         lastSignalKline = kline;
       }
 
-      kline.percentProfit = percentProfit;
+      kline.algorithms[algorithm].percentProfit = percentProfit;
     });
 
     return klines;
@@ -43,21 +43,21 @@ export default class Backtest extends Base {
     return diff / (lastSignalKline ?? lastKline).prices.close * 100;
   }
 
-  private calcCommission(baseCommission: number, signalKline: Kline, currentAmount: number): number {
-    switch (signalKline.signal) {
+  private calcCommission(kline: Kline, algorithm: string, baseCommission: number, currentAmount: number): number {
+    switch (kline.algorithms[algorithm].signal) {
       case this.closeSignal: return baseCommission * Math.abs(currentAmount);
       case this.buySignal:
-      case this.sellSignal: return baseCommission * (signalKline.amount || 1);
+      case this.sellSignal: return baseCommission * (kline.algorithms[algorithm].amount || 1);
       case this.closeBuySignal:
-      case this.closeSellSignal: return baseCommission * Math.abs(currentAmount) + baseCommission * (signalKline.amount || 1);
+      case this.closeSellSignal: return baseCommission * Math.abs(currentAmount) + baseCommission * (kline.algorithms[algorithm].amount || 1);
       default: return NaN;
     }
   }
 
-  private calcAmount(currentAmount: number, kline: Kline): number {
-    const amount = kline.amount ?? 1;   // if amount is not present, use default amount of 1
+  private calcAmount(kline: Kline, algorithm: string, currentAmount: number): number {
+    const amount = kline.algorithms[algorithm].amount ?? 1;   // if amount is not present, use default amount of 1
 
-    switch (kline.signal) {
+    switch (kline.algorithms[algorithm].signal) {
       case this.closeSignal: return 0;
       case this.closeBuySignal: return amount;
       case this.closeSellSignal: return -amount;

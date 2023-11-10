@@ -5,7 +5,7 @@ import Base from '../base';
 export default class Bb extends Base {
   private indicators = new Indicators();;
 
-  public setSignals(klines: Kline[], period: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: string, period: number): Kline[] {
     const bb = this.indicators.bb(klines, period);
     const klinesWithBb = klines.slice(-bb.length);
 
@@ -20,13 +20,13 @@ export default class Bb extends Base {
     klinesWithBb.forEach((kline: Kline, index: number) => {
       if (!positionOpen) {
         if (kline.prices.close < bb[index].bb.lower - bb[index].bb.lower * threshold) {
-          kline.signal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = this.closeBuySignal;
           positionOpen = true;
           takeProfitPrice = kline.prices.close + kline.prices.close * takeProfitFactor;
           stopLossPrice = kline.prices.close - kline.prices.close * stopLossFactor;
           positionOpenType = this.closeBuySignal;
         } else if (kline.prices.close > bb[index].bb.upper + bb[index].bb.upper * threshold) {
-          kline.signal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = this.closeSellSignal;
           positionOpen = true;
           takeProfitPrice = kline.prices.close - kline.prices.close * takeProfitFactor;
           stopLossPrice = kline.prices.close + kline.prices.close * stopLossFactor;
@@ -35,12 +35,12 @@ export default class Bb extends Base {
       } else {
         if (positionOpenType === this.closeBuySignal) {
           if (kline.prices.close > takeProfitPrice || kline.prices.close < stopLossPrice) {
-            kline.signal = this.closeSignal;
+            kline.algorithms[algorithm].signal = this.closeSignal;
             positionOpen = false;
           }
         } else if (positionOpenType === this.closeSellSignal) {
           if (kline.prices.close < takeProfitPrice || kline.prices.close > stopLossPrice) {
-            kline.signal = this.closeSignal;
+            kline.algorithms[algorithm].signal = this.closeSignal;
             positionOpen = false;
           }
         }

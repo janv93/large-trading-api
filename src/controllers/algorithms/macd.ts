@@ -5,7 +5,7 @@ import Base from '../base';
 export default class Macd extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], fast: number, slow: number, signal: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: string, fast: number, slow: number, signal: number): Kline[] {
     const histogram = this.indicators.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
 
@@ -43,10 +43,9 @@ export default class Macd extends Base {
             sumHighs += h;
             numberHighs++;
             peakHigh = h > peakHigh ? h : peakHigh;
-            const averageHigh = sumHighs / numberHighs;
 
             if (h > 0.003) {
-              kline.signal = this.closeSellSignal;
+              kline.algorithms[algorithm].signal = this.closeSellSignal;
               positionOpen = true;
               positionOpenType = this.closeSellSignal;
             }
@@ -54,17 +53,16 @@ export default class Macd extends Base {
             sumLows += h;
             numberLows++;
             peakLow = h < peakLow ? h : peakLow;
-            const averageLow = sumLows / numberLows;
 
             if (h < -0.003) {
-              kline.signal = this.closeBuySignal;
+              kline.algorithms[algorithm].signal = this.closeBuySignal;
               positionOpen = true;
               positionOpenType = this.closeBuySignal;
             }
           }
         } else {
           if ((positionOpenType === this.closeSellSignal && h < 0) || (positionOpenType === this.closeBuySignal && h > 0)) {
-            kline.signal = this.closeSignal;
+            kline.algorithms[algorithm].signal = this.closeSignal;
             positionOpen = false;
           }
         }

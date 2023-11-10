@@ -193,14 +193,14 @@ export default class Base {
   /**
    * (positive - negative klines) * profit
    */
-  protected calcPerformanceSteadyAscent(klines: Kline[]): number {
+  protected calcPerformanceSteadyAscent(klines: Kline[], algorithm: string): number {
     let positiveKlines = 0;
     let negativeKlines = 0;
     let lastProfit = 0;
 
     for (const kline of klines) {
-      if (kline.percentProfit) {
-        lastProfit = kline.percentProfit;
+      if (kline.algorithms[algorithm].percentProfit) {
+        lastProfit = kline.algorithms[algorithm].percentProfit;
 
         if (lastProfit > 0) {
           positiveKlines++;
@@ -224,17 +224,17 @@ export default class Base {
     return total / profits.length;
   }
 
-  protected getLastProfit(klines: Kline[]): number | undefined {
-    return klines.at(-1)?.percentProfit;
+  protected getLastProfit(klines: Kline[], algorithm: string): number | undefined {
+    return klines.at(-1)?.algorithms[algorithm].percentProfit;
   }
 
-  protected getTotalAmount(klines: Kline[]): number {
-    return klines.reduce((a, c) => a + (c.amount || 0), 0);
+  protected getTotalAmount(klines: Kline[], algorithm: string): number {
+    return klines.reduce((a, c) => a + (c.algorithms[algorithm].amount || 0), 0);
   }
 
-  protected calcProfitPerAmount(klines: Kline[]): number {
-    const lastProfit = this.getLastProfit(klines) || 0;
-    const totalAmount = this.getTotalAmount(klines);
+  protected calcProfitPerAmount(klines: Kline[], algorithm: string): number {
+    const lastProfit = this.getLastProfit(klines, algorithm) || 0;
+    const totalAmount = this.getTotalAmount(klines, algorithm);
     return totalAmount === 0 ? 0 : lastProfit / totalAmount;
   }
 }

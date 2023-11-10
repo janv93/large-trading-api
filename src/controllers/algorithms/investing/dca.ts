@@ -3,10 +3,10 @@ import Base from '../../base';
 
 
 export default class Dca extends Base {
-  public setSignals(klines: Kline[]): Kline[] {
+  public setSignals(klines: Kline[], algorithm): Kline[] {
     klines.forEach((kline: Kline, i: number) => {
       if (i % 10 === 0) {
-        kline.signal = this.buySignal;
+        kline.algorithms[algorithm].signal = this.buySignal;
       }
     });
 

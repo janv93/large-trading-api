@@ -93,7 +93,7 @@ export default class Routes extends Base {
     } else {
       tickersWithSignals = await Promise.all(allTickers.map(async (klines: Kline[]) => {
         const klinesWithSignals: Kline[] = await this.handleAlgo(klines, query);
-        return this.backtest.calcBacktestPerformance(klinesWithSignals, 0, true);
+        return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithm, 0, true);
       }));
     }
 
@@ -101,7 +101,7 @@ export default class Routes extends Base {
   }
 
   public postBacktestData(req, res): void {
-    const performance = this.backtest.calcBacktestPerformance(req.body, Number(req.query.commission), this.stringToBoolean(req.query.flowingProfit));
+    const performance = this.backtest.calcBacktestPerformance(req.body, req.query.algorithm, Number(req.query.commission), this.stringToBoolean(req.query.flowingProfit));
     res.send(performance);
   }
 
@@ -129,32 +129,36 @@ export default class Routes extends Base {
     res.send(indicatorChart);
   }
 
-  private async handleAlgo(responseInRange: Kline[], query): Promise<Kline[]> {
+  private async handleAlgo(klines: Kline[], query): Promise<Kline[]> {
     const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, user } = query;
+
+    klines.forEach((kline: Kline) => {
+      kline.algorithms[algorithm] = {};
+    });
 
     switch (algorithm) {
       case 'momentum':
-        return this.momentum.setSignals(responseInRange, streak);
+        return this.momentum.setSignals(klines, algorithm, streak);
       case 'macd':
-        return this.macd.setSignals(responseInRange, fast, slow, signal);
+        return this.macd.setSignals(klines, algorithm, fast, slow, signal);
       case 'rsi':
-        return this.rsi.setSignals(responseInRange, Number(length));
+        return this.rsi.setSignals(klines, algorithm, Number(length));
       case 'ema':
-        return this.ema.setSignals(responseInRange, Number(periodOpen), Number(periodClose));
+        return this.ema.setSignals(klines, algorithm, Number(periodOpen), Number(periodClose));
       case 'emasl':
-        return this.ema.setSignalsSL(responseInRange, Number(periodClose));
+        return this.ema.setSignalsSL(klines, algorithm, Number(periodClose));
       case 'bb':
-        return this.bb.setSignals(responseInRange, Number(length));
+        return this.bb.setSignals(klines, algorithm, Number(length));
       // case 'deepTrend':
-      //   return this.tensorflow.setSignals(responseInRange);
+      //   return this.tensorflow.setSignals(klines, algorithm);
       case 'flashCrash':
-        return this.flashCrash.setSignals(responseInRange);
+        return this.flashCrash.setSignals(klines, algorithm);
       case 'dca':
-        return this.dca.setSignals(responseInRange);
+        return this.dca.setSignals(klines, algorithm);
       case 'meanReversion':
-        return this.meanReversion.setSignals(responseInRange, Number(threshold), Number(profitBasedTrailingStopLoss));
+        return this.meanReversion.setSignals(klines, algorithm, Number(threshold), Number(profitBasedTrailingStopLoss));
       case 'twitterSentiment':
-        return await this.twitterSentiment.setSignals(responseInRange, user);
+        return await this.twitterSentiment.setSignals(klines, algorithm, user);
       default: throw 'invalid';
     }
   }

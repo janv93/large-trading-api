@@ -12,17 +12,17 @@ export default class TwitterSentiment extends Base {
   private binance = new Binance();
   private backtest = new Backtest();
 
-  public async setSignals(klines: Kline[], user: string): Promise<Kline[]> {
+  public async setSignals(klines: Kline[], algorithm: string, user: string): Promise<Kline[]> {
     const initTime = Date.now() - this.timeframeToMilliseconds('1m') * 100 * 1000;  // init with 100k minutes, so that there are no conflicts in future calls
     await this.twitter.getFriendsWithTheirTweets(user, initTime)
     const timelines = await this.twitter.getFriendsWithTheirTweets(user, klines[0].times.open);
     const tweets = await this.getTweetSentiments(timelines, klines);
     this.binance.addTweetsToKlines(klines, tweets);
-    this.createBacktests(klines);
+    this.createBacktests(klines, algorithm);
     return klines;
   }
 
-  private createBacktests(klines: Kline[]) {
+  private createBacktests(klines: Kline[], algorithm: string) {
     const [lowestSl, highestSl, lowestTp, highestTp] = [0.001, 0.06, 0.002, 0.12];
     let [currentSl, currentTp] = [lowestSl, lowestTp];
     const constellations: number[][] = [];
@@ -43,17 +43,17 @@ export default class TwitterSentiment extends Base {
     const profits: any[] = [];
 
     constellations.forEach((c) => {
-      const profit = this.backtestTpSl(klines, c[0], c[1], true);
+      const profit = this.backtestTpSl(klines, algorithm, c[0], c[1], true);
       profits.push({ sl: c[0], tp: c[1], profit });
     });
 
     profits.sort((a, b) => a.profit - b.profit);
     console.log(profits.slice(-10));  // log best tp/sls
-    this.backtestTpSl(klines, profits[profits.length - 1][0], profits[profits.length - 1][1], false);
+    this.backtestTpSl(klines, algorithm, profits[profits.length - 1][0], profits[profits.length - 1][1], false);
     return klines;
   }
 
-  private backtestTpSl(klines: Kline[], stopLoss: number, takeProfit: number, reset: boolean): number {
+  private backtestTpSl(klines: Kline[], algorithm: string, stopLoss: number, takeProfit: number, reset: boolean): number {
     const entryPrices: number[] = [];
 
     klines.forEach((kline: Kline) => {
@@ -82,21 +82,21 @@ export default class TwitterSentiment extends Base {
       }
 
       if (amount > 0) {
-        kline.amount = amount;
-        kline.signal = this.buySignal;
+        kline.algorithms[algorithm].amount = amount;
+        kline.algorithms[algorithm].signal = this.buySignal;
       } else if (amount < 0) {
-        kline.amount = -amount;
-        kline.signal = this.sellSignal;
+        kline.algorithms[algorithm].amount = -amount;
+        kline.algorithms[algorithm].signal = this.sellSignal;
       }
     });
 
-    const klinesWithProfit = this.backtest.calcBacktestPerformance(klines, 0, false);
-    const finalProfit = klinesWithProfit[klinesWithProfit.length - 1].percentProfit;
+    const klinesWithProfit = this.backtest.calcBacktestPerformance(klines, algorithm, 0, false);
+    const finalProfit = klinesWithProfit[klinesWithProfit.length - 1].algorithms[algorithm].percentProfit;
 
     if (reset) {
       klines.forEach(k => { // reset signals and profits after each run
-        k.percentProfit = undefined;
-        k.signal = undefined;
+        k.algorithms[algorithm].percentProfit = undefined;
+        k.algorithms[algorithm].signal = undefined;
       });
     }
 

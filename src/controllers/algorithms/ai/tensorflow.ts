@@ -15,7 +15,7 @@ export default class Tensorflow extends Base {
     // this.test();
   }
 
-  public setSignals(klines: Kline[]): Kline[] {
+  public setSignals(klines: Kline[], algorithm: string): Kline[] {
     console.log('Received ' + klines.length + ' klines');
 
     // this.trainModelPriceToPrice(klines);

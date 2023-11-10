@@ -77,7 +77,8 @@ class Database extends Base {
           low: kline.lowPrice
         },
         volume: kline.volume,
-        numberOfTrades: kline.numberOfTrades
+        numberOfTrades: kline.numberOfTrades,
+        algorithms: {}
       }));
 
       return mappedKlines;

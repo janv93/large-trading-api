@@ -13,7 +13,7 @@ export default class Ema extends Base {
   /**
    * sets position signals depending on emas going up or down
    */
-  public setSignals(klines: Kline[], periodOpen: number, periodClose: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: string, periodOpen: number, periodClose: number): Kline[] {
     const emaOpenFull = this.indicators.ema(klines, periodOpen);
     const emaCloseFull = this.indicators.ema(klines, periodClose);
     const maxLength = Math.min(emaOpenFull.length, emaCloseFull.length);
@@ -58,16 +58,16 @@ export default class Ema extends Base {
       // set signals
 
       if (positionOpen && momentumSwitchClose && lastMoveOpen !== moveClose) {
-        kline.signal = this.closeSignal;
+        kline.algorithms[algorithm].signal = this.closeSignal;
         positionOpen = false;
       }
 
       if (!positionOpen && momentumSwitchOpen) {
         if (moveOpen === 'up') {
-          kline.signal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = this.closeBuySignal;
           positionOpen = true;
         } else if (moveOpen === 'down') {
-          kline.signal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = this.closeSellSignal;
           positionOpen = true;
         }
       }
@@ -83,7 +83,7 @@ export default class Ema extends Base {
     return klines;
   }
 
-  public setSignalsSL(klines: Kline[], period: number): Kline[] {
+  public setSignalsSL(klines: Kline[], algorithm: string, period: number): Kline[] {
     const ema = this.indicators.ema(klines, period);
     const klinesWithEma = klines.slice(-ema.length);
 
@@ -116,22 +116,22 @@ export default class Ema extends Base {
         posOpenPrice = kline.prices.close;
 
         if (move === 'up') {
-          kline.signal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = this.closeBuySignal;
           positionOpen = true;
         } else {
-          kline.signal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = this.closeSellSignal;
           positionOpen = true;
         }
 
-        lastSignal = kline.signal;
+        lastSignal = kline.algorithms[algorithm].signal;
       } else if (positionOpen) {
         if (momentumSwitch) {
           posOpenPrice = kline.prices.close;
 
           if (move === 'up') {
-            kline.signal = this.closeBuySignal;
+            kline.algorithms[algorithm].signal = this.closeBuySignal;
           } else {
-            kline.signal = this.closeSellSignal;
+            kline.algorithms[algorithm].signal = this.closeSellSignal;
           }
         } else {
           const currentPrice = kline.prices.close;
@@ -142,14 +142,14 @@ export default class Ema extends Base {
             const stopLossReached = priceDiffPercent < -stopLossPercent;
 
             if (stopLossReached) {
-              kline.signal = this.closeSignal;
+              kline.algorithms[algorithm].signal = this.closeSignal;
               positionOpen = false;
             }
           } else {
             const stopLossReached = priceDiffPercent > stopLossPercent;
 
             if (stopLossReached) {
-              kline.signal = this.closeSignal;
+              kline.algorithms[algorithm].signal = this.closeSignal;
               positionOpen = false;
             }
           }
