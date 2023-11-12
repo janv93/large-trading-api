@@ -1,16 +1,20 @@
 import { Kline, MultiBenchmark } from '../../interfaces';
 import Base from '../base';
 import Backtest from './backtest';
-import Dca from './investing/dca';
 import MeanReversion from './investing/mean-reversion';
 import deepmerge from 'deepmerge';
 
 export default class MultiTicker extends Base {
   private backtest = new Backtest();
   private meanReversion = new MeanReversion();
-  private dca = new Dca();
 
-  public setSignals(tickers: Kline[][], algorithm: string): Kline[][] {
+  public handleAlgo(tickers: Kline[][], algorithm: string): Kline[][] {
+    tickers.forEach((klines: Kline[]) => {
+      klines.forEach((kline: Kline) => {
+        kline.algorithms[algorithm] = {};
+      });
+    });
+
     switch (algorithm) {
       case 'meanReversion': tickers = this.setSignalsMeanReversionAutoParams(tickers, algorithm); break;
       default: tickers = [];
