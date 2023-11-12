@@ -94,7 +94,6 @@ export default class Routes extends Base {
     for (let i = 0; i < algorithms.length; i++) {
       if (autoParams[i]) {
         tickersWithSignals = this.multiTicker.handleAlgo(allTickers, algorithms[i].algorithm);
-        tickersWithSignals[0].forEach(kline => console.log(kline.algorithms))
       } else {
         tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
           const klinesWithSignals: Kline[] = await this.handleAlgo(klines, algorithms[i]);
