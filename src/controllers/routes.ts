@@ -42,21 +42,24 @@ export default class Routes extends Base {
   /**
    * get list of klines / candlesticks and add buy and sell signals
    * 
-   * algorithm is passed through query parameter 'algorithm'
+   * algorithm is passed through body parameter 'algorithm'
    * depending on algorithm, additional query params may be necessary
    */
   public async getKlinesWithAlgorithm(req, res): Promise<void> {
-    const query = req.query;
-
-    const allKlines = await this.initKlines(query.exchange, query.symbol, query.timeframe);
+    const body = req.body;
+    const allKlines = await this.initKlines(body.exchange, body.symbol, body.timeframe);
 
     try {
-      const klinesInRange = allKlines.slice(-1000 * Number(query.times));    // get last times * 1000 timeframes
-      let klinesWithSignals = await this.handleAlgo(klinesInRange, query);
-      res.send(klinesWithSignals);
+      let klinesInRange = allKlines.slice(-1000 * Number(body.times));    // get last times * 1000 timeframes
+
+      for (const algorithm of body.algorithms) {
+        klinesInRange = await this.handleAlgo(klinesInRange, algorithm);
+      }
+
+      res.send(klinesInRange);
     } catch (err: any) {
       if (err === 'invalid') {
-        res.send('Algorithm "' + query.algorithm + '" does not exist');
+        res.send('Algorithm does not exist');
       } else {
         this.handleError(err);
         res.status(500).json({ error: err.message });
@@ -65,8 +68,8 @@ export default class Routes extends Base {
   }
 
   public async runMultiTicker(req, res): Promise<void> {
-    const query = req.query;
-    const { timeframe, algorithm, rank, autoParams } = query;
+    const body = req.body;
+    const { timeframe, rank, autoParams, algorithms } = body;
 
     // stocks
     const stocksSymbols = await this.getMultiStocks(Number(rank));
@@ -86,23 +89,31 @@ export default class Routes extends Base {
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
     this.reduceTickersToLimit(allTickers);
-    let tickersWithSignals: Kline[][];
+    let tickersWithSignals: Kline[][] = allTickers;
 
-    if (this.stringToBoolean(autoParams)) {
-      tickersWithSignals = this.multiTicker.setSignals(allTickers, algorithm);
-    } else {
-      tickersWithSignals = await Promise.all(allTickers.map(async (klines: Kline[]) => {
-        const klinesWithSignals: Kline[] = await this.handleAlgo(klines, query);
-        return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithm, 0, true);
-      }));
+    for (let i = 0; i < algorithms.length; i++) {
+      if (this.stringToBoolean(autoParams[i])) {
+        tickersWithSignals = this.multiTicker.setSignals(allTickers, algorithms[i].algorithm);
+      } else {
+        tickersWithSignals = await Promise.all(allTickers.map(async (klines: Kline[]) => {
+          const klinesWithSignals: Kline[] = await this.handleAlgo(klines, algorithms[i]);
+          return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithms[i].algorithm, 0, true);
+        }));
+      }
     }
 
     res.send(tickersWithSignals);
   }
 
   public postBacktestData(req, res): void {
-    const performance = this.backtest.calcBacktestPerformance(req.body, req.query.algorithm, Number(req.query.commission), this.stringToBoolean(req.query.flowingProfit));
-    res.send(performance);
+    const query = req.query;
+    let klines: Kline[] = req.body;
+
+    for (let algorithm in (req.body as Kline[])[0].algorithms) {
+      klines = this.backtest.calcBacktestPerformance(klines, algorithm, Number(query.commission), this.stringToBoolean(query.flowingProfit));
+    }
+
+    res.send(klines);
   }
 
   public tradeStrategy(req, res): void {
@@ -129,8 +140,8 @@ export default class Routes extends Base {
     res.send(indicatorChart);
   }
 
-  private async handleAlgo(klines: Kline[], query): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, user } = query;
+  private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {
+    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, user } = params;
 
     klines.forEach((kline: Kline) => {
       kline.algorithms[algorithm] = {};
