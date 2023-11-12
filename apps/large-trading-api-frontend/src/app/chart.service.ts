@@ -13,7 +13,7 @@ export class ChartService {
   // general
   public exchange = 'alpaca'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
   public symbol = 'AI';
-  public timeframe = '1h';  // 1m, 5m, 15m, 1h... 1d...
+  public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;
 
@@ -30,8 +30,8 @@ export class ChartService {
 
   // multi
   public isMulti = true;
-  public multiAutoParams = [true, false];  // primary algorithm and optional second algorithm
-  public multiRank = 40;
+  public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
+  public multiRank = 10;
 
   constructor() { }
 }

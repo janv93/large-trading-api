@@ -249,10 +249,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       },
       grid: {
         vertLines: {
-          color: '#333333',
+          color: 'rgba(255, 255, 255, 0.04)'
         },
         horzLines: {
-          color: '#333333',
+          color: 'rgba(255, 255, 255, 0.04)'
         },
       },
       crosshair: {
