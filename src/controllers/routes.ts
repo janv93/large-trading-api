@@ -217,7 +217,7 @@ export default class Routes extends Base {
    * express has a limit for max response length
    */
   private reduceTickersToLimit(tickers: Kline[][]) {
-    const klineLimit = 2 * 10 ** 6; // 2 million rough limit
+    const klineLimit = 1.8 * 10 ** 6; // 1.8 million rough limit
     const totalKlinesLength = tickers.reduce((acc, curr) => acc + curr.length, 0);
     let diff = totalKlinesLength - klineLimit;
     if (diff <= 0) return;
