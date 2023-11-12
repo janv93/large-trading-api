@@ -29,7 +29,7 @@ export class ChartService {
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
 
   // multi
-  public isMulti = true;
+  public isMulti = false;
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
   public multiRank = 10;
 
