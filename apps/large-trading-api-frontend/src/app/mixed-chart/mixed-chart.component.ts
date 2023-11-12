@@ -24,6 +24,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private commissionChecked = false;
   private flowingProfitChecked = true;
   private finalProfit: number[] = [];
+  private red = 'rgb(255, 77, 77)';
+  private green = 'rgb(0, 255, 0)';
 
   constructor(
     public chartService: ChartService,
@@ -78,7 +80,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   public getColor(value: number, maxGreen: number, maxRed: number): string {
     // negative value means negative profit
     if (value < 0) {
-      return 'rgb(255, 77, 77)';
+      return this.red;
     }
 
     let red, green, blue;
