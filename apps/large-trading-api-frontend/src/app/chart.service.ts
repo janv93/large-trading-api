@@ -31,7 +31,7 @@ export class ChartService {
   // multi
   public isMulti = true;
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm
-  public multiRank = 30;
+  public multiRank = 40;
 
   constructor() { }
 }

@@ -177,7 +177,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       const opacity = index === 0 ? 0.3 : 0.1;
 
       this.profitSeries[index].applyOptions({
-        color: this.finalProfit[index] > 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`,
+        color: this.finalProfit[index] >= 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`,
         priceLineVisible: false,
         lastValueVisible: false
       });
