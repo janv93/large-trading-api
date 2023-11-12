@@ -20,10 +20,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   public currentKlines: Kline[];
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
-  private profitSeries: ISeriesApi<'Line'>;
+  private profitSeries: ISeriesApi<'Line'>[] = [];
   private commissionChecked = false;
   private flowingProfitChecked = true;
-  private finalProfit: number;
+  private finalProfit: number[] = [];
 
   constructor(
     public chartService: ChartService,
@@ -35,12 +35,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   ngOnInit(): void {
-    if (this.chartService.isMulti) {
-      this.currentKlines = this.klines[0].klines; // in case of multi, only 1 available for now
-    } else {
-      this.currentKlines = this.klines[2].klines; // default: no commission, flowing profit
-    }
-
+    this.setKlines();
     this.calcStats();
     this.handleResize();
   }
@@ -61,7 +56,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         timeScale: {
           minBarSpacing: 0.001
         },
-        
+
       });
 
       this.addLegend();
@@ -80,7 +75,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   /**
    * interpolates the color between red and green, depending on value
    */
-  getColor(value: number, maxGreen: number, maxRed: number): string {
+  public getColor(value: number, maxGreen: number, maxRed: number): string {
     // negative value means negative profit
     if (value < 0) {
       return 'rgb(255, 77, 77)';
@@ -111,29 +106,41 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.commissionChecked = checked;
     this.setKlines();
-    this.setProfitSeriesData();
+
+    this.chartService.algorithms.forEach((algorithm, index) => {
+      this.setProfitSeriesData(index);
+    });
   }
 
   public onFlowingProfitChange(event: Event) {
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.flowingProfitChecked = checked;
     this.setKlines();
-    this.setProfitSeriesData();
+
+    this.chartService.algorithms.forEach((algorithm, index) => {
+      this.setProfitSeriesData(index);
+    });
   }
 
   private setKlines() {
-    const commission = this.commissionChecked;
-    const flowingProfit = this.flowingProfitChecked;
+    if (this.chartService.isMulti) {
+      this.currentKlines = this.klines[0].klines; // in case of multi, only 1 available for now
+    } else {
+      const commission = this.commissionChecked;
+      const flowingProfit = this.flowingProfitChecked;
 
-    if (!commission && !flowingProfit) {
-      this.currentKlines = this.klines[0].klines;
-    } else if (commission && !flowingProfit) {
-      this.currentKlines = this.klines[1].klines;
-    } else if (!commission && flowingProfit) {
-      this.currentKlines = this.klines[2].klines;
-    } else if (commission && flowingProfit) {
-      this.currentKlines = this.klines[3].klines;
+      if (!commission && !flowingProfit) {
+        this.currentKlines = this.klines[0].klines;
+      } else if (commission && !flowingProfit) {
+        this.currentKlines = this.klines[1].klines;
+      } else if (!commission && flowingProfit) {
+        this.currentKlines = this.klines[2].klines;
+      } else if (commission && flowingProfit) {
+        this.currentKlines = this.klines[3].klines;
+      }
     }
+
+    this.setFinalProfits();
   }
 
   private handleResize() {
@@ -155,15 +162,28 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.candlestickSeries = this.chart.addCandlestickSeries({ priceScaleId: 'right' });
     this.setCandlestickSeriesData();
     this.setCandlestickSeriesSignals();
+
+    this.candlestickSeries.applyOptions({
+      priceLineVisible: false,
+      lastValueVisible: false
+    });
   }
 
   private drawProfitSeries(): void {
-    this.profitSeries = this.chart.addLineSeries({ priceScaleId: 'left' });
-    this.setProfitSeriesData();  // init with no commission/flowing profit
+    this.chartService.algorithms.forEach((algorithm, index) => {
+      this.profitSeries.push(this.chart.addLineSeries({ priceScaleId: index === 0 ? 'left' : 'left2' }));
+      this.setProfitSeriesData(index);  // init with no commission/flowing profit
 
-    this.profitSeries.applyOptions({
-      color: this.finalProfit > 0 ? 'rgba(0,255,0,0.3)' : 'rgba(255,77,77,0.3)'
+      const opacity = index === 0 ? 0.3 : 0.1;
+
+      this.profitSeries[index].applyOptions({
+        color: this.finalProfit[index] > 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`,
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
     });
+
+    this.calcStats();
   }
 
   private setCandlestickSeriesData(): void {
@@ -184,7 +204,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const markers: any[] = [];
 
     this.klines[0].klines.forEach((kline: Kline) => {
-      if (kline.algorithms[this.chartService.algorithm].signal) {
+      if (kline.algorithms[this.chartService.algorithms[0]].signal) {
         markers.push(this.getTemplate(kline));
       }
     });
@@ -193,27 +213,27 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private getTemplate(kline: Kline): SeriesMarker<Time> {
-    const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.algorithms[this.chartService.algorithm].signal!) ? kline.algorithms[this.chartService.algorithm].signal!.replace('LOSE', '') : kline.algorithms[this.chartService.algorithm].signal;
+    const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.algorithms[this.chartService.algorithms[0]].signal!) ? kline.algorithms[this.chartService.algorithms[0]].signal!.replace('LOSE', '') : kline.algorithms[this.chartService.algorithms[0]].signal;
 
     return {
       time: kline.times.open / 1000 as Time,
       position: ['BUY', 'CBUY'].includes(signal!) ? 'belowBar' : 'aboveBar',
-      color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.algorithms[this.chartService.algorithm].signal === 'CLOSE' ? 'white' : '#ff4d4d',
+      color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.algorithms[this.chartService.algorithms[0]].signal === 'CLOSE' ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(signal!) ? 'arrowUp' : 'arrowDown',
-      text: signal + (kline.algorithms[this.chartService.algorithm].amount ? ` ${kline.algorithms[this.chartService.algorithm].amount}` : '')
+      text: signal + (kline.algorithms[this.chartService.algorithms[0]].amount ? ` ${kline.algorithms[this.chartService.algorithms[0]].amount}` : '')
     };
   }
 
-  private setProfitSeriesData() {
+  private setProfitSeriesData(index: number) {
     const mapped = this.currentKlines.map((kline: Kline) => {
+
       return {
         time: kline.times.open / 1000 as Time,
-        value: kline.algorithms[this.chartService.algorithm].percentProfit
+        value: kline.algorithms[this.chartService.algorithms[index]].percentProfit
       }
     });
 
-    this.profitSeries.setData(mapped);
-    this.calcStats();
+    this.profitSeries[index].setData(mapped);
   }
 
   private applyDarkTheme(chart: IChartApi) {
@@ -244,7 +264,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private addLegend() {
     this.chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
       const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
-      const profit = param.seriesData.get(this.profitSeries) as LineData;
+      const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
 
       if (ohlc) {
         for (const key in ohlc) {
@@ -261,12 +281,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private calcStats(): void {
-    this.finalProfit = this.currentKlines.at(-1)!.algorithms[this.chartService.algorithm].percentProfit || 0;
-    const tradesCount = this.currentKlines.filter(kline => kline.algorithms[this.chartService.algorithm].signal !== undefined && kline.algorithms[this.chartService.algorithm].signal !== this.closeSignal).length;
+    const tradesCount = this.currentKlines.filter(kline => kline.algorithms[this.chartService.algorithms[0]].signal !== undefined && kline.algorithms[this.chartService.algorithms[0]].signal !== this.closeSignal).length;
     const posNeg = this.calcPositiveNegativeTrades();
 
     this.stats = {
-      profit: Number(this.finalProfit.toFixed(2)),
+      profit: Number(this.finalProfit[0].toFixed(2)),
       numberOfTrades: tradesCount,
       positive: posNeg[0],
       negative: posNeg[1],
@@ -280,8 +299,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     let lastPercentage;
 
     this.currentKlines
-      .filter(kline => kline.algorithms[this.chartService.algorithm].signal)
-      .map(p => p.algorithms[this.chartService.algorithm].percentProfit || 0)
+      .filter(kline => kline.algorithms[this.chartService.algorithms[0]].signal)
+      .map(p => p.algorithms[this.chartService.algorithms[0]].percentProfit || 0)
       .forEach(percentage => {
         if (lastPercentage !== undefined) {
           const diff = Math.abs(percentage - lastPercentage);
@@ -307,7 +326,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     let high = 0, maxDrawback = 0, highestProfit = 0;
 
     this.currentKlines.forEach(kline => {
-      const profit = kline.algorithms[this.chartService.algorithm].percentProfit || 0;
+      const profit = kline.algorithms[this.chartService.algorithms[0]].percentProfit || 0;
       highestProfit = Math.max(highestProfit, profit);
       high = Math.max(high, profit);
 
@@ -315,5 +334,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     return highestProfit === 0 ? 100 : (maxDrawback / highestProfit * 100);
+  }
+
+  private setFinalProfits(): void {
+    this.chartService.algorithms.forEach((algorithm, index) => {
+      this.finalProfit.push(this.currentKlines.at(-1)!.algorithms[this.chartService.algorithms[index]].percentProfit || 0);
+    });
   }
 }

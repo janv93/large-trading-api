@@ -17,15 +17,23 @@ export class HttpService {
   ) { }
 
   public getKlines(): Observable<Kline[]> {
-    const query = this.getAlgorithmQuery();
+    const { exchange, symbol, timeframe, times } = this.chartService;
+
+    const body = {
+      exchange,
+      symbol,
+      timeframe,
+      times,
+      algorithms: [this.getAlgorithmBody(0)]
+    };
+
+    if (this.chartService.algorithms.length > 1) body.algorithms.push(this.getAlgorithmBody(1));
     const url = this.baseUrl + '/klinesWithAlgorithm';
-    const urlWithQuery = this.createUrl(url, query);
-    return this.http.get<Kline[]>(urlWithQuery);
+    return this.http.post<Kline[]>(url, body);
   }
 
   public postBacktest(klines: Array<Kline>, commission: number, flowingProfit: boolean): Observable<Kline[]> {
     const query = {
-      algorithm: this.chartService.algorithm,
       commission: commission,
       flowingProfit: flowingProfit
     };
@@ -36,133 +44,78 @@ export class HttpService {
   }
 
   public getMulti(): Observable<Kline[][]> {
-    const multiQuery = {
-      timeframe: this.chartService.timeframe,
-      algorithm: this.chartService.algorithm,
-      rank: this.chartService.multiRank,
-      autoParams: this.chartService.multiAutoParams
+    const { timeframe, multiRank, multiAutoParams } = this.chartService;
+
+    const body = {
+      timeframe,
+      rank: multiRank,
+      autoParams: multiAutoParams,
+      algorithms: [this.getAlgorithmBody(0)]
     };
 
-    const algorithmQuery = this.getAlgorithmQuery();
-    const query = { ...multiQuery, ...algorithmQuery };
-
+    if (this.chartService.algorithms.length > 1) body.algorithms.push(this.getAlgorithmBody(1));
     const url = this.baseUrl + '/multi';
-    const urlWithQuery = this.createUrl(url, query);
-    return this.http.get<Kline[][]>(urlWithQuery);
+    return this.http.post<Kline[][]>(url, body);
   }
 
-  private getAlgorithmQuery(): any {
-    const { exchange, algorithm, symbol, times, timeframe } = this.chartService;
+  private getAlgorithmBody(index: number): any {
+    const algorithm = this.chartService.algorithms[index];
 
     switch (algorithm) {
-      case 'pivotReversal':
-        return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'pivotReversal',
-          leftBars: 4,
-          rightBars: 1
-        };
       case 'momentum':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'momentum',
-          streak: this.chartService.momentumStreak
+          algorithm,
+          streak: this.chartService.momentumStreak[index]
         };
       case 'macd':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'macd',
+          algorithm,
           fast: 12,
           slow: 26,
           signal: 9
         };
       case 'rsi':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'rsi',
-          length: this.chartService.rsiLength
+          algorithm,
+          length: this.chartService.rsiLength[index]
         };
       case 'ema':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'ema',
-          periodOpen: this.chartService.emaPeriodOpen,
-          periodClose: this.chartService.emaPeriodClose
+          algorithm,
+          periodOpen: this.chartService.emaPeriodOpen[index],
+          periodClose: this.chartService.emaPeriodClose[index]
         };
       case 'emasl':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'emasl',
-          period: this.chartService.emaPeriodSL
+          algorithm,
+          period: this.chartService.emaPeriodSL[index]
         };
       case 'bb':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'bb',
-          period: this.chartService.bbPeriod
+          algorithm,
+          period: this.chartService.bbPeriod[index]
         };
       case 'deepTrend':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'deepTrend'
+          algorithm
         };
       case 'dca':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'dca'
+          algorithm
         };
       case 'meanReversion':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'meanReversion',
-          threshold: this.chartService.meanReversionThreshold,
-          profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss
+          algorithm,
+          threshold: this.chartService.meanReversionThreshold[index],
+          profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss[index]
         };
       case 'flashCrash':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'flashCrash'
+          algorithm
         };
       case 'twitterSentiment':
         return {
-          exchange,
-          symbol,
-          times,
-          timeframe,
-          algorithm: 'twitterSentiment',
+          algorithm,
           user: this.chartService.twitterUser
         };
     }
