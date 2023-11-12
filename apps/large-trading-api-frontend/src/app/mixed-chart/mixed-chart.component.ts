@@ -326,17 +326,25 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
    * max drawback = max percentage drop of profit / highest profit
    */
   private calcMaxDrawback(): number {
-    let high = 0, maxDrawback = 0, highestProfit = 0;
+    let high = 0, maxDrawback = 0, highestProfit = 0, lowestProfit = 0;
 
     this.currentKlines.forEach(kline => {
       const profit = kline.algorithms[this.chartService.algorithms[0]].percentProfit || 0;
       highestProfit = Math.max(highestProfit, profit);
+      lowestProfit = Math.min(lowestProfit, profit);
       high = Math.max(high, profit);
-
       maxDrawback = Math.max(maxDrawback, high - profit);
     });
 
-    return highestProfit === 0 ? 100 : (maxDrawback / highestProfit * 100);
+    if (highestProfit === 0) {
+      if (lowestProfit === 0) {
+        return 0; // profit always 0
+      } else {
+        return 100; // profit always negative
+      }
+    } else {
+      return maxDrawback / highestProfit * 100;
+    }
   }
 
   private setFinalProfits(): void {
