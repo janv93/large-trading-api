@@ -92,7 +92,7 @@ export default class Routes extends Base {
     let tickersWithSignals: Kline[][] = allTickers;
 
     for (let i = 0; i < algorithms.length; i++) {
-      if (this.stringToBoolean(autoParams[i])) {
+      if (autoParams[i]) {
         tickersWithSignals = this.multiTicker.setSignals(allTickers, algorithms[i].algorithm);
       } else {
         tickersWithSignals = await Promise.all(allTickers.map(async (klines: Kline[]) => {
