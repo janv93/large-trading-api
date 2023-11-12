@@ -2,7 +2,7 @@
 Charting tool for [Large Trading API](https://github.com/janv93/LargeTradingAPI) using [Lightweight Charts](https://github.com/tradingview/lightweight-charts)
 
 ## Setup
-1. Start [backend](https://github.com/janv93/large-trading-api)
+1. Start [Backend](https://github.com/janv93/large-trading-api)
 2. npm i
 3. npm start
 4. Set parameters in ChartService
