@@ -1,68 +1,42 @@
-export default class Logger {
-  private logLevel = 'nodb';
+import { createLogger, format, transports } from 'winston';
+const { combine, timestamp, label, printf } = format;
 
-  private colors = {
-    black: '\x1b[30m',
-    red: '\x1b[31m',
-    green: '\x1b[32m',
-    yellow: '\x1b[33m',
-    blue: '\x1b[34m',
-    magenta: '\x1b[35m',
-    cyan: '\x1b[36m',
-    white: '\x1b[37m',
-    reset: '\x1b[0m'
-  };
+// Custom logging format that includes the level, message, and timestamp.
+const logFormat = printf(({ level, message, timestamp }) => {
+  return `${timestamp} [${level.toUpperCase()}]: ${message}`;
+});
 
-  public log(...args: any[]) {
-    const caller = args.pop();
+export class Logger {
+  private logger;
 
-    if (this.passesLogLevelCheck(caller)) {
-      console.log(this.getParentLog(caller), ...args);
-    }
+  constructor(caller: string) {
+    this.logger = createLogger({
+      // Apply custom formatting to all logs.
+      format: combine(
+        label({ label: caller }),
+        timestamp(),
+        logFormat
+      ),
+      transports: [
+        new transports.Console(), // Log to console.
+        // Add other transports here if needed (e.g., file transport).
+      ],
+    });
   }
 
-  public logErr(...args: any[]) {
-    const caller = args.pop();
-
-    if (this.passesLogLevelCheck(caller)) {
-      console.error(`${this.getParentLog(caller)} ${this.colors.red}ERR${this.colors.reset}`, ...args);
-    }
+  public info(message: string): void {
+    this.logger.info(message);
   }
 
-  private getParentLog(caller: object) {
-    const maxLength = 10;
-    const callerName = caller.constructor.name;
-    let color: string;
-
-    switch (callerName) {
-      case 'App':
-        color = this.colors.blue;
-        break;
-      case 'Database':
-        color = this.colors.yellow;
-        break;
-      case 'Alpaca':
-        color = this.colors.cyan;
-        break;
-      case 'Binance':
-      case 'Kucoin':
-      case 'Btse':
-        color = this.colors.magenta;
-        break;
-      default:
-        color = this.colors.reset;
-        break;
-    }
-
-    const paddedName = callerName.toUpperCase().padEnd(maxLength);
-    return `${color}${paddedName}|${this.colors.reset}`;
+  public warn(message: string): void {
+    this.logger.warn(message);
   }
 
-  private passesLogLevelCheck(caller: object): boolean {
-    const callerName = caller.constructor.name;
+  public error(message: string): void {
+    this.logger.error(message);
+  }
 
-    if (this.logLevel === 'nodb') {
-      return callerName !== 'Database';
-    } else return true;
+  public debug(message: string): void {
+    this.logger.debug(message);
   }
 }
