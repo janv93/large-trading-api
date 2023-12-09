@@ -13,7 +13,7 @@ export default class Logger {
     reset: '\x1b[0m'
   };
 
-  public log(...args: any[]): void {
+  public log(...args: any[]) {
     const caller = args.pop();
 
     if (this.passesLogLevelCheck(caller)) {
@@ -21,7 +21,7 @@ export default class Logger {
     }
   }
 
-  public logErr(...args: any[]): void {
+  public logErr(...args: any[]) {
     const caller = args.pop();
 
     if (this.passesLogLevelCheck(caller)) {
@@ -29,7 +29,7 @@ export default class Logger {
     }
   }
 
-  private getParentLog(caller: object): string {
+  private getParentLog(caller: object) {
     const maxLength = 10;
     const callerName = caller.constructor.name;
     let color: string;
