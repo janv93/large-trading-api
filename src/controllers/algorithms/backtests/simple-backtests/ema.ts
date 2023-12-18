@@ -1,8 +1,8 @@
-import Indicators from '../../technical-analysis/indicators';
-import { Kline } from '../../../interfaces';
-import Base from '../../base';
-import Binance from '../../exchanges/binance';
-import Btse from '../../exchanges/btse';
+import Indicators from '../../../technical-analysis/indicators';
+import { Kline } from '../../../../interfaces';
+import Base from '../../../base';
+import Binance from '../../../exchanges/binance';
+import Btse from '../../../exchanges/btse';
 
 export default class Ema extends Base {
   private indicators = new Indicators();

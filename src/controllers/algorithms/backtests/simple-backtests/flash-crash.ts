@@ -1,5 +1,5 @@
-import { Kline } from '../../../interfaces';
-import Base from '../../base';
+import { Kline } from '../../../../interfaces';
+import Base from '../../../base';
 
 export default class FlashCrash extends Base {
   public setSignals(klines: Kline[], algorithm: string): Kline[] {
