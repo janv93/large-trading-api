@@ -52,7 +52,7 @@ export interface Backtest {
 
 export enum Signal {
   Buy = 'BUY',
-  CloseBuy = 'CLOSEBUY',
+  CloseBuy = 'CLOSEBUY',  // a close followed by a buy signal
   Sell = 'SELL',
   CloseSell = 'CLOSESELL',
   Close = 'CLOSE'
