@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LastPriceAnimationMode, LineData, LineStyle, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
-import { BacktestStats, Kline, Klines } from '../interfaces';
+import { BacktestStats, Kline, Klines, Signal } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 
@@ -218,14 +218,17 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private getTemplate(kline: Kline): SeriesMarker<Time> {
-    const signal = ['CLOSEBUY', 'CLOSESELL'].includes(kline.algorithms[this.chartService.algorithms[0]].signal!) ? kline.algorithms[this.chartService.algorithms[0]].signal!.replace('LOSE', '') : kline.algorithms[this.chartService.algorithms[0]].signal;
+    const algo = this.chartService.algorithms[0];
+    const signal: Signal = kline.algorithms[algo].signal;
+    const hasComboSignal = [Signal.CloseBuy, Signal.CloseSell].includes(signal);
+    const finalSignal: string = hasComboSignal ? String(signal).replace('LOSE', '') : String(signal);
 
     return {
       time: kline.times.open / 1000 as Time,
-      position: ['BUY', 'CBUY'].includes(signal!) ? 'belowBar' : 'aboveBar',
-      color: ['BUY', 'CBUY'].includes(signal!) ? 'lime' : kline.algorithms[this.chartService.algorithms[0]].signal === 'CLOSE' ? 'white' : '#ff4d4d',
-      shape: ['BUY', 'CBUY'].includes(signal!) ? 'arrowUp' : 'arrowDown',
-      text: signal + (kline.algorithms[this.chartService.algorithms[0]].amount ? ` ${kline.algorithms[this.chartService.algorithms[0]].amount}` : '')
+      position: ['BUY', 'CBUY'].includes(finalSignal) ? 'belowBar' : 'aboveBar',
+      color: ['BUY', 'CBUY'].includes(finalSignal) ? 'lime' : finalSignal === 'CLOSE' ? 'white' : '#ff4d4d',
+      shape: ['BUY', 'CBUY'].includes(finalSignal) ? 'arrowUp' : 'arrowDown',
+      text: finalSignal + (kline.algorithms[algo].amount ? ` ${kline.algorithms[algo].amount}` : '')
     };
   }
 
@@ -286,7 +289,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private calcStats(): void {
-    const tradesCount = this.currentKlines.filter(kline => kline.algorithms[this.chartService.algorithms[0]].signal !== undefined && kline.algorithms[this.chartService.algorithms[0]].signal !== this.closeSignal).length;
+    const tradesCount = this.currentKlines.filter(kline => kline.algorithms[this.chartService.algorithms[0]].signal !== undefined && kline.algorithms[this.chartService.algorithms[0]].signal !== Signal.Close).length;
     const posNeg = this.calcPositiveNegativeTrades();
 
     this.stats = {

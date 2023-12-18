@@ -33,9 +33,7 @@ export class AppComponent {
         { commission: this.chartService.commission, flowingProfit: true }
       ];
 
-      const requests = params.map(param => {
-        return this.httpService.postBacktest(klines, param.commission, param.flowingProfit);
-      });
+      const requests = params.map(param => this.httpService.postBacktest(klines, param.commission, param.flowingProfit));
 
       forkJoin(requests).subscribe((klinesList: Kline[][]) => {
         this.klines = params.map((param: any, i: number) => {

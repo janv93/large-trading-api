@@ -1,10 +1,4 @@
 export class BaseComponent {
-  public buySignal = 'BUY';
-  public closeBuySignal = 'CLOSEBUY';
-  public sellSignal = 'SELL';
-  public closeSellSignal = 'CLOSESELL';
-  public closeSignal = 'CLOSE';
-
   constructor() { }
 
   public dateToSimpleString(date: Date): string {

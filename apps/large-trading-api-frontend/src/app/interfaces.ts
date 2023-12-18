@@ -35,9 +35,17 @@ export interface Algorithms {
 };
 
 export interface Backtest {
-  signal?: string;
+  signal?: Signal;
   percentProfit?: number;
   amount?: number;
+};
+
+export enum Signal {
+  Buy = 'BUY',
+  CloseBuy = 'CLOSEBUY',
+  Sell = 'SELL',
+  CloseSell = 'CLOSESELL',
+  Close = 'CLOSE'
 };
 
 export interface Tweet {
