@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Kline } from '../../../../interfaces';
+import { Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Macd extends Base {
@@ -18,7 +18,7 @@ export default class Macd extends Base {
     let peakLow = 0;
     let numberLows = 0;
     let positionOpen = false;
-    let positionOpenType: string;
+    let positionOpenType: Signal;
 
     klinesWithHistogram.forEach((kline, index) => {
       const h = histogram[index].histogram;
@@ -45,9 +45,9 @@ export default class Macd extends Base {
             peakHigh = h > peakHigh ? h : peakHigh;
 
             if (h > 0.003) {
-              kline.algorithms[algorithm].signal = this.closeSellSignal;
+              kline.algorithms[algorithm].signal = Signal.CloseSell;
               positionOpen = true;
-              positionOpenType = this.closeSellSignal;
+              positionOpenType = Signal.CloseSell;
             }
           } else if (move === 'up' && h < 0) {
             sumLows += h;
@@ -55,14 +55,14 @@ export default class Macd extends Base {
             peakLow = h < peakLow ? h : peakLow;
 
             if (h < -0.003) {
-              kline.algorithms[algorithm].signal = this.closeBuySignal;
+              kline.algorithms[algorithm].signal = Signal.CloseBuy;
               positionOpen = true;
-              positionOpenType = this.closeBuySignal;
+              positionOpenType = Signal.CloseBuy;
             }
           }
         } else {
-          if ((positionOpenType === this.closeSellSignal && h < 0) || (positionOpenType === this.closeBuySignal && h > 0)) {
-            kline.algorithms[algorithm].signal = this.closeSignal;
+          if ((positionOpenType === Signal.CloseSell && h < 0) || (positionOpenType === Signal.CloseBuy && h > 0)) {
+            kline.algorithms[algorithm].signal = Signal.Close;
             positionOpen = false;
           }
         }

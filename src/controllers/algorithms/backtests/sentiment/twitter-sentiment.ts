@@ -1,4 +1,4 @@
-import { Kline, Tweet, TwitterTimeline } from '../../../../interfaces';
+import { Kline, Signal, Tweet, TwitterTimeline } from '../../../../interfaces';
 import Base from '../../../base';
 import Twitter from '../../../other-apis/twitter';
 import OpenAi from '../../../other-apis/openai';
@@ -63,7 +63,7 @@ export default class TwitterSentiment extends Base {
       for (let i = entryPrices.length - 1; i >= 0; i--) { // closing condition tp/sl
         const p = entryPrices[i];
         const priceDiffPercent = (currentPrice - p) / p;
-        const tpSlReached = this.isTpSlReached(this.buySignal, priceDiffPercent, stopLoss, takeProfit);
+        const tpSlReached = this.isTpSlReached(Signal.Buy, priceDiffPercent, stopLoss, takeProfit);
 
         if (tpSlReached) {
           amount--;
@@ -83,10 +83,10 @@ export default class TwitterSentiment extends Base {
 
       if (amount > 0) {
         kline.algorithms[algorithm].amount = amount;
-        kline.algorithms[algorithm].signal = this.buySignal;
+        kline.algorithms[algorithm].signal = Signal.Buy;
       } else if (amount < 0) {
         kline.algorithms[algorithm].amount = -amount;
-        kline.algorithms[algorithm].signal = this.sellSignal;
+        kline.algorithms[algorithm].signal = Signal.Sell;
       }
     });
 

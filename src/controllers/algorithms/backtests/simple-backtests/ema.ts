@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Kline } from '../../../../interfaces';
+import { Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 import Binance from '../../../exchanges/binance';
 import Btse from '../../../exchanges/btse';
@@ -58,16 +58,16 @@ export default class Ema extends Base {
       // set signals
 
       if (positionOpen && momentumSwitchClose && lastMoveOpen !== moveClose) {
-        kline.algorithms[algorithm].signal = this.closeSignal;
+        kline.algorithms[algorithm].signal = Signal.Close;
         positionOpen = false;
       }
 
       if (!positionOpen && momentumSwitchOpen) {
         if (moveOpen === 'up') {
-          kline.algorithms[algorithm].signal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = Signal.CloseBuy;
           positionOpen = true;
         } else if (moveOpen === 'down') {
-          kline.algorithms[algorithm].signal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = Signal.CloseSell;
           positionOpen = true;
         }
       }
@@ -90,7 +90,7 @@ export default class Ema extends Base {
     let lastMove: string;
     let positionOpen = false;
     let lastEma: number;
-    let lastSignal: string;
+    let lastSignal: Signal;
     let posOpenPrice: number;
     const stopLossPercent = 0.0;
 
@@ -116,10 +116,10 @@ export default class Ema extends Base {
         posOpenPrice = kline.prices.close;
 
         if (move === 'up') {
-          kline.algorithms[algorithm].signal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = Signal.CloseBuy;
           positionOpen = true;
         } else {
-          kline.algorithms[algorithm].signal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = Signal.CloseSell;
           positionOpen = true;
         }
 
@@ -129,27 +129,27 @@ export default class Ema extends Base {
           posOpenPrice = kline.prices.close;
 
           if (move === 'up') {
-            kline.algorithms[algorithm].signal = this.closeBuySignal;
+            kline.algorithms[algorithm].signal = Signal.CloseBuy;
           } else {
-            kline.algorithms[algorithm].signal = this.closeSellSignal;
+            kline.algorithms[algorithm].signal = Signal.CloseSell;
           }
         } else {
           const currentPrice = kline.prices.close;
           const priceDiff = currentPrice - posOpenPrice;
           const priceDiffPercent = priceDiff / posOpenPrice;
 
-          if (lastSignal === this.closeBuySignal) {
+          if (lastSignal === Signal.CloseBuy) {
             const stopLossReached = priceDiffPercent < -stopLossPercent;
 
             if (stopLossReached) {
-              kline.algorithms[algorithm].signal = this.closeSignal;
+              kline.algorithms[algorithm].signal = Signal.Close;
               positionOpen = false;
             }
           } else {
             const stopLossReached = priceDiffPercent > stopLossPercent;
 
             if (stopLossReached) {
-              kline.algorithms[algorithm].signal = this.closeSignal;
+              kline.algorithms[algorithm].signal = Signal.Close;
               positionOpen = false;
             }
           }

@@ -1,4 +1,4 @@
-import { Kline } from '../../../../interfaces';
+import { Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 enum Action {
@@ -97,7 +97,7 @@ export default class MeanReversion extends Base {
   }
 
   private buy(kline: Kline, state: any, algorithm: string) {
-    kline.algorithms[algorithm].signal = this.buySignal;
+    kline.algorithms[algorithm].signal = Signal.Buy;
     state.streak++;
     kline.algorithms[algorithm].amount = Math.pow(2, state.streak - 1); // start at 2^0
     state.isOpen = true;
@@ -114,7 +114,7 @@ export default class MeanReversion extends Base {
   }
 
   private close(kline: Kline, state: any, algorithm: string) {
-    kline.algorithms[algorithm].signal = this.closeSignal;
+    kline.algorithms[algorithm].signal = Signal.Close;
     state.streak = 0;
     state.isOpen = false;
     state.isTrailing = false;

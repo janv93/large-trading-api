@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Kline } from '../../../../interfaces';
+import { Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Rsi extends Base {
@@ -17,28 +17,28 @@ export default class Rsi extends Base {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 
-    let lastSignal: string;
+    let lastSignal: Signal;
 
     klines.forEach((kline, index) => {
       const r = rsi[index].rsi;
 
-      if (lastSignal === this.closeBuySignal) {
+      if (lastSignal === Signal.CloseBuy) {
         if (r > rsiThresholdHigh) {
-          kline.algorithms[algorithm].signal = this.closeSellSignal;
-          lastSignal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = Signal.CloseSell;
+          lastSignal = Signal.CloseSell;
         }
-      } else if (lastSignal === this.closeSellSignal) {
+      } else if (lastSignal === Signal.CloseSell) {
         if (r < rsiThresholdLow) {
-          kline.algorithms[algorithm].signal = this.closeBuySignal;
-          lastSignal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = Signal.CloseBuy;
+          lastSignal = Signal.CloseBuy;
         }
       } else {
         if (r > rsiThresholdHigh) {
-          kline.algorithms[algorithm].signal = this.closeSellSignal;
-          lastSignal = this.closeSellSignal;
+          kline.algorithms[algorithm].signal = Signal.CloseSell;
+          lastSignal = Signal.CloseSell;
         } else if (r < rsiThresholdLow) {
-          kline.algorithms[algorithm].signal = this.closeBuySignal;
-          lastSignal = this.closeBuySignal;
+          kline.algorithms[algorithm].signal = Signal.CloseBuy;
+          lastSignal = Signal.CloseBuy;
         }
       }
     });

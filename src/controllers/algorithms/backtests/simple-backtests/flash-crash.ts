@@ -1,4 +1,4 @@
-import { Kline } from '../../../../interfaces';
+import { Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class FlashCrash extends Base {
@@ -30,15 +30,15 @@ export default class FlashCrash extends Base {
             const percentChangeSinceOpen = this.percentage(openPrice, close);
             const takeProfit = threshold * 3 / 4
             const stopLoss = threshold / 3;
-            const isTpSlReached = this.isTpSlReached(this.buySignal, percentChangeSinceOpen, stopLoss, takeProfit);
+            const isTpSlReached = this.isTpSlReached(Signal.Buy, percentChangeSinceOpen, stopLoss, takeProfit);
 
             if (isTpSlReached) {
-              kline.algorithms[algorithm].signal = this.closeSignal;
+              kline.algorithms[algorithm].signal = Signal.Close;
               isOpen = false;
               isFlashCrash = false;
             }
           } else if (isStable) {    // 2. wait for stabilize
-            kline.algorithms[algorithm].signal = this.buySignal;
+            kline.algorithms[algorithm].signal = Signal.Buy;
             openPrice = close;
             isOpen = true;
           }

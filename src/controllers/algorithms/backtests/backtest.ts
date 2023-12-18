@@ -1,4 +1,4 @@
-import { Kline } from '../../../interfaces';
+import { Kline, Signal } from '../../../interfaces';
 import Base from '../../base';
 
 export default class Backtest extends Base {
@@ -19,7 +19,7 @@ export default class Backtest extends Base {
           const profitChange = this.calcProfitChange(kline, klines[i - 1], lastSignalKline);
           percentProfit += profitChange * currentAmount;
         } else {  // recalculate profit only on signal
-          if (kline.algorithms[algorithm].signal && lastSignalKline.algorithms[algorithm].signal !== this.closeSignal) {
+          if (kline.algorithms[algorithm].signal && lastSignalKline.algorithms[algorithm].signal !== Signal.Close) {
             const profitChange = this.calcProfitChange(kline, lastSignalKline);
             percentProfit += profitChange * currentAmount;
           }
@@ -45,11 +45,11 @@ export default class Backtest extends Base {
 
   private calcCommission(kline: Kline, algorithm: string, baseCommission: number, currentAmount: number): number {
     switch (kline.algorithms[algorithm].signal) {
-      case this.closeSignal: return baseCommission * Math.abs(currentAmount);
-      case this.buySignal:
-      case this.sellSignal: return baseCommission * (kline.algorithms[algorithm].amount || 1);
-      case this.closeBuySignal:
-      case this.closeSellSignal: return baseCommission * Math.abs(currentAmount) + baseCommission * (kline.algorithms[algorithm].amount || 1);
+      case Signal.Close: return baseCommission * Math.abs(currentAmount);
+      case Signal.Buy:
+      case Signal.Sell: return baseCommission * (kline.algorithms[algorithm].amount || 1);
+      case Signal.CloseBuy:
+      case Signal.CloseSell: return baseCommission * Math.abs(currentAmount) + baseCommission * (kline.algorithms[algorithm].amount || 1);
       default: return NaN;
     }
   }
@@ -58,11 +58,11 @@ export default class Backtest extends Base {
     const amount = kline.algorithms[algorithm].amount ?? 1;   // if amount is not present, use default amount of 1
 
     switch (kline.algorithms[algorithm].signal) {
-      case this.closeSignal: return 0;
-      case this.closeBuySignal: return amount;
-      case this.closeSellSignal: return -amount;
-      case this.buySignal: return currentAmount + amount;
-      case this.sellSignal: return currentAmount - amount;
+      case Signal.Close: return 0;
+      case Signal.CloseBuy: return amount;
+      case Signal.CloseSell: return -amount;
+      case Signal.Buy: return currentAmount + amount;
+      case Signal.Sell: return currentAmount - amount;
       default: return NaN;
     }
   }

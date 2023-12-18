@@ -7,6 +7,7 @@ export interface Kline {
   algorithms: Algorithms;
   numberOfTrades?: number;
   tweets?: Tweet[];
+  metaData?: KlineMetaData;
 };
 
 export interface KlineTimes {
@@ -34,10 +35,27 @@ export interface Algorithms {
   twitterSentiment?: Backtest;
 };
 
+export interface KlineMetaData {
+  pivotPoint?: PivotPoint;
+};
+
+export enum PivotPoint {
+  High,
+  Low
+};
+
 export interface Backtest {
-  signal?: string;
+  signal?: Signal;
   percentProfit?: number;
   amount?: number;
+};
+
+export enum Signal {
+  Buy = 'BUY',
+  CloseBuy = 'CLOSEBUY',
+  Sell = 'SELL',
+  CloseSell = 'CLOSESELL',
+  Close = 'CLOSE'
 };
 
 export interface MultiBenchmark {

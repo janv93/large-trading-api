@@ -1,13 +1,8 @@
-import { Kline } from '../interfaces';
+import { Kline, Signal } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
   private logger = new Logger();
-  protected buySignal = 'BUY';
-  protected closeBuySignal = 'CLOSEBUY';
-  protected sellSignal = 'SELL';
-  protected closeSellSignal = 'CLOSESELL';
-  protected closeSignal = 'CLOSE';
 
   /**
    * 1 = green, -1 = red, 0 = steady
@@ -17,15 +12,15 @@ export default class Base {
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }
 
-  protected handleError(err: any, symbol?: string, caller?: any) {
+  protected handleError(err: any, symbol?: string, caller: any = this) {
     if (symbol) {
-      this.logErr('Error received for symbol ' + symbol + ':', this);
+      this.logErr('Error received for symbol ' + symbol + ':', caller);
     }
 
     if (err.response && err.response.data) {
-      this.logErr(err.response.data, this);
+      this.logErr(err.response.data, caller);
     } else {
-      this.logErr(err, this);
+      this.logErr(err, caller);
     }
   }
 
@@ -96,11 +91,11 @@ export default class Base {
   /**
    * takes the difference priceDiffPercent between the open and current price, stopLoss and takeProfit in percent and returns if tp or sl are reached
    */
-  protected isTpSlReached(entrySignal: string, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
+  protected isTpSlReached(entrySignal: Signal, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
     let slReached: boolean;
     let tpReached: boolean;
 
-    if (entrySignal === this.buySignal || entrySignal === this.closeBuySignal) {
+    if (entrySignal === Signal.Buy || entrySignal === Signal.CloseBuy) {
       slReached = priceDiffPercent < -stopLoss;
       tpReached = priceDiffPercent > takeProfit;
     } else {
@@ -111,13 +106,13 @@ export default class Base {
     return slReached || tpReached ? true : false;
   }
 
-  protected invertSignal(signal: string): string {
+  protected invertSignal(signal: Signal | null): Signal | null {
     switch (signal) {
-      case this.buySignal: return this.sellSignal;
-      case this.sellSignal: return this.buySignal;
-      case this.closeBuySignal: return this.closeSellSignal;
-      case this.closeSellSignal: return this.closeBuySignal;
-      default: return '';
+      case Signal.Buy: return Signal.Sell;
+      case Signal.Sell: return Signal.Buy;
+      case Signal.CloseBuy: return Signal.CloseSell;
+      case Signal.CloseSell: return Signal.CloseBuy;
+      default: return null;
     }
   }
 

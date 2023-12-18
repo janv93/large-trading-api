@@ -1,4 +1,4 @@
-import { Kline } from '../../../../interfaces';
+import { Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Momentum extends Base {
@@ -6,7 +6,7 @@ export default class Momentum extends Base {
     const colors: number[] = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;
-    let lastEntrySignal: string;
+    let lastEntrySignal: Signal;
     let lastEntryIndex: number;
 
     klines.forEach((kline: any, index: number) => {
@@ -23,7 +23,7 @@ export default class Momentum extends Base {
         const close = this.isClose(klines, colors, index, streak, lastEntrySignal, lastEntryIndex);
 
         if (close) {
-          kline.algorithms[algorithm].signal = this.closeSignal;
+          kline.algorithms[algorithm].signal = Signal.Close;
           positionOpen = false;
         }
       }
@@ -32,23 +32,23 @@ export default class Momentum extends Base {
     return klines;
   }
 
-  private isEntry(colors: number[], index: number, streak: number): string {
+  private isEntry(colors: number[], index: number, streak: number): Signal | null {
     if (streak > index) {
-      return '';
+      return null;
     }
 
     const range = colors.slice(index - streak + 1, index + 1);
     const rangeGreen = range.every(kline => kline >= 0);
     const rangeRed = range.every(kline => kline <= 0);
 
-    let signal = rangeGreen ? this.closeBuySignal : rangeRed ? this.closeSellSignal : ''
+    let signal = rangeGreen ? Signal.CloseBuy : rangeRed ? Signal.CloseSell : null
     // invert the signal
     signal = this.invertSignal(signal);
 
     return signal;
   }
 
-  private isClose(klines: Kline[], colors: any[], index: number, streak: number, lastEntrySignal: string, lastEntryIndex: number): boolean {
+  private isClose(klines: Kline[], colors: any[], index: number, streak: number, lastEntrySignal: Signal, lastEntryIndex: number): boolean {
     const closePriceAtLastEntry = klines[lastEntryIndex].prices.close;
     const currentPrice = klines[index].prices.close;
 

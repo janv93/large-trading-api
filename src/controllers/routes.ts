@@ -141,7 +141,7 @@ export default class Routes extends Base {
   }
 
   private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, user } = params;
+    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, user } = params;
 
     klines.forEach((kline: Kline) => {
       kline.algorithms[algorithm] = {};
@@ -159,7 +159,7 @@ export default class Routes extends Base {
       case 'emasl':
         return this.ema.setSignalsSL(klines, algorithm, Number(periodClose));
       case 'bb':
-        return this.bb.setSignals(klines, algorithm, Number(length));
+        return this.bb.setSignals(klines, algorithm, Number(period));
       // case 'deepTrend':
       //   return this.tensorflow.setSignals(klines, algorithm);
       case 'flashCrash':
