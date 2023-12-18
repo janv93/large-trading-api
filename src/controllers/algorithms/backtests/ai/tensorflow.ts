@@ -1,7 +1,7 @@
-import Base from '../../base';
-import { Kline } from '../../../interfaces';
-import Plotly from '../../other-apis/plotly';
-import Indicators from '../../technical-analysis/indicators';
+import Base from '../../../base';
+import { Kline } from '../../../../interfaces';
+import Plotly from '../../../other-apis/plotly';
+import Indicators from '../../../technical-analysis/indicators';
 
 // import * as tf from '@tensorflow/tfjs-node-gpu';    // GPU
 import * as tf from '@tensorflow/tfjs-node';   // CPU

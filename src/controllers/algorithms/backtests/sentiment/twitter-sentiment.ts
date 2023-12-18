@@ -1,8 +1,8 @@
-import { Kline, Tweet, TwitterTimeline } from '../../../interfaces';
-import Base from '../../base';
-import Twitter from '../../other-apis/twitter';
-import OpenAi from '../../other-apis/openai';
-import Binance from '../../exchanges/binance';
+import { Kline, Tweet, TwitterTimeline } from '../../../../interfaces';
+import Base from '../../../base';
+import Twitter from '../../../other-apis/twitter';
+import OpenAi from '../../../other-apis/openai';
+import Binance from '../../../exchanges/binance';
 import Backtest from '../backtest';
 
 

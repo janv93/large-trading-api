@@ -1,5 +1,5 @@
-import { Kline, MultiBenchmark } from '../../interfaces';
-import Base from '../base';
+import { Kline, MultiBenchmark } from '../../../interfaces';
+import Base from '../../base';
 import Backtest from './backtest';
 import MeanReversion from './investing/mean-reversion';
 import deepmerge from 'deepmerge';

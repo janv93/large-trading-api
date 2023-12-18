@@ -1,6 +1,6 @@
-import Indicators from '../technical-analysis/indicators';
-import { Kline } from '../../interfaces';
-import Base from '../base';
+import Indicators from '../../technical-analysis/indicators';
+import { Kline } from '../../../interfaces';
+import Base from '../../base';
 
 export default class Bb extends Base {
   private indicators = new Indicators();;

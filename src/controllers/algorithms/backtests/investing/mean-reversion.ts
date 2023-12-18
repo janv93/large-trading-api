@@ -1,5 +1,5 @@
-import { Kline } from '../../../interfaces';
-import Base from '../../base';
+import { Kline } from '../../../../interfaces';
+import Base from '../../../base';
 
 enum Action {
   Buy,
