@@ -55,7 +55,7 @@ class Database extends Base {
 
   public async getKlines(symbol: string, timeframe: string): Promise<Kline[]> {
     try {
-      const klines = await this.Kline.find({ symbol, timeframe }).sort({ openTime: 1 });
+      const klines = await this.Kline.find({ symbol, timeframe });
 
       if (klines.length) {
         this.log(`Read ${klines.length} klines for symbol ${symbol}`, this);
@@ -80,6 +80,8 @@ class Database extends Base {
         numberOfTrades: kline.numberOfTrades,
         algorithms: {}
       }));
+
+      mappedKlines.sort((a, b) => a.times.open - b.times.open);
 
       return mappedKlines;
     } catch (err) {
