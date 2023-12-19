@@ -221,7 +221,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const algo = this.chartService.algorithms[0];
     const signal: Signal = kline.algorithms[algo].signal;
     const hasComboSignal = [Signal.CloseBuy, Signal.CloseSell].includes(signal);
-    const finalSignal: string = hasComboSignal ? String(signal).replace('LOSE', '') : String(signal);
+    const finalSignal: string = hasComboSignal ? signal.replace('LOSE', '') : signal;
 
     return {
       time: kline.times.open / 1000 as Time,
