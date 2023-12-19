@@ -43,29 +43,28 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   ngAfterViewInit(): void {
-    this.zone.runOutsideAngular(() => {
-      const container = this.containerRef.nativeElement;
+    const container = this.containerRef.nativeElement;
+    const width = Math.floor(container.getBoundingClientRect().width);
+    const height = Math.floor(container.getBoundingClientRect().height);
 
-      this.chart = createChart(container, {
-        width: container.clientWidth,
-        height: container.clientHeight,
-        leftPriceScale: {
-          visible: !this.chartService.isMulti
-        },
-        rightPriceScale: {
-          visible: !this.chartService.isMulti
-        },
-        timeScale: {
-          minBarSpacing: 0.001
-        },
-
-      });
-
-      this.addLegend();
-      this.applyDarkTheme(this.chart);
-      this.drawSeries();
-      this.chart.timeScale().fitContent();
+    this.chart = createChart(container, {
+      width,
+      height,
+      leftPriceScale: {
+        visible: !this.chartService.isMulti
+      },
+      rightPriceScale: {
+        visible: !this.chartService.isMulti
+      },
+      timeScale: {
+        minBarSpacing: 0.001
+      }
     });
+
+    this.addLegend();
+    this.applyDarkTheme(this.chart);
+    this.drawSeries();
+    this.chart.timeScale().fitContent();
   }
 
   ngOnDestroy(): void {
