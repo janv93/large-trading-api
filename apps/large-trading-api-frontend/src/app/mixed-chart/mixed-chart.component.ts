@@ -1,5 +1,5 @@
-import { Component, ChangeDetectorRef, ElementRef, Input, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LastPriceAnimationMode, LineData, LineStyle, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
+import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
 import { BacktestStats, Kline, Klines, Signal } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -29,7 +29,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   constructor(
     public chartService: ChartService,
-    private zone: NgZone,
     private renderer: Renderer2,
     private cd: ChangeDetectorRef
   ) {
