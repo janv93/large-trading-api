@@ -328,6 +328,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
+  // set values for top left legend
   private setLegendValues() {
     if (this.isCrosshairSubscribed) {
       this.chart.unsubscribeCrosshairMove(() => {
