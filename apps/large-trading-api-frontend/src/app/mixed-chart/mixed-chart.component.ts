@@ -171,6 +171,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawCandlestickSeries(): void {
+    if (this.candlestickSeries) {
+      this.chart.removeSeries(this.candlestickSeries);
+    }
+
     this.candlestickSeries = this.chart.addCandlestickSeries({ priceScaleId: 'right' });
     this.setCandlestickSeriesData();
     this.setSignalsMarkers();
