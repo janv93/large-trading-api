@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode } from 'lightweight-charts';
-import { BacktestStats, Kline, Klines, Signal } from '../interfaces';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp } from 'lightweight-charts';
+import { BacktestStats, Kline, Klines, PivotPoint, Signal } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 
@@ -26,6 +26,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private finalProfit: number[] = [];
   private red = 'rgb(255, 77, 77)';
   private green = 'rgb(0, 255, 0)';
+  private markersPivotPoints: SeriesMarker<Time>[] = [];
+  private markersSignals: SeriesMarker<Time>[] = [];
 
   constructor(
     public chartService: ChartService,
@@ -100,6 +102,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setKlines();
     this.setFinalProfits();
     this.drawSeries();
+    this.drawMetaData();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.setProfitSeriesData(index);
@@ -199,11 +202,20 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawMetaData() {
-    this.drawPivotPoints();
+    this.setPivotPoints();
   }
 
-  private drawPivotPoints() {
-    
+  private setPivotPoints() {
+    const markers: SeriesMarker<Time>[] = [];
+
+    this.currentKlines.forEach((kline: Kline) => {
+      if (kline.metaData?.pivotPoint) {
+        markers.push(this.getPivotPointTemplate(kline));
+      }
+    });
+
+    this.markersPivotPoints = markers;
+    this.drawMakers();
   }
 
   private setCandlestickSeriesData(): void {
@@ -221,18 +233,25 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private setCandlestickSeriesSignals() {
-    const markers: any[] = [];
+    const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
       if (kline.algorithms[this.chartService.algorithms[0]].signal) {
-        markers.push(this.getTemplate(kline));
+        markers.push(this.getSignalTemplate(kline));
       }
     });
 
-    this.candlestickSeries.setMarkers(markers);
+    this.markersSignals = markers;
+    this.drawMakers();
   }
 
-  private getTemplate(kline: Kline): SeriesMarker<Time> {
+  private drawMakers() {
+    const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
+    allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
+    this.candlestickSeries.setMarkers(allMarkers);
+  }
+
+  private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
     const algo = this.chartService.algorithms[0];
     const signal: Signal = kline.algorithms[algo].signal;
     const hasComboSignal = [Signal.CloseBuy, Signal.CloseSell].includes(signal);
@@ -244,6 +263,18 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       color: ['BUY', 'CBUY'].includes(finalSignal) ? 'lime' : finalSignal === 'CLOSE' ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(finalSignal) ? 'arrowUp' : 'arrowDown',
       text: finalSignal + (kline.algorithms[algo].amount ? ` ${kline.algorithms[algo].amount}` : '')
+    };
+  }
+
+  private getPivotPointTemplate(kline: Kline): SeriesMarker<Time> {
+    const pivotPoint: PivotPoint = kline.metaData?.pivotPoint!;
+
+    return {
+      time: kline.times.open / 1000 as Time,
+      position: pivotPoint === PivotPoint.High ? 'aboveBar' : 'belowBar',
+      color: 'white',
+      shape: pivotPoint === PivotPoint.High ? 'arrowDown' : 'arrowUp',
+      text: 'PP'
     };
   }
 
