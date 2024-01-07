@@ -3,7 +3,7 @@ import { Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Bb extends Base {
-  private indicators = new Indicators();;
+  private indicators = new Indicators();
 
   public setSignals(klines: Kline[], algorithm: string, period: number): Kline[] {
     const bb = this.indicators.bb(klines, period);

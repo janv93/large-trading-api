@@ -33,6 +33,7 @@ export interface Algorithms {
   dca?: Backtest;
   meanReversion?: Backtest;
   twitterSentiment?: Backtest;
+  trendline?: Backtest;
 };
 
 export interface KlineMetaData {
@@ -40,8 +41,8 @@ export interface KlineMetaData {
 };
 
 export enum PivotPoint {
-  High,
-  Low
+  High = 'HIGH',
+  Low = 'LOW'
 };
 
 export interface Backtest {
