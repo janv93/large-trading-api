@@ -173,7 +173,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private drawCandlestickSeries(): void {
     this.candlestickSeries = this.chart.addCandlestickSeries({ priceScaleId: 'right' });
     this.setCandlestickSeriesData();
-    this.setCandlestickSeriesSignals();
+    this.setSignalsMarkers();
 
     this.candlestickSeries.applyOptions({
       priceLineVisible: false,
@@ -203,10 +203,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawMetaData() {
-    this.setPivotPoints();
+    this.setPivotPointsMarkers();
   }
 
-  private setPivotPoints() {
+  private setPivotPointsMarkers() {
     const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
@@ -233,7 +233,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.candlestickSeries.setData(mapped);
   }
 
-  private setCandlestickSeriesSignals() {
+  private setSignalsMarkers() {
     const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
