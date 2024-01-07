@@ -37,6 +37,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   ngOnInit(): void {
     this.setKlines();
+    this.setFinalProfits();
     this.calcStats();
     this.handleResize();
   }
@@ -85,6 +86,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.commissionChecked = checked;
     this.setKlines();
+    this.setFinalProfits();
+    this.drawSeries();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.setProfitSeriesData(index);
@@ -95,6 +98,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.flowingProfitChecked = checked;
     this.setKlines();
+    this.setFinalProfits();
+    this.drawSeries();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.setProfitSeriesData(index);
@@ -123,6 +128,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.addLegend();
     this.applyDarkTheme(this.chart);
     this.drawSeries();
+    this.drawMetaData();
     this.chart.timeScale().fitContent();
   }
 
@@ -143,8 +149,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.currentKlines = this.klines[3].klines;
       }
     }
-
-    this.setFinalProfits();
   }
 
   private handleResize() {
@@ -194,8 +198,16 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.calcStats();
   }
 
+  private drawMetaData() {
+    this.drawPivotPoints();
+  }
+
+  private drawPivotPoints() {
+    
+  }
+
   private setCandlestickSeriesData(): void {
-    const mapped = this.klines[0].klines.map((kline: Kline) => {
+    const mapped = this.currentKlines.map((kline: Kline) => {
       return {
         time: kline.times.open / 1000 as Time,
         open: kline.prices.open,
@@ -211,7 +223,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private setCandlestickSeriesSignals() {
     const markers: any[] = [];
 
-    this.klines[0].klines.forEach((kline: Kline) => {
+    this.currentKlines.forEach((kline: Kline) => {
       if (kline.algorithms[this.chartService.algorithms[0]].signal) {
         markers.push(this.getTemplate(kline));
       }
