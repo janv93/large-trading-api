@@ -193,7 +193,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.profitSeries.push(this.chart.addLineSeries({ priceScaleId: index === 0 ? 'left' : 'left2' }));
-      console.log(this.profitSeries)
       this.setProfitSeriesData(index);  // init with no commission/flowing profit
 
       const opacity = index === 0 ? 0.3 : 0.1;
