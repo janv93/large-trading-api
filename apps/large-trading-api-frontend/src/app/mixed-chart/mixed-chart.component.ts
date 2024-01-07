@@ -1,5 +1,5 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode } from 'lightweight-charts';
 import { BacktestStats, Kline, Klines, Signal } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -266,7 +266,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         },
         horzLine: {
           color: '#FFFFFF'
-        }
+        },
+        mode: CrosshairMode.Normal
       }
     });
   }

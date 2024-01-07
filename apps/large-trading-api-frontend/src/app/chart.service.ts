@@ -11,14 +11,14 @@ export class ChartService {
   public twitterUser = environment.twitterUser;
 
   // general
-  public exchange = 'alpaca'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
-  public symbol = 'SPY';
+  public exchange = 'binance'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY
+  public symbol = 'BTCUSDT';
   public timeframe = '1d';  // 1m, 5m, 15m, 1h... 1d...
   public times = 1;  // 1 = 1000 timeframes
   public commission = 0.04;
 
   // algorithm, [0] is primary, [1] is optional second algorithm
-  public algorithms = ['ema', 'dca']; // if second algorithm is set, will draw a second profit line for comparison
+  public algorithms = ['trendline', 'dca']; // if second algorithm is set, will draw a second profit line for comparison
   public rsiLength = [7, 7];
   public emaPeriodOpen = [80, 80];
   public emaPeriodClose = [80, 80];

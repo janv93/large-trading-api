@@ -118,6 +118,10 @@ export class HttpService {
           algorithm,
           user: this.chartService.twitterUser
         };
+      case 'trendline':
+        return {
+          algorithm
+        }
     }
   }
 
