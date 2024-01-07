@@ -90,6 +90,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setKlines();
     this.setFinalProfits();
     this.drawSeries();
+    this.drawMetaData();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.setProfitSeriesData(index);
