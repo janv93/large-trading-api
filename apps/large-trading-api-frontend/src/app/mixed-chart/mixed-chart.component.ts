@@ -28,6 +28,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private green = 'rgb(0, 255, 0)';
   private markersPivotPoints: SeriesMarker<Time>[] = [];
   private markersSignals: SeriesMarker<Time>[] = [];
+  private isCrosshairSubscribed = false;
 
   constructor(
     public chartService: ChartService,
@@ -328,23 +329,32 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private setLegendValues() {
-    this.chart.unsubscribeCrosshairMove(() => {
-      this.chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
-        const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
-        const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
-  
-        if (ohlc) {
-          for (const key in ohlc) {
-            if (typeof ohlc[key] === "number") {
-              ohlc[key] = parseFloat(ohlc[key].toFixed(2));
-            }
-          }
-  
-          this.ohlc = ohlc;
-          this.currentProfit = Number(profit.value.toFixed(2));
-          this.cd.detectChanges();
-        }
+    if (this.isCrosshairSubscribed) {
+      this.chart.unsubscribeCrosshairMove(() => {
+        this.subscribeCrosshairMove();
       });
+    } else {
+      this.subscribeCrosshairMove();
+    }
+  }
+
+  private subscribeCrosshairMove() {
+    this.chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
+      this.isCrosshairSubscribed = true;
+      const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
+      const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
+
+      if (ohlc) {
+        for (const key in ohlc) {
+          if (typeof ohlc[key] === "number") {
+            ohlc[key] = parseFloat(ohlc[key].toFixed(2));
+          }
+        }
+
+        this.ohlc = ohlc;
+        this.currentProfit = Number(profit.value.toFixed(2));
+        this.cd.detectChanges();
+      }
     });
   }
 
