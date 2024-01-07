@@ -245,6 +245,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.drawMakers();
   }
 
+  // combine all markers
   private drawMakers() {
     const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
     allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
