@@ -186,7 +186,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.profitSeries[index].applyOptions({
         color,
         priceLineVisible: false,
-        lastValueVisible: false
+        lastValueVisible: false,
+        crosshairMarkerVisible: false
       });
     });
 
