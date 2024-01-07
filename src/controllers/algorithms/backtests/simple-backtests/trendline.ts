@@ -7,7 +7,13 @@ export default class Trendline extends Base {
 
   public setSignals(klines: Kline[], algorithm: string): Kline[] {
     const klinesWithPP = this.charting.calcPivotPoints(klines, 10);
+    klinesWithPP.forEach(k => {
+      if (k.metaData?.pivotPoint) {
+        k.algorithms[algorithm].signal = Signal.Buy
+      }
+    })
     console.log(klinesWithPP);
-    return klines;
+
+    return klinesWithPP;
   }
 }
