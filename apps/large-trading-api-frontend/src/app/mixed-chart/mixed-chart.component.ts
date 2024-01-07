@@ -90,6 +90,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setKlines();
     this.setFinalProfits();
     this.drawSeries();
+    this.setLegendValues();
     this.drawMetaData();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
@@ -103,6 +104,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setKlines();
     this.setFinalProfits();
     this.drawSeries();
+    this.setLegendValues();
     this.drawMetaData();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
@@ -129,7 +131,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       }
     });
 
-    this.addLegend();
+    this.setLegendValues();
     this.applyDarkTheme(this.chart);
     this.drawSeries();
     this.drawMetaData();
@@ -186,8 +188,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawProfitSeries(): void {
+    this.profitSeries.forEach(series => this.chart.removeSeries(series));
+    this.profitSeries = [];
+
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.profitSeries.push(this.chart.addLineSeries({ priceScaleId: index === 0 ? 'left' : 'left2' }));
+      console.log(this.profitSeries)
       this.setProfitSeriesData(index);  // init with no commission/flowing profit
 
       const opacity = index === 0 ? 0.3 : 0.1;
@@ -322,22 +328,24 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
-  private addLegend() {
-    this.chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
-      const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
-      const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
-
-      if (ohlc) {
-        for (const key in ohlc) {
-          if (typeof ohlc[key] === "number") {
-            ohlc[key] = parseFloat(ohlc[key].toFixed(2));
+  private setLegendValues() {
+    this.chart.unsubscribeCrosshairMove(() => {
+      this.chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
+        const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
+        const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
+  
+        if (ohlc) {
+          for (const key in ohlc) {
+            if (typeof ohlc[key] === "number") {
+              ohlc[key] = parseFloat(ohlc[key].toFixed(2));
+            }
           }
+  
+          this.ohlc = ohlc;
+          this.currentProfit = Number(profit.value.toFixed(2));
+          this.cd.detectChanges();
         }
-
-        this.ohlc = ohlc;
-        this.currentProfit = Number(profit.value.toFixed(2));
-        this.cd.detectChanges();
-      }
+      });
     });
   }
 
