@@ -23,21 +23,14 @@ export default class Charting {
         const isLow = leftLenthLow >= leftLength && rightLengthLow >= rightLength;
 
         if (isHigh) {
-          if (!kline.chartData) {
-            kline.chartData = {};
-          }
+          kline.chartData = kline.chartData || {};
+          kline.chartData.pivotPoints = kline.chartData.pivotPoints || [];
 
-          if (!kline.chartData.pivotPoints) {
-            kline.chartData.pivotPoints = [];
-          }
-
-          const pp: PivotPoint = {
+          kline.chartData.pivotPoints.push({
             left: leftLengthHigh,
             right: rightLengthHigh,
             direction: PivotPointDirection.High
-          };
-
-          kline.chartData.pivotPoints.push(pp);
+          });
         } else if (isLow) {
           if (!kline.chartData) {
             kline.chartData = {};
