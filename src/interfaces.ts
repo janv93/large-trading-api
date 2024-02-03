@@ -7,7 +7,7 @@ export interface Kline {
   algorithms: Algorithms;
   numberOfTrades?: number;
   tweets?: Tweet[];
-  metaData?: KlineMetaData;
+  chartData?: KlineChartData;
 };
 
 export interface KlineTimes {
@@ -36,11 +36,17 @@ export interface Algorithms {
   trendline?: Backtest;
 };
 
-export interface KlineMetaData {
-  pivotPoint?: PivotPoint;
+export interface KlineChartData {
+  pivotPoints?: PivotPoint[];
 };
 
-export enum PivotPoint {
+export interface PivotPoint {
+  left: number;
+  right: number;
+  direction: PivotPointDirection;
+};
+
+export enum PivotPointDirection {
   High = 'HIGH',
   Low = 'LOW'
 };
