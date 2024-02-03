@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp } from 'lightweight-charts';
-import { BacktestStats, Kline, Klines, PivotPoint, Signal } from '../interfaces';
+import { BacktestStats, Kline, Klines, PivotPoint, PivotPointDirection, Signal } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 
@@ -92,7 +92,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setFinalProfits();
     this.drawSeries();
     this.setLegendValues();
-    this.drawMetaData();
+    this.drawChartData();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.setProfitSeriesData(index);
@@ -106,7 +106,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setFinalProfits();
     this.drawSeries();
     this.setLegendValues();
-    this.drawMetaData();
+    this.drawChartData();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.setProfitSeriesData(index);
@@ -135,7 +135,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setLegendValues();
     this.applyDarkTheme(this.chart);
     this.drawSeries();
-    this.drawMetaData();
+    this.drawChartData();
     this.chart.timeScale().fitContent();
   }
 
@@ -212,7 +212,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.calcStats();
   }
 
-  private drawMetaData() {
+  private drawChartData() {
     this.setPivotPointsMarkers();
   }
 
@@ -220,7 +220,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
-      if (kline.metaData?.pivotPoint) {
+      if (kline.chartData?.pivotPoints) {
         markers.push(this.getPivotPointTemplate(kline));
       }
     });
@@ -279,13 +279,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private getPivotPointTemplate(kline: Kline): SeriesMarker<Time> {
-    const pivotPoint: PivotPoint = kline.metaData?.pivotPoint!;
+    const pivotPoint: PivotPoint = kline.chartData?.pivotPoints![0]!;
 
     return {
       time: kline.times.open / 1000 as Time,
-      position: pivotPoint === PivotPoint.High ? 'aboveBar' : 'belowBar',
+      position: pivotPoint.direction === PivotPointDirection.High ? 'aboveBar' : 'belowBar',
       color: 'white',
-      shape: pivotPoint === PivotPoint.High ? 'arrowDown' : 'arrowUp',
+      shape: pivotPoint.direction === PivotPointDirection.High ? 'arrowDown' : 'arrowUp',
       text: 'PP'
     };
   }
