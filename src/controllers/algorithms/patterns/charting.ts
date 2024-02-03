@@ -7,8 +7,8 @@ export default class Charting {
       const currentLow = kline.prices.low;
 
       if (klines[i - leftLength] && klines[i + rightLength]) {
-        const leftKlines = klines.slice(0, i);  // all leftious klines
-        const rightKlines = klines.slice(i + 1); // all succeeding klines
+        const leftKlines = klines.slice(0, i);
+        const rightKlines = klines.slice(i + 1);
 
         let leftLengthHigh: number = leftKlines.slice().reverse().findIndex((leftKline: Kline) => leftKline.prices.high > currentHigh);
         leftLengthHigh = leftLengthHigh === -1 ? Infinity : leftLengthHigh;
