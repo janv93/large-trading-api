@@ -32,21 +32,14 @@ export default class Charting {
             direction: PivotPointDirection.High
           });
         } else if (isLow) {
-          if (!kline.chartData) {
-            kline.chartData = {};
-          }
+          kline.chartData = kline.chartData || {};
+          kline.chartData.pivotPoints = kline.chartData.pivotPoints || [];
 
-          if (!kline.chartData.pivotPoints) {
-            kline.chartData.pivotPoints = [];
-          }
-
-          const pp: PivotPoint = {
+          kline.chartData.pivotPoints.push({
             left: leftLenthLow,
             right: rightLengthLow,
             direction: PivotPointDirection.Low
-          };
-
-          kline.chartData.pivotPoints.push(pp);
+          });
         }
       }
     });
