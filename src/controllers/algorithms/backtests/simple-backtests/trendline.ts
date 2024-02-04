@@ -12,7 +12,7 @@ export default class Trendline extends Base {
 
     klines.forEach((kline, i) => {
       if (kline.chartData?.trendlines?.length) {
-        console.log(i, kline.chartData.trendlines[0])
+        //console.log(i, kline.chartData.trendlines[0])
       }
     })
 

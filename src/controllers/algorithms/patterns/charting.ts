@@ -91,7 +91,7 @@ export default class Charting {
     const b: number = y1 - m * x1;
 
     const lineUninterrupted = klines.slice(startIndex, endIndex).every((k: Kline, i: number) => {
-      const x = i;
+      const x = startIndex + i;
 
       if (side === PivotPointSide.High) {
         const y = k.prices.high;
