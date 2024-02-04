@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp } from 'lightweight-charts';
-import { BacktestStats, Kline, Klines, PivotPoint, PivotPointSide, Signal } from '../interfaces';
+import { BacktestStats, Kline, Klines, PivotPoint, PivotPointSide, Position, Signal, TrendLine } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 
@@ -21,6 +21,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
   private profitSeries: ISeriesApi<'Line'>[] = [];
+  private trendLineSeries: ISeriesApi<'Line'>[] = [];
   private commissionChecked = false;
   private flowingProfitChecked = true;
   private finalProfit: number[] = [];
@@ -214,6 +215,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private drawChartData() {
     this.setPivotPointsMarkers();
+    this.setTrendLines();
   }
 
   private setPivotPointsMarkers() {
@@ -227,6 +229,16 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     this.markersPivotPoints = markers;
     this.drawMakers();
+  }
+
+  private setTrendLines() {
+    this.trendLineSeries.forEach(series => this.chart.removeSeries(series));
+    this.trendLineSeries = [];
+    const filtered = this.currentKlines.filter((kline: Kline) => kline.chartData?.trendlines?.length);
+
+    filtered.forEach((kline: Kline) => {
+      this.setTrendLineSeriesData(kline);
+    });
   }
 
   private setCandlestickSeriesData(): void {
@@ -292,14 +304,39 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setProfitSeriesData(index: number) {
     const mapped = this.currentKlines.map((kline: Kline) => {
-
       return {
         time: kline.times.open / 1000 as Time,
         value: kline.algorithms[this.chartService.algorithms[index]].percentProfit
-      }
+      };
     });
 
     this.profitSeries[index].setData(mapped);
+  }
+
+  private setTrendLineSeriesData(kline: Kline) {
+    kline.chartData!.trendlines!.forEach((trendline: TrendLine) => {
+      const start = {
+        time: kline.times.open / 1000 as Time,
+        value: trendline.position === Position.Above ? kline.prices.high : kline.prices.low
+      };
+
+      const endKline = this.currentKlines[trendline.endIndex];
+
+      const end = {
+        time: endKline.times.open / 1000 as Time,
+        value: trendline.position === Position.Above ? endKline.prices.high : endKline.prices.low
+      };
+
+      const data = [start, end];
+      this.trendLineSeries.push(this.chart.addLineSeries({ priceScaleId: 'right' }));
+      this.trendLineSeries.at(-1)!.setData(data);
+
+      this.trendLineSeries.at(-1)!.applyOptions({
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false
+      });
+    });
   }
 
   private applyDarkTheme(chart: IChartApi) {
