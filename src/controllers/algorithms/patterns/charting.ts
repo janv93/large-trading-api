@@ -48,29 +48,31 @@ export default class Charting {
   public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
     for (let i = 0; i < klines.length; i++) {
       const kline = klines[i];
-      if (!kline.chartData?.pivotPoints?.length) break;
+
+      if (!kline.chartData?.pivotPoints?.length) continue;
 
       const ppStart: PivotPoint = kline.chartData.pivotPoints[0];
       const ppStartSide: PivotPointSide = ppStart.side
       const ppStartPrice = ppStartSide === PivotPointSide.High ? kline.prices.high : kline.prices.low;
 
-      if (!klines[i + minLength] || !klines[i + maxLength]) break;
+      if (!klines[i + minLength] || !klines[i + maxLength]) continue;
 
       const klinesInRange: Kline[] = klines.slice(i + minLength, i + maxLength);
 
       klinesInRange.forEach((k: Kline, j: number) => {
+        const endIndex = i + minLength + j;
         const isSameSide = k.chartData?.pivotPoints?.[0].side === ppStartSide;
 
         if (isSameSide) {
           const ppEndPrice = ppStartSide === PivotPointSide.High ? k.prices.high : k.prices.low;
-          const isValid: boolean = this.isValidTrendLine(klines, i, j, ppStartPrice, ppEndPrice, ppStartSide);
+          const isValid: boolean = this.isValidTrendLine(klines, i, endIndex, ppStartPrice, ppEndPrice, ppStartSide);
 
           if (isValid) {
             kline.chartData!.trendlines = kline.chartData!.trendlines || [];
 
             kline.chartData!.trendlines.push({
-              endIndex: j,
-              length: j - i,
+              endIndex: endIndex,
+              length: endIndex - i,
               slope: ppStartPrice < ppEndPrice ? Slope.Ascending : Slope.Descending,
               position: ppStartSide === PivotPointSide.High ? Position.Above : Position.Below
             });
