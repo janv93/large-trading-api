@@ -38,17 +38,35 @@ export interface Algorithms {
 
 export interface KlineChartData {
   pivotPoints?: PivotPoint[];
+  trendlines?: TrendLine[];
 };
 
 export interface PivotPoint {
   left: number;
   right: number;
-  direction: PivotPointDirection;
+  side: PivotPointSide;
 };
 
-export enum PivotPointDirection {
+export enum PivotPointSide {
   High = 'HIGH',
   Low = 'LOW'
+};
+
+export interface TrendLine {
+  endIndex: number;
+  length: number;
+  slope: Slope;
+  position: Position;
+};
+
+export enum Slope {
+  Ascending = 'ASC',
+  Descending = 'DESC'
+};
+
+export enum Position {
+  Above = 'ABOVE',
+  Below = 'BELOW'
 };
 
 export interface Backtest {

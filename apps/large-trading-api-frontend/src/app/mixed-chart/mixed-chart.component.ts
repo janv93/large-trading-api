@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp } from 'lightweight-charts';
-import { BacktestStats, Kline, Klines, PivotPoint, PivotPointDirection, Signal } from '../interfaces';
+import { BacktestStats, Kline, Klines, PivotPoint, PivotPointSide, Signal } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 
@@ -283,9 +283,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     return {
       time: kline.times.open / 1000 as Time,
-      position: pivotPoint.direction === PivotPointDirection.High ? 'aboveBar' : 'belowBar',
+      position: pivotPoint.side === PivotPointSide.High ? 'aboveBar' : 'belowBar',
       color: 'white',
-      shape: pivotPoint.direction === PivotPointDirection.High ? 'arrowDown' : 'arrowUp',
+      shape: pivotPoint.side === PivotPointSide.High ? 'arrowDown' : 'arrowUp',
       text: 'PP'
     };
   }
