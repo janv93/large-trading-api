@@ -44,10 +44,10 @@ export interface KlineChartData {
 export interface PivotPoint {
   left: number;
   right: number;
-  direction: PivotPointDirection;
+  side: PivotPointSide;
 };
 
-export enum PivotPointDirection {
+export enum PivotPointSide {
   High = 'HIGH',
   Low = 'LOW'
 };

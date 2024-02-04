@@ -6,9 +6,10 @@ export default class Trendline extends Base {
   private charting = new Charting();
 
   public setSignals(klines: Kline[], algorithm: string): Kline[] {
-    const klinesWithPP = this.charting.calcPivotPoints(klines, 10, 10);
-    console.log(klinesWithPP);
+    this.charting.addPivotPoints(klines, 10, 10);
+    this.charting.addTrendLines(klines, 70, 100);
+    console.log(klines);
 
-    return klinesWithPP;
+    return klines;
   }
 }

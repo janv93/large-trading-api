@@ -1,7 +1,7 @@
-import { Kline, PivotPoint, PivotPointDirection } from '../../../interfaces';
+import { Kline, PivotPoint, PivotPointSide, Position, Slope } from '../../../interfaces';
 
 export default class Charting {
-  public calcPivotPoints(klines: Kline[], leftLength: number, rightLength: number): Kline[] {
+  public addPivotPoints(klines: Kline[], leftLength: number, rightLength: number): void {
     klines.forEach((kline: Kline, i: number) => {
       const currentHigh = kline.prices.high;
       const currentLow = kline.prices.low;
@@ -29,7 +29,7 @@ export default class Charting {
           kline.chartData.pivotPoints.push({
             left: leftLengthHigh,
             right: rightLengthHigh,
-            direction: PivotPointDirection.High
+            side: PivotPointSide.High
           });
         } else if (isLow) {
           kline.chartData = kline.chartData || {};
@@ -38,12 +38,70 @@ export default class Charting {
           kline.chartData.pivotPoints.push({
             left: leftLenthLow,
             right: rightLengthLow,
-            direction: PivotPointDirection.Low
+            side: PivotPointSide.Low
           });
         }
       }
     });
+  }
 
-    return klines;
+  public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
+    for (let i = 0; i < klines.length; i++) {
+      const kline = klines[i];
+      if (!kline.chartData?.pivotPoints?.length) break;
+
+      const ppStart: PivotPoint = kline.chartData.pivotPoints[0];
+      const ppStartSide: PivotPointSide = ppStart.side
+      const ppStartPrice = ppStartSide === PivotPointSide.High ? kline.prices.high : kline.prices.low;
+
+      if (!klines[i + minLength] || !klines[i + maxLength]) break;
+
+      const klinesInRange: Kline[] = klines.slice(i + minLength, i + maxLength);
+
+      klinesInRange.forEach((k: Kline, j: number) => {
+        const isSameSide = k.chartData?.pivotPoints?.[0].side === ppStartSide;
+
+        if (isSameSide) {
+          const ppEndPrice = ppStartSide === PivotPointSide.High ? k.prices.high : k.prices.low;
+          const isValid: boolean = this.isValidTrendLine(klines, i, j, ppStartPrice, ppEndPrice, ppStartSide);
+
+          if (isValid) {
+            kline.chartData!.trendlines = kline.chartData!.trendlines || [];
+
+            kline.chartData!.trendlines.push({
+              endIndex: j,
+              length: j - i,
+              slope: ppStartPrice < ppEndPrice ? Slope.Ascending : Slope.Descending,
+              position: ppStartSide === PivotPointSide.High ? Position.Above : Position.Below
+            });
+          }
+        }
+      });
+    }
+  }
+
+  private isValidTrendLine(klines: Kline[], startIndex: number, endIndex: number, startPrice: number, endPrice: number, side: PivotPointSide): boolean {
+    const x1: number = startIndex;
+    const x2: number = endIndex;
+    const y1: number = startPrice;
+    const y2: number = endPrice;
+    const m: number = (y2 - y1) / (x2 - x1);
+    const b: number = y1 - m * x1;
+
+    const lineUninterrupted = klines.slice(startIndex, endIndex).every((k: Kline, i: number) => {
+      const x = i;
+
+      if (side === PivotPointSide.High) {
+        const y = k.prices.high;
+        const maxY = m * x + b;
+        return y <= maxY;
+      } else {
+        const y = k.prices.low;
+        const minY = m * x + b;
+        return y >= minY;
+      }
+    });
+
+    return lineUninterrupted;
   }
 }
