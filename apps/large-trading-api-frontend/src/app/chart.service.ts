@@ -8,7 +8,6 @@ import { environment } from '../environments/environment';
 export class ChartService {
   public klinesSubject = new Subject();
   public baseUrl = 'http://127.0.0.1:3000';
-  public twitterUser = environment.twitterUser;
 
   // general
   public exchange = 'alpaca'; // binance, alpaca or kucoin; binance spot: BTCUSDT, kucoin futures: XBTUSDTM, alpaca: SPY

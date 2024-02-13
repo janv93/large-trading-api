@@ -115,8 +115,7 @@ export class HttpService {
         };
       case 'twitterSentiment':
         return {
-          algorithm,
-          user: this.chartService.twitterUser
+          algorithm
         };
       case 'trendline':
         return {
