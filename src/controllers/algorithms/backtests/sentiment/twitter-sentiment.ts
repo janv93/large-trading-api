@@ -12,7 +12,8 @@ export default class TwitterSentiment extends Base {
   private binance = new Binance();
   private backtest = new Backtest();
 
-  public async setSignals(klines: Kline[], algorithm: string, user: string): Promise<Kline[]> {
+  public async setSignals(klines: Kline[], algorithm: string): Promise<Kline[]> {
+    const user: string = process.env.twitter_user as string;
     const initTime = Date.now() - this.timeframeToMilliseconds('1m') * 100 * 1000;  // init with 100k minutes, so that there are no conflicts in future calls
     await this.twitter.getFriendsWithTheirTweets(user, initTime)
     const timelines = await this.twitter.getFriendsWithTheirTweets(user, klines[0].times.open);
