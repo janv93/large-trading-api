@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ChartService } from './chart.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Kline } from './interfaces';
+import { Algorithm, Kline } from './interfaces';
 
 
 @Injectable({
@@ -62,62 +62,62 @@ export class HttpService {
     const algorithm = this.chartService.algorithms[index];
 
     switch (algorithm) {
-      case 'momentum':
+      case Algorithm.Momentum:
         return {
           algorithm,
           streak: this.chartService.momentumStreak[index]
         };
-      case 'macd':
+      case Algorithm.Macd:
         return {
           algorithm,
           fast: 12,
           slow: 26,
           signal: 9
         };
-      case 'rsi':
+      case Algorithm.Rsi:
         return {
           algorithm,
           length: this.chartService.rsiLength[index]
         };
-      case 'ema':
+      case Algorithm.Ema:
         return {
           algorithm,
           periodOpen: this.chartService.emaPeriodOpen[index],
           periodClose: this.chartService.emaPeriodClose[index]
         };
-      case 'emasl':
+      case Algorithm.EmaSl:
         return {
           algorithm,
           period: this.chartService.emaPeriodSL[index]
         };
-      case 'bb':
+      case Algorithm.Bb:
         return {
           algorithm,
           period: this.chartService.bbPeriod[index]
         };
-      case 'deepTrend':
+      case Algorithm.DeepTrend:
         return {
           algorithm
         };
-      case 'dca':
+      case Algorithm.Dca:
         return {
           algorithm
         };
-      case 'meanReversion':
+      case Algorithm.MeanReversion:
         return {
           algorithm,
           threshold: this.chartService.meanReversionThreshold[index],
           profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss[index]
         };
-      case 'flashCrash':
+      case Algorithm.FlashCrash:
         return {
           algorithm
         };
-      case 'twitterSentiment':
+      case Algorithm.TwitterSentiment:
         return {
           algorithm
         };
-      case 'trendline':
+      case Algorithm.TrendLine:
         return {
           algorithm
         }
