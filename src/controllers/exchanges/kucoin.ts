@@ -1,12 +1,12 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import btoa from 'btoa';
-import { Kline } from '../../interfaces';
+import { Kline, Timeframe } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {
-  public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
+  public async getKlines(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
 
     const query = {
@@ -45,7 +45,7 @@ export default class Kucoin extends Base {
   /**
    * get startTime to now timeframes
    */
-  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: string): Promise<Kline[]> {
+  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: Timeframe): Promise<Kline[]> {
     let newStartTime = startTime;
     let newEndTime = endTime;
     let klines: Kline[] = [];
@@ -80,7 +80,7 @@ export default class Kucoin extends Base {
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
+  public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
     const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
     const dbKlines = await database.getKlines(symbol, timeframe);
@@ -186,7 +186,7 @@ export default class Kucoin extends Base {
     return axios.post(url, query, options);
   }
 
-  private mapKlines(symbol: string, timeframe: string, klines: any[]): Kline[] {
+  private mapKlines(symbol: string, timeframe: Timeframe, klines: any[]): Kline[] {
     return klines.map(k => {
       return {
         symbol,

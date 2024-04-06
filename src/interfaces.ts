@@ -1,6 +1,47 @@
+export enum Exchange {
+  Binance = 'BINANCE',
+  Kucoin = 'KUCOIN',
+  Alpaca = 'ALPACA',
+  BTSE = 'BTSE'
+}
+
+export enum Timeframe {
+   _1Minute = '1m',
+   _5Minutes = '5m',
+   _15Minutes = '15m',
+   _30Minutes = '30m',
+   _1Hour = '1h',
+   _2Hours = '2h',
+   _4Hours = '4h',
+   _6Hours = '6h',
+   _8Hours = '8h',
+   _12Hours = '12h',
+   _1Day = '1d',
+   _3Days = '3d',
+   _1Week = '1w',
+   _1Month = '1M',
+   _3Months = '3M',
+   _6Months = '6M'
+}
+
+export enum Algorithm {
+  Momentum = 'MOMENTUM',
+  Macd = 'MACD',
+  Rsi = 'RSI',
+  Ema = 'EMA',
+  EmaSl = 'EMASL',
+  DeepTrend = 'DEEPTREND',
+  Bb = 'BB',
+  FlashCrash = 'FLASHCRASH',
+  Dca = 'DCA',
+  MeanReversion = 'MEANREVERSION',
+  TwitterSentiment = 'TWITTERSENTIMENT',
+  TrendLine = 'TRENDLINE'
+}
+
 export interface Kline {
   symbol: string;
-  timeframe: string;
+  timeframe: Timeframe;
   times: KlineTimes;
   prices: KlinePrices;
   volume: number;

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import axios from 'axios';
-import { AlpacaResponse, Kline } from '../../interfaces';
+import { AlpacaResponse, Kline, Timeframe } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
 
@@ -8,7 +8,7 @@ class Alpaca extends Base {
   private rateLimitPerMinute = 190;
   private requestsSentThisMinute = 0;
 
-  public async getKlines(symbol: string, timeframe: string, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
+  public async getKlines(symbol: string, timeframe: Timeframe, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
 
     const query = {
@@ -51,7 +51,7 @@ class Alpaca extends Base {
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
+  public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
     const dbKlines = await database.getKlines(symbol, timeframe);
 
@@ -86,7 +86,7 @@ class Alpaca extends Base {
   /**
    * get klines from startTime until now
    */
-  private async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
+  private async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Kline[]> {
     let klines: Kline[] = [];
     let pageToken: string | undefined;
 
@@ -140,7 +140,7 @@ class Alpaca extends Base {
     return symbols;
   }
 
-  private mapKlines(symbol: string, timeframe: string, klines: any): Kline[] {
+  private mapKlines(symbol: string, timeframe: Timeframe, klines: any): Kline[] {
     return klines.map(k => {
       return {
         symbol,
@@ -161,7 +161,7 @@ class Alpaca extends Base {
     });
   }
 
-  private mapTimeframe(timeframe: string): string {
+  private mapTimeframe(timeframe: Timeframe): string {
     const amount = timeframe.replace(/\D/g, '');
     const unit = timeframe.replace(/[0-9]/g, '');
 

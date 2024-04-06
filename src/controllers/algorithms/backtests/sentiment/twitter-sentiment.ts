@@ -1,4 +1,4 @@
-import { Kline, Signal, Tweet, TwitterTimeline } from '../../../../interfaces';
+import { Kline, Signal, Timeframe, Tweet, TwitterTimeline } from '../../../../interfaces';
 import Base from '../../../base';
 import Twitter from '../../../other-apis/twitter';
 import OpenAi from '../../../other-apis/openai';
@@ -14,7 +14,7 @@ export default class TwitterSentiment extends Base {
 
   public async setSignals(klines: Kline[], algorithm: string): Promise<Kline[]> {
     const user: string = process.env.twitter_user as string;
-    const initTime = Date.now() - this.timeframeToMilliseconds('1m') * 100 * 1000;  // init with 100k minutes, so that there are no conflicts in future calls
+    const initTime = Date.now() - this.timeframeToMilliseconds(Timeframe._1Minute) * 100 * 1000;  // init with 100k minutes, so that there are no conflicts in future calls
     await this.twitter.getFriendsWithTheirTweets(user, initTime)
     const timelines = await this.twitter.getFriendsWithTheirTweets(user, klines[0].times.open);
     const tweets = await this.getTweetSentiments(timelines, klines);

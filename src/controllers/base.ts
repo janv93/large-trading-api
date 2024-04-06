@@ -1,4 +1,4 @@
-import { Kline, Signal } from '../interfaces';
+import { Kline, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
@@ -24,7 +24,7 @@ export default class Base {
     }
   }
 
-  protected timeframeToMilliseconds(timeframe: string): number {
+  protected timeframeToMilliseconds(timeframe: Timeframe): number {
     const unit = timeframe.slice(-1);
     const value = Number(timeframe.slice(0, timeframe.length - 1));
 
@@ -37,11 +37,11 @@ export default class Base {
     }
   }
 
-  protected timeframeToSeconds(timeframe: string): number {
+  protected timeframeToSeconds(timeframe: Timeframe): number {
     return this.timeframeToMilliseconds(timeframe) / 1000;
   }
 
-  protected timeframeToMinutes(timeframe: string): number {
+  protected timeframeToMinutes(timeframe: Timeframe): number {
     return this.timeframeToSeconds(timeframe) / 60;
   }
 
@@ -144,7 +144,7 @@ export default class Base {
     return `From ${this.timestampToDate(timestampStart)} to ${this.timestampToDate(timestampEnd)}`;
   }
 
-  protected calcStartTime(timeframe: string): number {
+  protected calcStartTime(timeframe: Timeframe): number {
     const unit = timeframe.slice(-1);
     const value = Number(timeframe.slice(0, timeframe.length - 1));
     const ms = this.timeframeToMilliseconds(timeframe);
@@ -162,7 +162,7 @@ export default class Base {
   /**
    * check if last kline in db is too far in the past
    */
-  protected klineOutdated(timeframe: string, lastOpen: number): boolean {
+  protected klineOutdated(timeframe: Timeframe, lastOpen: number): boolean {
     const unit = timeframe.slice(-1);
     const now = Date.now();
     const diff = now - lastOpen;

@@ -1,16 +1,16 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { Kline, Tweet } from '../../interfaces';
+import { Kline, Timeframe, Tweet } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
 
 export default class Binance extends Base {
-  public async getKlines(symbol: string, timeframe: string, endTime?: number, startTime?: number): Promise<Kline[]> {
+  public async getKlines(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
     const query = {
       limit: '1000',
-      interval: timeframe ? timeframe : '1m',
+      interval: timeframe ? timeframe : Timeframe._1Minute,
       symbol: symbol
     };
 
@@ -37,7 +37,7 @@ export default class Binance extends Base {
 
   public async getKlinesUntilNextFullHour(symbol: string, startTime: number): Promise<any> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
-    const interval = '1m';
+    const interval = Timeframe._1Minute;
     const limit = 60 - (new Date(startTime).getMinutes());
 
     const query = {
@@ -56,7 +56,7 @@ export default class Binance extends Base {
   /**
    * get startTime to now timeframes
    */
-  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: string): Promise<Kline[]> {
+  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Kline[]> {
     const klines: Kline[] = [];
     let nextStart = startTime;
     const now = Date.now() - this.timeframeToMilliseconds(timeframe);
@@ -88,7 +88,7 @@ export default class Binance extends Base {
    * initialize database with klines from predefined start date until now
    * allows to cache already requested klines and only request recent klines
    */
-  public async initKlinesDatabase(symbol: string, timeframe: string): Promise<Kline[]> {
+  public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
     const startTime = this.calcStartTime(timeframe);
     const dbKlines = await database.getKlines(symbol, timeframe);
 
@@ -246,7 +246,7 @@ export default class Binance extends Base {
     return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex');
   }
 
-  private mapKlines(symbol: string, timeframe: string, klines: any): Kline[] {
+  private mapKlines(symbol: string, timeframe: Timeframe, klines: any): Kline[] {
     return klines.map(k => {
       return {
         symbol,

@@ -1,5 +1,5 @@
 import Base from './base';
-import { Kline } from '../interfaces';
+import { Algorithm, Exchange, Kline, Timeframe } from '../interfaces';
 import alpaca from './exchanges/alpaca';
 import Binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
@@ -87,7 +87,7 @@ export default class Routes extends Base {
 
     // crypto
     const cryptosSymbols = await this.getMultiCryptos(Number(rank));
-    const cryptos = await this.initKlinesMulti('binance', cryptosSymbols, timeframe);
+    const cryptos = await this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe);
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
     this.reduceTickersToLimit(allTickers);
@@ -120,7 +120,7 @@ export default class Routes extends Base {
 
   public tradeStrategy(req, res): void {
     switch (req.query.strategy) {
-      case 'ema': this.ema.trade(req.query.symbol, req.query.open ? true : false);
+      case Algorithm.Ema: this.ema.trade(req.query.symbol, req.query.open ? true : false);
     }
 
     res.send('Running');
@@ -132,10 +132,10 @@ export default class Routes extends Base {
     let indicatorChart: any[] = [];
 
     switch (indicator) {
-      case 'rsi': indicatorChart = this.indicators.rsi(req.body, Number(length)); break;
-      case 'macd': indicatorChart = this.indicators.macd(req.body, Number(fast), Number(slow), Number(signal)); break;
-      case 'ema': indicatorChart = this.indicators.ema(req.body, Number(period)); break;
-      case 'bb': indicatorChart = this.indicators.bb(req.body, Number(period)); break;
+      case Algorithm.Rsi: indicatorChart = this.indicators.rsi(req.body, Number(length)); break;
+      case Algorithm.Macd: indicatorChart = this.indicators.macd(req.body, Number(fast), Number(slow), Number(signal)); break;
+      case Algorithm.Ema: indicatorChart = this.indicators.ema(req.body, Number(period)); break;
+      case Algorithm.Bb: indicatorChart = this.indicators.bb(req.body, Number(period)); break;
       default: res.send(`Indicator "${indicator}" does not exist`); return;
     }
 
@@ -150,47 +150,47 @@ export default class Routes extends Base {
     });
 
     switch (algorithm) {
-      case 'momentum':
+      case Algorithm.Momentum:
         return this.momentum.setSignals(klines, algorithm, streak);
-      case 'macd':
+      case Algorithm.Macd:
         return this.macd.setSignals(klines, algorithm, fast, slow, signal);
-      case 'rsi':
+      case Algorithm.Rsi:
         return this.rsi.setSignals(klines, algorithm, Number(length));
-      case 'ema':
+      case Algorithm.Ema:
         return this.ema.setSignals(klines, algorithm, Number(periodOpen), Number(periodClose));
-      case 'emasl':
+      case Algorithm.EmaSl:
         return this.ema.setSignalsSL(klines, algorithm, Number(periodClose));
-      case 'bb':
+      case Algorithm.Bb:
         return this.bb.setSignals(klines, algorithm, Number(period));
       // case 'deepTrend':
       //   return this.tensorflow.setSignals(klines, algorithm);
-      case 'flashCrash':
+      case Algorithm.FlashCrash:
         return this.flashCrash.setSignals(klines, algorithm);
-      case 'dca':
+      case Algorithm.Dca:
         return this.dca.setSignals(klines, algorithm);
-      case 'meanReversion':
+      case Algorithm.MeanReversion:
         return this.meanReversion.setSignals(klines, algorithm, Number(threshold), Number(profitBasedTrailingStopLoss));
-      case 'twitterSentiment':
+      case Algorithm.TwitterSentiment:
         return await this.twitterSentiment.setSignals(klines, algorithm);
-      case 'trendline':
+      case Algorithm.TrendLine:
         return await this.trendline.setSignals(klines, algorithm);
       default: throw 'invalid';
     }
   }
 
-  private async initKlines(exchange: string, symbol: string, timeframe: string): Promise<Kline[]> {
+  private async initKlines(exchange: string, symbol: string, timeframe: Timeframe): Promise<Kline[]> {
     let exchangeObj;
 
     switch (exchange) {
-      case 'binance': exchangeObj = this.binance; break;
-      case 'kucoin': exchangeObj = this.kucoin; break;
-      case 'alpaca': exchangeObj = alpaca; break;
+      case Exchange.Binance: exchangeObj = this.binance; break;
+      case Exchange.Kucoin: exchangeObj = this.kucoin; break;
+      case Exchange.Alpaca: exchangeObj = alpaca; break;
     }
 
     return exchangeObj.initKlinesDatabase(symbol, timeframe);
   }
 
-  private async initKlinesMulti(exchange: string, symbols: string[], timeframe: string): Promise<Kline[][]> {
+  private async initKlinesMulti(exchange: string, symbols: string[], timeframe: Timeframe): Promise<Kline[][]> {
     const klines: Kline[][] = await Promise.all(symbols.map(symbol => this.initKlines(exchange, symbol, timeframe)));
     return klines.filter(k => k.length);  // filter out not found symbols
   }

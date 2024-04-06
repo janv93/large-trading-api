@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import Base from '../controllers/base';
-import { Kline, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
+import { Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
 import { KlineSchema, TwitterUserTimelineSchema } from './schemas';
 
 mongoose.set('strictQuery', true);
@@ -53,7 +53,7 @@ class Database extends Base {
     }
   }
 
-  public async getKlines(symbol: string, timeframe: string): Promise<Kline[]> {
+  public async getKlines(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
     try {
       const klines = await this.Kline.find({ symbol, timeframe });
 

@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Kline, Signal } from '../../../../interfaces';
+import { Kline, Signal, Timeframe } from '../../../../interfaces';
 import Base from '../../../base';
 import Binance from '../../../exchanges/binance';
 import Btse from '../../../exchanges/btse';
@@ -173,7 +173,7 @@ export default class Ema extends Base {
     const timeDiffToNextHour = 60 * 60000 - (minutes * 60000 + seconds * 1000);
 
     const leverage = 50;
-    const timeframe = '1h';
+    const timeframe = Timeframe._1Hour;
     const quantityUSD = 2500;
     this.tradingPositionOpen.set(symbol, alreadyOpen);
 
@@ -191,7 +191,7 @@ export default class Ema extends Base {
   /**
    * run trading algorithm in selected interval
    */
-  private async tradeInterval(symbol: string, timeframe: string, quantityUSD: number, leverage: number) {
+  private async tradeInterval(symbol: string, timeframe: Timeframe, quantityUSD: number, leverage: number) {
     const klines = await this.binance.getKlines(symbol, timeframe);
     const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
     klines.splice(-1);  // remove running timeframe
