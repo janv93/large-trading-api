@@ -1,8 +1,8 @@
-import { Kline, Signal } from '../../../../interfaces';
+import { Algorithm, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Momentum extends Base {
-  public setSignals(klines: Kline[], algorithm: string, streak: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, streak: number): Kline[] {
     const colors: number[] = klines.map(kline => this.getKlineColor(kline));
 
     let positionOpen = false;

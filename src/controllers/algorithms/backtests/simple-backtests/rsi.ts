@@ -1,11 +1,11 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Kline, Signal } from '../../../../interfaces';
+import { Algorithm, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Rsi extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: string, length: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, length: number): Kline[] {
     const rsi = this.indicators.rsi(klines, length);
     const klinesWithRsi = klines.slice(-rsi.length);
     this.setSignalsOverBoughtOverSold(klinesWithRsi, algorithm, rsi);
@@ -13,7 +13,7 @@ export default class Rsi extends Base {
     return klines;
   }
 
-  private setSignalsOverBoughtOverSold(klines: Kline[], algorithm: string, rsi: any[]): Kline[] {
+  private setSignalsOverBoughtOverSold(klines: Kline[], algorithm: Algorithm, rsi: any[]): Kline[] {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 
@@ -24,20 +24,20 @@ export default class Rsi extends Base {
 
       if (lastSignal === Signal.CloseBuy) {
         if (r > rsiThresholdHigh) {
-          kline.algorithms[algorithm].signal = Signal.CloseSell;
+          kline.algorithms[algorithm]!.signal = Signal.CloseSell;
           lastSignal = Signal.CloseSell;
         }
       } else if (lastSignal === Signal.CloseSell) {
         if (r < rsiThresholdLow) {
-          kline.algorithms[algorithm].signal = Signal.CloseBuy;
+          kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
           lastSignal = Signal.CloseBuy;
         }
       } else {
         if (r > rsiThresholdHigh) {
-          kline.algorithms[algorithm].signal = Signal.CloseSell;
+          kline.algorithms[algorithm]!.signal = Signal.CloseSell;
           lastSignal = Signal.CloseSell;
         } else if (r < rsiThresholdLow) {
-          kline.algorithms[algorithm].signal = Signal.CloseBuy;
+          kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
           lastSignal = Signal.CloseBuy;
         }
       }

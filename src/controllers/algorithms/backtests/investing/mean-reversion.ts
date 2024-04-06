@@ -1,4 +1,4 @@
-import { Kline, Signal } from '../../../../interfaces';
+import { Algorithm, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 enum Action {
@@ -16,7 +16,7 @@ export default class MeanReversion extends Base {
    * 3. if increase from lowest drop sufficient, close position
    * 4. back to 1.
    */
-  public setSignals(klines: Kline[], algorithm: string, threshold: number, profitBasedTrailingStopLoss: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, threshold: number, profitBasedTrailingStopLoss: number): Kline[] {
     const state = {
       threshold,
       profitBasedTrailingStopLoss,
@@ -96,10 +96,10 @@ export default class MeanReversion extends Base {
     return (!state.isOpen || state.isTrailing) && close > state.peak;
   }
 
-  private buy(kline: Kline, state: any, algorithm: string) {
-    kline.algorithms[algorithm].signal = Signal.Buy;
+  private buy(kline: Kline, state: any, algorithm: Algorithm) {
+    kline.algorithms[algorithm]!.signal = Signal.Buy;
     state.streak++;
-    kline.algorithms[algorithm].amount = Math.pow(2, state.streak - 1); // start at 2^0
+    kline.algorithms[algorithm]!.amount = Math.pow(2, state.streak - 1); // start at 2^0
     state.isOpen = true;
     state.low = kline.prices.close;
   }
@@ -113,8 +113,8 @@ export default class MeanReversion extends Base {
     state.peak = kline.prices.close;
   }
 
-  private close(kline: Kline, state: any, algorithm: string) {
-    kline.algorithms[algorithm].signal = Signal.Close;
+  private close(kline: Kline, state: any, algorithm: Algorithm) {
+    kline.algorithms[algorithm]!.signal = Signal.Close;
     state.streak = 0;
     state.isOpen = false;
     state.isTrailing = false;

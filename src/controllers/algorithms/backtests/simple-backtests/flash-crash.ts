@@ -1,8 +1,8 @@
-import { Kline, Signal } from '../../../../interfaces';
+import { Algorithm, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class FlashCrash extends Base {
-  public setSignals(klines: Kline[], algorithm: string): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
     // WIP: react to rapid price decrease in short time interval
     // idea: use martingale at resistances / max % drop
 
@@ -33,12 +33,12 @@ export default class FlashCrash extends Base {
             const isTpSlReached = this.isTpSlReached(Signal.Buy, percentChangeSinceOpen, stopLoss, takeProfit);
 
             if (isTpSlReached) {
-              kline.algorithms[algorithm].signal = Signal.Close;
+              kline.algorithms[algorithm]!.signal = Signal.Close;
               isOpen = false;
               isFlashCrash = false;
             }
           } else if (isStable) {    // 2. wait for stabilize
-            kline.algorithms[algorithm].signal = Signal.Buy;
+            kline.algorithms[algorithm]!.signal = Signal.Buy;
             openPrice = close;
             isOpen = true;
           }

@@ -1,4 +1,4 @@
-import { Kline, MultiBenchmark } from '../../../../interfaces';
+import { Algorithm, Kline, MultiBenchmark } from '../../../../interfaces';
 import Base from '../../../base';
 import Backtest from '../backtest';
 import MeanReversion from '../investing/mean-reversion';
@@ -8,7 +8,7 @@ export default class MultiTicker extends Base {
   private backtest = new Backtest();
   private meanReversion = new MeanReversion();
 
-  public handleAlgo(tickers: Kline[][], algorithm: string): Kline[][] {
+  public handleAlgo(tickers: Kline[][], algorithm: Algorithm): Kline[][] {
     tickers.forEach((klines: Kline[]) => {
       klines.forEach((kline: Kline) => {
         kline.algorithms[algorithm] = {};
@@ -16,14 +16,14 @@ export default class MultiTicker extends Base {
     });
 
     switch (algorithm) {
-      case 'meanReversion': tickers = this.setSignalsMeanReversionAutoParams(tickers, algorithm); break;
+      case Algorithm.MeanReversion: tickers = this.setSignalsMeanReversionAutoParams(tickers, algorithm); break;
       default: tickers = [];
     }
 
     return tickers;
   }
 
-  private setSignalsMeanReversionAutoParams(tickers: Kline[][], algorithm: string): Kline[][] {
+  private setSignalsMeanReversionAutoParams(tickers: Kline[][], algorithm: Algorithm): Kline[][] {
     let threshold = 0.1;
     const thresholdMax = 0.2;
     const thresholdStep = 0.05;
@@ -78,7 +78,7 @@ export default class MultiTicker extends Base {
     return benchmarks.at(-1)?.tickers ?? [];
   }
 
-  private runMeanReversion(tickers: Kline[][], algorithm: string, threshold: number, profitBasedTrailingStopLoss: number): Kline[][] {
+  private runMeanReversion(tickers: Kline[][], algorithm: Algorithm, threshold: number, profitBasedTrailingStopLoss: number): Kline[][] {
     const clonedTickers = deepmerge({}, tickers);
 
     return clonedTickers.map((currentTicker: Kline[]) => {

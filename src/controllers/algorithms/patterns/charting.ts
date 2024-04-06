@@ -68,9 +68,9 @@ export default class Charting {
           const isValid: boolean = this.isValidTrendLine(klines, i, endIndex, ppStartPrice, ppEndPrice, ppStartSide);
 
           if (isValid) {
-            kline.chartData!.trendlines = kline.chartData!.trendlines || [];
+            kline.chartData!.trendLines = kline.chartData!.trendLines || [];
 
-            kline.chartData!.trendlines.push({
+            kline.chartData!.trendLines.push({
               endIndex: endIndex,
               length: endIndex - i,
               slope: ppStartPrice < ppEndPrice ? Slope.Ascending : Slope.Descending,

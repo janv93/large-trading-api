@@ -1,4 +1,4 @@
-import { Kline, Signal, Timeframe } from '../interfaces';
+import { Algorithm, Kline, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
@@ -188,14 +188,14 @@ export default class Base {
   /**
    * (positive - negative klines) * profit
    */
-  protected calcPerformanceSteadyAscent(klines: Kline[], algorithm: string): number {
+  protected calcPerformanceSteadyAscent(klines: Kline[], algorithm: Algorithm): number {
     let positiveKlines = 0;
     let negativeKlines = 0;
     let lastProfit = 0;
 
     for (const kline of klines) {
-      if (kline.algorithms[algorithm].percentProfit) {
-        lastProfit = kline.algorithms[algorithm].percentProfit;
+      if (kline.algorithms[algorithm]!.percentProfit) {
+        lastProfit = kline.algorithms[algorithm]!.percentProfit!;
 
         if (lastProfit > 0) {
           positiveKlines++;
@@ -219,15 +219,15 @@ export default class Base {
     return total / profits.length;
   }
 
-  protected getLastProfit(klines: Kline[], algorithm: string): number | undefined {
-    return klines.at(-1)?.algorithms[algorithm].percentProfit;
+  protected getLastProfit(klines: Kline[], algorithm: Algorithm): number | undefined {
+    return klines.at(-1)?.algorithms[algorithm]!.percentProfit;
   }
 
-  protected getTotalAmount(klines: Kline[], algorithm: string): number {
-    return klines.reduce((a, c) => a + (c.algorithms[algorithm].amount || 0), 0);
+  protected getTotalAmount(klines: Kline[], algorithm: Algorithm): number {
+    return klines.reduce((a, c) => a + (c.algorithms[algorithm]!.amount || 0), 0);
   }
 
-  protected calcProfitPerAmount(klines: Kline[], algorithm: string): number {
+  protected calcProfitPerAmount(klines: Kline[], algorithm: Algorithm): number {
     const lastProfit = this.getLastProfit(klines, algorithm) || 0;
     const totalAmount = this.getTotalAmount(klines, algorithm);
     return totalAmount === 0 ? 0 : lastProfit / totalAmount;

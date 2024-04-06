@@ -1,11 +1,11 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Kline, Signal } from '../../../../interfaces';
+import { Algorithm, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Bb extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: string, period: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, period: number): Kline[] {
     const bb = this.indicators.bb(klines, period);
     const klinesWithBb = klines.slice(-bb.length);
 
@@ -20,13 +20,13 @@ export default class Bb extends Base {
     klinesWithBb.forEach((kline: Kline, index: number) => {
       if (!positionOpen) {
         if (kline.prices.close < bb[index].bb.lower - bb[index].bb.lower * threshold) {
-          kline.algorithms[algorithm].signal = Signal.CloseBuy;
+          kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
           positionOpen = true;
           takeProfitPrice = kline.prices.close + kline.prices.close * takeProfitFactor;
           stopLossPrice = kline.prices.close - kline.prices.close * stopLossFactor;
           positionOpenType = Signal.CloseBuy;
         } else if (kline.prices.close > bb[index].bb.upper + bb[index].bb.upper * threshold) {
-          kline.algorithms[algorithm].signal = Signal.CloseSell;
+          kline.algorithms[algorithm]!.signal = Signal.CloseSell;
           positionOpen = true;
           takeProfitPrice = kline.prices.close - kline.prices.close * takeProfitFactor;
           stopLossPrice = kline.prices.close + kline.prices.close * stopLossFactor;
@@ -35,12 +35,12 @@ export default class Bb extends Base {
       } else {
         if (positionOpenType === Signal.CloseBuy) {
           if (kline.prices.close > takeProfitPrice || kline.prices.close < stopLossPrice) {
-            kline.algorithms[algorithm].signal = Signal.Close;
+            kline.algorithms[algorithm]!.signal = Signal.Close;
             positionOpen = false;
           }
         } else if (positionOpenType === Signal.CloseSell) {
           if (kline.prices.close < takeProfitPrice || kline.prices.close > stopLossPrice) {
-            kline.algorithms[algorithm].signal = Signal.Close;
+            kline.algorithms[algorithm]!.signal = Signal.Close;
             positionOpen = false;
           }
         }

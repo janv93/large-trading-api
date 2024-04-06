@@ -1,5 +1,5 @@
 import Base from '../../../base';
-import { Kline } from '../../../../interfaces';
+import { Algorithm, Kline } from '../../../../interfaces';
 import Plotly from '../../../other-apis/plotly';
 import Indicators from '../../../technical-analysis/indicators';
 
@@ -15,7 +15,7 @@ export default class Tensorflow extends Base {
     // this.test();
   }
 
-  public setSignals(klines: Kline[], algorithm: string): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
     console.log('Received ' + klines.length + ' klines');
 
     // this.trainModelPriceToPrice(klines);

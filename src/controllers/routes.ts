@@ -16,7 +16,7 @@ import Dca from './algorithms/backtests/investing/dca';
 import MeanReversion from './algorithms/backtests/investing/mean-reversion';
 import TwitterSentiment from './algorithms/backtests/sentiment/twitter-sentiment';
 import MultiTicker from './algorithms/backtests/simple-backtests/multi-ticker';
-import Trendline from './algorithms/backtests/simple-backtests/trendline';
+import TrendLine from './algorithms/backtests/simple-backtests/trend-line';
 import Nasdaq from './other-apis/nasdaq';
 import Coinmarketcap from './other-apis/coinmarketcap';
 
@@ -37,7 +37,7 @@ export default class Routes extends Base {
   private meanReversion = new MeanReversion();
   private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
-  private trendline = new Trendline();
+  private trendLine = new TrendLine();
   private nasdaq = new Nasdaq();
   private cmc = new Coinmarketcap();
 
@@ -112,7 +112,7 @@ export default class Routes extends Base {
     let klines: Kline[] = req.body;
 
     for (let algorithm in (req.body as Kline[])[0].algorithms) {
-      klines = this.backtest.calcBacktestPerformance(klines, algorithm, Number(query.commission), this.stringToBoolean(query.flowingProfit));
+      klines = this.backtest.calcBacktestPerformance(klines, algorithm as Algorithm, Number(query.commission), this.stringToBoolean(query.flowingProfit));
     }
 
     res.send(klines);
@@ -173,7 +173,7 @@ export default class Routes extends Base {
       case Algorithm.TwitterSentiment:
         return await this.twitterSentiment.setSignals(klines, algorithm);
       case Algorithm.TrendLine:
-        return await this.trendline.setSignals(klines, algorithm);
+        return await this.trendLine.setSignals(klines, algorithm);
       default: throw 'invalid';
     }
   }
