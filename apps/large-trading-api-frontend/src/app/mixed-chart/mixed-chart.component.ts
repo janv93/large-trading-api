@@ -234,7 +234,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private setTrendLines() {
     this.trendLineSeries.forEach(series => this.chart.removeSeries(series));
     this.trendLineSeries = [];
-    const filtered = this.currentKlines.filter((kline: Kline) => kline.chartData?.trendlines?.length);
+    const filtered = this.currentKlines.filter((kline: Kline) => kline.chartData?.trendLines?.length);
 
     filtered.forEach((kline: Kline) => {
       this.setTrendLineSeriesData(kline);
@@ -259,7 +259,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
-      if (kline.algorithms[this.chartService.algorithms[0]].signal) {
+      if (kline.algorithms[this.chartService.algorithms[0]]!.signal) {
         markers.push(this.getSignalTemplate(kline));
       }
     });
@@ -277,7 +277,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
     const algo = this.chartService.algorithms[0];
-    const signal: Signal = kline.algorithms[algo].signal;
+    const signal: Signal = kline.algorithms[algo]!.signal!;
     const hasComboSignal = [Signal.CloseBuy, Signal.CloseSell].includes(signal);
     const finalSignal: string = hasComboSignal ? signal.replace('LOSE', '') : signal;
 
@@ -286,7 +286,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       position: ['BUY', 'CBUY'].includes(finalSignal) ? 'belowBar' : 'aboveBar',
       color: ['BUY', 'CBUY'].includes(finalSignal) ? 'lime' : finalSignal === 'CLOSE' ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(finalSignal) ? 'arrowUp' : 'arrowDown',
-      text: finalSignal + (kline.algorithms[algo].amount ? ` ${kline.algorithms[algo].amount}` : '')
+      text: finalSignal + (kline.algorithms[algo]!.amount ? ` ${kline.algorithms[algo]!.amount}` : '')
     };
   }
 
@@ -306,7 +306,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const mapped = this.currentKlines.map((kline: Kline) => {
       return {
         time: kline.times.open / 1000 as Time,
-        value: kline.algorithms[this.chartService.algorithms[index]].percentProfit
+        value: kline.algorithms[this.chartService.algorithms[index]]!.percentProfit
       };
     });
 
@@ -314,17 +314,17 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private setTrendLineSeriesData(kline: Kline) {
-    kline.chartData!.trendlines!.forEach((trendline: TrendLine) => {
+    kline.chartData!.trendLines!.forEach((trendLine: TrendLine) => {
       const start = {
         time: kline.times.open / 1000 as Time,
-        value: trendline.position === Position.Above ? kline.prices.high : kline.prices.low
+        value: trendLine.position === Position.Above ? kline.prices.high : kline.prices.low
       };
 
-      const endKline = this.currentKlines[trendline.endIndex];
+      const endKline = this.currentKlines[trendLine.endIndex];
 
       const end = {
         time: endKline.times.open / 1000 as Time,
-        value: trendline.position === Position.Above ? endKline.prices.high : endKline.prices.low
+        value: trendLine.position === Position.Above ? endKline.prices.high : endKline.prices.low
       };
 
       const data = [start, end];
@@ -397,7 +397,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private calcStats(): void {
-    const tradesCount = this.currentKlines.filter(kline => kline.algorithms[this.chartService.algorithms[0]].signal !== undefined && kline.algorithms[this.chartService.algorithms[0]].signal !== Signal.Close).length;
+    const tradesCount = this.currentKlines.filter(kline => kline.algorithms[this.chartService.algorithms[0]]!.signal !== undefined && kline.algorithms[this.chartService.algorithms[0]]!.signal !== Signal.Close).length;
     const posNeg = this.calcPositiveNegativeTrades();
 
     this.stats = {
@@ -415,8 +415,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     let lastPercentage;
 
     this.currentKlines
-      .filter(kline => kline.algorithms[this.chartService.algorithms[0]].signal)
-      .map(p => p.algorithms[this.chartService.algorithms[0]].percentProfit || 0)
+      .filter(kline => kline.algorithms[this.chartService.algorithms[0]]!.signal)
+      .map(p => p.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0)
       .forEach(percentage => {
         if (lastPercentage !== undefined) {
           const diff = Math.abs(percentage - lastPercentage);
@@ -442,7 +442,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     let high = 0, maxDrawback = 0, highestProfit = 0, lowestProfit = 0;
 
     this.currentKlines.forEach(kline => {
-      const profit = kline.algorithms[this.chartService.algorithms[0]].percentProfit || 0;
+      const profit = kline.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0;
       highestProfit = Math.max(highestProfit, profit);
       lowestProfit = Math.min(lowestProfit, profit);
       high = Math.max(high, profit);
@@ -462,7 +462,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setFinalProfits(): void {
     this.chartService.algorithms.forEach((algorithm, index) => {
-      this.finalProfit.push(this.currentKlines.at(-1)!.algorithms[this.chartService.algorithms[index]].percentProfit || 0);
+      this.finalProfit.push(this.currentKlines.at(-1)!.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0);
     });
   }
 }
