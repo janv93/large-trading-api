@@ -162,7 +162,7 @@ export default class Routes extends Base {
         return this.ema.setSignalsSL(klines, algorithm, Number(periodClose));
       case Algorithm.Bb:
         return this.bb.setSignals(klines, algorithm, Number(period));
-      // case 'deepTrend':
+      //   case Algorithm.DeepTrend:
       //   return this.tensorflow.setSignals(klines, algorithm);
       case Algorithm.FlashCrash:
         return this.flashCrash.setSignals(klines, algorithm);
