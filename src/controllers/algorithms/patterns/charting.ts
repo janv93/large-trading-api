@@ -55,7 +55,7 @@ export default class Charting {
       const ppStart: PivotPoint = kline.chart.pivotPoints[0];
       const ppStartSide: PivotPointSide = ppStart.side
       const ppStartPrice = ppStartSide === PivotPointSide.High ? kline.prices.high : kline.prices.low;
-      const klinesInRange: Kline[] = klines.slice(i + minLength,i + maxLength);
+      const klinesInRange: Kline[] = klines.slice(i + minLength, i + maxLength);
 
       if (!klinesInRange.length) continue;
 
