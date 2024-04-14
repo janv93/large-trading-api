@@ -1,4 +1,5 @@
 import { Kline, PivotPoint, PivotPointSide, Position, Slope } from '../../../interfaces';
+import { LinearFunction } from './linear-function';
 
 export default class Charting {
   public addPivotPoints(klines: Kline[], leftLength: number, rightLength: number): void {
@@ -83,23 +84,26 @@ export default class Charting {
   }
 
   private isValidTrendLine(klines: Kline[], startIndex: number, endIndex: number, startPrice: number, endPrice: number, side: PivotPointSide): boolean {
-    const x1: number = startIndex;
-    const x2: number = endIndex;
-    const y1: number = startPrice;
-    const y2: number = endPrice;
-    const m: number = (y2 - y1) / (x2 - x1);
-    const b: number = y1 - m * x1;
+    const lineFunction = new LinearFunction(startIndex, startPrice, endIndex, endPrice);
+    const uninterrupted = this.isTrendLineUninterrupted(klines, lineFunction, startIndex, endIndex, side);
 
+    if (!uninterrupted) return false;
+
+    return true;
+  }
+
+  // checks if trend line from A to B has no klines in between that cross the line
+  private isTrendLineUninterrupted(klines: Kline[], lineFunction: LinearFunction, startIndex: number, endIndex: number, side: PivotPointSide): boolean {
     const lineUninterrupted = klines.slice(startIndex, endIndex).every((k: Kline, i: number) => {
       const x = startIndex + i;
 
       if (side === PivotPointSide.High) {
         const y = k.prices.high;
-        const maxY = m * x + b;
+        const maxY = lineFunction.m * x + lineFunction.b;
         return y <= maxY;
       } else {
         const y = k.prices.low;
-        const minY = m * x + b;
+        const minY = lineFunction.m * x + lineFunction.b;
         return y >= minY;
       }
     });
