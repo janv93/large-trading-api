@@ -85,15 +85,16 @@ export default class Charting {
 
   private isValidTrendLine(klines: Kline[], startIndex: number, endIndex: number, startPrice: number, endPrice: number, side: PivotPointSide): boolean {
     const lineFunction = new LinearFunction(startIndex, startPrice, endIndex, endPrice);
-    const uninterrupted = this.isTrendLineUninterrupted(klines, lineFunction, startIndex, endIndex, side);
+    const uninterrupted = this.trendLineIsUninterrupted(klines, lineFunction, startIndex, endIndex, side);
+    const length = endIndex - startIndex;
+    const leftBuffer = length * 0.2;  // some buffer to the left of the start of the line
+    const leftBufferUninterrupted = this.trendLineIsUninterrupted(klines, lineFunction, startIndex - leftBuffer, startIndex, side); // make sure line extends uninterrupted to the left beyond the start, similar to how a pivot point must have some left klines to be valid
 
-    if (!uninterrupted) return false;
-
-    return true;
+    return uninterrupted && leftBufferUninterrupted;
   }
 
   // checks if trend line from A to B has no klines in between that cross the line
-  private isTrendLineUninterrupted(klines: Kline[], lineFunction: LinearFunction, startIndex: number, endIndex: number, side: PivotPointSide): boolean {
+  private trendLineIsUninterrupted(klines: Kline[], lineFunction: LinearFunction, startIndex: number, endIndex: number, side: PivotPointSide): boolean {
     const lineUninterrupted = klines.slice(startIndex, endIndex).every((k: Kline, i: number) => {
       const x = startIndex + i;
 
@@ -110,4 +111,6 @@ export default class Charting {
 
     return lineUninterrupted;
   }
+
+  private trendLine
 }
