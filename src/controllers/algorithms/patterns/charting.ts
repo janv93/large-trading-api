@@ -24,19 +24,19 @@ export default class Charting {
         const isLow = leftLenthLow >= leftLength && rightLengthLow >= rightLength;
 
         if (isHigh) {
-          kline.chartData = kline.chartData || {};
-          kline.chartData.pivotPoints = kline.chartData.pivotPoints || [];
+          kline.chart = kline.chart || {};
+          kline.chart.pivotPoints = kline.chart.pivotPoints || [];
 
-          kline.chartData.pivotPoints.push({
+          kline.chart.pivotPoints.push({
             left: leftLengthHigh,
             right: rightLengthHigh,
             side: PivotPointSide.High
           });
         } else if (isLow) {
-          kline.chartData = kline.chartData || {};
-          kline.chartData.pivotPoints = kline.chartData.pivotPoints || [];
+          kline.chart = kline.chart || {};
+          kline.chart.pivotPoints = kline.chart.pivotPoints || [];
 
-          kline.chartData.pivotPoints.push({
+          kline.chart.pivotPoints.push({
             left: leftLenthLow,
             right: rightLengthLow,
             side: PivotPointSide.Low
@@ -50,9 +50,9 @@ export default class Charting {
     for (let i = 0; i < klines.length; i++) {
       const kline = klines[i];
 
-      if (!kline.chartData?.pivotPoints?.length) continue;
+      if (!kline.chart?.pivotPoints?.length) continue;
 
-      const ppStart: PivotPoint = kline.chartData.pivotPoints[0];
+      const ppStart: PivotPoint = kline.chart.pivotPoints[0];
       const ppStartSide: PivotPointSide = ppStart.side
       const ppStartPrice = ppStartSide === PivotPointSide.High ? kline.prices.high : kline.prices.low;
 
@@ -62,16 +62,16 @@ export default class Charting {
 
       klinesInRange.forEach((k: Kline, j: number) => {
         const endIndex = i + minLength + j;
-        const isSameSide = k.chartData?.pivotPoints?.[0].side === ppStartSide;
+        const isSameSide = k.chart?.pivotPoints?.[0].side === ppStartSide;
 
         if (isSameSide) {
           const ppEndPrice = ppStartSide === PivotPointSide.High ? k.prices.high : k.prices.low;
           const isValid: boolean = this.isValidTrendLine(klines, i, endIndex, ppStartPrice, ppEndPrice, ppStartSide);
 
           if (isValid) {
-            kline.chartData!.trendLines = kline.chartData!.trendLines || [];
+            kline.chart!.trendLines = kline.chart!.trendLines || [];
 
-            kline.chartData!.trendLines.push({
+            kline.chart!.trendLines.push({
               endIndex: endIndex,
               length: endIndex - i,
               slope: ppStartPrice < ppEndPrice ? Slope.Ascending : Slope.Descending,
