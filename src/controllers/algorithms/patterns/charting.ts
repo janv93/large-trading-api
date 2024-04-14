@@ -111,6 +111,4 @@ export default class Charting {
 
     return lineUninterrupted;
   }
-
-  private trendLine
 }
