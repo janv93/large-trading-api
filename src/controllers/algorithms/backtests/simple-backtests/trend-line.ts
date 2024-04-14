@@ -7,7 +7,7 @@ export default class TrendLine extends Base {
 
   public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
     this.charting.addPivotPoints(klines, 10, 10);
-    this.charting.addTrendLines(klines, 70, 150);
+    this.charting.addTrendLines(klines, 20, 500);
     //console.log(klines);
 
     klines.forEach((kline, i) => {

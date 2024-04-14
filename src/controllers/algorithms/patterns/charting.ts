@@ -50,15 +50,14 @@ export default class Charting {
     for (let i = 0; i < klines.length; i++) {
       const kline = klines[i];
 
-      if (!kline.chart?.pivotPoints?.length) continue;
+      if (!kline.chart?.pivotPoints?.length) continue;  // if no pivot points, skip kline
 
       const ppStart: PivotPoint = kline.chart.pivotPoints[0];
       const ppStartSide: PivotPointSide = ppStart.side
       const ppStartPrice = ppStartSide === PivotPointSide.High ? kline.prices.high : kline.prices.low;
+      const klinesInRange: Kline[] = klines.slice(i + minLength,i + maxLength);
 
-      if (!klines[i + minLength] || !klines[i + maxLength]) continue;
-
-      const klinesInRange: Kline[] = klines.slice(i + minLength, i + maxLength);
+      if (!klinesInRange.length) continue;
 
       klinesInRange.forEach((k: Kline, j: number) => {
         const endIndex = i + minLength + j;
@@ -66,9 +65,9 @@ export default class Charting {
 
         if (isSameSide) {
           const ppEndPrice = ppStartSide === PivotPointSide.High ? k.prices.high : k.prices.low;
-          const isValid: boolean = this.isValidTrendLine(klines, i, endIndex, ppStartPrice, ppEndPrice, ppStartSide);
+          const valid: boolean = this.isValidTrendLine(klines, i, endIndex, ppStartPrice, ppEndPrice, ppStartSide);
 
-          if (isValid) {
+          if (valid) {
             kline.chart!.trendLines = kline.chart!.trendLines || [];
 
             kline.chart!.trendLines.push({
@@ -89,13 +88,12 @@ export default class Charting {
     const length = endIndex - startIndex;
     const leftBuffer = length * 0.2;  // some buffer to the left of the start of the line
     const leftBufferUninterrupted = this.trendLineIsUninterrupted(klines, lineFunction, startIndex - leftBuffer, startIndex, side); // make sure line extends uninterrupted to the left beyond the start, similar to how a pivot point must have some left klines to be valid
-
     return uninterrupted && leftBufferUninterrupted;
   }
 
   // checks if trend line from A to B has no klines in between that cross the line
   private trendLineIsUninterrupted(klines: Kline[], lineFunction: LinearFunction, startIndex: number, endIndex: number, side: PivotPointSide): boolean {
-    const lineUninterrupted = klines.slice(startIndex, endIndex).every((k: Kline, i: number) => {
+    const lineUninterrupted = klines.slice(startIndex + 1, endIndex).every((k: Kline, i: number) => {
       const x = startIndex + i;
 
       if (side === PivotPointSide.High) {
