@@ -48,7 +48,7 @@ export interface Kline {
   algorithms: Partial<Record<Algorithm, Backtest>>;
   numberOfTrades?: number;
   tweets?: Tweet[];
-  chartData?: KlineChartData;
+  chart?: KlineChart;
 };
 
 export interface KlineTimes {
@@ -69,7 +69,7 @@ export interface Backtest {
   amount?: number;
 };
 
-export interface KlineChartData {
+export interface KlineChart {
   pivotPoints?: PivotPoint[];
   trendLines?: TrendLine[];
 };

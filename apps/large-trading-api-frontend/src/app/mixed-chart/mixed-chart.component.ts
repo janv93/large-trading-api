@@ -222,7 +222,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
-      if (kline.chartData?.pivotPoints) {
+      if (kline.chart?.pivotPoints) {
         markers.push(this.getPivotPointTemplate(kline));
       }
     });
@@ -234,7 +234,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private setTrendLines() {
     this.trendLineSeries.forEach(series => this.chart.removeSeries(series));
     this.trendLineSeries = [];
-    const filtered = this.currentKlines.filter((kline: Kline) => kline.chartData?.trendLines?.length);
+    const filtered = this.currentKlines.filter((kline: Kline) => kline.chart?.trendLines?.length);
 
     filtered.forEach((kline: Kline) => {
       this.setTrendLineSeriesData(kline);
@@ -291,7 +291,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private getPivotPointTemplate(kline: Kline): SeriesMarker<Time> {
-    const pivotPoint: PivotPoint = kline.chartData?.pivotPoints![0]!;
+    const pivotPoint: PivotPoint = kline.chart?.pivotPoints![0]!;
 
     return {
       time: kline.times.open / 1000 as Time,
@@ -314,7 +314,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private setTrendLineSeriesData(kline: Kline) {
-    kline.chartData!.trendLines!.forEach((trendLine: TrendLine) => {
+    kline.chart!.trendLines!.forEach((trendLine: TrendLine) => {
       const start = {
         time: kline.times.open / 1000 as Time,
         value: trendLine.position === Position.Above ? kline.prices.high : kline.prices.low
