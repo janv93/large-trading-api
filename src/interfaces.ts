@@ -1,3 +1,5 @@
+import { LinearFunction } from './controllers/algorithms/patterns/linear-function';
+
 export enum Exchange {
   Binance = 'BINANCE',
   Kucoin = 'KUCOIN',
@@ -66,6 +68,7 @@ export interface KlinePrices {
 export interface KlineChart {
   pivotPoints?: PivotPoint[];
   trendLines?: TrendLine[];
+  trendLineBreakthroughs?: TrendLine[];  // trend lines that break through kline
 }
 
 export interface PivotPoint {
@@ -80,6 +83,8 @@ export enum PivotPointSide {
 }
 
 export interface TrendLine {
+  function: LinearFunction;
+  startIndex: number;
   endIndex: number;
   length: number;
   slope: Slope;

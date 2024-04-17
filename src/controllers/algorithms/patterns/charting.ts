@@ -46,6 +46,7 @@ export default class Charting {
     });
   }
 
+  // add trend lines to klines that connect uninterrupted pivot points
   public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
     for (let i = 0; i < klines.length; i++) {
       const kline = klines[i];
@@ -65,12 +66,15 @@ export default class Charting {
 
         if (isSameSide) {
           const ppEndPrice = ppStartSide === PivotPointSide.High ? k.prices.high : k.prices.low;
-          const valid: boolean = this.isValidTrendLine(klines, i, endIndex, ppStartPrice, ppEndPrice, ppStartSide);
+          const lineFunction: LinearFunction = new LinearFunction(i, ppStartPrice, endIndex, ppEndPrice);
+          const valid: boolean = this.isValidTrendLine(klines, i, endIndex, ppStartPrice, ppEndPrice, ppStartSide, lineFunction);
 
           if (valid) {
             kline.chart!.trendLines = kline.chart!.trendLines || [];
 
             kline.chart!.trendLines.push({
+              function: lineFunction,
+              startIndex: i,
               endIndex: endIndex,
               length: endIndex - i,
               slope: ppStartPrice < ppEndPrice ? Slope.Ascending : Slope.Descending,
@@ -82,8 +86,14 @@ export default class Charting {
     }
   }
 
-  private isValidTrendLine(klines: Kline[], startIndex: number, endIndex: number, startPrice: number, endPrice: number, side: PivotPointSide): boolean {
-    const lineFunction = new LinearFunction(startIndex, startPrice, endIndex, endPrice);
+  // extends trend lines until they break through the price, marking a pivotal point
+  public addTrendLineBreakthroughPoints(klines: Kline[]) {
+    klines.forEach((kline: Kline) => {
+      // WIP
+    });
+  }
+
+  private isValidTrendLine(klines: Kline[], startIndex: number, endIndex: number, startPrice: number, endPrice: number, side: PivotPointSide, lineFunction: LinearFunction): boolean {
     const uninterrupted = this.trendLineIsUninterrupted(klines, lineFunction, startIndex, endIndex, side);
     const length = endIndex - startIndex;
     const leftBuffer = length * 0.2;  // some buffer to the left of the start of the line
