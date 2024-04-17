@@ -88,7 +88,10 @@ export default class Charting {
     const length = endIndex - startIndex;
     const leftBuffer = length * 0.2;  // some buffer to the left of the start of the line
     const leftBufferUninterrupted = this.trendLineIsUninterrupted(klines, lineFunction, startIndex - leftBuffer, startIndex, side); // make sure line extends uninterrupted to the left beyond the start, similar to how a pivot point must have some left klines to be valid
-    return uninterrupted && leftBufferUninterrupted;
+    const slope = startPrice < endPrice ? Slope.Ascending : Slope.Descending;
+    const position = side === PivotPointSide.High ? Position.Above : Position.Below
+    const againstTrend = (slope === Slope.Ascending && position === Position.Below) || (slope === Slope.Descending && position === Position.Above); // if trend line is on opposite side of trend (e.g. trend is up, line is below price)
+    return uninterrupted && leftBufferUninterrupted && againstTrend;
   }
 
   // checks if trend line from A to B has no klines in between that cross the line
