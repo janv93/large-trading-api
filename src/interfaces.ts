@@ -86,6 +86,7 @@ export interface TrendLine {
   function: LinearFunction;
   startIndex: number;
   endIndex: number;
+  breakThroughIndex?: number;
   length: number;
   slope: Slope;
   position: Position;

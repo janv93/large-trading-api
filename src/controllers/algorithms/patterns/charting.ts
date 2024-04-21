@@ -1,4 +1,4 @@
-import { Kline, PivotPoint, PivotPointSide, Position, Slope } from '../../../interfaces';
+import { Kline, PivotPoint, PivotPointSide, Position, Slope, TrendLine } from '../../../interfaces';
 import { LinearFunction } from './linear-function';
 
 export default class Charting {
@@ -47,7 +47,7 @@ export default class Charting {
   }
 
   // add trend lines to klines that connect uninterrupted pivot points
-  public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
+  public addTrendLinesFromPivotPoints(klines: Kline[], minLength: number, maxLength: number): void {
     for (let i = 0; i < klines.length; i++) {
       const kline = klines[i];
 
@@ -87,10 +87,53 @@ export default class Charting {
   }
 
   // extends trend lines until they break through the price, marking a pivotal point
-  public addTrendLineBreakthroughPoints(klines: Kline[]) {
+  public addTrendLineBreakthroughs(klines: Kline[]) {
     klines.forEach((kline: Kline) => {
-      // WIP
+      const trendLines: TrendLine[] | undefined = kline.chart?.trendLines;
+
+      if (trendLines?.length) {
+        trendLines.forEach((trendLine: TrendLine) => {
+          this.extendTrendLineUntilBreakthrough(klines, trendLine);
+        });
+      }
     });
+  }
+
+  private extendTrendLineUntilBreakthrough(klines: Kline[], trendLine: TrendLine) {
+    const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
+    const position: Position = trendLine.position;
+    const startIndex: number = trendLine.endIndex + 1;
+    const maxIndex: number = trendLine.endIndex + trendLine.length * 2; // the max distance of the end of the trend line to the breakthrough point, after that it is considered too far away to belong to the line
+    const candidateKlines: Kline[] = klines.slice(startIndex, maxIndex);
+    let breakThroughIndex = -1;
+
+    if (position === Position.Above) {
+      breakThroughIndex = candidateKlines.findIndex((kline: Kline, i: number) => {
+        const currentLinePrice = lineFunction.getY(startIndex + i);
+        const high = kline.prices.high;
+        return high > currentLinePrice;
+      });
+    } else if (position === Position.Below) {
+      breakThroughIndex = candidateKlines.findIndex((kline: Kline, i: number) => {
+        const currentLinePrice = lineFunction.getY(startIndex + i);
+        const low = kline.prices.low;
+        return low < currentLinePrice;
+      });
+    }
+
+    const breakThroughKline: Kline | undefined = candidateKlines[breakThroughIndex!];
+
+    if (breakThroughIndex > -1) {
+      // initialize properties if not yet defined
+      breakThroughKline.chart = breakThroughKline.chart || {};
+      breakThroughKline.chart!.trendLineBreakthroughs = breakThroughKline.chart?.trendLineBreakthroughs || [];
+
+      // add the trend line which is breaking through the kline to this kline. this reference may then later be used to get the trend line for backtesting purposes
+      breakThroughKline.chart.trendLineBreakthroughs.push(trendLine);
+
+      // equally add reference to breakthough point to trend line
+      trendLine.breakThroughIndex = trendLine.endIndex + 1 + breakThroughIndex;
+    }
   }
 
   private isValidTrendLine(klines: Kline[], startIndex: number, endIndex: number, startPrice: number, endPrice: number, side: PivotPointSide, lineFunction: LinearFunction): boolean {
@@ -98,8 +141,10 @@ export default class Charting {
     const length = endIndex - startIndex;
     const leftBuffer = length * 0.2;  // some buffer to the left of the start of the line
     const leftBufferUninterrupted = this.trendLineIsUninterrupted(klines, lineFunction, startIndex - leftBuffer, startIndex, side); // make sure line extends uninterrupted to the left beyond the start, similar to how a pivot point must have some left klines to be valid
+    const rightBuffer = length * 0.1; // same logic to the right
+    const rightBufferUninterrupted = this.trendLineIsUninterrupted(klines, lineFunction, endIndex, endIndex + rightBuffer, side);
     const againstTrend = this.trendLineIsAgainstTrend(startPrice, endPrice, side);
-    return uninterrupted && leftBufferUninterrupted && againstTrend;
+    return uninterrupted && leftBufferUninterrupted && rightBufferUninterrupted && againstTrend;
   }
 
   // checks if trend line from A to B has no klines in between that cross the line
