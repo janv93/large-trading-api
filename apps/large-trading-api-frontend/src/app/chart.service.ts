@@ -10,14 +10,14 @@ export class ChartService {
   public baseUrl = 'http://127.0.0.1:3000';
 
   // general
-  public exchange = Exchange.Alpaca;
-  public symbol = 'SPY';
+  public exchange = Exchange.Binance;
+  public symbol = 'BTCUSDT';
   public timeframe = Timeframe._1Day;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;
 
   // algorithm, [0] is primary, [1] is optional second algorithm
-  public algorithms = [Algorithm.TrendLine, Algorithm.Dca]; // if second algorithm is set, will draw a second profit line for comparison
+  public algorithms = [Algorithm.TrendLine]; // if second algorithm is set, will draw a second profit line for comparison
   public rsiLength = [7, 7];
   public emaPeriodOpen = [80, 80];
   public emaPeriodClose = [80, 80];
