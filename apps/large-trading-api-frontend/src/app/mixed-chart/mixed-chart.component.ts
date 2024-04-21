@@ -348,7 +348,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.trendLineSeries.at(-1)!.applyOptions({
         priceLineVisible: false,
         lastValueVisible: false,
-        crosshairMarkerVisible: false
+        crosshairMarkerVisible: false,
+        lineWidth: 1
       });
     });
   }
