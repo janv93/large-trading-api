@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
-import { environment } from '../environments/environment';
 import { Algorithm, Exchange, Timeframe } from './interfaces';
 
 @Injectable({
