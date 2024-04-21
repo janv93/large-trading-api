@@ -1,3 +1,5 @@
+import { LinearFunction } from './linear-function';
+
 export enum Exchange {
   Binance = 'BINANCE',
   Kucoin = 'KUCOIN',
@@ -72,6 +74,7 @@ export interface Backtest {
 export interface KlineChart {
   pivotPoints?: PivotPoint[];
   trendLines?: TrendLine[];
+  trendLineBreakthroughs?: TrendLine[];  // trend lines that break through kline
 };
 
 export interface PivotPoint {
@@ -86,7 +89,10 @@ export enum PivotPointSide {
 };
 
 export interface TrendLine {
+  function: LinearFunction;
+  startIndex: number;
   endIndex: number;
+  breakThroughIndex?: number;
   length: number;
   slope: Slope;
   position: Position;

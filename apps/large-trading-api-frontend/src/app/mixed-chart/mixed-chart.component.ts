@@ -3,6 +3,7 @@ import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEve
 import { BacktestStats, Kline, Klines, PivotPoint, PivotPointSide, Position, Signal, TrendLine } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
+import { LinearFunction } from '../linear-function';
 
 @Component({
   selector: 'mixed-chart',
@@ -214,7 +215,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawChartData() {
-    this.setPivotPointsMarkers();
+    // this.setPivotPointsMarkers();
     this.setTrendLines();
   }
 
@@ -320,12 +321,25 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         value: trendLine.position === Position.Above ? kline.prices.high : kline.prices.low
       };
 
-      const endKline = this.currentKlines[trendLine.endIndex];
+      const endKline: Kline = this.currentKlines[trendLine.endIndex];
 
-      const end = {
-        time: endKline.times.open / 1000 as Time,
-        value: trendLine.position === Position.Above ? endKline.prices.high : endKline.prices.low
-      };
+      let end;
+
+      if (trendLine.breakThroughIndex) {
+        const breakthroughKline: Kline = this.currentKlines[trendLine.breakThroughIndex];
+        const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
+        const value = lineFunction.getY(trendLine.breakThroughIndex);
+
+        end = {
+          time: breakthroughKline.times.open / 1000 as Time,
+          value
+        };
+      } else {  // no breakthrough
+        end = {
+          time: endKline.times.open / 1000 as Time,
+          value: trendLine.position === Position.Above ? endKline.prices.high : endKline.prices.low
+        };
+      }
 
       const data = [start, end];
       this.trendLineSeries.push(this.chart.addLineSeries({ priceScaleId: 'right' }));
