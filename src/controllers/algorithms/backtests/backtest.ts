@@ -16,12 +16,12 @@ export default class Backtest extends Base {
     klines.forEach((kline: Kline, i: number) => {
       if (lastSignalKline) {
         if (flowingProfit) {  // recalculate profit every kline
-          const calcPriceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline, klines[i - 1]);
-          percentProfit += calcPriceChangeInPercent * currentAmount;
+          const priceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline, klines[i - 1]);
+          percentProfit += priceChangeInPercent * currentAmount;
         } else {  // recalculate profit only on signal
           if (kline.algorithms[algorithm]!.signal && lastSignalKline.algorithms[algorithm]!.signal !== Signal.Close) {
-            const calcPriceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline);
-            percentProfit += calcPriceChangeInPercent * currentAmount;
+            const priceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline);
+            percentProfit += priceChangeInPercent * currentAmount;
           }
         }
       }
