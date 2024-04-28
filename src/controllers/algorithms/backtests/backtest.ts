@@ -16,12 +16,12 @@ export default class Backtest extends Base {
     klines.forEach((kline: Kline, i: number) => {
       if (lastSignalKline) {
         if (flowingProfit) {  // recalculate profit every kline
-          const profitChange = this.calcProfitChange(kline, klines[i - 1], lastSignalKline);
-          percentProfit += profitChange * currentAmount;
+          const calcPriceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline, klines[i - 1]);
+          percentProfit += calcPriceChangeInPercent * currentAmount;
         } else {  // recalculate profit only on signal
           if (kline.algorithms[algorithm]!.signal && lastSignalKline.algorithms[algorithm]!.signal !== Signal.Close) {
-            const profitChange = this.calcProfitChange(kline, lastSignalKline);
-            percentProfit += profitChange * currentAmount;
+            const calcPriceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline);
+            percentProfit += calcPriceChangeInPercent * currentAmount;
           }
         }
       }
@@ -38,9 +38,17 @@ export default class Backtest extends Base {
     return klines;
   }
 
-  private calcProfitChange(kline: Kline, lastKline: Kline, lastSignalKline?: Kline): number {
-    const diff = kline.prices.close - lastKline.prices.close;
-    return diff / (lastSignalKline ?? lastKline).prices.close * 100;
+  /**
+   * calculate price change in percent
+   * 1. if flowing profit, calc between current and last price, relative to price at last signal
+   * 2. if no flowing profit, calc between current and price at last signal
+   * @param kline - current kline (i)
+   * @param lastSignalKline - last kline with signal (i - n)
+   * @param lastKline - last kline (i - 1)
+   */
+  private calcPriceChangeInPercent(kline: Kline, lastSignalKline: Kline, lastKline?: Kline): number {
+    const diff = kline.prices.close - (lastKline ?? lastSignalKline).prices.close;
+    return diff / (lastSignalKline).prices.close * 100;
   }
 
   private calcCommission(kline: Kline, algorithm: Algorithm, baseCommission: number, currentAmount: number): number {

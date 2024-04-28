@@ -106,6 +106,8 @@ export interface Backtest {
   signal?: Signal;
   percentProfit?: number;
   amount?: number;
+  entryPrice?: number;
+  exitPrice?: number;
 }
 
 export enum Signal {
