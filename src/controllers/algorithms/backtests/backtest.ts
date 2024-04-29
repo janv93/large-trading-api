@@ -16,11 +16,11 @@ export default class Backtest extends Base {
     klines.forEach((kline: Kline, i: number) => {
       if (lastSignalKline) {
         if (flowingProfit) {  // recalculate profit every kline
-          const priceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline, klines[i - 1]);
+          const priceChangeInPercent = this.calcPriceChangeInPercent(algorithm, kline, lastSignalKline, klines[i - 1]);
           percentProfit += priceChangeInPercent * currentAmount;
         } else {  // recalculate profit only on signal
-          if (kline.algorithms[algorithm]!.signal && lastSignalKline.algorithms[algorithm]!.signal !== Signal.Close) {
-            const priceChangeInPercent = this.calcPriceChangeInPercent(kline, lastSignalKline);
+          if (kline.algorithms[algorithm]!.signal && lastSignalKline.algorithms[algorithm]!.signal !== Signal.Close) {  // e.g. current signal = close, last signal = buy
+            const priceChangeInPercent = this.calcPriceChangeInPercent(algorithm, kline, lastSignalKline);
             percentProfit += priceChangeInPercent * currentAmount;
           }
         }
@@ -46,9 +46,9 @@ export default class Backtest extends Base {
    * @param lastSignalKline - last kline with signal (i - n)
    * @param lastKline - last kline (i - 1)
    */
-  private calcPriceChangeInPercent(kline: Kline, lastSignalKline: Kline, lastKline?: Kline): number {
-    const diff = kline.prices.close - (lastKline ?? lastSignalKline).prices.close;
-    return diff / (lastSignalKline).prices.close * 100;
+  private calcPriceChangeInPercent(algorithm: Algorithm, currentKline: Kline, lastSignalKline: Kline, lastKline?: Kline): number {
+    const diff = this.signalOrClosePrice(currentKline, algorithm) - this.signalOrClosePrice(lastKline ?? lastSignalKline, algorithm);
+    return diff / this.signalOrClosePrice(lastSignalKline, algorithm) * 100;
   }
 
   private calcCommission(kline: Kline, algorithm: Algorithm, baseCommission: number, currentAmount: number): number {
@@ -73,5 +73,9 @@ export default class Backtest extends Base {
       case Signal.Sell: return currentAmount - amount;
       default: return NaN;
     }
+  }
+
+  private signalOrClosePrice(kline: Kline, algorithm: Algorithm): number {
+    return kline.algorithms[algorithm]?.signalPrice ?? kline.prices.close;
   }
 }
