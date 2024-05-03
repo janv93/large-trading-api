@@ -41,6 +41,29 @@ export enum Algorithm {
   TrendLine = 'TRENDLINE'
 }
 
+export enum PivotPointSide {
+  High = 'HIGH',
+  Low = 'LOW'
+}
+
+export enum Signal {
+  Buy = 'BUY',
+  CloseBuy = 'CLOSEBUY',  // a close followed by a buy signal
+  Sell = 'SELL',
+  CloseSell = 'CLOSESELL',
+  Close = 'CLOSE'
+}
+
+export enum Slope {
+  Ascending = 'ASC',
+  Descending = 'DESC'
+}
+
+export enum Position {
+  Above = 'ABOVE',
+  Below = 'BELOW'
+}
+
 export interface Kline {
   symbol: string;
   timeframe: Timeframe;
@@ -77,11 +100,6 @@ export interface PivotPoint {
   side: PivotPointSide;
 }
 
-export enum PivotPointSide {
-  High = 'HIGH',
-  Low = 'LOW'
-}
-
 export interface TrendLine {
   function: LinearFunction;
   startIndex: number;
@@ -92,29 +110,17 @@ export interface TrendLine {
   position: Position;
 }
 
-export enum Slope {
-  Ascending = 'ASC',
-  Descending = 'DESC'
-}
-
-export enum Position {
-  Above = 'ABOVE',
-  Below = 'BELOW'
-}
-
 export interface BacktestData {
   signal?: Signal;
   percentProfit?: number;
   amount?: number;
   signalPrice?: number;
+  positionCloseTrigger?: PositionCloseTrigger;
 }
 
-export enum Signal {
-  Buy = 'BUY',
-  CloseBuy = 'CLOSEBUY',  // a close followed by a buy signal
-  Sell = 'SELL',
-  CloseSell = 'CLOSESELL',
-  Close = 'CLOSE'
+export interface PositionCloseTrigger {
+  stopLoss?: number;
+  takeProfit?: number;
 }
 
 export interface MultiBenchmark {
