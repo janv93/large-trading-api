@@ -104,9 +104,9 @@ export default class Base {
 
       openPositions = openPositions.filter((openKline: Kline) => {
         const openBacktest: Backtest = openKline.algorithms[algorithm]!;
-        const tpSlReached: boolean = this.isTpSlReachedKlines(openKline, currentKline, algorithm, stopLoss, takeProfit);
+        const tpSlPrice: number | null = this.getTpSlTriggerPrice(openKline, currentKline, algorithm, stopLoss, takeProfit);
 
-        if (tpSlReached) {
+        if (tpSlPrice) {
           // add negated signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
           const newSignalAndAmount = this.combineSignals(this.negateSignal(openBacktest.signal!), currentBacktest?.signal, openBacktest.amount, currentBacktest?.amount);
 
@@ -198,6 +198,7 @@ export default class Base {
   }
 
   /**
+   * TODO: this is an old function and probably can be replaced
    * takes the difference priceDiffPercent between the open and current price, stopLoss and takeProfit in percent and returns if tp or sl are reached
    */
   protected isTpSlReached(entrySignal: Signal, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
@@ -216,17 +217,19 @@ export default class Base {
   }
 
   /**
-   * takes start and end kline and calculates if the price diff reaches tp/sl
+   * takes start and end kline and calculates if the price diff reaches tp/sl, then returns the trigger price
    */
-  protected isTpSlReachedKlines(openKline: Kline, currentKline: Kline, algorithm: Algorithm, stopLoss: number, takeProfit: number): boolean {
+  protected getTpSlTriggerPrice(openKline: Kline, currentKline: Kline, algorithm: Algorithm, stopLoss: number, takeProfit: number): number | null {
     const signalPrice: number = this.signalOrClosePrice(openKline, algorithm);
-    const currentHigh: number = currentKline.prices.high;
     const currentLow: number = currentKline.prices.low;
-    const highDiff: number = (currentHigh - signalPrice) / signalPrice;
-    const lowDiff: number = (currentLow - signalPrice) / signalPrice;
-    const slReached: boolean = lowDiff >= stopLoss;
-    const tpReached: boolean = highDiff >= takeProfit;
-    return slReached || tpReached;
+    const currentHigh: number = currentKline.prices.high;
+    const slPrice: number = signalPrice - stopLoss * signalPrice;
+    const tpPrice: number = signalPrice + takeProfit * signalPrice;
+    const slReached: boolean = currentLow <= slPrice;
+    const tpReached: boolean = currentHigh >= tpPrice;
+    if (slReached) return slPrice;
+    if (tpReached) return tpPrice;
+    return null;  // no tp/sl reached
   }
 
   protected invertSignal(signal: Signal | null): Signal | null {
@@ -359,4 +362,11 @@ export default class Base {
   protected signalOrClosePrice(kline: Kline, algorithm: Algorithm): number {
     return kline.algorithms[algorithm]?.signalPrice ?? kline.prices.close;
   }
+
+  // fit price between kline low and high
+  protected fitPriceInKlinePriceRange(kline: Kline, price: number) {
+    const { low, high } = kline.prices;
+    return Math.min(Math.max(price, low), high);
+  }
+
 }
