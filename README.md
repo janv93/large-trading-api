@@ -20,12 +20,12 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - [x] Sentiment analysis of popular Twitter traders using Twitter API and OpenAI API
 - [x] Backtesting multiple tickers at once
 - [x] Comparing algorithm profit curves
+- [x] Charting tools, e.g. backtests that test trend lines
 
 ### Todo:
 
 - [ ] AI: Transformer as improvement to standard NNs (position encoding time steps)
 - [ ] Algorithm that builds strategies using multiple indicators and figuring out which combined indicators work the best
-- [ ] Charting tools, e.g. backtests that test trend lines
 
 ## How to use backtests:
 
