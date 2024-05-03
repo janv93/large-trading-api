@@ -114,11 +114,7 @@ export default class Base {
         if (tpSlTriggerPrice) {
           // add inverse signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
           const invertedPositionBacktest: BacktestData = { signal: this.invertSignal(openBacktest.signal!)!, amount: openBacktest.amount!, signalPrice: tpSlTriggerPrice };
-          console.log(currentBacktest, invertedPositionBacktest)
           const combinedBacktest = this.combineBacktestData(currentBacktest, invertedPositionBacktest);
-          console.log(combinedBacktest)
-          console.log(new Date(currentKline.times.open))
-          console.log()
           currentKline.algorithms[algorithm] = combinedBacktest;
           return false; // remove position from openPositions if tp/sl is reached
         }
