@@ -116,7 +116,7 @@ export default class Base {
           const invertedPositionBacktest: BacktestData = { signal: this.invertSignal(openBacktest.signal!)!, amount: openBacktest.amount!, signalPrice: tpSlTriggerPrice };
           const combinedBacktest = this.combineBacktestData(currentBacktest, invertedPositionBacktest);
           currentKline.algorithms[algorithm] = combinedBacktest;
-          currentBacktest = combinedBacktest; // update current backtest for next iteration. in js, when a = b and b = c, then a != c
+          currentBacktest = combinedBacktest; // update current backtest for next iteration. in js, when a = b and b = c, then a != c, so have to a = c
           return false; // remove position from openPositions if tp/sl is reached
         }
 
