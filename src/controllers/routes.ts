@@ -4,7 +4,7 @@ import alpaca from './exchanges/alpaca';
 import Binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Momentum from './algorithms/backtests/simple-backtests/momentum';
-import Backtest from './algorithms/backtests/backtest';
+import Backtester from './algorithms/backtests/backtester';
 import Indicators from './technical-analysis/indicators';
 import Macd from './algorithms/backtests/simple-backtests/macd';
 import Rsi from './algorithms/backtests/simple-backtests/rsi';
@@ -26,7 +26,7 @@ export default class Routes extends Base {
   private kucoin = new Kucoin();
   private indicators = new Indicators();
   private momentum = new Momentum();
-  private backtest = new Backtest();
+  private backtest = new Backtester();
   private macd = new Macd();
   private rsi = new Rsi();
   private ema = new Ema();

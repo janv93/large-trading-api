@@ -362,7 +362,7 @@ export default class Tensorflow extends Base {
    */
   private createTrainingDataPriceToPrice(klines: Kline[], inputCount: number, outputCount: number): any[] {
     const closes = klines.map(kline => kline.prices.close);
-    const normalizedCloses = this.normalize(closes);
+    const normalizedCloses = this.normalizeBetween0And1(closes);
 
     return this.createInputsOutputs(normalizedCloses, inputCount, outputCount);
   }

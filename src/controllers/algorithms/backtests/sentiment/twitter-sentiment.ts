@@ -3,14 +3,14 @@ import Base from '../../../base';
 import Twitter from '../../../other-apis/twitter';
 import OpenAi from '../../../other-apis/openai';
 import Binance from '../../../exchanges/binance';
-import Backtest from '../backtest';
+import Backtester from '../backtester';
 
 
 export default class TwitterSentiment extends Base {
   private twitter = new Twitter();
   private openai = new OpenAi();
   private binance = new Binance();
-  private backtest = new Backtest();
+  private backtest = new Backtester();
 
   public async setSignals(klines: Kline[], algorithm: Algorithm): Promise<Kline[]> {
     const user: string = process.env.twitter_user as string;

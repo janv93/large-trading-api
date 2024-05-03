@@ -1,7 +1,7 @@
 import { Algorithm, Kline, Signal } from '../../../interfaces';
 import Base from '../../base';
 
-export default class Backtest extends Base {
+export default class Backtester extends Base {
   /**
    * @param klines the klines returned from /klinesWithAlgorithm
    * @param commission commission of exchange, e.g. 0.04
@@ -73,9 +73,5 @@ export default class Backtest extends Base {
       case Signal.Sell: return currentAmount - amount;
       default: return NaN;
     }
-  }
-
-  private signalOrClosePrice(kline: Kline, algorithm: Algorithm): number {
-    return kline.algorithms[algorithm]?.signalPrice ?? kline.prices.close;
   }
 }

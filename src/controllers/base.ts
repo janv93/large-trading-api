@@ -1,4 +1,4 @@
-import { Algorithm, Kline, Signal, Timeframe } from '../interfaces';
+import { Algorithm, Backtest, Kline, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
@@ -80,12 +80,121 @@ export default class Base {
   /**
    * normalize to values between 0 and 1
    */
-  protected normalize(values: number[]): number[] {
+  protected normalizeBetween0And1(values: number[]): number[] {
     const minClose = Math.min(...values);
     const maxClose = Math.max(...values);
     const range = maxClose - minClose;
 
     return values.map(close => (close - minClose) / range);
+  }
+
+  /**
+   * takes klines that already have buy or sell signals, computes the tp/sl for each signal and adds the tp/sl signals by subtracting the original position amount
+   * can't set a close signal since multiple position may be open or it could overwrite existing signal
+   */
+  protected addTpSlSignals(klines: Kline[], algorithm: Algorithm, stopLoss: number, takeProfit: number) {
+    let openPositions: Kline[] = [];
+
+    klines.forEach((currentKline: Kline) => {
+      let currentBacktest: Backtest | undefined = currentKline.algorithms[algorithm];
+
+      if (currentBacktest?.signal && currentBacktest.signal !== Signal.Close) {
+        openPositions.push(currentKline);
+      }
+
+      openPositions = openPositions.filter((openKline: Kline) => {
+        const openBacktest: Backtest = openKline.algorithms[algorithm]!;
+        const tpSlReached: boolean = this.isTpSlReachedKlines(openKline, currentKline, algorithm, stopLoss, takeProfit);
+
+        if (tpSlReached) {
+          // add negated signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
+          const newSignalAndAmount = this.combineSignals(this.negateSignal(openBacktest.signal!), currentBacktest?.signal, openBacktest.amount, currentBacktest?.amount);
+
+          if (currentBacktest) {  // overwrite existing signal
+            currentBacktest.signal = newSignalAndAmount.signal;
+            currentBacktest.amount = newSignalAndAmount.amount;
+          } else {  // set new signal
+            currentKline.algorithms[algorithm] = newSignalAndAmount;
+          }
+
+          return false; // remove position from openPositions if tp/sl is reached
+        }
+
+        return true;  // keep if not reached
+      });
+    });
+  }
+
+  /**
+   * combines two signals, e.g. buy 1 and sell 2 = sell 1
+   * or closebuy 1 + sell 2 = closesell 2
+   * or close + buy 1 = closebuy 1
+   */
+  private combineSignals(signal1?: Signal, signal2?: Signal, amount1: number = 1, amount2: number = 1): { signal?: Signal, amount?: number } {
+    if (!signal1) {
+      return { signal: signal2, amount: amount2 };
+    }
+
+    if (!signal2) {
+      return { signal: signal1, amount: amount1 };
+    }
+
+    if (signal1 === Signal.Buy) {
+      switch (signal2) {
+        case Signal.Buy: return { signal: Signal.Buy, amount: amount1 + amount2 };
+        case Signal.Sell: return amount1 > amount2 ? { signal: Signal.Buy, amount: amount1 - amount2 } : { signal: Signal.Sell, amount: amount2 - amount1 };
+        case Signal.Close: return { signal: Signal.CloseBuy, amount: amount1 };
+        case Signal.CloseBuy: return { signal: Signal.CloseBuy, amount: amount1 + amount2 };
+        case Signal.CloseSell: return amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
+      }
+    } else if (signal1 === Signal.Sell) {
+      switch (signal2) {
+        case Signal.Buy: return amount1 > amount2 ? { signal: Signal.Sell, amount: amount1 - amount2 } : { signal: Signal.Buy, amount: amount2 - amount1 };
+        case Signal.Sell: return { signal: Signal.Sell, amount: amount1 + amount2 };
+        case Signal.Close: return { signal: Signal.CloseSell, amount: amount1 };
+        case Signal.CloseBuy: return amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
+        case Signal.CloseSell: return { signal: Signal.CloseSell, amount: amount1 + amount2 };
+      }
+    } else if (signal1 === Signal.Close) {
+      switch (signal2) {
+        case Signal.Buy: return { signal: Signal.CloseBuy, amount: amount2 };
+        case Signal.Sell: return { signal: Signal.CloseSell, amount: amount2 };
+        case Signal.Close: return { signal: Signal.Close };
+        case Signal.CloseBuy: return { signal: Signal.CloseBuy, amount: amount2 };
+        case Signal.CloseSell: return { signal: Signal.CloseSell, amount: amount2 };
+      }
+    } else if (signal1 === Signal.CloseBuy) {
+      switch (signal2) {
+        case Signal.Buy: return { signal: Signal.CloseBuy, amount: amount1 + amount2 };
+        case Signal.Sell: return amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
+        case Signal.Close: return { signal: Signal.CloseBuy, amount: amount1 };
+        case Signal.CloseBuy: return { signal: Signal.CloseBuy, amount: amount1 + amount2 };
+        case Signal.CloseSell: return amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
+      }
+    } else if (signal1 === Signal.CloseSell) {
+      switch (signal2) {
+        case Signal.Buy: return amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
+        case Signal.Sell: return { signal: Signal.Sell, amount: amount1 + amount2 };
+        case Signal.Close: return { signal: Signal.CloseSell, amount: amount1 };
+        case Signal.CloseBuy: return amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
+        case Signal.CloseSell: return { signal: Signal.CloseSell, amount: amount1 + amount2 };
+      }
+    }
+
+    return {};
+  }
+
+  /**
+   * turns signal into its opposite
+   */
+  private negateSignal(signal: Signal): Signal {
+    switch (signal) {
+      case Signal.Buy: return Signal.Sell;
+      case Signal.Sell: return Signal.Buy;
+      case Signal.Close: return Signal.Close;
+      case Signal.CloseBuy: return Signal.CloseSell;
+      case Signal.CloseSell: return Signal.CloseBuy;
+    }
   }
 
   /**
@@ -104,6 +213,20 @@ export default class Base {
     }
 
     return slReached || tpReached ? true : false;
+  }
+
+  /**
+   * takes start and end kline and calculates if the price diff reaches tp/sl
+   */
+  protected isTpSlReachedKlines(openKline: Kline, currentKline: Kline, algorithm: Algorithm, stopLoss: number, takeProfit: number): boolean {
+    const signalPrice: number = this.signalOrClosePrice(openKline, algorithm);
+    const currentHigh: number = currentKline.prices.high;
+    const currentLow: number = currentKline.prices.low;
+    const highDiff: number = (currentHigh - signalPrice) / signalPrice;
+    const lowDiff: number = (currentLow - signalPrice) / signalPrice;
+    const slReached: boolean = lowDiff >= stopLoss;
+    const tpReached: boolean = highDiff >= takeProfit;
+    return slReached || tpReached;
   }
 
   protected invertSignal(signal: Signal | null): Signal | null {
@@ -231,5 +354,9 @@ export default class Base {
     const lastProfit = this.getLastProfit(klines, algorithm) || 0;
     const totalAmount = this.getTotalAmount(klines, algorithm);
     return totalAmount === 0 ? 0 : lastProfit / totalAmount;
+  }
+
+  protected signalOrClosePrice(kline: Kline, algorithm: Algorithm): number {
+    return kline.algorithms[algorithm]?.signalPrice ?? kline.prices.close;
   }
 }

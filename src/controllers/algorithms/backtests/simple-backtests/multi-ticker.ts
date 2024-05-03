@@ -1,11 +1,11 @@
 import { Algorithm, Kline, MultiBenchmark } from '../../../../interfaces';
 import Base from '../../../base';
-import Backtest from '../backtest';
+import Backtester from '../backtester';
 import MeanReversion from '../investing/mean-reversion';
 import deepmerge from 'deepmerge';
 
 export default class MultiTicker extends Base {
-  private backtest = new Backtest();
+  private backtest = new Backtester();
   private meanReversion = new MeanReversion();
 
   public handleAlgo(tickers: Kline[][], algorithm: Algorithm): Kline[][] {
