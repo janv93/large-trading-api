@@ -47,7 +47,7 @@ export interface Kline {
   times: KlineTimes;
   prices: KlinePrices;
   volume: number;
-  algorithms: Partial<Record<Algorithm, Backtest>>;
+  algorithms: Partial<Record<Algorithm, BacktestData>>;
   numberOfTrades?: number;
   tweets?: Tweet[];
   chart?: KlineChart;
@@ -102,7 +102,7 @@ export enum Position {
   Below = 'BELOW'
 }
 
-export interface Backtest {
+export interface BacktestData {
   signal?: Signal;
   percentProfit?: number;
   amount?: number;

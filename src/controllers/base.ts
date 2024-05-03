@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { Algorithm, Backtest, Kline, Signal, Timeframe } from '../interfaces';
+import { Algorithm, BacktestData, Kline, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
@@ -97,7 +97,7 @@ export default class Base {
     let openPositions: Kline[] = [];
 
     klines.forEach((currentKline: Kline) => {
-      let currentBacktest: Backtest | undefined = currentKline.algorithms[algorithm];
+      let currentBacktest: BacktestData | undefined = currentKline.algorithms[algorithm];
 
       // push klines to check for tp/sl. has to happen before setting tp/sl, because tp/sl modifies signal
       if (currentBacktest?.signal && currentBacktest.signal !== Signal.Close) {
@@ -108,12 +108,13 @@ export default class Base {
         // if openKline = currentKline, then no tp/sl handling (not possible intrakline)
         if (openKline.times.open === currentKline.times.open) return true;
 
-        const openBacktest: Backtest = openKline.algorithms[algorithm]!;
+        const openBacktest: BacktestData = openKline.algorithms[algorithm]!;
         const tpSlTriggerPrice: number | null = this.getTpSlTriggerPrice(openKline, currentKline, algorithm, stopLoss, takeProfit);
 
         if (tpSlTriggerPrice) {
-          // add negated signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
-          const newSignalAndAmount = this.combineSignals(this.negateSignal(openBacktest.signal!), currentBacktest?.signal, openBacktest.amount, currentBacktest?.amount, openBacktest.signalPrice, currentBacktest?.signalPrice);
+          // add inverse signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
+          const invertedPositionBacktest: BacktestData = { signal: this.invertSignal(openBacktest.signal!)!, amount: openBacktest.amount!, signalPrice: tpSlTriggerPrice };
+          const newSignalAndAmount = this.combineBacktestData(currentBacktest, invertedPositionBacktest);
 
           if (currentBacktest) {  // overwrite existing signal
             currentBacktest.signal = newSignalAndAmount.signal;
@@ -135,7 +136,14 @@ export default class Base {
    * or closebuy 1 + sell 2 = closesell 2
    * or close + buy 1 = closebuy 1
    */
-  protected combineSignals(signal1?: Signal, signal2?: Signal, amount1: number = 1, amount2: number = 1, signalPrice1?: number, signalPrice2?: number): { signal?: Signal, amount?: number, signalPrice?: number} {
+  protected combineBacktestData(backtest1?: BacktestData, backtest2?: BacktestData): BacktestData {
+    const signal1: Signal | undefined = backtest1?.signal;
+    const amount1: number = backtest1?.amount || 1;
+    const signalPrice1: number | undefined = backtest1?.signalPrice;
+    const signal2: Signal | undefined = backtest2?.signal;
+    const amount2: number = backtest2?.amount || 1;
+    const signalPrice2: number | undefined = backtest2?.signalPrice;
+
     if (!signal1) {
       return { signal: signal2, amount: amount2, signalPrice: signalPrice2 };
     }
@@ -144,11 +152,13 @@ export default class Base {
       return { signal: signal1, amount: amount1, signalPrice: signalPrice1 };
     }
 
-    let newSignal: { signal?: Signal, amount?: number } = {};
+    let newSignal: BacktestData = {};
 
     if (signal1 === Signal.Buy) {
       switch (signal2) {
-        case Signal.Buy: newSignal = { signal: Signal.Buy, amount: amount1 + amount2 }; break;
+        case Signal.Buy:
+          newSignal = { signal: Signal.Buy, amount: amount1 + amount2 };
+          break;
         case Signal.Sell: newSignal = amount1 > amount2 ? { signal: Signal.Buy, amount: amount1 - amount2 } : { signal: Signal.Sell, amount: amount2 - amount1 }; break;
         case Signal.Close: newSignal = { signal: Signal.CloseBuy, amount: amount1 }; break;
         case Signal.CloseBuy: newSignal = { signal: Signal.CloseBuy, amount: amount1 + amount2 }; break;
@@ -196,19 +206,6 @@ export default class Base {
   }
 
   /**
-   * turns signal into its opposite
-   */
-  private negateSignal(signal: Signal): Signal {
-    switch (signal) {
-      case Signal.Buy: return Signal.Sell;
-      case Signal.Sell: return Signal.Buy;
-      case Signal.Close: return Signal.Close;
-      case Signal.CloseBuy: return Signal.CloseSell;
-      case Signal.CloseSell: return Signal.CloseBuy;
-    }
-  }
-
-  /**
    * TODO: this is an old function and probably can be replaced
    * takes the difference priceDiffPercent between the open and current price, stopLoss and takeProfit in percent and returns if tp or sl are reached
    */
@@ -247,6 +244,7 @@ export default class Base {
     switch (signal) {
       case Signal.Buy: return Signal.Sell;
       case Signal.Sell: return Signal.Buy;
+      case Signal.Close: return Signal.Close;
       case Signal.CloseBuy: return Signal.CloseSell;
       case Signal.CloseSell: return Signal.CloseBuy;
       default: return null;
