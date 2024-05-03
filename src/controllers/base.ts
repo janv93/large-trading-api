@@ -99,6 +99,7 @@ export default class Base {
     klines.forEach((currentKline: Kline) => {
       let currentBacktest: Backtest | undefined = currentKline.algorithms[algorithm];
 
+      // push klines to check for tp/sl. has to happen before setting tp/sl, because tp/sl modifies signal
       if (currentBacktest?.signal && currentBacktest.signal !== Signal.Close) {
         openPositions.push(currentKline);
       }
