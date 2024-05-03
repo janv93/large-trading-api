@@ -1,3 +1,4 @@
+import { cloneDeep } from 'lodash';
 import { Algorithm, Backtest, Kline, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
@@ -103,6 +104,9 @@ export default class Base {
       }
 
       openPositions = openPositions.filter((openKline: Kline) => {
+        // if openKline = currentKline, then no tp/sl handling (not possible intrakline)
+        if (openKline.times.open === currentKline.times.open) return true;
+
         const openBacktest: Backtest = openKline.algorithms[algorithm]!;
         const tpSlPrice: number | null = this.getTpSlTriggerPrice(openKline, currentKline, algorithm, stopLoss, takeProfit);
 
@@ -130,7 +134,7 @@ export default class Base {
    * or closebuy 1 + sell 2 = closesell 2
    * or close + buy 1 = closebuy 1
    */
-  private combineSignals(signal1?: Signal, signal2?: Signal, amount1: number = 1, amount2: number = 1): { signal?: Signal, amount?: number } {
+  protected combineSignals(signal1?: Signal, signal2?: Signal, amount1: number = 1, amount2: number = 1): { signal?: Signal, amount?: number } {
     if (!signal1) {
       return { signal: signal2, amount: amount2 };
     }
@@ -139,49 +143,55 @@ export default class Base {
       return { signal: signal1, amount: amount1 };
     }
 
+    let newSignal: { signal?: Signal, amount?: number } = {};
+
     if (signal1 === Signal.Buy) {
       switch (signal2) {
-        case Signal.Buy: return { signal: Signal.Buy, amount: amount1 + amount2 };
-        case Signal.Sell: return amount1 > amount2 ? { signal: Signal.Buy, amount: amount1 - amount2 } : { signal: Signal.Sell, amount: amount2 - amount1 };
-        case Signal.Close: return { signal: Signal.CloseBuy, amount: amount1 };
-        case Signal.CloseBuy: return { signal: Signal.CloseBuy, amount: amount1 + amount2 };
-        case Signal.CloseSell: return amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
+        case Signal.Buy: newSignal = { signal: Signal.Buy, amount: amount1 + amount2 };
+        case Signal.Sell: newSignal = amount1 > amount2 ? { signal: Signal.Buy, amount: amount1 - amount2 } : { signal: Signal.Sell, amount: amount2 - amount1 };
+        case Signal.Close: newSignal = { signal: Signal.CloseBuy, amount: amount1 };
+        case Signal.CloseBuy: newSignal = { signal: Signal.CloseBuy, amount: amount1 + amount2 };
+        case Signal.CloseSell: newSignal = amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
       }
     } else if (signal1 === Signal.Sell) {
       switch (signal2) {
-        case Signal.Buy: return amount1 > amount2 ? { signal: Signal.Sell, amount: amount1 - amount2 } : { signal: Signal.Buy, amount: amount2 - amount1 };
-        case Signal.Sell: return { signal: Signal.Sell, amount: amount1 + amount2 };
-        case Signal.Close: return { signal: Signal.CloseSell, amount: amount1 };
-        case Signal.CloseBuy: return amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
-        case Signal.CloseSell: return { signal: Signal.CloseSell, amount: amount1 + amount2 };
+        case Signal.Buy: newSignal = amount1 > amount2 ? { signal: Signal.Sell, amount: amount1 - amount2 } : { signal: Signal.Buy, amount: amount2 - amount1 };
+        case Signal.Sell: newSignal = { signal: Signal.Sell, amount: amount1 + amount2 };
+        case Signal.Close: newSignal = { signal: Signal.CloseSell, amount: amount1 };
+        case Signal.CloseBuy: newSignal = amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
+        case Signal.CloseSell: newSignal = { signal: Signal.CloseSell, amount: amount1 + amount2 };
       }
     } else if (signal1 === Signal.Close) {
       switch (signal2) {
-        case Signal.Buy: return { signal: Signal.CloseBuy, amount: amount2 };
-        case Signal.Sell: return { signal: Signal.CloseSell, amount: amount2 };
-        case Signal.Close: return { signal: Signal.Close };
-        case Signal.CloseBuy: return { signal: Signal.CloseBuy, amount: amount2 };
-        case Signal.CloseSell: return { signal: Signal.CloseSell, amount: amount2 };
+        case Signal.Buy: newSignal = { signal: Signal.CloseBuy, amount: amount2 };
+        case Signal.Sell: newSignal = { signal: Signal.CloseSell, amount: amount2 };
+        case Signal.Close: newSignal = { signal: Signal.Close };
+        case Signal.CloseBuy: newSignal = { signal: Signal.CloseBuy, amount: amount2 };
+        case Signal.CloseSell: newSignal = { signal: Signal.CloseSell, amount: amount2 };
       }
     } else if (signal1 === Signal.CloseBuy) {
       switch (signal2) {
-        case Signal.Buy: return { signal: Signal.CloseBuy, amount: amount1 + amount2 };
-        case Signal.Sell: return amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
-        case Signal.Close: return { signal: Signal.CloseBuy, amount: amount1 };
-        case Signal.CloseBuy: return { signal: Signal.CloseBuy, amount: amount1 + amount2 };
-        case Signal.CloseSell: return amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
+        case Signal.Buy: newSignal = { signal: Signal.CloseBuy, amount: amount1 + amount2 };
+        case Signal.Sell: newSignal = amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
+        case Signal.Close: newSignal = { signal: Signal.CloseBuy, amount: amount1 };
+        case Signal.CloseBuy: newSignal = { signal: Signal.CloseBuy, amount: amount1 + amount2 };
+        case Signal.CloseSell: newSignal = amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 };
       }
     } else if (signal1 === Signal.CloseSell) {
       switch (signal2) {
-        case Signal.Buy: return amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
-        case Signal.Sell: return { signal: Signal.Sell, amount: amount1 + amount2 };
-        case Signal.Close: return { signal: Signal.CloseSell, amount: amount1 };
-        case Signal.CloseBuy: return amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
-        case Signal.CloseSell: return { signal: Signal.CloseSell, amount: amount1 + amount2 };
+        case Signal.Buy: newSignal = amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
+        case Signal.Sell: newSignal = { signal: Signal.Sell, amount: amount1 + amount2 };
+        case Signal.Close: newSignal = { signal: Signal.CloseSell, amount: amount1 };
+        case Signal.CloseBuy: newSignal = amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 };
+        case Signal.CloseSell: newSignal = { signal: Signal.CloseSell, amount: amount1 + amount2 };
       }
     }
 
-    return {};
+    if (newSignal.amount === 0) { // if amount is 0, then signal can be removed
+      newSignal = {};
+    }
+
+    return newSignal;
   }
 
   /**
@@ -369,4 +379,7 @@ export default class Base {
     return Math.min(Math.max(price, low), high);
   }
 
+  protected clone(original: any): any {
+    return cloneDeep(original);
+  }
 }
