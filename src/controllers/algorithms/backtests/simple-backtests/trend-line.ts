@@ -44,8 +44,8 @@ export default class TrendLineBreakthrough extends Base {
     });
 
     // TODO: adapt stop loss relative to timeframe/variance
-    const stopLoss = 0.05;
-    const takeProfit = 0.1;
+    const stopLoss = 0.03;
+    const takeProfit = 0.2;
     this.addTpSlSignals(klines, algorithm, stopLoss, takeProfit);
 
     return klines;
