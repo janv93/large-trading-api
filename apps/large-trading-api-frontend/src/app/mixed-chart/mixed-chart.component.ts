@@ -287,7 +287,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       position: ['BUY', 'CBUY'].includes(finalSignal) ? 'belowBar' : 'aboveBar',
       color: ['BUY', 'CBUY'].includes(finalSignal) ? 'lime' : finalSignal === 'CLOSE' ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(finalSignal) ? 'arrowUp' : 'arrowDown',
-      text: finalSignal + (kline.algorithms[algo]!.amount ? ` ${kline.algorithms[algo]!.amount}` : '')
+      text: finalSignal + (kline.algorithms[algo]!.amount ? ` ${kline.algorithms[algo]!.amount!.toFixed(2)}` : '')
     };
   }
 
