@@ -114,7 +114,7 @@ export default class Base {
         if (tpSlTriggerPrice) {
           // add inverse signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
           const invertedPositionBacktest: BacktestData = { signal: this.invertSignal(openBacktest.signal!)!, amount: openBacktest.amount!, signalPrice: tpSlTriggerPrice };
-          const combinedBacktest = this.combineBacktestData(currentBacktest, invertedPositionBacktest);
+          const combinedBacktest: BacktestData = this.combineBacktestData(currentBacktest, invertedPositionBacktest);
           currentKline.algorithms[algorithm] = combinedBacktest;
           currentBacktest = combinedBacktest; // update current backtest for next open position iteration. in js, when a = b and b = c, then a != c, so have to a = c
           return false; // remove position from openPositions if tp/sl is reached
@@ -122,6 +122,9 @@ export default class Base {
 
         return true;  // keep if not reached
       });
+
+      // normalize signal price to be between low and high price of the kline
+      currentKline.algorithms[algorithm]!.signalPrice = this.fitPriceInKlinePriceRange(currentKline, currentKline.algorithms[algorithm]?.signalPrice);
     });
   }
 
@@ -374,7 +377,8 @@ export default class Base {
   }
 
   // fit price between kline low and high
-  protected fitPriceInKlinePriceRange(kline: Kline, price: number) {
+  protected fitPriceInKlinePriceRange(kline: Kline, price?: number): number | undefined {
+    if (!price) return undefined;
     const { low, high } = kline.prices;
     return Math.min(Math.max(price, low), high);
   }
