@@ -41,16 +41,14 @@ export default class TrendLineBreakthrough extends Base {
         if (score > 0) {
           backtest.signal = Signal.Buy;
           backtest.amount = score;
-          const averageBreakthoughPrice = kline.algorithms[algorithm]!.signalPrice = signalPricesSum / breakthroughs.length;
-          backtest.signalPrice = averageBreakthoughPrice;
-          backtest.positionCloseTrigger = { stopLoss, takeProfit };
         } else if (score < 0) {
           backtest.signal = Signal.Sell;
           backtest.amount = Math.abs(score);
-          const averageBreakthoughPrice = kline.algorithms[algorithm]!.signalPrice = signalPricesSum / breakthroughs.length;
-          backtest.signalPrice = averageBreakthoughPrice;
-          backtest.positionCloseTrigger = { stopLoss, takeProfit };
         }
+
+        const averageBreakthoughPrice = kline.algorithms[algorithm]!.signalPrice = signalPricesSum / breakthroughs.length;
+        backtest.signalPrice = averageBreakthoughPrice;
+        backtest.positionCloseTrigger = { stopLoss, takeProfit };
       }
     });
 
