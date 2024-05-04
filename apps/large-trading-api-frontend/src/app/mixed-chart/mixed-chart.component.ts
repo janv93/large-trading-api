@@ -229,7 +229,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     this.markersPivotPoints = markers;
-    this.drawMakers();
+    this.drawMarkers();
   }
 
   private setTrendLines() {
@@ -266,11 +266,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     this.markersSignals = markers;
-    this.drawMakers();
+    this.drawMarkers();
   }
 
   // combine all markers
-  private drawMakers() {
+  private drawMarkers() {
     const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
     allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
     this.candlestickSeries.setMarkers(allMarkers);
