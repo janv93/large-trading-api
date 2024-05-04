@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { HttpService } from './http.service';
-import { Kline, Klines } from './interfaces';
+import { Kline, Run } from './interfaces';
 import { ChartService } from './chart.service';
 
 @Component({
@@ -10,8 +10,8 @@ import { ChartService } from './chart.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  public klines: Klines[];
-  public tickers: Klines[][];
+  public klines: Run[];
+  public tickers: Run[][];
 
   constructor(
     public chartService: ChartService,
@@ -49,7 +49,7 @@ export class AppComponent {
 
   private backtestMulti() {
     this.httpService.getMulti().subscribe((tickers: Kline[][]) => {
-      const tickersMapped: Klines[][] = tickers.map((klines: Kline[]) => {
+      const tickersMapped: Run[][] = tickers.map((klines: Kline[]) => {
         return [{
           klines,
           commission: 0,
@@ -57,7 +57,7 @@ export class AppComponent {
         }];
       });
 
-      tickersMapped.sort((a: Klines[], b: Klines[]) => {
+      tickersMapped.sort((a: Run[], b: Run[]) => {
         return (a[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0) - (b[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0);
       });
 

@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp } from 'lightweight-charts';
-import { BacktestStats, Kline, Klines, PivotPoint, PivotPointSide, Position, Signal, TrendLine } from '../interfaces';
+import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, Position, Signal, TrendLine } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
@@ -13,7 +13,7 @@ import { LinearFunction } from '../linear-function';
 export class MixedChartComponent extends BaseComponent implements OnInit, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;
   @ViewChild('legend') legend: ElementRef;
-  @Input() klines: Klines[];
+  @Input() klines: Run[];
 
   public ohlc: CandlestickData;
   public currentProfit: number;
