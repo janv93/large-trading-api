@@ -35,7 +35,7 @@ export default class TrendLineBreakthrough extends Base {
         });
 
         const averagePriceChange: number = averagePriceChangeSum / breakthroughs.length;
-        const stopLoss: number  = averagePriceChange / 2;
+        const stopLoss: number  = averagePriceChange;
         const takeProfit: number = stopLoss * 5;
 
         if (score > 0) {
