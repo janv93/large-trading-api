@@ -1,4 +1,4 @@
-import { Algorithm, Kline, Signal } from '../../../interfaces';
+import { Algorithm, BacktestData, Kline, Signal } from '../../../interfaces';
 import Base from '../../base';
 
 export default class Backtester extends Base {
@@ -32,7 +32,9 @@ export default class Backtester extends Base {
         lastSignalKline = kline;
       }
 
-      kline.algorithms[algorithm]!.percentProfit = percentProfit;
+      const backtest: BacktestData = kline.algorithms[algorithm]!;
+      backtest.percentProfit = percentProfit;
+      backtest.openAmount = currentAmount;
     });
 
     return klines;

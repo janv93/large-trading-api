@@ -116,6 +116,7 @@ export interface BacktestData {
   amount?: number;
   signalPrice?: number;
   positionCloseTrigger?: PositionCloseTrigger;
+  openAmount?: number;
 }
 
 export interface PositionCloseTrigger {
