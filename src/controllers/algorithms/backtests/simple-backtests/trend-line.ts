@@ -1,4 +1,4 @@
-import { Algorithm, Kline, Position, Signal, TrendLine } from '../../../../interfaces';
+import { Algorithm, BacktestData, Kline, Position, Signal, TrendLine } from '../../../../interfaces';
 import Base from '../../../base';
 import Charting from '../../patterns/charting';
 import { LinearFunction } from '../../patterns/linear-function';
@@ -12,11 +12,13 @@ export default class TrendLineBreakthrough extends Base {
     this.charting.addTrendLineBreakthroughs(klines);
 
     klines.forEach((kline, i) => {
+      const backtest: BacktestData = kline.algorithms[algorithm]!;
       const breakthroughs: TrendLine[] | undefined = kline.chart?.trendLineBreakthroughs;
 
       if (breakthroughs?.length) {
         let score = 0;  // a score of how bullish (positive) or bearish (negative) the breakthrough is
         let signalPricesSum = 0;
+        let averagePriceChangeSum = 0;
 
         breakthroughs.forEach((trendLine: TrendLine) => {
           const length: number = trendLine.length;
@@ -27,27 +29,32 @@ export default class TrendLineBreakthrough extends Base {
           const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
           const breakthoughPrice = lineFunction.getY(trendLine.breakThroughIndex!);
           signalPricesSum += breakthoughPrice;
+          const trendLineCloses: number [] = klines.slice(trendLine.startIndex, trendLine.endIndex).map(kline => kline.prices.close);
+          const averagePriceChange: number = this.calcAverageChangeInPercent(trendLineCloses);
+          averagePriceChangeSum += averagePriceChange;
         });
 
+        const averagePriceChange: number = averagePriceChangeSum / breakthroughs.length;
+        const stopLoss: number  = averagePriceChange / 2;
+        const takeProfit: number = stopLoss * 5;
+
         if (score > 0) {
-          kline.algorithms[algorithm]!.signal = Signal.Buy;
-          kline.algorithms[algorithm]!.amount = score;
+          backtest.signal = Signal.Buy;
+          backtest.amount = score;
           const averageBreakthoughPrice = kline.algorithms[algorithm]!.signalPrice = signalPricesSum / breakthroughs.length;
-          kline.algorithms[algorithm]!.signalPrice = averageBreakthoughPrice;
+          backtest.signalPrice = averageBreakthoughPrice;
+          backtest.positionCloseTrigger = { stopLoss, takeProfit };
         } else if (score < 0) {
-          kline.algorithms[algorithm]!.signal = Signal.Sell;
-          kline.algorithms[algorithm]!.amount = Math.abs(score);
+          backtest.signal = Signal.Sell;
+          backtest.amount = Math.abs(score);
           const averageBreakthoughPrice = kline.algorithms[algorithm]!.signalPrice = signalPricesSum / breakthroughs.length;
-          kline.algorithms[algorithm]!.signalPrice = averageBreakthoughPrice;
+          backtest.signalPrice = averageBreakthoughPrice;
+          backtest.positionCloseTrigger = { stopLoss, takeProfit };
         }
       }
     });
 
-    // TODO: adapt stop loss relative to timeframe/variance
-    const stopLoss = 0.03;
-    const takeProfit = 0.2;
-    this.addTpSlSignals(klines, algorithm, stopLoss, takeProfit);
-
+    this.addTpSlSignals(klines, algorithm);
     return klines;
   }
 }

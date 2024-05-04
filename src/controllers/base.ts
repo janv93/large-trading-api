@@ -93,7 +93,7 @@ export default class Base {
    * takes klines that already have buy or sell signals, computes the tp/sl for each signal and adds the tp/sl signals by subtracting the original position amount
    * can't set a close signal since multiple position may be open or it could overwrite existing signal
    */
-  protected addTpSlSignals(klines: Kline[], algorithm: Algorithm, stopLoss: number, takeProfit: number) {
+  protected addTpSlSignals(klines: Kline[], algorithm: Algorithm, stopLoss?: number, takeProfit?: number) {
     let openPositions: Kline[] = [];
 
     klines.forEach((currentKline: Kline) => {
@@ -109,7 +109,12 @@ export default class Base {
         if (openKline.times.open === currentKline.times.open) return true;
 
         const openBacktest: BacktestData = openKline.algorithms[algorithm]!;
-        const tpSlTriggerPrice: number | null = this.getTpSlTriggerPrice(openKline, currentKline, algorithm, stopLoss, takeProfit);
+        // either take tp/sl defined in kline or one tp/sl for all klines from parameters
+        const klineStopLoss: number | undefined = currentBacktest?.positionCloseTrigger?.stopLoss;
+        const klineTakeProfit: number | undefined = currentBacktest?.positionCloseTrigger?.takeProfit;
+        const sl: number | undefined = (klineStopLoss ?? stopLoss);
+        const tp: number | undefined = (klineTakeProfit ?? takeProfit);
+        const tpSlTriggerPrice: number | null = sl && tp ? this.getTpSlTriggerPrice(openKline, currentKline, algorithm, sl, tp) : null;
 
         if (tpSlTriggerPrice) {
           // add inverse signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
@@ -386,5 +391,28 @@ export default class Base {
 
   protected clone(original: any): any {
     return cloneDeep(original);
+  }
+
+  protected calcAverage(numbers: number[]): number {
+    return numbers.reduce((sum, num) => sum + num, 0) / numbers.length;
+  }
+
+  protected calcStandardDeviation(numbers: number[]): number {
+    if (numbers.length === 0) return 0;
+    const average: number = this.calcAverage(numbers);
+    const variance: number = numbers.reduce((sum, num) => sum + Math.pow(num - average, 2), 0) / numbers.length;
+    return Math.sqrt(variance);
+  }
+
+  protected calcAverageChangeInPercent(numbers: number[]): number {
+    if (numbers.length < 2) return 0;
+    let totalChange = 0;
+
+    for (let i = 1; i < numbers.length; i++) {
+      const change = Math.abs(numbers[i] - numbers[i - 1]) / numbers[i - 1];
+      totalChange += change;
+    }
+
+    return totalChange / (numbers.length - 1);
   }
 }
