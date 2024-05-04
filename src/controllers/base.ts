@@ -124,7 +124,7 @@ export default class Base {
       });
 
       // normalize signal price to be between low and high price of the kline
-      currentKline.algorithms[algorithm]!.signalPrice = this.fitPriceInKlinePriceRange(currentKline, currentKline.algorithms[algorithm]?.signalPrice);
+      currentKline.algorithms[algorithm]!.signalPrice = this.limitKlineSignalPrice(currentKline, algorithm);
     });
   }
 
@@ -376,11 +376,12 @@ export default class Base {
     return kline.algorithms[algorithm]?.signalPrice ?? kline.prices.close;
   }
 
-  // fit price between kline low and high
-  protected fitPriceInKlinePriceRange(kline: Kline, price?: number): number | undefined {
-    if (!price) return undefined;
+  // fit signal price between kline low and high
+  protected limitKlineSignalPrice(kline: Kline, algorithm: Algorithm): number | undefined {
+    const signalPrice: number | undefined = kline.algorithms[algorithm]?.signalPrice;
+    if (!signalPrice) return undefined;
     const { low, high } = kline.prices;
-    return Math.min(Math.max(price, low), high);
+    return Math.min(Math.max(signalPrice, low), high);
   }
 
   protected clone(original: any): any {
