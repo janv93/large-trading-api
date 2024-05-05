@@ -10,6 +10,8 @@
     <span class="text-info">{{ ohlc.close }}</span>
     <span [ngClass]="{'green': currentProfit > 0, 'red': currentProfit < 0 }"> {{ currentProfit }}</span>
     <span>%</span>
+    <span *ngIf="currentOpenAmount" [ngClass]="{'turquoise': currentOpenAmount > 0, 'pink': currentOpenAmount < 0 }"> {{ currentOpenAmount }}</span>
+    <span *ngIf="currentOpenAmount">$</span>
   </div>
   <div *ngIf="currentKlines" class="position-absolute d-flex justify-content-center align-items-center symbol">
     <img *ngIf="!chartService.isMulti" class="d-inline-block mr-4 mt-4" [src]="'assets/images/' + chartService.exchange.toLowerCase() + '.png'">
@@ -21,6 +23,8 @@
       <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
       <label class="ml-3 mr-2">flowing profit</label>
       <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)" checked>
+      <label class="ml-3 mr-2">current amount</label>
+      <input class="align-middle" type="checkbox" (change)="onShowAmountChange($event)">
     </div>
     <div *ngIf="stats" class="text-right stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
       <div>

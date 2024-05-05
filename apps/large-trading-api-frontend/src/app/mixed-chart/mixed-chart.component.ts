@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp } from 'lightweight-charts';
-import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, Position, Signal, TrendLine } from '../interfaces';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData } from 'lightweight-charts';
+import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, Position, Signal, TrendLine, Algorithm } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
@@ -17,14 +17,17 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   public ohlc: CandlestickData;
   public currentProfit: number;
+  public currentOpenAmount: number;
   public stats: BacktestStats;
   public currentKlines: Kline[];
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
   private profitSeries: ISeriesApi<'Line'>[] = [];
+  private openAmountSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLineSeries: ISeriesApi<'Line'>[] = [];
   private commissionChecked = false;
   private flowingProfitChecked = true;
+  private showAmountChecked = false;
   private finalProfit: number[] = [];
   private red = 'rgb(255, 77, 77)';
   private green = 'rgb(0, 255, 0)';
@@ -115,6 +118,22 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
+  public onShowAmountChange(event: Event) {
+    const checked: boolean = (event.target as HTMLInputElement).checked;
+    this.showAmountChecked = checked;
+
+    if (checked) {
+      this.drawOpenAmount();
+    } else {
+      if (this.openAmountSeries) {
+        this.chart.removeSeries(this.openAmountSeries);
+        this.openAmountSeries = undefined;
+      }
+    }
+
+    this.cd.detectChanges();
+  }
+
   private createChart() {
     const container = this.containerRef.nativeElement;
     const width = Math.floor(container.getBoundingClientRect().width);
@@ -199,9 +218,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.setProfitSeriesData(index);  // init with no commission/flowing profit
 
       const opacity = index === 0 ? 0.3 : 0.1;
-      let color = `rgba(255,255,255,${opacity})`;
-      color = this.finalProfit[index] > 0 ? `rgba(0,255,0,${opacity})` : color;
-      color = this.finalProfit[index] < 0 ? `rgba(255,77,77,${opacity})` : color;
+      let color = `rgba(255, 255, 255, ${opacity})`;
+      color = this.finalProfit[index] > 0 ? `rgba(0, 255, 0, ${opacity})` : color;
+      color = this.finalProfit[index] < 0 ? `rgba(255, 77, 77, ${opacity})` : color;
 
       this.profitSeries[index].applyOptions({
         color,
@@ -212,6 +231,20 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     this.calcStats();
+  }
+
+  private drawOpenAmount(): void {
+    if (this.openAmountSeries) {
+      this.chart.removeSeries(this.openAmountSeries);
+    }
+
+    this.openAmountSeries = this.chart.addHistogramSeries({ priceScaleId: 'histogram' });
+    this.setOpenAmountSeriesData();
+
+    this.openAmountSeries.applyOptions({
+      priceLineVisible: false,
+      lastValueVisible: false
+    });
   }
 
   private drawChartData() {
@@ -314,6 +347,23 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.profitSeries[index].setData(mapped);
   }
 
+  private setOpenAmountSeriesData() {
+    const mapped = this.currentKlines.map((kline: Kline) => {
+      const openAmount: number = kline.algorithms[this.chartService.algorithms[0]]!.openAmount!;
+      const color = openAmount === 0 ? `transparent` : openAmount > 0 ? `rgba(0, 255, 162, 0.3)` : `rgba(255, 0, 170, 0.3)`;
+
+      return {
+        time: kline.times.open / 1000 as Time,
+        value: openAmount,
+        color
+      };
+    });
+
+    if (this.openAmountSeries) {
+      this.openAmountSeries.setData(mapped);
+    }
+  }
+
   private setTrendLineSeriesData(kline: Kline) {
     kline.chart!.trendLines!.forEach((trendLine: TrendLine) => {
       const start = {
@@ -396,6 +446,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.isCrosshairSubscribed = true;
       const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
       const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
+      const openAmount: HistogramData | undefined = this.openAmountSeries ? param.seriesData.get(this.openAmountSeries) as HistogramData : undefined;
 
       if (ohlc) {
         for (const key in ohlc) {
@@ -406,6 +457,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
         this.ohlc = ohlc;
         this.currentProfit = Number(profit.value.toFixed(2));
+
+        if (openAmount !== undefined) {
+          this.currentOpenAmount = Number(openAmount.value.toFixed(2));
+        }
+
         this.cd.detectChanges();
       }
     });
