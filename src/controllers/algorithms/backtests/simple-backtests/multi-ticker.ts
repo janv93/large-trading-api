@@ -1,6 +1,6 @@
 import { Algorithm, Kline, MultiBenchmark } from '../../../../interfaces';
 import Base from '../../../base';
-import Backtester from '../backtester';
+import Backtester from '../backtester/backtester';
 import MeanReversion from '../investing/mean-reversion';
 import deepmerge from 'deepmerge';
 

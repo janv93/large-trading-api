@@ -4,7 +4,7 @@ import alpaca from './exchanges/alpaca';
 import Binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Momentum from './algorithms/backtests/simple-backtests/momentum';
-import Backtester from './algorithms/backtests/backtester';
+import Backtester from './algorithms/backtests/backtester/backtester';
 import Indicators from './technical-analysis/indicators';
 import Macd from './algorithms/backtests/simple-backtests/macd';
 import Rsi from './algorithms/backtests/simple-backtests/rsi';
