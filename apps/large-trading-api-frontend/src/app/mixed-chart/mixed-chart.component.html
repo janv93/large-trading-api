@@ -1,5 +1,6 @@
 <div #container class="w-100 h-100 position-relative chart-container">
-  <div *ngIf="ohlc" #legend class="position-absolute legend-left" [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
+  <div *ngIf="ohlc" #legend class="position-absolute legend-left"
+    [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
     <span>O</span>
     <span class="text-info">{{ ohlc.open }}</span>
     <span> H</span>
@@ -10,21 +11,30 @@
     <span class="text-info">{{ ohlc.close }}</span>
     <span [ngClass]="{'green': currentProfit > 0, 'red': currentProfit < 0 }"> {{ currentProfit }}</span>
     <span>%</span>
-    <span *ngIf="currentOpenAmount" [ngClass]="{'turquoise': currentOpenAmount > 0, 'pink': currentOpenAmount < 0 }"> {{ currentOpenAmount }}</span>
+    <span *ngIf="currentOpenAmount" [ngClass]="{'turquoise': currentOpenAmount > 0, 'pink': currentOpenAmount < 0 }"> {{
+      currentOpenAmount }}</span>
     <span *ngIf="currentOpenAmount">$</span>
   </div>
   <div *ngIf="currentKlines" class="position-absolute d-flex justify-content-center align-items-center symbol">
-    <img *ngIf="!chartService.isMulti" class="d-inline-block mr-4 mt-4" [src]="'assets/images/' + chartService.exchange.toLowerCase() + '.png'">
-    <p class="d-inline-block font-weight-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">{{ currentKlines[0].symbol }}</p>
+    <img *ngIf="!chartService.isMulti" class="d-inline-block mr-4 mt-4"
+      [src]="'assets/images/' + chartService.exchange.toLowerCase() + '.png'">
+    <p class="d-inline-block font-weight-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">{{
+      currentKlines[0].symbol }}</p>
   </div>
   <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
     <div *ngIf="!chartService.isMulti">
-      <label class="mr-2">commission</label>
-      <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
-      <label class="ml-3 mr-2">flowing profit</label>
-      <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)" checked>
-      <label class="ml-3 mr-2">show amount</label>
-      <input class="align-middle" type="checkbox" (change)="onShowAmountChange($event)">
+      <div class="text-right">
+        <label class="mr-2">commission</label>
+        <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
+        <label class="ml-3 mr-2">flowing profit</label>
+        <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)" checked>
+      </div>
+      <div class="text-right">
+        <label class="mr-2">amount</label>
+        <input class="align-middle" type="checkbox" (change)="onShowAmountChange($event)">
+        <label class="ml-3 mr-2">charting</label>
+        <input class="align-middle" type="checkbox" (change)="onShowChartingChange($event)" checked>
+      </div>
     </div>
     <div *ngIf="stats" class="text-right stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
       <div>

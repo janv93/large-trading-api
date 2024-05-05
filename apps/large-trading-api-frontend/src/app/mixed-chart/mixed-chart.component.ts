@@ -27,7 +27,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private trendLineSeries: ISeriesApi<'Line'>[] = [];
   private commissionChecked = false;
   private flowingProfitChecked = true;
-  private showAmountChecked = false;
   private finalProfit: number[] = [];
   private red = 'rgb(255, 77, 77)';
   private green = 'rgb(0, 255, 0)';
@@ -120,7 +119,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   public onShowAmountChange(event: Event) {
     const checked: boolean = (event.target as HTMLInputElement).checked;
-    this.showAmountChecked = checked;
 
     if (checked) {
       this.drawOpenAmount();
@@ -130,8 +128,18 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.openAmountSeries = undefined;
       }
     }
+  }
 
-    this.cd.detectChanges();
+  public onShowChartingChange(event: Event) {
+    const checked: boolean = (event.target as HTMLInputElement).checked;
+
+    if (checked) {
+      this.drawChartData();
+    } else {
+      this.trendLineSeries.forEach(series => this.chart.removeSeries(series));
+      this.trendLineSeries = [];
+      this.candlestickSeries.setMarkers(this.markersSignals);
+    }
   }
 
   private createChart() {
