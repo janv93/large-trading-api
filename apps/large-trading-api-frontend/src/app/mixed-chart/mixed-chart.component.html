@@ -23,7 +23,7 @@
       <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
       <label class="ml-3 mr-2">flowing profit</label>
       <input class="align-middle" type="checkbox" (change)="onFlowingProfitChange($event)" checked>
-      <label class="ml-3 mr-2">current amount</label>
+      <label class="ml-3 mr-2">show amount</label>
       <input class="align-middle" type="checkbox" (change)="onShowAmountChange($event)">
     </div>
     <div *ngIf="stats" class="text-right stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
