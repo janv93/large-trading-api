@@ -36,15 +36,45 @@ describe('Backtester', () => {
         prices: { ...basePrices, close: 300 },
         algorithms: { [Algorithm.Dca]: { signal: Signal.CloseBuy } }
       },
-      {
+      { // 4
         ...base,
         prices: { ...basePrices, close: 450 },
         algorithms: { [Algorithm.Dca]: { signal: Signal.CloseSell } }
       },
       {
         ...base,
-        prices: { ...basePrices, close: 0 },
+        prices: { ...basePrices, close: 900 },
         algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 0 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 10, signalPrice: 100 } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 0 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell, amount: 10, signalPrice: 200 } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 100 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+      },
+      { // 9
+        ...base,
+        prices: { ...basePrices, close: 100 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 2 } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 200 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 2 } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 400 },
+        algorithms: { [Algorithm.Dca]: {} }
       }
     ];
 
@@ -56,6 +86,14 @@ describe('Backtester', () => {
     expect(backtests[2].percentProfit).toBe(100);
     expect(backtests[3].percentProfit).toBe(50);
     expect(backtests[4].percentProfit).toBe(100);
-    expect(backtests[5].percentProfit).toBe(200);
+    expect(backtests[5].percentProfit).toBe(0);
+    // with amount + signalPrice
+    expect(backtests[6].percentProfit).toBe(0);
+    expect(backtests[7].percentProfit).toBe(1000);
+    expect(backtests[8].percentProfit).toBe(500);
+    // multiple positions at once
+    expect(backtests[9].percentProfit).toBe(500);
+    expect(backtests[10].percentProfit).toBe(700);
+    expect(backtests[11].percentProfit).toBe(1300);
   });
 });
