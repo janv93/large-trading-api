@@ -12,48 +12,34 @@ describe('Backtester', () => {
   });
 
   it('should calculate percentProfit correctly', () => {
-    const algorithm = Algorithm.Dca;
-    const symbol = 'BTCUSDT';
-    const timeframe = Timeframe._1Day;
-    const times = { open: 0, close: 0 };
+    const base = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
 
     const klines: Kline[] = [
       {
-        symbol,
-        timeframe,
-        times,
-        prices: {
-          open: 100,
-          close: 100,
-          high: 100,
-          low: 100
-        },
-        volume: 3096.291,
-        algorithms: {
-          [algorithm]: {
-            signal: Signal.Buy
-          }
-        }
+        ...base,
+        prices: { open: 100, close: 100, high: 100, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy } }
       },
       {
-        symbol,
-        timeframe,
-        times,
-        prices: {
-          open: 200,
-          close: 200,
-          high: 200,
-          low: 200
-        },
-        volume: 14824.373,
-        algorithms: {
-          [algorithm]: {}
-        }
+        ...base,
+        prices: { open: 200, close: 200, high: 200, low: 200 },
+        algorithms: { [Algorithm.Dca]: {} }
+      },
+      {
+        ...base,
+        prices: { open: 200, close: 200, high: 200, low: 200 },
+        algorithms: { [Algorithm.Dca]: {} }
+      },
+      {
+        ...base,
+        prices: { open: 200, close: 200, high: 200, low: 200 },
+        algorithms: { [Algorithm.Dca]: {} }
       }
     ];
 
     const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0, true);
-    expect(klinesWithProfit[0].algorithms[algorithm]!.percentProfit).toBe(0);
-    expect(klinesWithProfit[1].algorithms[algorithm]!.percentProfit).toBe(100);
+    const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
+    expect(backtests[0].percentProfit).toBe(0);
+    expect(backtests[1].percentProfit).toBe(100);
   });
 });
