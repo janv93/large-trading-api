@@ -34,15 +34,28 @@ describe('Backtester', () => {
       {
         ...base,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signal: Signal.CloseBuy } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 450 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.CloseSell } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 0 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
       }
     ];
 
     const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0, true);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
+
     expect(backtests[0].percentProfit).toBe(0);
     expect(backtests[1].percentProfit).toBe(100);
     expect(backtests[2].percentProfit).toBe(100);
     expect(backtests[3].percentProfit).toBe(50);
+    expect(backtests[4].percentProfit).toBe(100);
+    expect(backtests[5].percentProfit).toBe(200);
   });
 });
