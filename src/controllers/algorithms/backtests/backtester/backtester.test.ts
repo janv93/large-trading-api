@@ -13,26 +13,27 @@ describe('Backtester', () => {
 
   it('should calculate percentProfit correctly', () => {
     const base = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const basePrices = { open: 0, high: 0, low: 0 };
 
     const klines: Kline[] = [
       {
         ...base,
-        prices: { open: 100, close: 100, high: 100, low: 100 },
+        prices: { ...basePrices, close: 100 },
         algorithms: { [Algorithm.Dca]: { signal: Signal.Buy } }
       },
       {
         ...base,
-        prices: { open: 200, close: 200, high: 200, low: 200 },
-        algorithms: { [Algorithm.Dca]: {} }
+        prices: { ...basePrices, close: 200 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
       },
       {
         ...base,
-        prices: { open: 200, close: 200, high: 200, low: 200 },
-        algorithms: { [Algorithm.Dca]: {} }
+        prices: { ...basePrices, close: 200 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell } }
       },
       {
         ...base,
-        prices: { open: 200, close: 200, high: 200, low: 200 },
+        prices: { ...basePrices, close: 300 },
         algorithms: { [Algorithm.Dca]: {} }
       }
     ];
@@ -41,5 +42,7 @@ describe('Backtester', () => {
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
     expect(backtests[0].percentProfit).toBe(0);
     expect(backtests[1].percentProfit).toBe(100);
+    expect(backtests[2].percentProfit).toBe(100);
+    expect(backtests[3].percentProfit).toBe(50);
   });
 });
