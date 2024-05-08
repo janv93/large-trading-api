@@ -47,8 +47,9 @@ export default class Backtester extends Base {
    * calculate price change between 2 klines, e.g. 0.5 = +50%, -0.5 = -50%
    */
   private calcPriceChange(algorithm: Algorithm, currentKline: Kline, lastKline: Kline): number {
-    const diff: number = this.signalOrClosePrice(currentKline, algorithm) - this.signalOrClosePrice(lastKline, algorithm);
-    return diff / this.signalOrClosePrice(lastKline, algorithm);
+    const currentPrice = this.signalOrClosePrice(currentKline, algorithm);
+    const lastPrice = this.signalOrClosePrice(lastKline, algorithm);
+    return (currentPrice - lastPrice) / lastPrice;
   }
 
   /**
