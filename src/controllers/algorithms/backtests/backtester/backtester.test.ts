@@ -75,6 +75,21 @@ describe('Backtester', () => {
         ...base,
         prices: { ...basePrices, close: 400 },
         algorithms: { [Algorithm.Dca]: {} }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 400 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell, amount: 2 } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 200 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 100 },
+        algorithms: { [Algorithm.Dca]: {} }
       }
     ];
 
@@ -95,5 +110,8 @@ describe('Backtester', () => {
     expect(backtests[9].percentProfit).toBe(500);
     expect(backtests[10].percentProfit).toBe(700);
     expect(backtests[11].percentProfit).toBe(1300);
+    expect(backtests[12].percentProfit).toBe(1300);
+    expect(backtests[13].percentProfit).toBe(800);
+    expect(backtests[14].percentProfit).toBe(800);
   });
 });
