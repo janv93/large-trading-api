@@ -415,4 +415,8 @@ export default class Base {
 
     return totalChange / (numbers.length - 1);
   }
+
+  protected isAnyCloseSignal(signal: Signal) {
+    return [Signal.Close, Signal.CloseBuy, Signal.CloseSell].includes(signal);
+  }
 }

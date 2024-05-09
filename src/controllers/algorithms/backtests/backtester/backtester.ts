@@ -33,7 +33,7 @@ export default class Backtester extends Base {
 
       if (kline.algorithms[algorithm]!.signal) {
         percentProfit -= this.calcCommission(kline, algorithm, commission, currentAmount);
-        currentAmount = this.calcNewAmount(kline, algorithm, currentAmount);
+        currentAmount = this.calcNewAmount(kline, algorithm, currentAmount);  // now include the new signal and new amount
         lastSignalKline = kline;
       }
 
@@ -55,16 +55,19 @@ export default class Backtester extends Base {
   /**
    * open positions have changing position sizes (amounts), e.g.
    * open position: buy for amount 2, price change: -0.5 (-50%), new amount = 2 - 0.5 * 2 = 1
+   * open position: sell for amount -2, price change: 1 (+100%), new amount = -2 + 1 * 2 = 0  (liquidation)
    */
   private calcAmountFromPriceChange(currentAmount: number, priceChange: number): number {
-    if (priceChange === 0) return currentAmount;
+    // TODO: handle liquidation events and set close signal if liquidated
     return currentAmount + priceChange * Math.abs(currentAmount);
   }
 
   private calcNewAmount(kline: Kline, algorithm: Algorithm, currentAmount: number): number {
-    const amount: number = kline.algorithms[algorithm]!.amount ?? 1;   // if amount is not present, use default amount of 1
+    const backtest: BacktestData = kline.algorithms[algorithm]!;
+    const signal: Signal = backtest.signal!;
+    const amount: number = backtest.amount ?? 1;   // if amount is not present, use default amount of 1
 
-    switch (kline.algorithms[algorithm]!.signal) {
+    switch (signal) {
       case Signal.Close: return 0;
       case Signal.CloseBuy: return amount;
       case Signal.CloseSell: return -amount;
@@ -75,12 +78,16 @@ export default class Backtester extends Base {
   }
 
   private calcCommission(kline: Kline, algorithm: Algorithm, baseCommission: number, currentAmount: number): number {
-    switch (kline.algorithms[algorithm]!.signal) {
-      case Signal.Close: return baseCommission * Math.abs(currentAmount);
+    const backtest: BacktestData = kline.algorithms[algorithm]!;
+    const signal: Signal = backtest.signal!;
+    const klineAmount: number = backtest.amount || 1;
+
+    switch (signal) {
       case Signal.Buy:
-      case Signal.Sell: return baseCommission * (kline.algorithms[algorithm]!.amount || 1);
+      case Signal.Sell: return baseCommission * (klineAmount);
+      case Signal.Close: return baseCommission * Math.abs(currentAmount);
       case Signal.CloseBuy:
-      case Signal.CloseSell: return baseCommission * Math.abs(currentAmount) + baseCommission * (kline.algorithms[algorithm]!.amount || 1);
+      case Signal.CloseSell: return baseCommission * Math.abs(currentAmount) + baseCommission * klineAmount;
       default: return NaN;
     }
   }
