@@ -115,7 +115,7 @@ describe('Backtester', () => {
     expect(backtests[14].percentProfit).toBe(800);
   });
 
-  fit('should calculate percentProfit correctly with flowing profit and commission', () => {
+  it('should calculate percentProfit correctly with flowing profit and commission', () => {
     const base = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 0 };
 
@@ -205,17 +205,17 @@ describe('Backtester', () => {
     expect(backtests[2].percentProfit).toBeCloseTo(99.6);
     expect(backtests[3].percentProfit).toBeCloseTo(49.45);
     expect(backtests[4].percentProfit).toBeCloseTo(99.2);
-    expect(backtests[5].percentProfit).toBeCloseTo(0);
+    expect(backtests[5].percentProfit).toBeCloseTo(-0.8);
     // with amount + signalPrice
-    expect(backtests[6].percentProfit).toBeCloseTo(0);
-    expect(backtests[7].percentProfit).toBeCloseTo(1000);
-    expect(backtests[8].percentProfit).toBeCloseTo(500);
+    expect(backtests[6].percentProfit).toBeCloseTo(-1.8);
+    expect(backtests[7].percentProfit).toBeCloseTo(997.2);
+    expect(backtests[8].percentProfit).toBeCloseTo(496.7);
     // multiple positions at once
-    expect(backtests[9].percentProfit).toBeCloseTo(500);
-    expect(backtests[10].percentProfit).toBeCloseTo(700);
-    expect(backtests[11].percentProfit).toBeCloseTo(1300);
-    expect(backtests[12].percentProfit).toBeCloseTo(1300);
-    expect(backtests[13].percentProfit).toBeCloseTo(800);
-    expect(backtests[14].percentProfit).toBeCloseTo(800);
+    expect(backtests[9].percentProfit).toBeCloseTo(496.5);
+    expect(backtests[10].percentProfit).toBeCloseTo(696.3);
+    expect(backtests[11].percentProfit).toBeCloseTo(1296.3);
+    expect(backtests[12].percentProfit).toBeCloseTo(1296.1);
+    expect(backtests[13].percentProfit).toBeCloseTo(795.6);
+    expect(backtests[14].percentProfit).toBeCloseTo(795.6);
   });
 });
