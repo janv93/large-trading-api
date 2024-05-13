@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData } from 'lightweight-charts';
-import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, Position, Signal, TrendLine, Algorithm } from '../interfaces';
+import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
@@ -357,7 +357,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setOpenAmountSeriesData() {
     const mapped = this.currentKlines.map((kline: Kline) => {
-      const openAmount: number = kline.algorithms[this.chartService.algorithms[0]]!.openAmount!;
+      const openAmount: number = kline.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
       const color = openAmount === 0 ? `transparent` : openAmount > 0 ? `rgba(0, 255, 162, 0.3)` : `rgba(255, 0, 170, 0.3)`;
 
       return {
@@ -376,7 +376,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     kline.chart!.trendLines!.forEach((trendLine: TrendLine) => {
       const start = {
         time: kline.times.open / 1000 as Time,
-        value: trendLine.position === Position.Above ? kline.prices.high : kline.prices.low
+        value: trendLine.position === TrendLinePosition.Above ? kline.prices.high : kline.prices.low
       };
 
       const endKline: Kline = this.currentKlines[trendLine.endIndex];
@@ -395,7 +395,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       } else {  // no breakthrough
         end = {
           time: endKline.times.open / 1000 as Time,
-          value: trendLine.position === Position.Above ? endKline.prices.high : endKline.prices.low
+          value: trendLine.position === TrendLinePosition.Above ? endKline.prices.high : endKline.prices.low
         };
       }
 

@@ -60,7 +60,7 @@ export enum Slope {
   Descending = 'DESC'
 }
 
-export enum Position {
+export enum TrendLinePosition {
   Above = 'ABOVE',
   Below = 'BELOW'
 }
@@ -108,7 +108,7 @@ export interface TrendLine {
   breakThroughIndex?: number;
   length: number;
   slope: Slope;
-  position: Position;
+  position: TrendLinePosition;
 }
 
 export interface BacktestData {
@@ -117,7 +117,8 @@ export interface BacktestData {
   amount?: number;
   signalPrice?: number;
   positionCloseTrigger?: PositionCloseTrigger;
-  openAmount?: number;
+  openPositionSize?: number;
+  isLiquidation?: boolean;
 }
 
 export interface PositionCloseTrigger {
