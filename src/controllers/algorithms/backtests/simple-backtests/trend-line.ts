@@ -1,4 +1,4 @@
-import { Algorithm, BacktestData, Kline, Position, Signal, TrendLine } from '../../../../interfaces';
+import { Algorithm, BacktestData, Kline, Signal, TrendLine, TrendLinePosition } from '../../../../interfaces';
 import Base from '../../../base';
 import Charting from '../../patterns/charting';
 import { LinearFunction } from '../../patterns/linear-function';
@@ -22,9 +22,9 @@ export default class TrendLineBreakthrough extends Base {
 
         breakthroughs.forEach((trendLine: TrendLine) => {
           const length: number = trendLine.length;
-          const position: Position = trendLine.position;
+          const position: TrendLinePosition = trendLine.position;
           const directionScore: number = length / 100;  // e.g. trend line of length 120 gets 1.2 score, more than a line with length 50 (0.5). the longer the trend line, the more meaningful the breakthrough
-          const trendLineScore: number = position === Position.Above ? directionScore : directionScore * -1;  // score becomes negative if breakthrough is to the downside
+          const trendLineScore: number = position === TrendLinePosition.Above ? directionScore : directionScore * -1;  // score becomes negative if breakthrough is to the downside
           score += trendLineScore;
           const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
           const breakthoughPrice = lineFunction.getY(trendLine.breakThroughIndex!);

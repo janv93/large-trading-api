@@ -1,4 +1,4 @@
-import { Kline, PivotPoint, PivotPointSide, Position, Slope, TrendLine } from '../../../interfaces';
+import { Kline, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition } from '../../../interfaces';
 import { LinearFunction } from './linear-function';
 
 export default class Charting {
@@ -78,7 +78,7 @@ export default class Charting {
               endIndex: endIndex,
               length: endIndex - i,
               slope: ppStartPrice < ppEndPrice ? Slope.Ascending : Slope.Descending,
-              position: ppStartSide === PivotPointSide.High ? Position.Above : Position.Below
+              position: ppStartSide === PivotPointSide.High ? TrendLinePosition.Above : TrendLinePosition.Below
             });
           }
         }
@@ -101,19 +101,19 @@ export default class Charting {
 
   private extendTrendLineUntilBreakthrough(klines: Kline[], trendLine: TrendLine) {
     const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
-    const position: Position = trendLine.position;
+    const position: TrendLinePosition = trendLine.position;
     const startIndex: number = trendLine.endIndex + 1;
     const maxIndex: number = trendLine.endIndex + trendLine.length * 2; // the max distance of the end of the trend line to the breakthrough point, after that it is considered too far away to belong to the line
     const candidateKlines: Kline[] = klines.slice(startIndex, maxIndex);
     let breakThroughIndex = -1;
 
-    if (position === Position.Above) {
+    if (position === TrendLinePosition.Above) {
       breakThroughIndex = candidateKlines.findIndex((kline: Kline, i: number) => {
         const currentLinePrice = lineFunction.getY(startIndex + i);
         const high = kline.prices.high;
         return high > currentLinePrice;
       });
-    } else if (position === Position.Below) {
+    } else if (position === TrendLinePosition.Below) {
       breakThroughIndex = candidateKlines.findIndex((kline: Kline, i: number) => {
         const currentLinePrice = lineFunction.getY(startIndex + i);
         const low = kline.prices.low;
@@ -169,7 +169,7 @@ export default class Charting {
   // if trend line is on opposite side of trend (e.g. trend is up, line is below price)
   private trendLineIsAgainstTrend(startPrice: number, endPrice: number, side: PivotPointSide): boolean {
     const slope = startPrice < endPrice ? Slope.Ascending : Slope.Descending;
-    const position = side === PivotPointSide.High ? Position.Above : Position.Below;
-    return (slope === Slope.Ascending && position === Position.Below) || (slope === Slope.Descending && position === Position.Above);
+    const position = side === PivotPointSide.High ? TrendLinePosition.Above : TrendLinePosition.Below;
+    return (slope === Slope.Ascending && position === TrendLinePosition.Below) || (slope === Slope.Descending && position === TrendLinePosition.Above);
   }
 }

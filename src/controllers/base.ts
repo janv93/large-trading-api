@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { Algorithm, BacktestData, Kline, Signal, Timeframe } from '../interfaces';
+import { Algorithm, BacktestData, Kline, Position, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
@@ -416,7 +416,94 @@ export default class Base {
     return totalChange / (numbers.length - 1);
   }
 
-  protected isAnyCloseSignal(signal: Signal) {
+  protected isAnyCloseSignal(signal: Signal | undefined): boolean {
+    if (!signal) return false;
     return [Signal.Close, Signal.CloseBuy, Signal.CloseSell].includes(signal);
+  }
+
+  protected isBuySignal(signal: Signal | undefined): boolean {
+    if (!signal) return false;
+    return [Signal.Buy, Signal.CloseBuy].includes(signal);
+  }
+
+  protected isSellSignal(signal: Signal | undefined): boolean {
+    if (!signal) return false;
+    return [Signal.Sell, Signal.CloseSell].includes(signal);
+  }
+
+  /**
+   * creates position from kline signal
+   */
+  protected createPosition(kline: Kline, algorithm: Algorithm): Position | undefined {
+    const backtest: BacktestData = kline.algorithms[algorithm]!;
+    const signal: Signal | undefined = backtest.signal;
+
+    if (!signal) {
+      return undefined;
+    }
+
+    const amount: number = backtest.amount || 1;
+    const signalPrice: number = this.signalOrClosePrice(kline, algorithm);
+    let size: number;
+    let entrySize: number;
+    let price: number;
+    let entryPrice: number;
+    let liquidationPrice: number;
+
+    if (this.isBuySignal(signal)) {
+      size = amount;
+      entrySize = amount;
+      price = signalPrice;
+      entryPrice = signalPrice;
+      liquidationPrice = 0;
+    } else if (this.isSellSignal(signal)) {
+      size = -amount;
+      entrySize = -amount;
+      price = signalPrice;
+      entryPrice = signalPrice;
+      liquidationPrice = entryPrice * 2;
+    } else {
+      return undefined;
+    }
+
+    return { size, entrySize, price, entryPrice, liquidationPrice };
+  }
+
+  protected combinePositions(previousPosition?: Position, newPosition?: Position): Position | undefined {
+    if (!previousPosition) return newPosition;
+    if (!newPosition) return previousPosition;
+
+    if (previousPosition.isLiquidated) {
+      return {
+        size: newPosition.size,
+        entrySize: newPosition.size,
+        price: previousPosition.liquidationPrice, // currently only one price per position possible, thus pick liquidation price. this means that in case of liquidation, the new position entry will be ignored
+        entryPrice: previousPosition.liquidationPrice,
+        liquidationPrice: newPosition.size > 0 ? 0 : newPosition.entryPrice * 2,
+        isLiquidated: true
+      };
+    }
+
+    const newSize: number = previousPosition.size + newPosition.size;
+
+    if (newSize === 0) return undefined;  // if positions cancel each other out, return nothing
+
+    const newEntryPrice: number = newPosition.entryPrice;
+    const newLiquidationPrice: number = newSize > 0 ? 0 : newEntryPrice * 2;
+
+    return {
+      size: newSize,
+      entrySize: newSize,
+      price: newEntryPrice,
+      entryPrice: newEntryPrice,
+      liquidationPrice: newLiquidationPrice
+    };
+  }
+
+  /**
+   * e.g. 10 -> 15 = 0.5
+   */
+  protected calcPriceChange(startPrice: number, endPrice: number): number {
+    return (endPrice - startPrice) / startPrice;
   }
 }
