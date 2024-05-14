@@ -75,15 +75,15 @@ export default class Routes extends Base {
 
     // stocks
     const stocksSymbols = await this.getMultiStocks(Number(rank));
-    const stocks = await this.initKlinesMulti('alpaca', stocksSymbols, timeframe);
+    const stocks = await this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe);
 
     // indexes
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'];
-    const indexes = await this.initKlinesMulti('alpaca', indexSymbols, timeframe);
+    const indexes = await this.initKlinesMulti(Exchange.Alpaca, indexSymbols, timeframe);
 
     // commodities
     const commoditySymbols = ['GLD', 'UNG', 'USO', 'COPX']; // gold, gas, oil, copper
-    const commodities = await this.initKlinesMulti('alpaca', commoditySymbols, timeframe);
+    const commodities = await this.initKlinesMulti(Exchange.Alpaca, commoditySymbols, timeframe);
 
     // crypto
     const cryptosSymbols = await this.getMultiCryptos(Number(rank));
