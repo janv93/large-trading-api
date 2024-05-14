@@ -540,6 +540,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private setFinalProfits(): void {
+    this.finalProfit = [];
+
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.finalProfit.push(this.currentKlines.at(-1)!.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0);
     });
