@@ -24,10 +24,10 @@ export default class Backtester extends Base {
         backtest.openPositionSize = newPosition?.size || 0;
       } else {  // open position
         this.setLiquidation(position, kline);  // check if liquidation
-        const positionBeforeUpdate: Position = this.clone(position);
+        const positionBeforeUpdate: Position = this.clone(position);  // only needed for liquidation case
         const isLiquidation = position?.isLiquidation;
 
-        if (flowingProfit || !flowingProfit && signal || isLiquidation) {
+        if (flowingProfit || !flowingProfit && signal || isLiquidation) { // if flowing profit, profits/sizes every kline - if not, either set when signal or liquidation (since liquidation also sets signal)
           profit = this.updateProfit(profit, position, kline, algorithm); // calculate profit
           this.updateOldPosition(position, kline, algorithm);  // update position size
           profit -= this.calcFee(position, newPosition, signal, commission);  // subtract fee from profit
