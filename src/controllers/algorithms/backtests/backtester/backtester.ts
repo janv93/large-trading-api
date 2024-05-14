@@ -23,13 +23,13 @@ export default class Backtester extends Base {
         backtest.percentProfit = profit;
         backtest.openPositionSize = newPosition?.size || 0;
       } else {  // open position
-        position = this.setLiquidation(position, kline);  // check if liquidation
+        this.setLiquidation(position, kline);  // check if liquidation
         const positionBeforeUpdate: Position = this.clone(position);
         const isLiquidation = position?.isLiquidation;
 
         if (flowingProfit || !flowingProfit && signal || isLiquidation) {
           profit = this.updateProfit(profit, position, kline, algorithm); // calculate profit
-          position = this.updateOldPosition(position, kline, algorithm);  // update position size
+          this.updateOldPosition(position, kline, algorithm);  // update position size
           profit -= this.calcFee(position, newPosition, signal, commission);  // subtract fee from profit
           if (signal && this.isAnyCloseSignal(signal)) position = undefined;  // optionally close position
           position = this.combinePositions(position, newPosition);  // add the new signal/position to the old one
@@ -42,7 +42,7 @@ export default class Backtester extends Base {
     return klines;
   }
 
-  private setLiquidation(position: Position, kline: Kline): Position {
+  private setLiquidation(position: Position, kline: Kline) {
     const size: number = position.size;
     const liquidationPrice: number = position.liquidationPrice;
     const currentHigh: number = kline.prices.high;
@@ -53,8 +53,6 @@ export default class Backtester extends Base {
     } else if (size < 0) {  //short
       position.isLiquidation = currentHigh >= liquidationPrice;
     }
-
-    return position;
   }
 
   private updateProfit(profit: number, oldPosition: Position, kline: Kline, algorithm: Algorithm): number {
@@ -76,7 +74,7 @@ export default class Backtester extends Base {
   /**
    * recalculates the existing position size and sets liquidation signal
    */
-  private updateOldPosition(position: Position, kline: Kline, algorithm: Algorithm): Position {
+  private updateOldPosition(position: Position, kline: Kline, algorithm: Algorithm) {
     const entryPrice: number = position.entryPrice;
     const currentPrice: number = this.signalOrClosePrice(kline, algorithm);
     const priceChange: number = this.calcPriceChange(entryPrice, currentPrice);
@@ -90,8 +88,6 @@ export default class Backtester extends Base {
         position.price = currentPrice;
       }
     }
-
-    return position;
   }
 
   private calcFee(oldPosition: Position | undefined, newPosition: Position | undefined, signal: Signal | undefined, commission: number): number {

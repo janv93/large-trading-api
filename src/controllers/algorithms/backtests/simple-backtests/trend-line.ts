@@ -7,14 +7,6 @@ export default class TrendLineBreakthrough extends Base {
   private charting = new Charting();
 
   public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
-    let done = false;
-    klines.forEach((kline) => {
-      if (kline.prices.low < 5000 && !done) {
-        kline.algorithms[algorithm]!.signal = Signal.Sell;
-        done = true;
-      }
-    });
-    return klines;
     this.charting.addPivotPoints(klines, 10, 10);
     this.charting.addTrendLinesFromPivotPoints(klines, 40, 150);
     this.charting.addTrendLineBreakthroughs(klines);
