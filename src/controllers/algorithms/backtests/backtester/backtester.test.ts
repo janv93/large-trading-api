@@ -218,4 +218,28 @@ describe('Backtester', () => {
     expect(backtests[13].percentProfit).toBeCloseTo(795.6);
     expect(backtests[14].percentProfit).toBeCloseTo(795.6);
   });
+
+  fit('should calculate percentProfit correctly in case of liquidation', () => {
+    const base = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const basePrices = { open: 0, low: 1 };
+
+    const klines: Kline[] = [
+      {
+        ...base,
+        prices: { ...basePrices, close: 100, high: 120 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 150, high: 200 },
+        algorithms: { [Algorithm.Dca]: {} }
+      }
+    ];
+
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0, true);
+    const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
+
+    expect(backtests[0].percentProfit).toBe(0);
+    expect(backtests[1].percentProfit).toBe(-100);
+  });
 });
