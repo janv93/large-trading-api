@@ -51,8 +51,6 @@ export default class Backtester extends Base {
       position.isLiquidated = currentHigh >= liquidationPrice;
     }
 
-    if (position.isLiquidated) console.log('LIQ', new Date(kline.prices.open))
-
     return position;
   }
 
