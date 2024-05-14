@@ -189,5 +189,5 @@ export interface Position {
   price: number;
   entryPrice: number;
   liquidationPrice: number;
-  isLiquidated?: boolean;
+  isLiquidation?: boolean;
 }

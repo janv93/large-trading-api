@@ -472,7 +472,7 @@ export default class Base {
   protected combinePositions(previousPosition?: Position, newPosition?: Position): Position | undefined {
     if (!previousPosition) return newPosition;
 
-    if (previousPosition.isLiquidated) {
+    if (previousPosition.isLiquidation) {
       if (newPosition) {
         return {
           size: newPosition.size,
@@ -480,7 +480,7 @@ export default class Base {
           price: previousPosition.liquidationPrice, // currently only one price per position possible, thus pick liquidation price. this means that in case of liquidation, the new position entry will be ignored
           entryPrice: previousPosition.liquidationPrice,
           liquidationPrice: newPosition.size > 0 ? 0 : newPosition.entryPrice * 2,
-          isLiquidated: true
+          isLiquidation: true
         };
       } else {
         return undefined;

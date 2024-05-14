@@ -23,8 +23,11 @@ export default class Backtester extends Base {
         backtest.percentProfit = profit;
         backtest.openPositionSize = newPosition?.size || 0;
       } else {  // open position
-        if (flowingProfit || !flowingProfit && signal) {
-          position = this.setLiquidation(position, kline);  // check if liquidation
+        position = this.setLiquidation(position, kline);  // check if liquidation
+        const positionBeforeUpdate: Position = this.clone(position);
+        const isLiquidation = position?.isLiquidation;
+
+        if (flowingProfit || !flowingProfit && signal || isLiquidation) {
           profit = this.updateProfit(profit, position, kline, algorithm); // calculate profit
           position = this.updateOldPosition(position, kline, algorithm);  // update position size
           profit -= this.calcFee(position, newPosition, signal, commission);  // subtract fee from profit
@@ -32,7 +35,7 @@ export default class Backtester extends Base {
           position = this.combinePositions(position, newPosition);  // add the new signal/position to the old one
         }
 
-        this.updateBacktestWithPosition(position, backtest, profit);  // transfer calculated data back into kline backtest
+        this.updateBacktestWithPosition(position || positionBeforeUpdate, backtest, profit);  // transfer calculated data back into kline backtest
       }
     });
 
@@ -46,9 +49,9 @@ export default class Backtester extends Base {
     const currentLow: number = kline.prices.low;
 
     if (size > 0) { // long
-      position.isLiquidated = currentLow <= liquidationPrice; // for now, without leverage, long liquidation cannot be triggered (except weird cases like negative prices on oil, will not consider that)
+      position.isLiquidation = currentLow <= liquidationPrice; // for now, without leverage, long liquidation cannot be triggered (except weird cases like negative prices on oil, will not consider that)
     } else if (size < 0) {  //short
-      position.isLiquidated = currentHigh >= liquidationPrice;
+      position.isLiquidation = currentHigh >= liquidationPrice;
     }
 
     return position;
@@ -63,7 +66,7 @@ export default class Backtester extends Base {
     const entrySize: number = oldPosition.entrySize;
     const size: number = oldPosition.size;
 
-    if (oldPosition.isLiquidated) {
+    if (oldPosition.isLiquidation) {
       return profit - Math.abs(size) * 100;
     } else {
       return profit + change * entrySize * 100;
@@ -78,7 +81,7 @@ export default class Backtester extends Base {
     const currentPrice: number = this.signalOrClosePrice(kline, algorithm);
     const priceChange: number = this.calcPriceChange(entryPrice, currentPrice);
 
-    if (!position.isLiquidated) {
+    if (!position.isLiquidation) {
       if (position.size > 0) {  // long
         position.size = position.entrySize * (1 + priceChange);
         position.price = currentPrice;
@@ -95,7 +98,7 @@ export default class Backtester extends Base {
     let fee = 0;
 
     // (forced) closing position costs position size * commission
-    if (oldPosition && (oldPosition.isLiquidated || this.isAnyCloseSignal(signal))) {
+    if (oldPosition && (oldPosition.isLiquidation || this.isAnyCloseSignal(signal))) {
       fee += commission * Math.abs(oldPosition.size);
     }
 
@@ -110,13 +113,13 @@ export default class Backtester extends Base {
   /**
    * updates the kline backtest with the calculated data
    */
-  private updateBacktestWithPosition(position: Position | undefined, backtest: BacktestData, profit): void {
+  private updateBacktestWithPosition(position: Position, backtest: BacktestData, profit: number): void {
     backtest.openPositionSize = position?.size || 0;
     backtest.percentProfit = profit;
 
-    if (position?.isLiquidated) {
+    if (position.isLiquidation) {
       backtest.isLiquidation = true;
-      backtest.signalPrice = position!.price; // overwrite the price, there is currently only one signal price possible per kline
+      backtest.signalPrice = position.price; // overwrite the price, there is currently only one signal price possible per kline
       const signal: Signal | undefined = backtest.signal;
 
       if (this.isBuySignal(signal)) { // if liquidated, set a close signal and merge it with the new signal
