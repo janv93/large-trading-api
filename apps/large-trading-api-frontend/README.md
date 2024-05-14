@@ -11,5 +11,8 @@ Charting tool for [Large Trading API](https://github.com/janv93/LargeTradingAPI)
 ### One ticker
 ![not available](https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/chart.png)
 
+### Charting
+![not available](https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/chart-charting.png)
+
 ### Multiple tickers
 ![not available](https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/multi-chart.png)
