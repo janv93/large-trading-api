@@ -21,6 +21,7 @@ export default class Backtester extends Base {
         position = newPosition;
         profit -= this.calcFee(position, newPosition, signal, commission);  // subtract fee from profit
         backtest.percentProfit = profit;
+        backtest.openPositionSize = newPosition?.size || 0;
       } else {  // open position
         if (flowingProfit || !flowingProfit && signal) {
           position = this.setLiquidation(position, kline);  // check if liquidation
