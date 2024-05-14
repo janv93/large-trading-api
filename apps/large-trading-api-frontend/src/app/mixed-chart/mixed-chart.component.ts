@@ -27,6 +27,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private trendLineSeries: ISeriesApi<'Line'>[] = [];
   private commissionChecked = false;
   private flowingProfitChecked = true;
+  private positionSizeChecked = false;
   private finalProfit: number[] = [];
   private red = 'rgb(255, 77, 77)';
   private green = 'rgb(0, 255, 0)';
@@ -110,6 +111,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.drawSeries();
     this.setLegendValues();
     this.drawChartData();
+    this.drawOpenPositionSize();
 
     this.chartService.algorithms.forEach((algorithm, index) => {
       this.setProfitSeriesData(index);
@@ -118,15 +120,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   public onShowPositionSizeChange(event: Event) {
     const checked: boolean = (event.target as HTMLInputElement).checked;
-
-    if (checked) {
-      this.drawOpenAmount();
-    } else {
-      if (this.openPositionSizeSeries) {
-        this.chart.removeSeries(this.openPositionSizeSeries);
-        this.openPositionSizeSeries = undefined;
-      }
-    }
+    this.positionSizeChecked = checked;
+    this.drawOpenPositionSize();
   }
 
   public onShowChartingChange(event: Event) {
@@ -240,18 +235,25 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.calcStats();
   }
 
-  private drawOpenAmount(): void {
-    if (this.openPositionSizeSeries) {
-      this.chart.removeSeries(this.openPositionSizeSeries);
+  private drawOpenPositionSize(): void {
+    if (this.positionSizeChecked) {
+      if (this.openPositionSizeSeries) {
+        this.chart.removeSeries(this.openPositionSizeSeries);
+      }
+  
+      this.openPositionSizeSeries = this.chart.addHistogramSeries({ priceScaleId: 'histogram' });
+      this.setOpenPositionSizeSeriesData();
+  
+      this.openPositionSizeSeries.applyOptions({
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+    } else {
+      if (this.openPositionSizeSeries) {
+        this.chart.removeSeries(this.openPositionSizeSeries);
+        this.openPositionSizeSeries = undefined;
+      }
     }
-
-    this.openPositionSizeSeries = this.chart.addHistogramSeries({ priceScaleId: 'histogram' });
-    this.setOpenPositionSizeSeriesData();
-
-    this.openPositionSizeSeries.applyOptions({
-      priceLineVisible: false,
-      lastValueVisible: false
-    });
   }
 
   private drawChartData() {
