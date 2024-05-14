@@ -17,13 +17,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   public ohlc: CandlestickData;
   public currentProfit: number;
-  public currentOpenAmount: number;
+  public openPositionSize: number;
   public stats: BacktestStats;
   public currentKlines: Kline[];
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
   private profitSeries: ISeriesApi<'Line'>[] = [];
-  private openAmountSeries: ISeriesApi<'Histogram'> | undefined;
+  private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLineSeries: ISeriesApi<'Line'>[] = [];
   private commissionChecked = false;
   private flowingProfitChecked = true;
@@ -117,15 +117,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
-  public onShowAmountChange(event: Event) {
+  public onShowPositionSizeChange(event: Event) {
     const checked: boolean = (event.target as HTMLInputElement).checked;
 
     if (checked) {
       this.drawOpenAmount();
     } else {
-      if (this.openAmountSeries) {
-        this.chart.removeSeries(this.openAmountSeries);
-        this.openAmountSeries = undefined;
+      if (this.openPositionSizeSeries) {
+        this.chart.removeSeries(this.openPositionSizeSeries);
+        this.openPositionSizeSeries = undefined;
       }
     }
   }
@@ -242,14 +242,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawOpenAmount(): void {
-    if (this.openAmountSeries) {
-      this.chart.removeSeries(this.openAmountSeries);
+    if (this.openPositionSizeSeries) {
+      this.chart.removeSeries(this.openPositionSizeSeries);
     }
 
-    this.openAmountSeries = this.chart.addHistogramSeries({ priceScaleId: 'histogram' });
-    this.setOpenAmountSeriesData();
+    this.openPositionSizeSeries = this.chart.addHistogramSeries({ priceScaleId: 'histogram' });
+    this.setOpenPositionSizeSeriesData();
 
-    this.openAmountSeries.applyOptions({
+    this.openPositionSizeSeries.applyOptions({
       priceLineVisible: false,
       lastValueVisible: false
     });
@@ -355,20 +355,20 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.profitSeries[index].setData(mapped);
   }
 
-  private setOpenAmountSeriesData() {
+  private setOpenPositionSizeSeriesData() {
     const mapped = this.currentKlines.map((kline: Kline) => {
-      const openAmount: number = kline.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
-      const color = openAmount === 0 ? `transparent` : openAmount > 0 ? `rgba(0, 255, 162, 0.3)` : `rgba(255, 0, 170, 0.3)`;
+      const openPositionSize: number = kline.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
+      const color = openPositionSize === 0 ? `transparent` : openPositionSize > 0 ? `rgba(0, 255, 162, 0.3)` : `rgba(255, 0, 170, 0.3)`;
 
       return {
         time: kline.times.open / 1000 as Time,
-        value: openAmount,
+        value: openPositionSize,
         color
       };
     });
 
-    if (this.openAmountSeries) {
-      this.openAmountSeries.setData(mapped);
+    if (this.openPositionSizeSeries) {
+      this.openPositionSizeSeries.setData(mapped);
     }
   }
 
@@ -454,7 +454,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.isCrosshairSubscribed = true;
       const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
       const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
-      const openAmount: HistogramData | undefined = this.openAmountSeries ? param.seriesData.get(this.openAmountSeries) as HistogramData : undefined;
+      const openPositionSize: HistogramData | undefined = this.openPositionSizeSeries ? param.seriesData.get(this.openPositionSizeSeries) as HistogramData : undefined;
 
       if (ohlc) {
         for (const key in ohlc) {
@@ -466,8 +466,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.ohlc = ohlc;
         this.currentProfit = Number(profit.value.toFixed(2));
 
-        if (openAmount !== undefined) {
-          this.currentOpenAmount = Number(openAmount.value.toFixed(2));
+        if (openPositionSize !== undefined) {
+          this.openPositionSize = Number(openPositionSize.value.toFixed(2));
         }
 
         this.cd.detectChanges();
