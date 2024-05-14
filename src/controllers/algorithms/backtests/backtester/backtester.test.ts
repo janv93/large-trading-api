@@ -254,4 +254,34 @@ describe('Backtester', () => {
     expect(backtests[2].percentProfit).toBe(-100);
     expect(backtests[3].percentProfit).toBe(-200);
   });
+
+  it('should calculate percentProfit correctly in case of shrinking short position', () => {
+    const base = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const basePrices = { open: 0, high: 0, low: 0 };
+
+    const klines: Kline[] = [
+      {
+        ...base,
+        prices: { ...basePrices, close: 100 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell } }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 120 },
+        algorithms: { [Algorithm.Dca]: {} }
+      },
+      {
+        ...base,
+        prices: { ...basePrices, close: 140 },
+        algorithms: { [Algorithm.Dca]: {} }
+      }
+    ];
+
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0, true);
+    const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
+
+    expect(backtests[0].percentProfit).toBe(0);
+    expect(backtests[1].percentProfit).toBe(-20);
+    expect(backtests[2].percentProfit).toBe(-40);
+  });
 });

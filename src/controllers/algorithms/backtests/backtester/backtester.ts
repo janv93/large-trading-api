@@ -59,12 +59,12 @@ export default class Backtester extends Base {
     const currentPrice: number = this.signalOrClosePrice(kline, algorithm);
     const diff: number = currentPrice - lastPrice;
     const change: number = diff / entryPrice;
-    const size: number = oldPosition.size;
+    const entrySize: number = oldPosition.entrySize;
 
     if (oldPosition.isLiquidated) {
-      return profit - Math.abs(size) * 100;
+      return profit - Math.abs(entrySize) * 100;
     } else {
-      return profit + change * size * 100;
+      return profit + change * entrySize * 100;
     }
   }
 
