@@ -28,9 +28,9 @@ export class ChartService {
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
 
   // multi
-  public isMulti = false;
+  public isMulti = true;
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
-  public multiRank = 10;
+  public multiRank = 10;  // top [rank] tickers of each category. e.g. top 10 of stocks, cryptos etc
 
   constructor() { }
 }
