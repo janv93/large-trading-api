@@ -471,18 +471,23 @@ export default class Base {
 
   protected combinePositions(previousPosition?: Position, newPosition?: Position): Position | undefined {
     if (!previousPosition) return newPosition;
-    if (!newPosition) return previousPosition;
 
     if (previousPosition.isLiquidated) {
-      return {
-        size: newPosition.size,
-        entrySize: newPosition.size,
-        price: previousPosition.liquidationPrice, // currently only one price per position possible, thus pick liquidation price. this means that in case of liquidation, the new position entry will be ignored
-        entryPrice: previousPosition.liquidationPrice,
-        liquidationPrice: newPosition.size > 0 ? 0 : newPosition.entryPrice * 2,
-        isLiquidated: true
-      };
+      if (newPosition) {
+        return {
+          size: newPosition.size,
+          entrySize: newPosition.size,
+          price: previousPosition.liquidationPrice, // currently only one price per position possible, thus pick liquidation price. this means that in case of liquidation, the new position entry will be ignored
+          entryPrice: previousPosition.liquidationPrice,
+          liquidationPrice: newPosition.size > 0 ? 0 : newPosition.entryPrice * 2,
+          isLiquidated: true
+        };
+      } else {
+        return undefined;
+      }
     }
+
+    if (!newPosition) return previousPosition;
 
     const newSize: number = previousPosition.size + newPosition.size;
 
