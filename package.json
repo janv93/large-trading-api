@@ -4,7 +4,7 @@
   "description": "WIP",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node --max-old-space-size=16384 dist/app.js",
+    "start": "rm -rf dist && tsc && node --max-old-space-size=16384 dist/app.js",
     "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log",
     "test": "jest"
   },
