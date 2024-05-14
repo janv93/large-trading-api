@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData } from 'lightweight-charts';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm } from '../interfaces';
 import { ChartService } from '../chart.service';
@@ -36,8 +36,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   constructor(
     public chartService: ChartService,
-    private renderer: Renderer2,
-    private cd: ChangeDetectorRef
+    private renderer: Renderer2
   ) {
     super();
   }
@@ -469,8 +468,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         if (openPositionSize !== undefined) {
           this.openPositionSize = Number(openPositionSize.value.toFixed(2));
         }
-
-        this.cd.detectChanges();
       }
     });
   }
