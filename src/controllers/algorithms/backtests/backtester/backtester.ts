@@ -31,6 +31,9 @@ export default class Backtester extends Base {
           if (signal && this.isAnyCloseSignal(signal)) position = undefined;  // optionally close position
           position = this.combinePositions(position, newPosition);  // add the new signal/position to the old one
           this.updateBacktestWithPosition(position, backtest, profit);  // transfer calculated data back into kline backtest
+        } else {
+          backtest.percentProfit = profit;
+          backtest.openPositionSize = position.size || 0;
         }
       }
     });
@@ -49,6 +52,8 @@ export default class Backtester extends Base {
     } else if (size < 0) {  //short
       position.isLiquidated = currentHigh >= liquidationPrice;
     }
+
+    if (position.isLiquidated) console.log('LIQ', new Date(kline.prices.open))
 
     return position;
   }
