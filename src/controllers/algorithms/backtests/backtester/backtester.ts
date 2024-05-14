@@ -24,7 +24,9 @@ export default class Backtester extends Base {
         backtest.openPositionSize = newPosition?.size || 0;
       } else {  // open position
         if (flowingProfit || !flowingProfit && signal) {
+          console.log(i)
           position = this.setLiquidation(position, kline);  // check if liquidation
+          console.log(position.isLiquidated)
           profit = this.updateProfit(profit, position, kline, algorithm); // calculate profit
           position = this.updateOldPosition(position, kline, algorithm);  // update position size
           profit -= this.calcFee(position, newPosition, signal, commission);  // subtract fee from profit
@@ -60,9 +62,10 @@ export default class Backtester extends Base {
     const diff: number = currentPrice - lastPrice;
     const change: number = diff / entryPrice;
     const entrySize: number = oldPosition.entrySize;
+    const size: number = oldPosition.size;
 
     if (oldPosition.isLiquidated) {
-      return profit - Math.abs(entrySize) * 100;
+      return profit - Math.abs(size) * 100;
     } else {
       return profit + change * entrySize * 100;
     }

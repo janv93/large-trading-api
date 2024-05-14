@@ -231,6 +231,11 @@ describe('Backtester', () => {
       },
       {
         ...base,
+        prices: { ...basePrices, close: 150, high: 150, low: 80 },
+        algorithms: { [Algorithm.Dca]: {} }
+      },
+      {
+        ...base,
         prices: { ...basePrices, close: 150, high: 200, low: 120 },
         algorithms: { [Algorithm.Dca]: {} }
       },
@@ -250,9 +255,10 @@ describe('Backtester', () => {
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].percentProfit).toBe(0);
-    expect(backtests[1].percentProfit).toBe(-100);
+    expect(backtests[1].percentProfit).toBe(-50);
     expect(backtests[2].percentProfit).toBe(-100);
-    expect(backtests[3].percentProfit).toBe(-200);
+    expect(backtests[3].percentProfit).toBe(-100);
+    expect(backtests[4].percentProfit).toBe(-200);
   });
 
   it('should calculate percentProfit correctly in case of shrinking short position', () => {
