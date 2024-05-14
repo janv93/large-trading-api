@@ -115,7 +115,7 @@ describe('Backtester', () => {
     expect(backtests[14].percentProfit).toBe(800);
   });
 
-  fit('should calculate percentProfit correctly with flowing profit and commission', () => {
+  it('should calculate percentProfit correctly with flowing profit and commission', () => {
     const base = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1 };
 
