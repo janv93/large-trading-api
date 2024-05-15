@@ -10,6 +10,7 @@ export default class TrendLineBreakthrough extends Base {
     this.charting.addPivotPoints(klines, 10, 10);
     this.charting.addTrendLinesFromPivotPoints(klines, 40, 150);
     this.charting.addTrendLineBreakthroughs(klines);
+    this.charting.filterTrendLinesWithoutBreakthroughs(klines);
 
     klines.forEach((kline, i) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;

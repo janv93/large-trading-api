@@ -99,6 +99,14 @@ export default class Charting {
     });
   }
 
+  public filterTrendLinesWithoutBreakthroughs(klines: Kline[]) {
+    klines.forEach((kline: Kline) => {
+      if (kline.chart?.trendLines) {
+        kline.chart.trendLines = kline.chart.trendLines.filter((trendLine: TrendLine) => trendLine.breakThroughIndex !== undefined);
+      }
+    });
+  }
+
   private extendTrendLineUntilBreakthrough(klines: Kline[], trendLine: TrendLine) {
     const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
     const position: TrendLinePosition = trendLine.position;
