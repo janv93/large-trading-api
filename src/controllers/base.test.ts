@@ -55,6 +55,6 @@ describe('Backtester', () => {
     expect(backtests[2].signal).toBe(Signal.Sell);
     expect(backtests[2].amount).toBe(1.8);
     expect(backtests[4].signal).toBe(Signal.Buy);
-    expect(backtests[4].amount).toBe(1.2);
+    expect(backtests[4].amount).toBe(1.2);  // 3-(2*1.9)
   });
 });
