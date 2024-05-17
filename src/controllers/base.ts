@@ -112,8 +112,8 @@ export default class Base {
         // either take tp/sl defined in kline or one tp/sl for all klines from parameters
         const klineStopLoss: number | undefined = openBacktest?.positionCloseTrigger?.stopLoss;
         const klineTakeProfit: number | undefined = openBacktest?.positionCloseTrigger?.takeProfit;
-        const sl: number | undefined = (klineStopLoss ?? stopLoss);
-        const tp: number | undefined = (klineTakeProfit ?? takeProfit);
+        const sl: number | undefined = klineStopLoss ?? stopLoss;
+        const tp: number | undefined = klineTakeProfit ?? takeProfit;
         const tpSlTriggerPrice: number | null = sl && tp ? this.getTpSlTriggerPrice(openKline, currentKline, algorithm, sl, tp) : null;
 
         if (tpSlTriggerPrice) {
