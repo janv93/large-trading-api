@@ -117,8 +117,13 @@ export default class Base {
         const tpSlTriggerPrice: number | null = sl && tp ? this.getTpSlTriggerPrice(openKline, currentKline, algorithm, sl, tp) : null;
 
         if (tpSlTriggerPrice) {
+          // calculate amount after price change
+          const entryPrice: number = this.signalOrClosePrice(openKline, algorithm);
+          const priceChange: number = this.calcPriceChange(entryPrice, tpSlTriggerPrice);
+          const entryAmount: number = openBacktest.amount || 1;
+          const tpSlAmount: number = this.isBuySignal(openBacktest.signal) ? entryAmount * (1 + priceChange) : entryAmount * (1 - priceChange);
           // add inverse signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
-          const invertedPositionBacktest: BacktestData = { signal: this.invertSignal(openBacktest.signal!)!, amount: openBacktest.amount!, signalPrice: tpSlTriggerPrice };
+          const invertedPositionBacktest: BacktestData = { signal: this.invertSignal(openBacktest.signal!)!, amount: tpSlAmount, signalPrice: tpSlTriggerPrice };
           const combinedBacktest: BacktestData = this.combineBacktestData(currentBacktest, invertedPositionBacktest);
           currentKline.algorithms[algorithm] = combinedBacktest;
           currentBacktest = combinedBacktest; // update current backtest for next open position iteration. in js, when a = b and b = c, then a != c, so have to a = c

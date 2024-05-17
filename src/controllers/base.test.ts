@@ -33,7 +33,19 @@ describe('Backtester', () => {
         times: { open: 3, close: 0 },
         prices: { ...basePrices, high: 120, low: 90 },
         algorithms: { [Algorithm.Dca]: {} }
-      }
+      },
+      {
+        ...baseKline,
+        times: { open: 4, close: 0 },
+        prices: { ...basePrices, high: 120, low: 80 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, signalPrice: 100, amount: 2 } }
+      },
+      { // 4
+        ...baseKline,
+        times: { open: 2, close: 0 },
+        prices: { ...basePrices, high: 120, low: 90 },
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 3 } }
+      },
     ];
 
     (base as any).addTpSlSignals(klines, Algorithm.Dca, 0.1, 0.5);
@@ -41,6 +53,8 @@ describe('Backtester', () => {
 
     expect(backtests[1].signal).toBeUndefined();
     expect(backtests[2].signal).toBe(Signal.Sell);
-    expect(backtests[2].amount).toBe(2);
+    expect(backtests[2].amount).toBe(1.8);
+    expect(backtests[4].signal).toBe(Signal.Buy);
+    expect(backtests[4].amount).toBe(1.2);
   });
 });
