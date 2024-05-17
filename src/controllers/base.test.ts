@@ -11,7 +11,7 @@ describe('Backtester', () => {
     base = new Base();
   });
 
-  fit('should set correct default tp/sl signals on klines', () => {
+  it('should set correct default tp/sl signals on klines', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, volume: 0 };
     const basePrices = { open: 0, close: 0 };
 
@@ -20,7 +20,7 @@ describe('Backtester', () => {
         ...baseKline,
         times: { open: 1, close: 0 },
         prices: { ...basePrices, high: 120, low: 80 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, signalPrice: 100 } }
+        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, signalPrice: 100, amount: 2 } }
       },
       {
         ...baseKline,
@@ -41,5 +41,6 @@ describe('Backtester', () => {
 
     expect(backtests[1].signal).toBeUndefined();
     expect(backtests[2].signal).toBe(Signal.Sell);
+    expect(backtests[2].amount).toBe(2);
   });
 });
