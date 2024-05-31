@@ -85,11 +85,6 @@ export class HttpService {
           periodOpen: this.chartService.emaPeriodOpen[index],
           periodClose: this.chartService.emaPeriodClose[index]
         };
-      case Algorithm.EmaSl:
-        return {
-          algorithm,
-          period: this.chartService.emaPeriodSL[index]
-        };
       case Algorithm.Bb:
         return {
           algorithm,
@@ -108,10 +103,6 @@ export class HttpService {
           algorithm,
           threshold: this.chartService.meanReversionThreshold[index],
           profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss[index]
-        };
-      case Algorithm.FlashCrash:
-        return {
-          algorithm
         };
       case Algorithm.TwitterSentiment:
         return {
