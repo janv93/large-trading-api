@@ -1,4 +1,4 @@
-import { Algorithm, Kline, Signal, Timeframe, Tweet, TwitterTimeline } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe, Tweet, TwitterTimeline } from '../../../../interfaces';
 import Base from '../../../base';
 import Twitter from '../../../other-apis/twitter';
 import OpenAi from '../../../other-apis/openai';
@@ -10,7 +10,7 @@ export default class TwitterSentiment extends Base {
   private twitter = new Twitter();
   private openai = new OpenAi();
   private binance = new Binance();
-  private backtest = new Backtester();
+  private backtester = new Backtester();
 
   public async setSignals(klines: Kline[], algorithm: Algorithm): Promise<Kline[]> {
     const user: string = process.env.twitter_user as string;
@@ -55,49 +55,31 @@ export default class TwitterSentiment extends Base {
   }
 
   private backtestTpSl(klines: Kline[], algorithm: Algorithm, stopLoss: number, takeProfit: number, reset: boolean): number {
-    const entryPrices: number[] = [];
 
     klines.forEach((kline: Kline) => {
-      let amount = 0;
-      const currentPrice = kline.prices.close;
-
-      for (let i = entryPrices.length - 1; i >= 0; i--) { // closing condition tp/sl
-        const p = entryPrices[i];
-        const priceDiffPercent = (currentPrice - p) / p;
-        const tpSlReached = this.isTpSlReached(Signal.Buy, priceDiffPercent, stopLoss, takeProfit);
-
-        if (tpSlReached) {
-          amount--;
-          entryPrices.splice(i, 1);
-        }
-      }
+      const backtest: BacktestData = kline.algorithms[algorithm]!;
+      const signals: BacktestSignal[] = backtest.signals;
 
       const bullishTweets = !kline.tweets ? [] : kline.tweets.filter(t => {
         const sentiment = t.symbols[0].sentiment;
         return sentiment && sentiment > 8;
       });
 
-      if (bullishTweets.length) {
-        amount += bullishTweets.length;
-        entryPrices.push(kline.prices.close);
-      }
-
-      if (amount > 0) {
-        kline.algorithms[algorithm]!.amount = amount;
-        kline.algorithms[algorithm]!.signal = Signal.Buy;
-      } else if (amount < 0) {
-        kline.algorithms[algorithm]!.amount = -amount;
-        kline.algorithms[algorithm]!.signal = Signal.Sell;
-      }
+      signals.push({
+        signal: Signal.Buy,
+        size: bullishTweets.length,
+        price: kline.prices.close
+      });
     });
 
-    const klinesWithProfit = this.backtest.calcBacktestPerformance(klines, algorithm, 0, false);
+    const klinesWithProfit = this.backtester.calcBacktestPerformance(klines, algorithm, 0, false);
     const finalProfit = klinesWithProfit[klinesWithProfit.length - 1].algorithms[algorithm]!.percentProfit;
 
     if (reset) {
       klines.forEach(k => { // reset signals and profits after each run
-        k.algorithms[algorithm]!.percentProfit = undefined;
-        k.algorithms[algorithm]!.signal = undefined;
+        k.algorithms[algorithm]! = {
+          signals: []
+        };
       });
     }
 

@@ -11,7 +11,9 @@ export default class MultiTicker extends Base {
   public handleAlgo(tickers: Kline[][], algorithm: Algorithm): Kline[][] {
     tickers.forEach((klines: Kline[]) => {
       klines.forEach((kline: Kline) => {
-        kline.algorithms[algorithm] = {};
+        kline.algorithms[algorithm] = {
+          signals: []
+        };
       });
     });
 

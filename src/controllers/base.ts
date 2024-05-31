@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { Algorithm, BacktestData, Kline, Position, Signal, Timeframe } from '../interfaces';
+import { Algorithm, BacktestSignal, CloseType, Kline, Position, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
@@ -89,178 +89,11 @@ export default class Base {
     return values.map(close => (close - minClose) / range);
   }
 
-  /**
-   * takes klines that already have buy or sell signals, computes the tp/sl for each signal and adds the tp/sl signals by subtracting the original position amount
-   * can't set a close signal since multiple position may be open or it could overwrite existing signal
-   */
-  protected addTpSlSignals(klines: Kline[], algorithm: Algorithm, stopLoss?: number, takeProfit?: number) {
-    let openPositions: Kline[] = [];
-
-    klines.forEach((currentKline: Kline) => {
-      let currentBacktest: BacktestData | undefined = currentKline.algorithms[algorithm];
-
-      // push klines to check for tp/sl. has to happen before setting tp/sl, because tp/sl modifies signal
-      if (currentBacktest?.signal && currentBacktest.signal !== Signal.Close) {
-        openPositions.push(this.clone(currentKline)); // clone kline before modifications
-      }
-
-      openPositions = openPositions.filter((openKline: Kline) => {
-        // if openKline = currentKline, then no tp/sl handling (not possible intrakline)
-        if (openKline.times.open === currentKline.times.open) return true;
-
-        const openBacktest: BacktestData = openKline.algorithms[algorithm]!;
-        // either take tp/sl defined in kline or one tp/sl for all klines from parameters
-        const klineStopLoss: number | undefined = openBacktest?.positionCloseTrigger?.stopLoss;
-        const klineTakeProfit: number | undefined = openBacktest?.positionCloseTrigger?.takeProfit;
-        const sl: number | undefined = klineStopLoss ?? stopLoss;
-        const tp: number | undefined = klineTakeProfit ?? takeProfit;
-        const tpSlTriggerPrice: number | null = sl && tp ? this.getTpSlTriggerPrice(openKline, currentKline, algorithm, sl, tp) : null;
-
-        if (tpSlTriggerPrice) {
-          // calculate amount after price change
-          const entryPrice: number = this.signalOrClosePrice(openKline, algorithm);
-          const priceChange: number = this.calcPriceChange(entryPrice, tpSlTriggerPrice);
-          const entryAmount: number = openBacktest.amount || 1;
-          const tpSlAmount: number = this.isBuySignal(openBacktest.signal) ? entryAmount * (1 + priceChange) : entryAmount * (1 - priceChange);
-          // add inverse signal to current signal, e.g. original signal was buy and tp reached, then add sell with equal amount to current signal
-          const invertedPositionBacktest: BacktestData = { signal: this.invertSignal(openBacktest.signal!)!, amount: tpSlAmount, signalPrice: tpSlTriggerPrice };
-          const combinedBacktest: BacktestData = this.combineBacktestData(currentBacktest, invertedPositionBacktest);
-          currentKline.algorithms[algorithm] = combinedBacktest;
-          currentBacktest = combinedBacktest; // update current backtest for next open position iteration. in js, when a = b and b = c, then a != c, so have to a = c
-          return false; // remove position from openPositions if tp/sl is reached
-        }
-
-        return true;  // keep if not reached
-      });
-
-      // normalize signal price to be between low and high price of the kline
-      currentKline.algorithms[algorithm]!.signalPrice = this.limitKlineSignalPrice(currentKline, algorithm);
-    });
-  }
-
-  /**
-   * combines two signals, e.g. buy 1 and sell 2 = sell 1
-   * or closebuy 1 + sell 2 = closesell 1
-   * or close + buy 1 = closebuy 1
-   */
-  protected combineBacktestData(backtest1?: BacktestData, backtest2?: BacktestData): BacktestData {
-    const signal1: Signal | undefined = backtest1?.signal;
-    const amount1: number = backtest1?.amount || 1;
-    let signalPrice1: number | undefined = backtest1?.signalPrice;
-    const signal2: Signal | undefined = backtest2?.signal;
-    const amount2: number = backtest2?.amount || 1;
-    let signalPrice2: number | undefined = backtest2?.signalPrice;
-    const amountSum: number = amount1 + amount2;
-    // if either is undefined, assign it to the other
-    signalPrice1 = signalPrice1 ?? signalPrice2;
-    signalPrice2 = signalPrice2 ?? signalPrice1;
-    const signalPricesDefined = signalPrice1 && signalPrice2;
-    const signalPriceSum: number | undefined = signalPricesDefined ? signalPrice1! * amount1 + signalPrice2! * amount2 : undefined; // weigh prices by their amount
-    const signalPriceAverage: number | undefined = signalPricesDefined ? signalPriceSum! / amountSum : undefined;
-
-    if (!signal1) {
-      return { signal: signal2, amount: amount2, signalPrice: signalPrice2 };
-    }
-
-    if (!signal2) {
-      return { signal: signal1, amount: amount1, signalPrice: signalPrice1 };
-    }
-
-    let newSignal: BacktestData = {};
-
-    if (signal1 === Signal.Buy) {
-      switch (signal2) {
-        case Signal.Buy: newSignal = { signal: Signal.Buy, amount: amountSum }; break;
-        case Signal.Sell: newSignal = amount1 > amount2 ? { signal: Signal.Buy, amount: amount1 - amount2 } : { signal: Signal.Sell, amount: amount2 - amount1 }; break;
-        case Signal.Close: newSignal = { signal: Signal.CloseBuy, amount: amount1 }; break;
-        case Signal.CloseBuy: newSignal = { signal: Signal.CloseBuy, amount: amountSum }; break;
-        case Signal.CloseSell: newSignal = amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 }; break;
-      }
-    } else if (signal1 === Signal.Sell) {
-      switch (signal2) {
-        case Signal.Buy: newSignal = amount1 > amount2 ? { signal: Signal.Sell, amount: amount1 - amount2 } : { signal: Signal.Buy, amount: amount2 - amount1 }; break;
-        case Signal.Sell: newSignal = { signal: Signal.Sell, amount: amountSum }; break;
-        case Signal.Close: newSignal = { signal: Signal.CloseSell, amount: amount1 }; break;
-        case Signal.CloseBuy: newSignal = amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 }; break;
-        case Signal.CloseSell: newSignal = { signal: Signal.CloseSell, amount: amountSum }; break;
-      }
-    } else if (signal1 === Signal.Close) {
-      switch (signal2) {
-        case Signal.Buy: newSignal = { signal: Signal.CloseBuy, amount: amount2 }; break;
-        case Signal.Sell: newSignal = { signal: Signal.CloseSell, amount: amount2 }; break;
-        case Signal.Close: newSignal = { signal: Signal.Close }; break;
-        case Signal.CloseBuy: newSignal = { signal: Signal.CloseBuy, amount: amount2 }; break;
-        case Signal.CloseSell: newSignal = { signal: Signal.CloseSell, amount: amount2 }; break;
-      }
-    } else if (signal1 === Signal.CloseBuy) {
-      switch (signal2) {
-        case Signal.Buy: newSignal = { signal: Signal.CloseBuy, amount: amountSum }; break;
-        case Signal.Sell: newSignal = amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 }; break;
-        case Signal.Close: newSignal = { signal: Signal.CloseBuy, amount: amount1 }; break;
-        case Signal.CloseBuy: newSignal = { signal: Signal.CloseBuy, amount: amountSum }; break;
-        case Signal.CloseSell: newSignal = amount1 > amount2 ? { signal: Signal.CloseBuy, amount: amount1 - amount2 } : { signal: Signal.CloseSell, amount: amount2 - amount1 }; break;
-      }
-    } else if (signal1 === Signal.CloseSell) {
-      switch (signal2) {
-        case Signal.Buy: newSignal = amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 }; break;
-        case Signal.Sell: newSignal = { signal: Signal.Sell, amount: amountSum }; break;
-        case Signal.Close: newSignal = { signal: Signal.CloseSell, amount: amount1 }; break;
-        case Signal.CloseBuy: newSignal = amount1 > amount2 ? { signal: Signal.CloseSell, amount: amount1 - amount2 } : { signal: Signal.CloseBuy, amount: amount2 - amount1 }; break;
-        case Signal.CloseSell: newSignal = { signal: Signal.CloseSell, amount: amountSum }; break;
-      }
-    }
-
-    newSignal.signalPrice = signalPriceAverage;
-
-    if (newSignal.amount === 0) { // if amount is 0, then signal can be removed
-      newSignal = {};
-    }
-
-    return newSignal;
-  }
-
-  /**
-   * TODO: this is an old function and probably can be replaced
-   * takes the difference priceDiffPercent between the open and current price, stopLoss and takeProfit in percent and returns if tp or sl are reached
-   */
-  protected isTpSlReached(entrySignal: Signal, priceDiffPercent: number, stopLoss: number, takeProfit: number): boolean {
-    let slReached: boolean;
-    let tpReached: boolean;
-
-    if (entrySignal === Signal.Buy || entrySignal === Signal.CloseBuy) {
-      slReached = priceDiffPercent < -stopLoss;
-      tpReached = priceDiffPercent > takeProfit;
-    } else {
-      slReached = priceDiffPercent > stopLoss;
-      tpReached = priceDiffPercent < -takeProfit;
-    }
-
-    return slReached || tpReached ? true : false;
-  }
-
-  /**
-   * takes start and end kline and calculates if the price diff reaches tp/sl, then returns the trigger price
-   */
-  protected getTpSlTriggerPrice(openKline: Kline, currentKline: Kline, algorithm: Algorithm, stopLoss: number, takeProfit: number): number | null {
-    const signalPrice: number = this.signalOrClosePrice(openKline, algorithm);
-    const currentLow: number = currentKline.prices.low;
-    const currentHigh: number = currentKline.prices.high;
-    const slPrice: number = signalPrice - stopLoss * signalPrice;
-    const tpPrice: number = signalPrice + takeProfit * signalPrice;
-    const slReached: boolean = currentLow <= slPrice;
-    const tpReached: boolean = currentHigh >= tpPrice;
-    if (slReached) return slPrice;
-    if (tpReached) return tpPrice;
-    return null;  // no tp/sl reached
-  }
-
   protected invertSignal(signal: Signal | null): Signal | null {
     switch (signal) {
       case Signal.Buy: return Signal.Sell;
       case Signal.Sell: return Signal.Buy;
       case Signal.Close: return Signal.Close;
-      case Signal.CloseBuy: return Signal.CloseSell;
-      case Signal.CloseSell: return Signal.CloseBuy;
       default: return null;
     }
   }
@@ -372,26 +205,22 @@ export default class Base {
     return klines.at(-1)?.algorithms[algorithm]!.percentProfit;
   }
 
-  protected getTotalAmount(klines: Kline[], algorithm: Algorithm): number {
-    return klines.reduce((a, c) => a + (c.algorithms[algorithm]!.amount || 0), 0);
+  protected getTotalSize(klines: Kline[], algorithm: Algorithm): number {
+    let totalSize = 0;
+
+    klines.forEach((kline: Kline) => {
+      kline.algorithms[algorithm]?.signals.forEach((signal: BacktestSignal) => {
+        if (signal.signal !== Signal.Close) totalSize += signal.size!;
+      });
+    });
+
+    return totalSize;
   }
 
   protected calcProfitPerAmount(klines: Kline[], algorithm: Algorithm): number {
     const lastProfit = this.getLastProfit(klines, algorithm) || 0;
-    const totalAmount = this.getTotalAmount(klines, algorithm);
+    const totalAmount = this.getTotalSize(klines, algorithm);
     return totalAmount === 0 ? 0 : lastProfit / totalAmount;
-  }
-
-  protected signalOrClosePrice(kline: Kline, algorithm: Algorithm): number {
-    return kline.algorithms[algorithm]?.signalPrice ?? kline.prices.close;
-  }
-
-  // fit signal price between kline low and high
-  protected limitKlineSignalPrice(kline: Kline, algorithm: Algorithm): number | undefined {
-    const signalPrice: number | undefined = kline.algorithms[algorithm]?.signalPrice;
-    if (!signalPrice) return undefined;
-    const { low, high } = kline.prices;
-    return Math.min(Math.max(signalPrice, low), high);
   }
 
   protected clone(original: any): any {
@@ -421,99 +250,15 @@ export default class Base {
     return totalChange / (numbers.length - 1);
   }
 
-  protected isAnyCloseSignal(signal: Signal | undefined): boolean {
-    if (!signal) return false;
-    return [Signal.Close, Signal.CloseBuy, Signal.CloseSell].includes(signal);
-  }
-
-  protected isBuySignal(signal: Signal | undefined): boolean {
-    if (!signal) return false;
-    return [Signal.Buy, Signal.CloseBuy].includes(signal);
-  }
-
-  protected isSellSignal(signal: Signal | undefined): boolean {
-    if (!signal) return false;
-    return [Signal.Sell, Signal.CloseSell].includes(signal);
-  }
-
-  /**
-   * creates position from kline signal
-   */
-  protected createPosition(kline: Kline, algorithm: Algorithm): Position | undefined {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
-    const signal: Signal | undefined = backtest.signal;
-
-    if (!signal) {
-      return undefined;
-    }
-
-    const amount: number = backtest.amount || 1;
-    const signalPrice: number = this.signalOrClosePrice(kline, algorithm);
-    let size: number;
-    let entrySize: number;
-    let price: number;
-    let entryPrice: number;
-    let liquidationPrice: number;
-
-    if (this.isBuySignal(signal)) {
-      size = amount;
-      entrySize = amount;
-      price = signalPrice;
-      entryPrice = signalPrice;
-      liquidationPrice = 0;
-    } else if (this.isSellSignal(signal)) {
-      size = -amount;
-      entrySize = -amount;
-      price = signalPrice;
-      entryPrice = signalPrice;
-      liquidationPrice = entryPrice * 2;
-    } else {
-      return undefined;
-    }
-
-    return { size, entrySize, price, entryPrice, liquidationPrice };
-  }
-
-  protected combinePositions(previousPosition?: Position, newPosition?: Position): Position | undefined {
-    if (!previousPosition) return newPosition;
-
-    if (previousPosition.isLiquidation) {
-      if (newPosition) {
-        return {
-          size: newPosition.size,
-          entrySize: newPosition.size,
-          price: previousPosition.liquidationPrice, // currently only one price per position possible, thus pick liquidation price. this means that in case of liquidation, the new position entry will be ignored
-          entryPrice: previousPosition.liquidationPrice,
-          liquidationPrice: newPosition.size > 0 ? 0 : newPosition.entryPrice * 2,
-          isLiquidation: true
-        };
-      } else {
-        return undefined;
-      }
-    }
-
-    if (!newPosition) return previousPosition;
-
-    const newSize: number = previousPosition.size + newPosition.size;
-
-    if (newSize === 0) return undefined;  // if positions cancel each other out, return nothing
-
-    const newEntryPrice: number = newPosition.entryPrice;
-    const newLiquidationPrice: number = newSize > 0 ? 0 : newEntryPrice * 2;
-
-    return {
-      size: newSize,
-      entrySize: newSize,
-      price: newEntryPrice,
-      entryPrice: newEntryPrice,
-      liquidationPrice: newLiquidationPrice
-    };
-  }
-
   /**
    * e.g. 10 -> 15 = 0.5
    */
   protected calcPriceChange(startPrice: number, endPrice: number): number {
     return (endPrice - startPrice) / startPrice;
+  }
+
+  protected isForceCloseType(closeType?: CloseType): boolean {
+    if (!closeType) return false;
+    return [CloseType.Liquidation, CloseType.StopLoss, CloseType.TakeProfit].includes(closeType);
   }
 }

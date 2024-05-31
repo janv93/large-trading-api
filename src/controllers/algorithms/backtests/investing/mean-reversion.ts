@@ -1,4 +1,4 @@
-import { Algorithm, Kline, Signal } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 enum Action {
@@ -97,9 +97,17 @@ export default class MeanReversion extends Base {
   }
 
   private buy(kline: Kline, state: any, algorithm: Algorithm) {
-    kline.algorithms[algorithm]!.signal = Signal.Buy;
+    const backtest: BacktestData = kline.algorithms[algorithm]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const closePrice: number = kline.prices.close;
+
+    signals.push({
+      signal: Signal.Buy,
+      size: Math.pow(2, state.streak - 1),  // start at 2^0
+      price: closePrice
+    });
+
     state.streak++;
-    kline.algorithms[algorithm]!.amount = Math.pow(2, state.streak - 1); // start at 2^0
     state.isOpen = true;
     state.low = kline.prices.close;
   }
@@ -114,7 +122,15 @@ export default class MeanReversion extends Base {
   }
 
   private close(kline: Kline, state: any, algorithm: Algorithm) {
-    kline.algorithms[algorithm]!.signal = Signal.Close;
+    const backtest: BacktestData = kline.algorithms[algorithm]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const closePrice: number = kline.prices.close;
+
+    signals.push({
+      signal: Signal.Close,
+      price: closePrice
+    });
+
     state.streak = 0;
     state.isOpen = false;
     state.isTrailing = false;

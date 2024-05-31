@@ -8,22 +8,22 @@ export enum Exchange {
 }
 
 export enum Timeframe {
-   _1Minute = '1m',
-   _5Minutes = '5m',
-   _15Minutes = '15m',
-   _30Minutes = '30m',
-   _1Hour = '1h',
-   _2Hours = '2h',
-   _4Hours = '4h',
-   _6Hours = '6h',
-   _8Hours = '8h',
-   _12Hours = '12h',
-   _1Day = '1d',
-   _3Days = '3d',
-   _1Week = '1w',
-   _1Month = '1M',
-   _3Months = '3M',
-   _6Months = '6M'
+  _1Minute = '1m',
+  _5Minutes = '5m',
+  _15Minutes = '15m',
+  _30Minutes = '30m',
+  _1Hour = '1h',
+  _2Hours = '2h',
+  _4Hours = '4h',
+  _6Hours = '6h',
+  _8Hours = '8h',
+  _12Hours = '12h',
+  _1Day = '1d',
+  _3Days = '3d',
+  _1Week = '1w',
+  _1Month = '1M',
+  _3Months = '3M',
+  _6Months = '6M'
 }
 
 export enum Algorithm {
@@ -31,10 +31,8 @@ export enum Algorithm {
   Macd = 'MACD',
   Rsi = 'RSI',
   Ema = 'EMA',
-  EmaSl = 'EMASL',
   DeepTrend = 'DEEPTREND',
   Bb = 'BB',
-  FlashCrash = 'FLASHCRASH',
   Dca = 'DCA',
   MeanReversion = 'MEANREVERSION',
   TwitterSentiment = 'TWITTERSENTIMENT',
@@ -48,10 +46,16 @@ export enum PivotPointSide {
 
 export enum Signal {
   Buy = 'BUY',
-  CloseBuy = 'CLOSEBUY',  // a close followed by a buy signal
   Sell = 'SELL',
-  CloseSell = 'CLOSESELL',
-  Close = 'CLOSE'
+  Close = 'CLOSE', // closes all open positions
+  ForceClose = 'FORCECLOSE'
+}
+
+export enum CloseType {
+  Close = 'CLOSE',
+  StopLoss = 'STOPLOSS',
+  TakeProfit = 'TAKEPROFIT',
+  Liquidation = 'LIQUIDATION'
 }
 
 export enum Slope {
@@ -110,19 +114,28 @@ export interface TrendLine {
   position: TrendLinePosition;
 }
 
+// information for backtest and calculated backtest data
 export interface BacktestData {
-  signal?: Signal;
-  percentProfit?: number;
-  amount?: number;
-  signalPrice?: number;
+  signals: BacktestSignal[];  // allow multiple independent signals for multiple independent positions
+  percentProfit?: number; // calculated profit at current kline
+  openPositionSize?: number;  // calculated position size open at current kline
+  forceClose?: CloseType;  // if liquidation was triggered this kline
+}
+
+export interface BacktestSignal {
+  signal: Signal;
+  size?: number;  // not required if close
+  price: number;
   positionCloseTrigger?: PositionCloseTrigger;
-  openPositionSize?: number;
-  isLiquidation?: boolean;
 }
 
 export interface PositionCloseTrigger {
-  stopLoss?: number;
-  takeProfit?: number;
+  tpSl?: TakeProfitStopLoss;
+}
+
+export interface TakeProfitStopLoss {
+  takeProfit: number;
+  stopLoss: number;
 }
 
 export interface MultiBenchmark {
@@ -189,5 +202,6 @@ export interface Position {
   price: number;
   entryPrice: number;
   liquidationPrice: number;
-  isLiquidation?: boolean;
+  takeProfitPrice?: number;
+  stopLossPrice?: number;
 }

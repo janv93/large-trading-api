@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Algorithm, Kline, Signal } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Rsi extends Base {
@@ -20,25 +20,68 @@ export default class Rsi extends Base {
     let lastSignal: Signal;
 
     klines.forEach((kline, index) => {
-      const r = rsi[index].rsi;
+      const backtest: BacktestData = kline.algorithms[algorithm]!;
+      const signals: BacktestSignal[] = backtest.signals;
+      const closePrice: number = kline.prices.close;
+      const rsiValue = rsi[index].rsi;
 
-      if (lastSignal === Signal.CloseBuy) {
-        if (r > rsiThresholdHigh) {
-          kline.algorithms[algorithm]!.signal = Signal.CloseSell;
-          lastSignal = Signal.CloseSell;
+      if (lastSignal === Signal.Buy) {
+        if (rsiValue > rsiThresholdHigh) {
+          signals.push({
+            signal: Signal.Close,
+            price: closePrice
+          });
+
+          signals.push({
+            signal: Signal.Sell,
+            size: 1,
+            price: closePrice
+          });
+
+          lastSignal = Signal.Sell;
         }
-      } else if (lastSignal === Signal.CloseSell) {
-        if (r < rsiThresholdLow) {
-          kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
-          lastSignal = Signal.CloseBuy;
+      } else if (lastSignal === Signal.Sell) {
+        if (rsiValue < rsiThresholdLow) {
+          signals.push({
+            signal: Signal.Close,
+            price: closePrice
+          });
+
+          signals.push({
+            signal: Signal.Buy,
+            size: 1,
+            price: closePrice
+          });
+
+          lastSignal = Signal.Buy;
         }
       } else {
-        if (r > rsiThresholdHigh) {
-          kline.algorithms[algorithm]!.signal = Signal.CloseSell;
-          lastSignal = Signal.CloseSell;
-        } else if (r < rsiThresholdLow) {
-          kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
-          lastSignal = Signal.CloseBuy;
+        if (rsiValue > rsiThresholdHigh) {
+          signals.push({
+            signal: Signal.Close,
+            price: closePrice
+          });
+
+          signals.push({
+            signal: Signal.Sell,
+            size: 1,
+            price: closePrice
+          });
+
+          lastSignal = Signal.Sell;
+        } else if (rsiValue < rsiThresholdLow) {
+          signals.push({
+            signal: Signal.Close,
+            price: closePrice
+          });
+
+          signals.push({
+            signal: Signal.Buy,
+            size: 1,
+            price: closePrice
+          });
+
+          lastSignal = Signal.Buy;
         }
       }
     });

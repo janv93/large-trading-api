@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Algorithm, Kline, Signal } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Macd extends Base {
@@ -21,6 +21,9 @@ export default class Macd extends Base {
     let positionOpenType: Signal;
 
     klinesWithHistogram.forEach((kline, index) => {
+      const backtest: BacktestData = kline.algorithms[algorithm]!;
+      const signals: BacktestSignal[] = backtest.signals;
+      const closePrice: number = kline.prices.close;
       const h = histogram[index].histogram;
 
       if (!lastHistogram) {
@@ -45,9 +48,19 @@ export default class Macd extends Base {
             peakHigh = h > peakHigh ? h : peakHigh;
 
             if (h > 0.003) {
-              kline.algorithms[algorithm]!.signal = Signal.CloseSell;
+              signals.push({
+                signal: Signal.Close,
+                price: closePrice
+              });
+
+              signals.push({
+                signal: Signal.Sell,
+                size: 1,
+                price: closePrice
+              });
+
               positionOpen = true;
-              positionOpenType = Signal.CloseSell;
+              positionOpenType = Signal.Sell;
             }
           } else if (move === 'up' && h < 0) {
             sumLows += h;
@@ -55,14 +68,28 @@ export default class Macd extends Base {
             peakLow = h < peakLow ? h : peakLow;
 
             if (h < -0.003) {
-              kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
+              signals.push({
+                signal: Signal.Close,
+                price: closePrice
+              });
+
+              signals.push({
+                signal: Signal.Buy,
+                size: 1,
+                price: closePrice
+              });
+
               positionOpen = true;
-              positionOpenType = Signal.CloseBuy;
+              positionOpenType = Signal.Buy;
             }
           }
         } else {
-          if ((positionOpenType === Signal.CloseSell && h < 0) || (positionOpenType === Signal.CloseBuy && h > 0)) {
-            kline.algorithms[algorithm]!.signal = Signal.Close;
+          if ((positionOpenType === Signal.Sell && h < 0) || (positionOpenType === Signal.Buy && h > 0)) {
+            signals.push({
+              signal: Signal.Close,
+              price: closePrice
+            });
+
             positionOpen = false;
           }
         }
@@ -115,6 +142,4 @@ export default class Macd extends Base {
     const averageDiff = sumDiffs / numberDiffs;
     console.log(averageDiff);
   }
-
-
 }

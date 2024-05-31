@@ -13,83 +13,83 @@ describe('Backtester', () => {
 
   it('should calculate percentProfit correctly with flowing profit and no commission', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
-    const basePrices = { open: 0, high: 0, low: 1 };
+    const basePrices = { open: 0, high: 0, low: 1, close: 0 };
 
     const klines: Kline[] = [
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.CloseBuy } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       { // 4
         ...baseKline,
         prices: { ...basePrices, close: 450 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.CloseSell } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 900 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 0 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 10, signalPrice: 100 } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 0 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell, amount: 10, signalPrice: 200 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 900 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 10 }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 200 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 10 }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 100 }] } }
       },
       { // 9
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 2 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 2 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 2 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 2 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell, amount: 2 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 400, size: 2 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       }
     ];
 
@@ -123,77 +123,77 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.CloseBuy } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       { // 4
         ...baseKline,
         prices: { ...basePrices, close: 450 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.CloseSell } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 900 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 0 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 10, signalPrice: 100 } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 0 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell, amount: 10, signalPrice: 200 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 900 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 10 }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 200 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 10 }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 100 }] } }
       },
       { // 9
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 2 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 2 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy, amount: 2 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 2 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell, amount: 2 } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 400, size: 2 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Close } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       }
     ];
 
@@ -209,14 +209,14 @@ describe('Backtester', () => {
     // with amount + signalPrice
     expect(backtests[6].percentProfit).toBeCloseTo(-1.8);
     expect(backtests[7].percentProfit).toBeCloseTo(997.2);
-    expect(backtests[8].percentProfit).toBeCloseTo(496.7);
+    expect(backtests[8].percentProfit).toBeCloseTo(494.7);
     // multiple positions at once
-    expect(backtests[9].percentProfit).toBeCloseTo(496.5);
-    expect(backtests[10].percentProfit).toBeCloseTo(696.3);
-    expect(backtests[11].percentProfit).toBeCloseTo(1296.3);
-    expect(backtests[12].percentProfit).toBeCloseTo(1296.1);
-    expect(backtests[13].percentProfit).toBeCloseTo(795.6);
-    expect(backtests[14].percentProfit).toBeCloseTo(795.6);
+    expect(backtests[9].percentProfit).toBeCloseTo(494.5);
+    expect(backtests[10].percentProfit).toBeCloseTo(694.3);
+    expect(backtests[11].percentProfit).toBeCloseTo(1294.3);
+    expect(backtests[12].percentProfit).toBeCloseTo(1294.1);
+    expect(backtests[13].percentProfit).toBeCloseTo(793.2);
+    expect(backtests[14].percentProfit).toBeCloseTo(793.2);
   });
 
   it('should calculate percentProfit correctly in case of liquidation', () => {
@@ -227,27 +227,27 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 100, high: 120, low: 80 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 150, high: 150, low: 80 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 150, high: 200, low: 120 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 300, high: 400, low: 250 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Buy } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 50, high: 100, low: 0 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       }
     ];
 
@@ -269,17 +269,17 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signal: Signal.Sell } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 120 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 140 },
-        algorithms: { [Algorithm.Dca]: {} }
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
       }
     ];
 

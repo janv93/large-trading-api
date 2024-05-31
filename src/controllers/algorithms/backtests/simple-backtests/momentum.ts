@@ -1,62 +1,43 @@
-import { Algorithm, Kline, Signal } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Momentum extends Base {
   public setSignals(klines: Kline[], algorithm: Algorithm, streak: number): Kline[] {
     const colors: number[] = klines.map(kline => this.getKlineColor(kline));
 
-    let positionOpen = false;
-    let lastEntrySignal: Signal;
-    let lastEntryIndex: number;
-
     klines.forEach((kline: any, index: number) => {
-      if (!positionOpen) {
-        const entry = this.isEntry(colors, index, streak);
+      const backtest: BacktestData = kline.algorithms[algorithm]!;
+      const signals: BacktestSignal[] = backtest.signals;
+      const closePrice: number = kline.prices.close;
+      const entrySignal: Signal | undefined = this.getEntrySignal(colors, index, streak);
 
-        if (entry) {
-          kline.algorithms[algorithm].signal = entry;
-          positionOpen = true;
-          lastEntrySignal = entry;
-          lastEntryIndex = index;
-        }
-      } else {
-        const close = this.isClose(klines, colors, index, streak, lastEntrySignal, lastEntryIndex);
-
-        if (close) {
-          kline.algorithms[algorithm].signal = Signal.Close;
-          positionOpen = false;
-        }
+      if (entrySignal) {
+        signals.push({
+          signal: entrySignal,
+          size: 1,
+          price: closePrice,
+          positionCloseTrigger: {
+            tpSl: {
+              takeProfit: 0.006,
+              stopLoss: 0.003
+            }
+          }
+        });
       }
     });
 
     return klines;
   }
 
-  private isEntry(colors: number[], index: number, streak: number): Signal | null {
+  private getEntrySignal(colors: number[], index: number, streak: number): Signal | undefined {
     if (streak > index) {
-      return null;
+      return undefined;
     }
 
     const range = colors.slice(index - streak + 1, index + 1);
     const rangeGreen = range.every(kline => kline >= 0);
     const rangeRed = range.every(kline => kline <= 0);
-
-    let signal = rangeGreen ? Signal.CloseBuy : rangeRed ? Signal.CloseSell : null
-    // invert the signal
-    signal = this.invertSignal(signal);
-
-    return signal;
-  }
-
-  private isClose(klines: Kline[], colors: any[], index: number, streak: number, lastEntrySignal: Signal, lastEntryIndex: number): boolean {
-    const closePriceAtLastEntry = klines[lastEntryIndex].prices.close;
-    const currentPrice = klines[index].prices.close;
-
-    const priceDiff = currentPrice - closePriceAtLastEntry;
-    const priceDiffPercent = priceDiff / closePriceAtLastEntry;
-    const slRate = 0.003;
-    const tpRate = slRate * 2;
-
-    return this.isTpSlReached(lastEntrySignal, priceDiffPercent, slRate, tpRate);
+    let signal = rangeGreen ? Signal.Sell : rangeRed ? Signal.Buy : null
+    return signal!;
   }
 }

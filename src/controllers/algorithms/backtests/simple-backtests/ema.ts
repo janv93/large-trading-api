@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Algorithm, Kline, Signal, Timeframe } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '../../../../interfaces';
 import Base from '../../../base';
 import Binance from '../../../exchanges/binance';
 import Btse from '../../../exchanges/btse';
@@ -28,6 +28,9 @@ export default class Ema extends Base {
     let positionOpen = false;
 
     klinesWithEma.forEach((kline, i) => {
+      const backtest: BacktestData = kline.algorithms[algorithm]!;
+      const signals: BacktestSignal[] = backtest.signals;
+      const closePrice: number = kline.prices.close;
       const eOpen = emaOpen[i].ema;
       const eClose = emaClose[i].ema;
 
@@ -58,16 +61,40 @@ export default class Ema extends Base {
       // set signals
 
       if (positionOpen && momentumSwitchClose && lastMoveOpen !== moveClose) {
-        kline.algorithms[algorithm]!.signal = Signal.Close;
+        signals.push({
+          signal: Signal.Close,
+          price: closePrice
+        });
+
         positionOpen = false;
       }
 
       if (!positionOpen && momentumSwitchOpen) {
         if (moveOpen === 'up') {
-          kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
+          signals.push({
+            signal: Signal.Close,
+            price: closePrice
+          });
+
+          signals.push({
+            signal: Signal.Buy,
+            size: 1,
+            price: closePrice
+          });
+
           positionOpen = true;
         } else if (moveOpen === 'down') {
-          kline.algorithms[algorithm]!.signal = Signal.CloseSell;
+          signals.push({
+            signal: Signal.Close,
+            price: closePrice
+          });
+
+          signals.push({
+            signal: Signal.Sell,
+            size: 1,
+            price: closePrice
+          });
+
           positionOpen = true;
         }
       }
@@ -78,86 +105,6 @@ export default class Ema extends Base {
       lastEmaOpen = eOpen;
       lastMoveClose = moveClose;
       lastEmaClose = eClose;
-    });
-
-    return klines;
-  }
-
-  public setSignalsSL(klines: Kline[], algorithm: Algorithm, period: number): Kline[] {
-    const ema = this.indicators.ema(klines, period);
-    const klinesWithEma = klines.slice(-ema.length);
-
-    let lastMove: string;
-    let positionOpen = false;
-    let lastEma: number;
-    let lastSignal: Signal;
-    let posOpenPrice: number;
-    const stopLossPercent = 0.0;
-
-    klinesWithEma.forEach((kline, index) => {
-      const e = ema[index].ema;
-
-      if (!lastEma) {
-        lastEma = e;
-        return;
-      }
-
-      const move = e - lastEma > 0 ? 'up' : 'down';
-
-      if (!lastMove) {
-        lastMove = move;
-        lastEma = e;
-        return;
-      }
-
-      const momentumSwitch = move !== lastMove;
-
-      if (!positionOpen && momentumSwitch) {
-        posOpenPrice = kline.prices.close;
-
-        if (move === 'up') {
-          kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
-          positionOpen = true;
-        } else {
-          kline.algorithms[algorithm]!.signal = Signal.CloseSell;
-          positionOpen = true;
-        }
-
-        lastSignal = kline.algorithms[algorithm]!.signal!;
-      } else if (positionOpen) {
-        if (momentumSwitch) {
-          posOpenPrice = kline.prices.close;
-
-          if (move === 'up') {
-            kline.algorithms[algorithm]!.signal = Signal.CloseBuy;
-          } else {
-            kline.algorithms[algorithm]!.signal = Signal.CloseSell;
-          }
-        } else {
-          const currentPrice = kline.prices.close;
-          const priceDiff = currentPrice - posOpenPrice;
-          const priceDiffPercent = priceDiff / posOpenPrice;
-
-          if (lastSignal === Signal.CloseBuy) {
-            const stopLossReached = priceDiffPercent < -stopLossPercent;
-
-            if (stopLossReached) {
-              kline.algorithms[algorithm]!.signal = Signal.Close;
-              positionOpen = false;
-            }
-          } else {
-            const stopLossReached = priceDiffPercent > stopLossPercent;
-
-            if (stopLossReached) {
-              kline.algorithms[algorithm]!.signal = Signal.Close;
-              positionOpen = false;
-            }
-          }
-        }
-      }
-
-      lastMove = move;
-      lastEma = e;
     });
 
     return klines;
@@ -185,7 +132,6 @@ export default class Ema extends Base {
         this.tradeInterval(symbol, timeframe, quantityUSD, leverage);
       }, 60 * 60000);
     }, timeDiffToNextHour + 10000);
-
   }
 
   /**
@@ -198,14 +144,14 @@ export default class Ema extends Base {
     console.log(klines.slice(-3))
     const ema = this.indicators.ema(klines, 80);
     console.log(ema.slice(-3))
-  
+
     const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
     const lastMove = ema[ema.length - 2].ema - ema[ema.length - 3].ema > 0 ? 'up' : 'down';
     console.log(lastMove);
     console.log(move);
-  
+
     const momentumSwitch = move !== lastMove;
-  
+
     if (!this.tradingPositionOpen.get(symbol)) {
       if (momentumSwitch) {
         if (move === 'up') {
@@ -224,7 +170,7 @@ export default class Ema extends Base {
       }
     }
   }
-  
+
   private async openLong(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
       await this.btse.long(symbol, cryptoQuantity, leverage);
@@ -233,7 +179,7 @@ export default class Ema extends Base {
       this.handleError(err);
     }
   }
-  
+
   private async openShort(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
       await this.btse.short(symbol, cryptoQuantity, leverage);
@@ -242,7 +188,7 @@ export default class Ema extends Base {
       this.handleError(err);
     }
   }
-  
+
   private async closeShortOpenLong(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
       await this.btse.closeOrder(symbol);
@@ -251,7 +197,7 @@ export default class Ema extends Base {
       this.handleError(err);
     }
   }
-  
+
   private async closeLongOpenShort(symbol: string, cryptoQuantity: number, leverage: number) {
     try {
       await this.btse.closeOrder(symbol);
@@ -260,5 +206,5 @@ export default class Ema extends Base {
       this.handleError(err);
     }
   }
-  
+
 }

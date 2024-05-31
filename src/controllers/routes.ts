@@ -11,7 +11,6 @@ import Rsi from './algorithms/backtests/simple-backtests/rsi';
 import Ema from './algorithms/backtests/simple-backtests/ema';
 import Bb from './algorithms/backtests/simple-backtests/bb';
 // import Tensorflow from './algorithms/ai/tensorflow';
-import FlashCrash from './algorithms/backtests/simple-backtests/flash-crash';
 import Dca from './algorithms/backtests/investing/dca';
 import MeanReversion from './algorithms/backtests/investing/mean-reversion';
 import TwitterSentiment from './algorithms/backtests/sentiment/twitter-sentiment';
@@ -32,7 +31,6 @@ export default class Routes extends Base {
   private ema = new Ema();
   private bb = new Bb();
   // private tensorflow = new Tensorflow();
-  private flashCrash = new FlashCrash();
   private dca = new Dca();
   private meanReversion = new MeanReversion();
   private twitterSentiment = new TwitterSentiment();
@@ -146,7 +144,9 @@ export default class Routes extends Base {
     const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak } = params;
 
     klines.forEach((kline: Kline) => {
-      kline.algorithms[algorithm] = {};
+      kline.algorithms[algorithm] = {
+        signals: []
+      };
     });
 
     switch (algorithm) {
@@ -158,14 +158,10 @@ export default class Routes extends Base {
         return this.rsi.setSignals(klines, algorithm, Number(length));
       case Algorithm.Ema:
         return this.ema.setSignals(klines, algorithm, Number(periodOpen), Number(periodClose));
-      case Algorithm.EmaSl:
-        return this.ema.setSignalsSL(klines, algorithm, Number(periodClose));
       case Algorithm.Bb:
         return this.bb.setSignals(klines, algorithm, Number(period));
       //   case Algorithm.DeepTrend:
       //   return this.tensorflow.setSignals(klines, algorithm);
-      case Algorithm.FlashCrash:
-        return this.flashCrash.setSignals(klines, algorithm);
       case Algorithm.Dca:
         return this.dca.setSignals(klines, algorithm);
       case Algorithm.MeanReversion:

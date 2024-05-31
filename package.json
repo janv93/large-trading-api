@@ -4,9 +4,10 @@
   "description": "WIP",
   "main": "index.js",
   "scripts": {
-    "start": "rm -rf dist && tsc && node --max-old-space-size=16384 dist/app.js",
+    "start": "npm run remove:dist && tsc && node --max-old-space-size=16384 dist/app.js",
     "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log",
-    "test": "jest"
+    "test": "npm run remove:dist && jest",
+    "remove:dist": "rm -rf dist"
   },
   "repository": {
     "type": "git",
