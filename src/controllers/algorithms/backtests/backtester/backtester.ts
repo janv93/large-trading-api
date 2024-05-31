@@ -14,6 +14,7 @@ export default class Backtester extends Base {
 
     klines.forEach((kline: Kline, i) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
+      const backtestSignals: BacktestSignal[] = backtest.signals;
 
       positions = positions.map((position: Position | undefined) => {
         const closeType: CloseType | undefined = this.getCloseType(position!, kline, algorithm);
@@ -21,10 +22,10 @@ export default class Backtester extends Base {
         if (this.isForceCloseType(closeType)) { // add force close to kline signals
           backtest.forceClose = closeType;
           const closePrice: number = this.getClosePrice(position!, closeType!, kline, algorithm);
-          backtest.signals.push({ signal: Signal.ForceClose, price: closePrice });
+          backtestSignals.push({ signal: Signal.ForceClose, price: closePrice });
         }
 
-        if (flowingProfit || flowingProfit && closeType || !flowingProfit && backtest.signals.length) { // if flowing profit or (force) close, or , change existing positions
+        if (flowingProfit || flowingProfit && closeType || !flowingProfit && backtestSignals.length) { // if flowing profit or (force) close, or , change existing positions
           profit += this.calcProfitChange(position!, kline, algorithm, closeType);
           if (closeType) profit -= this.calcCloseFee(position!, kline, algorithm, closeType, commission);
           return this.updateExistingPosition(position!, kline, closeType);
