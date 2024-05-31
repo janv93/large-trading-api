@@ -499,42 +499,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       return acc + backtestSignals.filter((signal: BacktestSignal) => ![Signal.Close, Signal.ForceClose].includes(signal.signal)).length;
     }, 0);
 
-    const posNeg = this.calcPositiveNegativeTrades();
-
     this.stats = {
       profit: Number(this.finalProfit[0].toFixed(2)),
       numberOfTrades: tradesCount,
-      positive: posNeg[0],
-      negative: posNeg[1],
       maxDrawback: Number(this.calcMaxDrawback().toFixed(2)),
     };
-  }
-
-  private calcPositiveNegativeTrades(): number[] {
-    let pos = 0;
-    let neg = 0;
-    let lastPercentage;
-    const algorithm: Algorithm = this.chartService.algorithms[0];
-
-    this.currentKlines
-      .filter(kline => kline.algorithms[algorithm]!.signals.length)
-      .map(p => p.algorithms[algorithm]!.percentProfit || 0)
-      .forEach(percentage => {
-        if (lastPercentage !== undefined) {
-          const diff = Math.abs(percentage - lastPercentage);
-          const isEqual = diff <= this.chartService.commission + 0.001; // 0.001 prevents floating point error
-
-          if (!isEqual && percentage > lastPercentage) {
-            pos++;
-          } else if (!isEqual && percentage < lastPercentage) {
-            neg++;
-          }
-        }
-
-        lastPercentage = percentage;
-      });
-
-    return [pos, neg];
   }
 
   /**

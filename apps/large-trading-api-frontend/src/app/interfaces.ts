@@ -206,7 +206,5 @@ export interface Run {
 export interface BacktestStats {
   profit: number;
   numberOfTrades: number;
-  positive: number;
-  negative: number;
   maxDrawback: number;
 };

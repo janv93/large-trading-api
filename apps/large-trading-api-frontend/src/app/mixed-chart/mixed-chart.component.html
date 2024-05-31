@@ -38,21 +38,15 @@
     </div>
     <div *ngIf="stats" class="text-right stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
       <div>
-        <span>profit: </span>
         <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>
-        <span>%</span>
+        <span>% profit</span>
       </div>
       <div>
-        <span>max drawback: </span>
         <span [style.color]="getColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
-        <span>%</span>
+        <span>% max drawback</span>
       </div>
       <div>
-        <span>trades: </span>
-        <span>{{ stats.numberOfTrades }}/</span>
-        <span class="green">{{ stats.positive }}</span>
-        <span>/</span>
-        <span class="red">{{ stats.negative }}</span>
+        <span>{{ stats.numberOfTrades }} trades</span>
       </div>
     </div>
   </div>
