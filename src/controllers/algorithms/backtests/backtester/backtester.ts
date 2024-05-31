@@ -24,7 +24,7 @@ export default class Backtester extends Base {
           backtest.signals.push({ signal: Signal.ForceClose, price: closePrice });
         }
 
-        if (flowingProfit || closeType) { // if flowing profit or (force) close, change existing positions
+        if (flowingProfit || flowingProfit && closeType || !flowingProfit && backtest.signals.length) { // if flowing profit or (force) close, or , change existing positions
           profit += this.calcProfitChange(position!, kline, algorithm, closeType);
           if (closeType) profit -= this.calcCloseFee(position!, kline, algorithm, closeType, commission);
           return this.updateExistingPosition(position!, kline, closeType);
