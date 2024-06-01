@@ -48,8 +48,11 @@ export enum PivotPointSide {
 export enum Signal {
   Buy = 'BUY',
   Sell = 'SELL',
-  Close = 'CLOSE',  // closes all open positions
-  ForceClose = 'FORCECLOSE'
+  Close = 'CLOSE', // closes all open positions
+  // these are only set by the backtester
+  Liquidation = 'LIQUIDATION',
+  TakeProfit = 'TAKEPROFIT',
+  StopLoss = 'STOPLOSS'
 }
 
 export enum CloseType {
@@ -120,7 +123,6 @@ export interface BacktestData {
   signals: BacktestSignal[];  // allow multiple independent signals for multiple independent positions
   percentProfit?: number; // calculated profit at current kline
   openPositionSize?: number;  // calculated position size open at current kline
-  forceClose?: CloseType;  // if liquidation was triggered this kline
 }
 
 export interface BacktestSignal {

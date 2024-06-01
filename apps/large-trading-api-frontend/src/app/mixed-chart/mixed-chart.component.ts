@@ -1,6 +1,6 @@
 import { Component, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData } from 'lightweight-charts';
-import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal } from '../interfaces';
+import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
@@ -319,32 +319,40 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
-    const algo = this.chartService.algorithms[0];
-    const backtestSignals: BacktestSignal[] = kline.algorithms[algo]!.signals!;
+    const algorithm = this.chartService.algorithms[0];
+    const backtest: BacktestData = kline.algorithms[algorithm]!
+    const backtestSignals: BacktestSignal[] = backtest.signals;
     const signals: Signal[] = backtestSignals.map((signal: BacktestSignal) => signal.signal);
+    console.log(JSON.stringify(signals))
     const hasBuy: boolean = signals.includes(Signal.Buy);
     const hasSell: boolean = signals.includes(Signal.Sell);
     const hasClose: boolean = signals.includes(Signal.Close);
-    const hasForceClose: boolean = signals.includes(Signal.ForceClose);
+    const hasLiquidation: boolean = signals.includes(Signal.Liquidation);
+    const hasTakeProfit: boolean = signals.includes(Signal.TakeProfit);
+    const hasStopLoss: boolean = signals.includes(Signal.StopLoss);
+    const hasForceClose: boolean = hasLiquidation || hasTakeProfit || hasStopLoss;
+    const hasMultipleForceClose: boolean = [hasLiquidation, hasTakeProfit, hasStopLoss].every((val: boolean) => val);
     const isBuy: string | undefined = hasBuy && !hasSell && !hasClose && !hasForceClose ? 'BUY' : undefined;
     const isSell: string | undefined = hasSell && !hasBuy && !hasClose && !hasForceClose ? 'SELL' : undefined;
     const isClose: string | undefined = !hasBuy && !hasSell && !hasForceClose ? 'CLOSE' : undefined;
-    const isForceClose: string | undefined = hasForceClose && !hasClose && !hasBuy && !hasSell ? 'FCLOSE' : undefined;
+    const isLiquidation: string | undefined = hasLiquidation && !hasTakeProfit && !hasStopLoss && !hasClose && !hasBuy && !hasSell ? 'LIQ' : undefined;
+    const isTakeProfit: string | undefined = hasTakeProfit && !hasLiquidation && !hasStopLoss && !hasClose && !hasBuy && !hasSell ? 'TP' : undefined;
+    const isStopLoss: string | undefined = hasStopLoss && !hasLiquidation && !hasTakeProfit && !hasClose && !hasBuy && !hasSell ? 'SL' : undefined;
     const isCloseBuy: string | undefined = (hasClose || hasForceClose) && hasBuy && !hasSell ? 'CBUY' : undefined;
     const isCloseSell: string | undefined = (hasClose || hasForceClose) && hasSell && !hasBuy ? 'CSELL' : undefined;
-    const isMix: string | undefined = hasBuy && hasSell || hasClose && hasForceClose ? 'MIX' : undefined;
-    const signal: string = (isBuy || isSell || isClose || isForceClose || isCloseBuy || isCloseSell || isMix)!;
+    const isMix: string | undefined = hasBuy && hasSell || hasClose && hasForceClose || hasMultipleForceClose ? 'MIX' : undefined;
+    let signal: string = (isBuy || isSell || isClose || isLiquidation || isTakeProfit || isStopLoss || isCloseBuy || isCloseSell || isMix)!;
 
     // sum up sizes of all signals of this kline
     const totalSize: number = backtestSignals.reduce((acc: number, signal: BacktestSignal) => {
-      const isCloseSignal: boolean = [Signal.Close, Signal.ForceClose].includes(signal.signal);
+      const isCloseSignal: boolean = this.isCloseSignal(signal.signal);
       return isCloseSignal ? acc + 0 : acc + signal.size!;
     }, 0);
 
     return {
       time: kline.times.open / 1000 as Time,
       position: ['BUY', 'CBUY'].includes(signal) ? 'belowBar' : 'aboveBar',
-      color: ['BUY', 'CBUY'].includes(signal) ? 'lime' : ['CLOSE', 'FCLOSE'].includes(signal) ? 'white' : '#ff4d4d',
+      color: ['BUY', 'CBUY'].includes(signal) ? 'lime' : ['CLOSE', 'LIQ', 'TP', 'SL'].includes(signal) ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(signal) ? 'arrowUp' : 'arrowDown',
       text: signal + (totalSize ? ` ${totalSize.toFixed(2)}` : '')
     };
@@ -496,7 +504,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     const tradesCount: number = this.currentKlines.reduce((acc: number, kline: Kline) => {
       const backtestSignals: BacktestSignal[] = kline.algorithms[algorithm]!.signals;
-      return acc + backtestSignals.filter((signal: BacktestSignal) => ![Signal.Close, Signal.ForceClose].includes(signal.signal)).length;
+      return acc + backtestSignals.filter((signal: BacktestSignal) => !this.isCloseSignal(signal.signal)).length;
     }, 0);
 
     this.stats = {
