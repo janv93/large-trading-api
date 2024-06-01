@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { Algorithm, BacktestSignal, CloseType, Kline, Position, Signal, Timeframe } from '../interfaces';
+import { Algorithm, BacktestSignal, Kline, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
 export default class Base {
@@ -257,8 +257,13 @@ export default class Base {
     return (endPrice - startPrice) / startPrice;
   }
 
-  protected isForceCloseType(closeType?: CloseType): boolean {
-    if (!closeType) return false;
-    return [CloseType.Liquidation, CloseType.StopLoss, CloseType.TakeProfit].includes(closeType);
+  protected isCloseSignal(signal?: Signal): boolean {
+    if (!signal) return false;
+    return [Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
+  }
+
+  protected isForceCloseSignal(signal?: Signal): boolean {
+    const isCloseSignal: boolean = (this.isCloseSignal(signal));
+    return isCloseSignal && signal !== Signal.Close;
   }
 }

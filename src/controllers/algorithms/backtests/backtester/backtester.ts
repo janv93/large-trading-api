@@ -1,4 +1,4 @@
-import { Algorithm, BacktestData, BacktestSignal, CloseType, Kline, Position, PositionCloseTrigger, Signal, TakeProfitStopLoss } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Position, Signal, TakeProfitStopLoss } from '../../../../interfaces';
 import Base from '../../../base';
 
 export default class Backtester extends Base {
@@ -17,18 +17,17 @@ export default class Backtester extends Base {
       const backtestSignals: BacktestSignal[] = backtest.signals;
 
       positions = positions.map((position: Position | undefined) => {
-        const closeType: CloseType | undefined = this.getCloseType(position!, kline, algorithm);
+        const closeSignal: Signal | undefined = this.getCloseSignal(position!, kline, algorithm);
 
-        if (this.isForceCloseType(closeType)) { // add force close to kline signals
-          backtest.forceClose = closeType;
-          const closePrice: number = this.getClosePrice(position!, closeType!, kline, algorithm);
-          backtestSignals.push({ signal: Signal.ForceClose, price: closePrice });
+        if (this.isForceCloseSignal(closeSignal)) { // add force close to kline signals
+          const closePrice: number = this.getClosePrice(position!, closeSignal!, kline, algorithm);
+          backtestSignals.push({ signal: closeSignal!, price: closePrice });
         }
 
-        if (flowingProfit || flowingProfit && closeType || !flowingProfit && backtestSignals.length) { // if flowing profit or (force) close, or , change existing positions
-          profit += this.calcProfitChange(position!, kline, algorithm, closeType);
-          if (closeType) profit -= this.calcCloseFee(position!, kline, algorithm, closeType, commission);
-          return this.updateExistingPosition(position!, kline, closeType);
+        if (flowingProfit || flowingProfit && closeSignal || !flowingProfit && backtestSignals.length) { // if flowing profit or (force) close, or , change existing positions
+          profit += this.calcProfitChange(position!, kline, algorithm, closeSignal);
+          if (closeSignal) profit -= this.calcCloseFee(position!, kline, algorithm, closeSignal, commission);
+          return this.updateExistingPosition(position!, kline, closeSignal);
         } else {
           return position;
         }
@@ -56,7 +55,7 @@ export default class Backtester extends Base {
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal) => {
-      if (![Signal.Close, Signal.ForceClose].includes(signal.signal)) {
+      if (![Signal.Close, Signal.Liquidation].includes(signal.signal)) {
         totalOpenFee += commission * signal.size!
       }
     });
@@ -69,7 +68,7 @@ export default class Backtester extends Base {
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal) => {
-      if (![Signal.Close, Signal.ForceClose].includes(signal.signal)) {
+      if (!this.isCloseSignal(signal.signal)) {
         positions.push(this.createPosition(signal));
       }
     });
@@ -78,18 +77,39 @@ export default class Backtester extends Base {
   private createPosition(signal: BacktestSignal): Position {
     const signalSize: number = signal.size!;
     const signalPrice: number = signal.price;
+    const tpSl: TakeProfitStopLoss | undefined = signal.positionCloseTrigger?.tpSl;
+    const takeProfit: number | undefined = tpSl?.takeProfit;
+    const stopLoss: number | undefined = tpSl?.stopLoss;
     let size: number;
     let entrySize: number;
     let liquidationPrice: number;
+    let takeProfitPrice: number | undefined;
+    let stopLossPrice: number | undefined;
 
     if (signal.signal === Signal.Buy) {
       size = signalSize;
       entrySize = signalSize;
       liquidationPrice = 0;
+
+      if (takeProfit) {
+        takeProfitPrice = signalPrice * (1 + takeProfit);
+      }
+
+      if (stopLoss) {
+        stopLossPrice = signalPrice * (1 - stopLoss);
+      }
     } else if (signal.signal === Signal.Sell) {
       size = -signalSize;
       entrySize = -signalSize;
       liquidationPrice = signalPrice * 2;
+
+      if (takeProfit) {
+        takeProfitPrice = signalPrice * (1 - takeProfit);
+      }
+
+      if (stopLoss) {
+        stopLossPrice = signalPrice * (1 + stopLoss);
+      }
     }
 
     return {
@@ -97,12 +117,14 @@ export default class Backtester extends Base {
       entrySize: entrySize!,
       price: signalPrice,
       entryPrice: signalPrice,
-      liquidationPrice: liquidationPrice!
+      liquidationPrice: liquidationPrice!,
+      takeProfitPrice,
+      stopLossPrice
     };
   }
 
-  private calcCloseFee(position: Position, kline: Kline, algorithm: Algorithm, closeType: CloseType, commission: number): number {
-    if (closeType === CloseType.Liquidation) {
+  private calcCloseFee(position: Position, kline: Kline, algorithm: Algorithm, closeSignal: Signal, commission: number): number {
+    if (closeSignal === Signal.Liquidation) {
       // in case of liquidation, you don't pay a fee.
       // e.g. when normally closing a position that is worth 50$ from an orignal 100$, you pay the commission * 50$
       // now when the position is worth 0$ from an original 100$, you pay 0 commission
@@ -112,7 +134,7 @@ export default class Backtester extends Base {
       const entryPrice: number = position.entryPrice;
       const entrySize: number = position.entrySize;
       const currentSize: number = position.size;
-      const currentPrice: number = this.getClosePrice(position, closeType, kline, algorithm);
+      const currentPrice: number = this.getClosePrice(position, closeSignal, kline, algorithm);
       const priceChange: number = this.calcPriceChange(entryPrice, currentPrice!);
       // then determine the size of the position at close
       const sizeAtClose: number = currentSize > 0 ? entrySize * (1 + priceChange) : entrySize * (1 - priceChange);
@@ -123,8 +145,8 @@ export default class Backtester extends Base {
   }
 
   // update size and price of existing position or set position undefined if it was closed
-  private updateExistingPosition(position: Position, kline: Kline, closeType: CloseType | undefined): Position | undefined {
-    if (closeType) return undefined;
+  private updateExistingPosition(position: Position, kline: Kline, closeSignal: Signal | undefined): Position | undefined {
+    if (closeSignal) return undefined;
 
     const entryPrice: number = position.entryPrice;
     const currentPrice: number = kline.prices.close;
@@ -141,38 +163,38 @@ export default class Backtester extends Base {
     return position;
   }
 
-  private calcProfitChange(position: Position, kline: Kline, algorithm: Algorithm, closeType: CloseType | undefined): number {
+  private calcProfitChange(position: Position, kline: Kline, algorithm: Algorithm, closeSignal: Signal | undefined): number {
     const lastPrice: number = position.price;
     const entryPrice: number = position.entryPrice;
     const entrySize: number = position.entrySize;
-    const currentPrice: number = closeType ? this.getClosePrice(position, closeType, kline, algorithm) : kline.prices.close;
+    const currentPrice: number = closeSignal ? this.getClosePrice(position, closeSignal, kline, algorithm) : kline.prices.close;
     const diff: number = currentPrice - lastPrice;
     const change: number = diff / entryPrice;
     const profitChange: number = change * entrySize * 100;
     return profitChange;
   }
 
-  private getClosePrice(position: Position, closeType: CloseType, kline: Kline, algorithm: Algorithm): number {
+  private getClosePrice(position: Position, closeSignal: Signal, kline: Kline, algorithm: Algorithm): number {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
     let currentPrice: number;
 
-    switch (closeType) {
-      case CloseType.Close:
+    switch (closeSignal) {
+      case Signal.Close:
         const closeSignal: BacktestSignal = backtest.signals.find((signal: BacktestSignal) => {
           return signal.signal === Signal.Close;
         })!;
 
         currentPrice = closeSignal.price;
         break;
-      case CloseType.Liquidation: currentPrice = position.liquidationPrice; break;
-      case CloseType.StopLoss: currentPrice = position.stopLossPrice!; break;
-      case CloseType.TakeProfit: currentPrice = position.takeProfitPrice!; break;
+      case Signal.Liquidation: currentPrice = position.liquidationPrice; break;
+      case Signal.StopLoss: currentPrice = position.stopLossPrice!; break;
+      case Signal.TakeProfit: currentPrice = position.takeProfitPrice!; break;
     }
 
-    return currentPrice;
+    return currentPrice!;
   }
 
-  private getCloseType(position: Position, kline: Kline, algorithm: Algorithm): CloseType | undefined {
+  private getCloseSignal(position: Position, kline: Kline, algorithm: Algorithm): Signal | undefined {
     const size: number = position.size;
     const isForceClose: boolean = this.isForceClose(position, kline);
     const closeSignal: BacktestSignal | undefined = kline.algorithms[algorithm]?.signals.find((signal: BacktestSignal) => signal.signal === Signal.Close);
@@ -184,31 +206,31 @@ export default class Backtester extends Base {
     const isTpTrigger: boolean = this.isTakeProfitTrigger(position, kline);
     const isSlTrigger: boolean = this.isStopLossTrigger(position, kline);
     const isLiquidation: boolean = this.isLiquidation(position, kline);
-    const forceCloseTypes: CloseType[] = []; // all triggered close types
+    const forceCloseSignals: Signal[] = []; // all triggered close signal
 
-    if (isSlTrigger) forceCloseTypes.push(CloseType.StopLoss);  // sl has precedence over liquidation because sl will always be triggered before liquidation
-    if (isLiquidation) forceCloseTypes.push(CloseType.Liquidation); // liquidation has precedence over take profit because we calculate with max loss, max risk, since intra-kline we can't determine which came first
-    if (isTpTrigger) forceCloseTypes.push(CloseType.TakeProfit);
+    if (isSlTrigger) forceCloseSignals.push(Signal.StopLoss);  // sl has precedence over liquidation because sl will always be triggered before liquidation
+    if (isLiquidation) forceCloseSignals.push(Signal.Liquidation); // liquidation has precedence over take profit because we calculate with max loss, max risk, since intra-kline we can't determine which came first
+    if (isTpTrigger) forceCloseSignals.push(Signal.TakeProfit);
 
-    const forceCloseType: CloseType | undefined = forceCloseTypes[0]; // take the first type that was pushed, which will have precedence over the succeeding types
+    const forceCloseSignal: Signal | undefined = forceCloseSignals[0]; // take the first signal that was pushed, which will have precedence over the succeeding types
 
-    if (!forceCloseType) return CloseType.Close;
-    if (!closeSignal) return forceCloseType;
+    if (!forceCloseSignal) return Signal.Close;
+    if (!closeSignal) return forceCloseSignal;
 
-    if (forceCloseType && closeSignal) {
+    if (forceCloseSignal && closeSignal) {
       const closePrice: number = closeSignal.price;
       let forceClosePrice: number;
 
-      switch (forceCloseType) {
-        case CloseType.StopLoss: forceClosePrice = slPrice!; break;
-        case CloseType.Liquidation: forceClosePrice = liquidationPrice; break;
-        case CloseType.TakeProfit: forceClosePrice = tpPrice!; break;
+      switch (forceCloseSignal) {
+        case Signal.StopLoss: forceClosePrice = slPrice!; break;
+        case Signal.Liquidation: forceClosePrice = liquidationPrice; break;
+        case Signal.TakeProfit: forceClosePrice = tpPrice!; break;
       }
 
       if (size > 0) { // long
-        return closePrice < forceClosePrice! ? CloseType.Close : forceCloseType;  // again, take the price that would result in max loss, max risk
+        return closePrice < forceClosePrice! ? Signal.Close : forceCloseSignal;  // again, take the price that would result in max loss, max risk
       } else {  // short
-        return closePrice > forceClosePrice! ? CloseType.Close : forceCloseType;
+        return closePrice > forceClosePrice! ? Signal.Close : forceCloseSignal;
       }
     }
   }

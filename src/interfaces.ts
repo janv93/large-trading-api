@@ -48,14 +48,10 @@ export enum Signal {
   Buy = 'BUY',
   Sell = 'SELL',
   Close = 'CLOSE', // closes all open positions
-  ForceClose = 'FORCECLOSE'
-}
-
-export enum CloseType {
-  Close = 'CLOSE',
-  StopLoss = 'STOPLOSS',
+  // these are only set by the backtester
+  Liquidation = 'LIQUIDATION',
   TakeProfit = 'TAKEPROFIT',
-  Liquidation = 'LIQUIDATION'
+  StopLoss = 'STOPLOSS'
 }
 
 export enum Slope {
@@ -119,7 +115,6 @@ export interface BacktestData {
   signals: BacktestSignal[];  // allow multiple independent signals for multiple independent positions
   percentProfit?: number; // calculated profit at current kline
   openPositionSize?: number;  // calculated position size open at current kline
-  forceClose?: CloseType;  // if liquidation was triggered this kline
 }
 
 export interface BacktestSignal {
