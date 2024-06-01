@@ -294,9 +294,9 @@ export default class Backtester extends Base {
     const currentLow: number = kline.prices.low;
 
     if (size > 0) { // long
-      return stopLossPrice !== undefined && stopLossPrice < currentLow;
+      return stopLossPrice !== undefined && currentLow < stopLossPrice;
     } else if (size < 0) {  // short
-      return stopLossPrice !== undefined && stopLossPrice > currentHigh;
+      return stopLossPrice !== undefined && currentHigh > stopLossPrice;
     }
 
     return false;
