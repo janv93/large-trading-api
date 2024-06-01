@@ -55,7 +55,7 @@ export default class Backtester extends Base {
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal) => {
-      if (![Signal.Close, Signal.Liquidation].includes(signal.signal)) {
+      if (!this.isCloseSignal(signal.signal)) {
         totalOpenFee += commission * signal.size!
       }
     });
