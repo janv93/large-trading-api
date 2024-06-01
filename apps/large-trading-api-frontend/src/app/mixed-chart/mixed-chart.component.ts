@@ -323,7 +323,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const backtest: BacktestData = kline.algorithms[algorithm]!
     const backtestSignals: BacktestSignal[] = backtest.signals;
     const signals: Signal[] = backtestSignals.map((signal: BacktestSignal) => signal.signal);
-    console.log(JSON.stringify(signals))
     const hasBuy: boolean = signals.includes(Signal.Buy);
     const hasSell: boolean = signals.includes(Signal.Sell);
     const hasClose: boolean = signals.includes(Signal.Close);
