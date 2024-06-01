@@ -1,6 +1,7 @@
 import { describe, expect, it, fit, beforeEach } from '@jest/globals';
 import Backtester from './backtester';
 import { Kline, Algorithm, Signal, Timeframe, BacktestData } from '../../../../interfaces';
+import { exp } from '@tensorflow/tfjs-node';
 
 
 describe('Backtester', () => {
@@ -289,5 +290,138 @@ describe('Backtester', () => {
     expect(backtests[0].percentProfit).toBe(0);
     expect(backtests[1].percentProfit).toBe(-20);
     expect(backtests[2].percentProfit).toBe(-40);
+  });
+
+  fit('should calculate percentProfit correctly in case of tp/sl', () => {
+    const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const basePrices = { open: 0 };
+
+    const klinesBuySl: Kline[] = [
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 0, low: 0 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 110, high: 100, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 100, low: 89 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 80, high: 100, low: 80 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      }
+    ];
+
+    const klinesWithProfitBuySl: Kline[] = backtester.calcBacktestPerformance(klinesBuySl, algorithm, 0, true);
+    const backtestsBuySl: BacktestData[] = klinesWithProfitBuySl.map(k => k.algorithms[algorithm]!);
+
+    expect(backtestsBuySl[0].percentProfit).toBeCloseTo(0);
+    expect(backtestsBuySl[1].percentProfit).toBeCloseTo(10);
+    expect(backtestsBuySl[2].percentProfit).toBeCloseTo(-10);
+    expect(backtestsBuySl[2].signals[0].signal).toBe(Signal.StopLoss);
+    expect(backtestsBuySl[3].percentProfit).toBeCloseTo(-10);
+
+    const klinesBuyTp: Kline[] = [
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 0, low: 0 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 110, high: 100, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 130, high: 130, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 150, high: 150, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      }
+    ];
+
+    const klinesWithProfitBuyTp: Kline[] = backtester.calcBacktestPerformance(klinesBuyTp, algorithm, 0, true);
+    const backtestsBuyTp: BacktestData[] = klinesWithProfitBuyTp.map(k => k.algorithms[algorithm]!);
+
+    expect(backtestsBuyTp[0].percentProfit).toBeCloseTo(0);
+    expect(backtestsBuyTp[1].percentProfit).toBeCloseTo(10);
+    expect(backtestsBuyTp[2].percentProfit).toBeCloseTo(20);
+    expect(backtestsBuyTp[2].signals[0].signal).toBe(Signal.TakeProfit);
+    expect(backtestsBuyTp[3].percentProfit).toBeCloseTo(20);
+
+    const klinesSellSl: Kline[] = [
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 0, low: 0 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 110, high: 110, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 130, high: 130, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 140, high: 140, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      }
+    ];
+
+    const klinesWithProfitSellSl: Kline[] = backtester.calcBacktestPerformance(klinesSellSl, algorithm, 0, true);
+    const backtestsSellSl: BacktestData[] = klinesWithProfitSellSl.map(k => k.algorithms[algorithm]!);
+
+    expect(backtestsSellSl[0].percentProfit).toBeCloseTo(0);
+    expect(backtestsSellSl[1].percentProfit).toBeCloseTo(-10);
+    expect(backtestsSellSl[2].percentProfit).toBeCloseTo(-10);
+    expect(backtestsSellSl[2].signals[0].signal).toBe(Signal.StopLoss);
+    expect(backtestsSellSl[3].percentProfit).toBeCloseTo(-10);
+
+    const klinesSellTp: Kline[] = [
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 0, low: 0 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 90, high: 100, low: 90 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 70, high: 100, low: 70 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 60, high: 100, low: 60 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      }
+    ];
+
+    const klinesWithProfitSellTp: Kline[] = backtester.calcBacktestPerformance(klinesSellTp, algorithm, 0, true);
+    const backtestsSellTp: BacktestData[] = klinesWithProfitSellTp.map(k => k.algorithms[algorithm]!);
+
+    expect(backtestsSellTp[0].percentProfit).toBeCloseTo(0);
+    expect(backtestsSellTp[1].percentProfit).toBeCloseTo(10);
+    expect(backtestsSellTp[2].percentProfit).toBeCloseTo(20);
+    expect(backtestsSellTp[2].signals[0].signal).toBe(Signal.TakeProfit);
+    expect(backtestsSellTp[3].percentProfit).toBeCloseTo(20);
   });
 });
