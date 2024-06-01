@@ -292,7 +292,7 @@ describe('Backtester', () => {
     expect(backtests[2].percentProfit).toBe(-40);
   });
 
-  fit('should calculate percentProfit correctly in case of tp/sl', () => {
+  it('should calculate percentProfit correctly in case of tp/sl', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
