@@ -1,7 +1,7 @@
 import Base from './base';
 import { Algorithm, Exchange, Kline, Timeframe } from '../interfaces';
 import alpaca from './exchanges/alpaca';
-import Binance from './exchanges/binance';
+import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Momentum from './algorithms/backtests/simple-backtests/momentum';
 import Backtester from './algorithms/backtests/backtester/backtester';
@@ -21,7 +21,6 @@ import Coinmarketcap from './other-apis/coinmarketcap';
 
 
 export default class Routes extends Base {
-  private binance = new Binance();
   private kucoin = new Kucoin();
   private indicators = new Indicators();
   private momentum = new Momentum();
@@ -178,7 +177,7 @@ export default class Routes extends Base {
     let exchangeObj;
 
     switch (exchange) {
-      case Exchange.Binance: exchangeObj = this.binance; break;
+      case Exchange.Binance: exchangeObj = binance; break;
       case Exchange.Kucoin: exchangeObj = this.kucoin; break;
       case Exchange.Alpaca: exchangeObj = alpaca; break;
     }
@@ -201,7 +200,7 @@ export default class Routes extends Base {
   private async getMultiCryptos(rank: number): Promise<string[]> {
     const capCryptos = await this.cmc.getCryptosByMarketCapRank(rank);
     const capCryptosFiltered = capCryptos.filter((c: string) => !['USDC', 'USDT'].includes(c));
-    const binanceCryptos = await this.binance.getUsdtBusdPairs();
+    const binanceCryptos = await binance.getUsdtBusdPairs();
 
     const binanceEquivalents = capCryptosFiltered.map((c: string) => {
       const usdtSymbol = binanceCryptos.find(v => v === c + 'USDT');

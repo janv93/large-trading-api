@@ -4,7 +4,10 @@ import { Kline, Timeframe, Tweet } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
 
-export default class Binance extends Base {
+class Binance extends Base {
+  private rateLimitPerMinute = 2400;
+  private requestsSentThisMinute = 0;
+
   public async getKlines(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
@@ -26,6 +29,7 @@ export default class Binance extends Base {
     this.log('GET ' + klineUrl, this);
 
     try {
+      await this.waitIfRateLimitReached();
       const response = await axios.get(klineUrl);
       const result = this.mapKlines(symbol, timeframe, response.data);
       return result;
@@ -267,4 +271,17 @@ export default class Binance extends Base {
       };
     });
   }
+
+  private async waitIfRateLimitReached(): Promise<void> {
+    this.requestsSentThisMinute++;
+
+    // wait at rate limit
+    if (this.requestsSentThisMinute >= this.rateLimitPerMinute) {
+      this.log('Rate limit reached, waiting', this);
+      await this.sleep(60000);
+      this.requestsSentThisMinute = 0;
+    }
+  }
 }
+
+export default new Binance();

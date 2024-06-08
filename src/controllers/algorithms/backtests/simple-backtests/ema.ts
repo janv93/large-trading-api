@@ -1,12 +1,11 @@
 import Indicators from '../../../technical-analysis/indicators';
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '../../../../interfaces';
 import Base from '../../../base';
-import Binance from '../../../exchanges/binance';
+import binance from '../../../exchanges/binance';
 import Btse from '../../../exchanges/btse';
 
 export default class Ema extends Base {
   private indicators = new Indicators();
-  private binance = new Binance();
   private btse = new Btse();
   private tradingPositionOpen = new Map();
 
@@ -138,7 +137,7 @@ export default class Ema extends Base {
    * run trading algorithm in selected interval
    */
   private async tradeInterval(symbol: string, timeframe: Timeframe, quantityUSD: number, leverage: number) {
-    const klines = await this.binance.getKlines(symbol, timeframe);
+    const klines = await binance.getKlines(symbol, timeframe);
     const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
     klines.splice(-1);  // remove running timeframe
     console.log(klines.slice(-3))

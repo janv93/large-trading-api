@@ -2,14 +2,13 @@ import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe, Twee
 import Base from '../../../base';
 import Twitter from '../../../other-apis/twitter';
 import OpenAi from '../../../other-apis/openai';
-import Binance from '../../../exchanges/binance';
+import binance from '../../../exchanges/binance';
 import Backtester from '../backtester/backtester';
 
 
 export default class TwitterSentiment extends Base {
   private twitter = new Twitter();
   private openai = new OpenAi();
-  private binance = new Binance();
   private backtester = new Backtester();
 
   public async setSignals(klines: Kline[], algorithm: Algorithm): Promise<Kline[]> {
@@ -18,7 +17,7 @@ export default class TwitterSentiment extends Base {
     await this.twitter.getFriendsWithTheirTweets(user, initTime)
     const timelines = await this.twitter.getFriendsWithTheirTweets(user, klines[0].times.open);
     const tweets = await this.getTweetSentiments(timelines, klines);
-    this.binance.addTweetsToKlines(klines, tweets);
+    binance.addTweetsToKlines(klines, tweets);
     this.createBacktests(klines, algorithm);
     return klines;
   }
@@ -88,7 +87,7 @@ export default class TwitterSentiment extends Base {
 
   private async getTweetSentiments(timelines: TwitterTimeline[], klines: Kline[]): Promise<Tweet[]> {
     const earliestTime = klines[0].times.open;
-    const symbol = this.binance.pairToSymbol(klines[0].symbol);
+    const symbol = binance.pairToSymbol(klines[0].symbol);
     const tweets: Tweet[] = timelines.flatMap(ti => ti.tweets);
     const tweetsInTimeRange = tweets.filter(t => t.time > earliestTime);
     const tweetsWithSymbol = tweetsInTimeRange.filter(t => t.symbols.map(s => s.symbol).includes(symbol));

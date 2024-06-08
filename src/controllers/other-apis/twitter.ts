@@ -2,7 +2,7 @@ import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
 import Base from '../base';
-import Binance from '../exchanges/binance';
+import binance from '../exchanges/binance';
 import database from '../../data/database';
 import Coinmarketcap from './coinmarketcap';
 import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '../../interfaces';
@@ -10,7 +10,6 @@ import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '../../i
 export default class Twitter extends Base {
   private database = database;
   private cmc = new Coinmarketcap();
-  private binance = new Binance();
   private baseUrl = 'https://api.twitter.com';
   private callCounter = 0;
 
@@ -112,8 +111,8 @@ export default class Twitter extends Base {
   }
 
   public async getFriendsWithTheirTweets(userName: string, startTime: number): Promise<TwitterTimeline[]> {
-    const binanceSymbols = await this.binance.getUsdtBusdPairs();
-    const shortBinanceSymbols = this.binance.pairsToSymbols(binanceSymbols);
+    const binanceSymbols = await binance.getUsdtBusdPairs();
+    const shortBinanceSymbols = binance.pairsToSymbols(binanceSymbols);
     const friends = await this.getFriends(userName);
     const latestUpdate = await this.database.getLatestTwitterChangeTime();
     const needsUpdate = latestUpdate != 0 ? (Date.now() - latestUpdate) / (1000 * 60) > 10 : true;  // latest change in database longer than 10 minutes in the past
@@ -147,7 +146,7 @@ export default class Twitter extends Base {
         return false;
       });
 
-      const klineSymbol = this.binance.pairToSymbol(klines[0].symbol);
+      const klineSymbol = binance.pairToSymbol(klines[0].symbol);
       const symbol = t.symbols.find(s => s.symbol === klineSymbol);
 
       if (symbol && priceKline) {
