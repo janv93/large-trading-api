@@ -1,6 +1,6 @@
 import { Component, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData } from 'lightweight-charts';
-import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData } from '../interfaces';
+import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
@@ -34,6 +34,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private markersPivotPoints: SeriesMarker<Time>[] = [];
   private markersSignals: SeriesMarker<Time>[] = [];
   private isCrosshairSubscribed = false;
+  private drawingMarkers = false;
 
   constructor(
     public chartService: ChartService,
@@ -313,9 +314,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   // combine all markers
   private drawMarkers() {
+    if (this.drawingMarkers) return;
+
+    this.drawingMarkers = true;
     const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
     allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
     this.candlestickSeries.setMarkers(allMarkers);
+    this.drawingMarkers = false;
   }
 
   private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
@@ -330,15 +335,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const hasTakeProfit: boolean = signals.includes(Signal.TakeProfit);
     const hasStopLoss: boolean = signals.includes(Signal.StopLoss);
     const hasForceClose: boolean = hasLiquidation || hasTakeProfit || hasStopLoss;
-    const hasMultipleForceClose: boolean = [hasLiquidation, hasTakeProfit, hasStopLoss].every((val: boolean) => val);
+    const hasMultipleForceClose: boolean = [hasLiquidation, hasTakeProfit, hasStopLoss].filter((val: boolean) => val).length > 1;
     const isBuy: string | undefined = hasBuy && !hasSell && !hasClose && !hasForceClose ? 'BUY' : undefined;
     const isSell: string | undefined = hasSell && !hasBuy && !hasClose && !hasForceClose ? 'SELL' : undefined;
     const isClose: string | undefined = !hasBuy && !hasSell && !hasForceClose ? 'CLOSE' : undefined;
-    const isLiquidation: string | undefined = hasLiquidation && !hasTakeProfit && !hasStopLoss && !hasClose && !hasBuy && !hasSell ? 'LIQ' : undefined;
-    const isTakeProfit: string | undefined = hasTakeProfit && !hasLiquidation && !hasStopLoss && !hasClose && !hasBuy && !hasSell ? 'TP' : undefined;
-    const isStopLoss: string | undefined = hasStopLoss && !hasLiquidation && !hasTakeProfit && !hasClose && !hasBuy && !hasSell ? 'SL' : undefined;
-    const isCloseBuy: string | undefined = (hasClose || hasForceClose) && hasBuy && !hasSell ? 'CBUY' : undefined;
-    const isCloseSell: string | undefined = (hasClose || hasForceClose) && hasSell && !hasBuy ? 'CSELL' : undefined;
+    const isLiquidation: string | undefined = hasLiquidation && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'LIQ' : undefined;
+    const isTakeProfit: string | undefined = hasTakeProfit && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'TP' : undefined;
+    const isStopLoss: string | undefined = hasStopLoss && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'SL' : undefined;
+    const isCloseBuy: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasBuy && !hasSell ? 'CBUY' : undefined;
+    const isCloseSell: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasSell && !hasBuy ? 'CSELL' : undefined;
     const isMix: string | undefined = hasBuy && hasSell || hasClose && hasForceClose || hasMultipleForceClose ? 'MIX' : undefined;
     let signal: string = (isBuy || isSell || isClose || isLiquidation || isTakeProfit || isStopLoss || isCloseBuy || isCloseSell || isMix)!;
 
@@ -351,7 +356,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     return {
       time: kline.times.open / 1000 as Time,
       position: ['BUY', 'CBUY'].includes(signal) ? 'belowBar' : 'aboveBar',
-      color: ['BUY', 'CBUY'].includes(signal) ? 'lime' : ['CLOSE', 'LIQ', 'TP', 'SL'].includes(signal) ? 'white' : '#ff4d4d',
+      color: ['BUY', 'CBUY'].includes(signal) ? 'lime' : ['CLOSE', 'LIQ', 'TP', 'SL', 'MIX'].includes(signal) ? 'white' : '#ff4d4d',
       shape: ['BUY', 'CBUY'].includes(signal) ? 'arrowUp' : 'arrowDown',
       text: signal + (totalSize ? ` ${totalSize.toFixed(2)}` : '')
     };
@@ -480,6 +485,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
       const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
       const openPositionSize: HistogramData | undefined = this.openPositionSizeSeries ? param.seriesData.get(this.openPositionSizeSeries) as HistogramData : undefined;
+      const index: number = param.logical as number;
+      const kline: Kline | undefined = this.currentKlines[index];
 
       if (ohlc) {
         for (const key in ohlc) {
@@ -495,7 +502,36 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
           this.openPositionSize = Number(openPositionSize.value.toFixed(2));
         }
       }
+
+      if (kline) {
+        this.highlightOpenSignals(kline);
+      }
     });
+  }
+
+  private highlightOpenSignals(kline: Kline) {
+    const algorithm: Algorithm = this.chartService.algorithms[0];
+    const backtest: BacktestData = kline.algorithms[algorithm]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const openTimes: number[] = [];
+
+    signals.forEach((signal: BacktestSignal) => {
+      if (signal.openSignalReferences) {
+        signal.openSignalReferences.forEach((signalReference: SignalReference) => {
+          openTimes.push(signalReference.openTime);
+        });
+      }
+    });
+
+    this.markersSignals.forEach((marker: SeriesMarker<Time>) => {
+      marker.size = undefined;
+
+      if (openTimes.includes((marker.time as UTCTimestamp) * 1000)) {
+        marker.size = 3;
+      }
+    });
+
+    this.drawMarkers();
   }
 
   private calcStats(): void {

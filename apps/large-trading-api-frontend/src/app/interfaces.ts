@@ -130,6 +130,12 @@ export interface BacktestSignal {
   size?: number;  // not required if close
   price: number;
   positionCloseTrigger?: PositionCloseTrigger;
+  openSignalReferences?: SignalReference[];  // only for closes to refer to the position which is closed
+}
+
+export interface SignalReference {
+  openTime: number;
+  signal: BacktestSignal;
 }
 
 export interface PositionCloseTrigger {

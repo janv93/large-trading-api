@@ -18,6 +18,7 @@
     "@angular/platform-browser": "^16.1.0",
     "@angular/platform-browser-dynamic": "^16.1.0",
     "@angular/router": "^16.1.0",
+    "@types/node": "^20.14.0",
     "apexcharts": "^3.42.0",
     "deepmerge": "^4.2.2",
     "lightweight-charts": "^4.1.0",

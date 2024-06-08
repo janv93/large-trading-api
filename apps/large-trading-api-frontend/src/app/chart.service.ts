@@ -17,7 +17,7 @@ export class ChartService {
   public commission = 0.04;
 
   // algorithm, [0] is primary, [1] is optional second algorithm
-  public algorithms = [Algorithm.TrendLine]; // if second algorithm is set, will draw a second profit line for comparison
+  public algorithms = [Algorithm.MeanReversion]; // if second algorithm is set, will draw a second profit line for comparison
   public rsiLength = [7, 7];
   public emaPeriodOpen = [80, 80];
   public emaPeriodClose = [80, 80];
