@@ -82,7 +82,7 @@ class Binance extends Base {
     }
 
     const dateRange = this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
-    this.log(`Received total of ${klines.length} klines: ${dateRange}`, this);
+    this.log(`${klines.length} ${symbol} klines received - ${dateRange}`, this);
 
     klines.sort((a, b) => a.times.open - b.times.open);
     return klines;
@@ -102,7 +102,7 @@ class Binance extends Base {
 
       if (newKlines.length) {
         await database.writeKlines(newKlines);
-        this.log('Database initialized with ' + newKlines.length + ' klines', this);
+        this.log(`${newKlines.length} ${symbol} klines initialized in database`, this);
       }
 
       return newKlines;
@@ -115,11 +115,12 @@ class Binance extends Base {
     if (this.klineOutdated(timeframe, newStart)) {
       const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      this.log('Added ' + newKlines.length + ' new klines to database', this);
+      this.log(`${newKlines.length} new ${symbol} klines added to database`, this);
       await database.writeKlines(newKlines);
       const mergedKlines: Kline[] = dbKlines.concat(newKlines);
       return mergedKlines;
     } else {
+      this.log(`${symbol} already up to date`, this);
       return dbKlines;
     }
   }
