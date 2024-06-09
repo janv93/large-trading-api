@@ -3,7 +3,7 @@ import { Algorithm, BacktestSignal, Kline, Signal, Timeframe } from '../interfac
 import Logger from './logger';
 
 export default class Base {
-  private logger = new Logger();
+  protected logger = new Logger();
 
   /**
    * 1 = green, -1 = red, 0 = steady
@@ -133,10 +133,11 @@ export default class Base {
     const now = Date.now();
 
     switch (unit) {
-      case 'm': return now - ms * 200 * 1000; // 200k * 1 min = 138 days - 200k * 15 min = 2k days
+      case 'm': return now - ms * 100 * 1000; // 100k * 1 min = 69 days - 100k * 15 min = 1k days
       case 'h': return now - ms * Math.round(100 / value) * 1000; // 100k hours = 4k days
       case 'd': return now - ms * Math.round(10 / value) * 1000; // 10k days = 27 years
-      case 'w': return now - ms * 2 * 1000; // 1k weeks = 38 years
+      case 'w': return now - ms * 1000; // 1k weeks = 38 years
+      case 'M': return now - ms * 100;
       default: throw `timeframe ${timeframe} does not exist`;
     }
   }
@@ -250,9 +251,7 @@ export default class Base {
     return totalChange / (numbers.length - 1);
   }
 
-  /**
-   * e.g. 10 -> 15 = 0.5
-   */
+  // e.g. 10 -> 15 = 0.5
   protected calcPriceChange(startPrice: number, endPrice: number): number {
     return (endPrice - startPrice) / startPrice;
   }

@@ -101,6 +101,7 @@ export default class Routes extends Base {
       }
     }
 
+    this.log('Multi finished', this);
     res.send(tickersWithSignals);
   }
 

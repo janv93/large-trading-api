@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Base from '../controllers/base';
 import { Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
 import { KlineSchema, TwitterUserTimelineSchema } from './schemas';
+import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
 
@@ -87,6 +88,30 @@ class Database extends Base {
     } catch (err) {
       this.logErr(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`, err, this);
       return [];
+    }
+  }
+
+  // delete klines before a certain time too far in the past
+  public async deleteOutdatedKlines(): Promise<number> {
+    this.log('Deleting outdated klines', this);
+
+    try {
+      let totalDeleted = 0;
+
+      for (const timeframe of Object.values(Timeframe)) {
+        const result: DeleteResult = await this.Kline.deleteMany({
+          timeframe: timeframe,
+          openTime: { $lt: this.calcStartTime(timeframe) }
+        });
+
+        totalDeleted += result.deletedCount;
+      }
+
+      this.log(`${totalDeleted} outdated klines deleted`, this);
+      return totalDeleted;
+    } catch (err) {
+      this.logErr('Failed to delete klines: ', err, this);
+      return 0;
     }
   }
 

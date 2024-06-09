@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import config from 'config';
 import Routes from './controllers/routes';
 import Base from './controllers/base';
+import database from './data/database';
 
 class App extends Base {
   public app: express.Application;
@@ -14,6 +15,12 @@ class App extends Base {
     this.routes = new Routes();
     this.config();
     this.route();
+    this.log('Initializing App', this);
+
+    database.deleteOutdatedKlines().then((totalDeleted: number) => {
+      this.log(`${totalDeleted} outdated klines deleted`, this);
+      this.log('App initialized', this);
+    });
   }
 
   private config(): void {
@@ -56,7 +63,6 @@ class App extends Base {
 
   public start(): void {
     this.app.listen(config.port, () => {
-      console.log();
       this.log(`Server is listening on port ${config.port}`, this);
     });
   }

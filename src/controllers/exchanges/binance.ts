@@ -93,12 +93,12 @@ class Binance extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
-    const startTime = this.calcStartTime(timeframe);
-    const dbKlines = await database.getKlines(symbol, timeframe);
+    const startTime: number = this.calcStartTime(timeframe);
+    const dbKlines: Kline[] = await database.getKlines(symbol, timeframe);
 
     // not in database yet
     if (!dbKlines || !dbKlines.length) {
-      const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
+      const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
 
       if (newKlines.length) {
         await database.writeKlines(newKlines);
@@ -109,15 +109,15 @@ class Binance extends Base {
     }
 
     // already in database
-    const lastKline = dbKlines[dbKlines.length - 1];
-    const newStart = lastKline.times.open;
+    const lastKline: Kline = dbKlines[dbKlines.length - 1];
+    const newStart: number = lastKline.times.open;
 
     if (this.klineOutdated(timeframe, newStart)) {
-      const newKlines = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
+      const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log('Added ' + newKlines.length + ' new klines to database', this);
       await database.writeKlines(newKlines);
-      const mergedKlines = dbKlines.concat(newKlines);
+      const mergedKlines: Kline[] = dbKlines.concat(newKlines);
       return mergedKlines;
     } else {
       return dbKlines;
