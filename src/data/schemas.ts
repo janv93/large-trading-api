@@ -95,3 +95,10 @@ export const TwitterUserTimelineSchema = new mongoose.Schema({
   },
   tweets: [TweetSchema]
 }, { timestamps: true });
+
+export const AlpacaSymbolsSchema = new mongoose.Schema({
+  symbols: [{
+    type: String,
+    required: true
+  }]
+}, { timestamps: true });

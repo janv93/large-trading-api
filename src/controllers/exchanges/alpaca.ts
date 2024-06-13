@@ -1,5 +1,5 @@
 import fs from 'fs';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { AlpacaResponse, Kline, Timeframe } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
@@ -109,18 +109,8 @@ class Alpaca extends Base {
   }
 
   public async getAssets(): Promise<string[]> {
-    const cachedFile = 'src/controllers/exchanges/alpaca-all-tickers.json';
-
-    if (fs.existsSync(cachedFile)) {
-      const cachedData = JSON.parse(fs.readFileSync(cachedFile, 'utf8'));
-      const currentTime = new Date().getTime();
-      const oneWeek = 7 * 24 * 60 * 60 * 1000;
-
-      // If cache is newer than one week, return it
-      if (currentTime - cachedData.timestamp < oneWeek) {
-        return cachedData.symbols;
-      }
-    }
+    const dbSymbols: string[] | null = await database.getAlpacaSymbolsIfUpToDate();
+    if (dbSymbols) return dbSymbols;
 
     const options = {
       headers: {
@@ -130,14 +120,8 @@ class Alpaca extends Base {
     };
 
     const res = await axios.get('https://api.alpaca.markets/v2/assets', options);
-    const symbols = res.data.map(s => s.symbol);
-
-    const cacheData = {
-      timestamp: new Date().getTime(),
-      symbols: symbols,
-    };
-
-    fs.writeFileSync(cachedFile, JSON.stringify(cacheData));
+    const symbols: string[] = res.data.map(s => s.symbol);
+    await database.updateAlpacaSymbols(symbols);
     return symbols;
   }
 
