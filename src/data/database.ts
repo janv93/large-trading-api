@@ -98,17 +98,16 @@ class Database extends Base {
     this.log('Deleting outdated klines', this);
 
     try {
-      let totalDeleted = 0;
+      const deleteConditions = Object.values(Timeframe).map(timeframe => ({
+        timeframe,
+        openTime: { $lt: this.calcStartTime(timeframe) }
+      }));
 
-      for (const timeframe of Object.values(Timeframe)) {
-        const result: DeleteResult = await this.kline.deleteMany({
-          timeframe: timeframe,
-          openTime: { $lt: this.calcStartTime(timeframe) }
-        });
+      const result: DeleteResult = await this.kline.deleteMany({
+        $or: deleteConditions
+      });
 
-        totalDeleted += result.deletedCount;
-      }
-
+      const totalDeleted = result.deletedCount;
       this.log(`${totalDeleted} outdated klines deleted`, this);
       return totalDeleted;
     } catch (err) {
