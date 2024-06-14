@@ -2,7 +2,7 @@ import { cloneDeep } from 'lodash';
 import { Algorithm, BacktestSignal, Kline, Signal, Timeframe } from '../interfaces';
 import Logger from './logger';
 
-export default class Base {
+export default abstract class Base {
   protected logger = new Logger();
 
   /**
