@@ -33,7 +33,7 @@ class Alpaca extends Base {
       }
     };
 
-    this.log('GET ' + klineUrl, this);
+    this.log('GET ' + klineUrl);
 
     try {
       await this.waitIfRateLimitReached();
@@ -41,7 +41,7 @@ class Alpaca extends Base {
       const klines = this.mapKlines(symbol, timeframe, res.data.bars);
       return { nextPageToken: res.data.next_page_token, klines };
     } catch (err) {
-      this.handleError(err, symbol, this);
+      this.handleError(err, symbol);
       return { nextPageToken: '', klines: [] };
     }
   }
@@ -60,7 +60,7 @@ class Alpaca extends Base {
 
       if (newKlines.length) {
         await database.writeKlines(newKlines);
-        this.log(`${newKlines.length} ${symbol} klines initialized in database`, this);
+        this.log(`${newKlines.length} ${symbol} klines initialized in database`);
       }
 
       return newKlines;
@@ -73,12 +73,12 @@ class Alpaca extends Base {
     if (this.klineOutdated(timeframe, newStart)) {
       const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      this.log(`${newKlines.length} new ${symbol} klines added to database`, this);
+      this.log(`${newKlines.length} new ${symbol} klines added to database`);
       await database.writeKlines(newKlines);
       const mergedKlines: Kline[] = dbKlines.concat(newKlines);
       return mergedKlines;
     } else {
-      this.log(`${symbol} already up to date`, this);
+      this.log(`${symbol} already up to date`);
       return dbKlines;
     }
   }
@@ -101,7 +101,7 @@ class Alpaca extends Base {
     }
 
     const dateRange = this.timestampsToDateRange(klines[0]?.times.open, klines[klines.length - 1]?.times.open)
-    this.log(`${klines.length} ${symbol} klines received - ${dateRange}`, this);
+    this.log(`${klines.length} ${symbol} klines received - ${dateRange}`);
 
     klines.sort((a, b) => a.times.open - b.times.open);
     return klines;
@@ -163,7 +163,7 @@ class Alpaca extends Base {
 
     // wait at rate limit
     if (this.requestsSentThisMinute >= this.rateLimitPerMinute) {
-      this.log('Rate limit reached, waiting', this);
+      this.log('Rate limit reached, waiting');
       await this.sleep(60000);
       this.requestsSentThisMinute = 0;
     }

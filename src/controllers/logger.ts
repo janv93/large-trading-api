@@ -29,12 +29,11 @@ export default class Logger {
     }
   }
 
-  private getParentLog(caller: object) {
+  private getParentLog(caller: string) {
     const maxLength = 10;
-    const callerName = caller.constructor.name;
     let color: string;
 
-    switch (callerName) {
+    switch (caller) {
       case 'App':
         color = this.colors.blue;
         break;
@@ -54,15 +53,13 @@ export default class Logger {
         break;
     }
 
-    const paddedName = callerName.toUpperCase().padEnd(maxLength);
+    const paddedName = caller.toUpperCase().padEnd(maxLength);
     return `${color}${paddedName}|${this.colors.reset}`;
   }
 
-  private passesLogLevelCheck(caller: object): boolean {
-    const callerName = caller.constructor.name;
-
+  private passesLogLevelCheck(caller: string): boolean {
     if (this.logLevel === 'nodb') {
-      return callerName !== 'Database';
+      return caller !== 'Database';
     } else return true;
   }
 }

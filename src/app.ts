@@ -15,11 +15,11 @@ class App extends Base {
     this.routes = new Routes();
     this.config();
     this.route();
-    this.log('Initializing App', this);
+    this.log('Initializing App');
 
     database.deleteOutdatedKlines().then((totalDeleted: number) => {
-      this.log(`${totalDeleted} outdated klines deleted`, this);
-      this.log('App initialized', this);
+      this.log(`${totalDeleted} outdated klines deleted`);
+      this.log('App initialized');
     });
   }
 
@@ -36,34 +36,34 @@ class App extends Base {
 
   private route(): void {
     this.app.post('/klinesWithAlgorithm', (req, res) => {
-      this.log(req.originalUrl, this);
+      this.log(req.originalUrl);
       this.routes.getKlinesWithAlgorithm(req, res);
     });
 
     this.app.post('/multi', (req, res) => {
-      this.log(req.originalUrl, this);
+      this.log(req.originalUrl);
       this.routes.runMultiTicker(req, res);
     });
 
     this.app.get('/trade', (req, res) => {
-      this.log(req.originalUrl, this);
+      this.log(req.originalUrl);
       this.routes.tradeStrategy(req, res);
     });
 
     this.app.post('/backtest', (req, res) => {
-      this.log(req.originalUrl, this);
+      this.log(req.originalUrl);
       this.routes.postBacktestData(req, res);
     });
 
     this.app.post('/indicators', (req, res) => {
-      this.log(req.originalUrl, this);
+      this.log(req.originalUrl);
       this.routes.postTechnicalIndicator(req, res);
     });
   }
 
   public start(): void {
     this.app.listen(config.port, () => {
-      this.log(`Server is listening on port ${config.port}`, this);
+      this.log(`Server is listening on port ${config.port}`);
     });
   }
 }

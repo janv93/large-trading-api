@@ -21,7 +21,7 @@ class Database extends Base {
 
   public async writeKlines(klines: Kline[]): Promise<void> {
     if (klines.length === 0) {
-      this.log('0 klines to write. Exiting...', this);
+      this.log('0 klines to write. Exiting...');
       return;
     } else {
       // check if doc with "filter" props exists. if not, adds doc with "filter" and "$setOnInsert" properties combined
@@ -49,9 +49,9 @@ class Database extends Base {
 
       try {
         await this.kline.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
-        this.log(`Wrote <= ${klines.length} klines`, this);
+        this.log(`Wrote <= ${klines.length} klines`);
       } catch (err) {
-        this.logErr('Failed to write klines: ', err, this);
+        this.logErr('Failed to write klines: ', err);
       }
     }
   }
@@ -61,9 +61,9 @@ class Database extends Base {
       const klines = await this.kline.find({ symbol, timeframe });
 
       if (klines.length) {
-        this.log(`Read ${klines.length} klines for symbol ${symbol}`, this);
+        this.log(`Read ${klines.length} klines for symbol ${symbol}`);
       } else {
-        this.log('No klines found', this);
+        this.log('No klines found');
       }
 
       const mappedKlines: Kline[] = klines.map(kline => ({
@@ -88,14 +88,14 @@ class Database extends Base {
 
       return mappedKlines;
     } catch (err) {
-      this.logErr(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`, err, this);
+      this.logErr(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`, err);
       return [];
     }
   }
 
   // delete klines before a certain time too far in the past
   public async deleteOutdatedKlines(): Promise<number> {
-    this.log('Deleting outdated klines', this);
+    this.log('Deleting outdated klines');
 
     try {
       const deleteConditions = Object.values(Timeframe).map(timeframe => ({
@@ -108,16 +108,16 @@ class Database extends Base {
       });
 
       const totalDeleted = result.deletedCount;
-      this.log(`${totalDeleted} outdated klines deleted`, this);
+      this.log(`${totalDeleted} outdated klines deleted`);
       return totalDeleted;
     } catch (err) {
-      this.logErr('Failed to delete klines: ', err, this);
+      this.logErr('Failed to delete klines: ', err);
       return 0;
     }
   }
 
   public async writeTweetSentiments(sentiments: TweetSentiment[]): Promise<void> {
-    this.log(`Writing up to ${sentiments.length} sentiments...`, this);
+    this.log(`Writing up to ${sentiments.length} sentiments...`);
 
     try {
       const timelines = await this.twitterUserTimeline.find();
@@ -141,9 +141,9 @@ class Database extends Base {
         await ti.save();
       }));
 
-      this.log(`Done writing ${newSentiments} sentiments`, this);
+      this.log(`Done writing ${newSentiments} sentiments`);
     } catch (err) {
-      this.logErr(`Failed to write sentiments: `, err, this);
+      this.logErr(`Failed to write sentiments: `, err);
       return;
     }
   }
@@ -157,17 +157,17 @@ class Database extends Base {
       const sentiment = tweetSymbol?.sentiments.find(s => s.model === model)?.sentiment || 0;
       return sentiment;
     } catch (err) {
-      this.logErr(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`, err, this);
+      this.logErr(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`, err);
       return 0;
     }
   }
 
   public async writeTwitterUserTimeline(userId: string, tweets: Tweet[]): Promise<void> {
     if (tweets.length === 0) {
-      this.log('0 tweets to write. Exiting...', this);
+      this.log('0 tweets to write. Exiting...');
       return;
     } else {
-      this.log(`Writing ${tweets.length} tweets for user ${userId}...`, this);
+      this.log(`Writing ${tweets.length} tweets for user ${userId}...`);
 
       const tweetDocuments = tweets.map(tweet => ({
         id: tweet.id,
@@ -183,21 +183,21 @@ class Database extends Base {
 
       try {
         await this.twitterUserTimeline.create(userDocument);
-        this.log(`Done writing tweets`, this);
+        this.log(`Done writing tweets`);
       } catch (err) {
-        this.logErr(`Failed to write tweets for user ${userId}: `, err, this);
+        this.logErr(`Failed to write tweets for user ${userId}: `, err);
       }
     }
   }
 
   public async getTwitterUserTimeline(userId: string): Promise<TwitterTimeline | null> {
-    this.log(`Reading Twitter user ${userId}...`, this);
+    this.log(`Reading Twitter user ${userId}...`);
 
     try {
       const user = await this.twitterUserTimeline.findOne({ id: userId });
 
       if (user) {
-        this.log(`Read Twitter user`, this);
+        this.log(`Read Twitter user`);
 
         const mappedTweets = user.tweets
           .map(tweet => ({
@@ -214,17 +214,17 @@ class Database extends Base {
           tweets: mappedTweets
         };
       } else {
-        this.log(`Twitter user ${userId} not found`, this);
+        this.log(`Twitter user ${userId} not found`);
         return null;
       }
     } catch (err) {
-      this.logErr(`Failed to retrieve Twitter user ${userId}: `, err, this);
+      this.logErr(`Failed to retrieve Twitter user ${userId}: `, err);
       return null;
     }
   }
 
   public async updateTwitterUserTweets(userId: string, newTweets: Tweet[]): Promise<void> {
-    this.log(`Updating tweets for Twitter user ${userId}...`, this);
+    this.log(`Updating tweets for Twitter user ${userId}...`);
 
     try {
       const user = await this.twitterUserTimeline.findOne({ id: userId });
@@ -239,12 +239,12 @@ class Database extends Base {
 
         await user.save();
 
-        this.log(`Updated tweets for Twitter user ${userId}`, this);
+        this.log(`Updated tweets for Twitter user ${userId}`);
       } else {
-        this.log(`Twitter user ${userId} not found`, this);
+        this.log(`Twitter user ${userId} not found`);
       }
     } catch (err) {
-      this.logErr(`Failed to update tweets for Twitter user ${userId}: `, err, this);
+      this.logErr(`Failed to update tweets for Twitter user ${userId}: `, err);
     }
   }
 
@@ -266,14 +266,14 @@ class Database extends Base {
       const document = await this.alpacaSymbols.findOne({});
 
       if (document && document.updatedAt < oneWeekAgo) {
-        this.log(`Alpaca symbols outdated`, this);
+        this.log(`Alpaca symbols outdated`);
         return null;
       }
 
-      this.log(`Read alpaca symbols`, this);
+      this.log(`Read alpaca symbols`);
       return document ? document.symbols : null;
     } catch (err) {
-      this.logErr(`Failed to retrieve alpaca symbols`, err, this);
+      this.logErr(`Failed to retrieve alpaca symbols`, err);
       return null;
     }
   }
@@ -281,18 +281,18 @@ class Database extends Base {
   public async updateAlpacaSymbols(symbols: string[]): Promise<void> {
     try {
       await this.alpacaSymbols.findOneAndUpdate({}, { symbols, updatedAt: new Date() }, { upsert: true });
-      this.log(`Updated alpaca symbols`, this);
+      this.log(`Updated alpaca symbols`);
     } catch (err) {
-      this.logErr('Failed to update symbols: ', err, this);
+      this.logErr('Failed to update symbols: ', err);
     }
   }
 
   private async init() {
     try {
       await mongoose.connect(process.env.mongo_connection_string as string);
-      this.log('Mongo connected', this);
+      this.log('Mongo connected');
     } catch (err) {
-      this.logErr(err, this);
+      this.logErr(err);
     }
   }
 }

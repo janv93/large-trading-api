@@ -26,7 +26,7 @@ class Binance extends Base {
     }
 
     const klineUrl = this.createUrl(baseUrl, query);
-    this.log('GET ' + klineUrl, this);
+    this.log('GET ' + klineUrl);
 
     try {
       await this.waitIfRateLimitReached();
@@ -34,7 +34,7 @@ class Binance extends Base {
       const result = this.mapKlines(symbol, timeframe, response.data);
       return result;
     } catch (err) {
-      this.handleError(err, symbol, this);
+      this.handleError(err, symbol);
       return [];
     }
   }
@@ -53,7 +53,7 @@ class Binance extends Base {
 
     const klineUrl = this.createUrl(baseUrl, query);
 
-    this.log('GET ' + klineUrl, this);
+    this.log('GET ' + klineUrl);
     return axios.get(klineUrl);
   }
 
@@ -82,7 +82,7 @@ class Binance extends Base {
     }
 
     const dateRange = this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
-    this.log(`${klines.length} ${symbol} klines received - ${dateRange}`, this);
+    this.log(`${klines.length} ${symbol} klines received - ${dateRange}`);
 
     klines.sort((a, b) => a.times.open - b.times.open);
     return klines;
@@ -102,7 +102,7 @@ class Binance extends Base {
 
       if (newKlines.length) {
         await database.writeKlines(newKlines);
-        this.log(`${newKlines.length} ${symbol} klines initialized in database`, this);
+        this.log(`${newKlines.length} ${symbol} klines initialized in database`);
       }
 
       return newKlines;
@@ -115,12 +115,12 @@ class Binance extends Base {
     if (this.klineOutdated(timeframe, newStart)) {
       const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      this.log(`${newKlines.length} new ${symbol} klines added to database`, this);
+      this.log(`${newKlines.length} new ${symbol} klines added to database`);
       await database.writeKlines(newKlines);
       const mergedKlines: Kline[] = dbKlines.concat(newKlines);
       return mergedKlines;
     } else {
-      this.log(`${symbol} already up to date`, this);
+      this.log(`${symbol} already up to date`);
       return dbKlines;
     }
   }
@@ -149,9 +149,9 @@ class Binance extends Base {
   public async short(symbol: string, quantity: number): Promise<void> {
     try {
       await this.createOrder(symbol, 'SELL', quantity);
-      this.log('SHORT position opened', this);
+      this.log('SHORT position opened');
     } catch (err) {
-      this.handleError(err, symbol, this);
+      this.handleError(err, symbol);
       throw err;
     }
   }
@@ -159,9 +159,9 @@ class Binance extends Base {
   public async long(symbol: string, quantity: number): Promise<void> {
     try {
       await this.createOrder(symbol, 'BUY', quantity);
-      this.log('LONG position opened', this);
+      this.log('LONG position opened');
     } catch (err) {
-      this.handleError(err, symbol, this);
+      this.handleError(err, symbol);
       throw err;
     }
   }
@@ -278,7 +278,7 @@ class Binance extends Base {
 
     // wait at rate limit
     if (this.requestsSentThisMinute >= this.rateLimitPerMinute) {
-      this.log('Rate limit reached, waiting', this);
+      this.log('Rate limit reached, waiting');
       await this.sleep(60000);
       this.requestsSentThisMinute = 0;
     }

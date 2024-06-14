@@ -161,7 +161,7 @@ export default class Base {
   }
 
   protected log(...args: any[]) {
-    this.logger.log(...args);
+    this.logger.log(...args, this.constructor.name);
   }
 
   protected logErr(...args: any[]) {
