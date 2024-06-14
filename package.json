@@ -18,10 +18,11 @@
     "large",
     "trading",
     "api",
+    "stocks",
     "crypto",
     "algorithm"
   ],
-  "author": "",
+  "author": "janv93",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/janv93/large-trading-api/issues"
