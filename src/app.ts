@@ -1,4 +1,4 @@
-require('dotenv').config();
+import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import config from 'config';
 import Routes from './controllers/routes';
