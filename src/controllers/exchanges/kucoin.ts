@@ -48,7 +48,7 @@ export default class Kucoin extends Base {
   public async getKlinesFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: Timeframe): Promise<Kline[]> {
     let newStartTime = startTime;
     let newEndTime = endTime;
-    let klines: Kline[] = [];
+    const klines: Kline[] = [];
 
     while (true) {
       const res = await this.getKlines(symbol, timeframe, newEndTime, newStartTime);

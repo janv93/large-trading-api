@@ -57,7 +57,7 @@ export default class Plotly extends Base {
   }
 
   private draw(data, layout) {
-    this._plotly.plot(data, layout, (err, msg) => {
+    this._plotly.plot(data, layout, (err) => {
       if (err) {
         console.log('Error while plotting');
         return console.log(err);

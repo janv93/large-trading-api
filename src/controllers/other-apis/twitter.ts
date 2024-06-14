@@ -179,7 +179,7 @@ export default class Twitter extends Base {
   }
 
   private buildOAuth10A(): Function {
-    var oauth = new OAuth.OAuth(
+    const oauth = new OAuth.OAuth(
       'https://api.twitter.com/oauth/request_token',
       'https://api.twitter.com/oauth/access_token',
       process.env.twitter_api_key,

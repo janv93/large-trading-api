@@ -11,12 +11,6 @@ export default class Macd extends Base {
 
     let lastHistogram: number;
     let lastMove: string;
-    let sumHighs = 0;
-    let peakHigh = 0;
-    let numberHighs = 0;
-    let sumLows = 0;
-    let peakLow = 0;
-    let numberLows = 0;
     let positionOpen = false;
     let positionOpenType: Signal;
 
@@ -43,10 +37,6 @@ export default class Macd extends Base {
       if (momentumSwitch) {
         if (!positionOpen) {
           if (move === 'down' && h > 0) {
-            sumHighs += h;
-            numberHighs++;
-            peakHigh = h > peakHigh ? h : peakHigh;
-
             if (h > 0.003) {
               signals.push({
                 signal: Signal.Close,
@@ -63,10 +53,6 @@ export default class Macd extends Base {
               positionOpenType = Signal.Sell;
             }
           } else if (move === 'up' && h < 0) {
-            sumLows += h;
-            numberLows++;
-            peakLow = h < peakLow ? h : peakLow;
-
             if (h < -0.003) {
               signals.push({
                 signal: Signal.Close,

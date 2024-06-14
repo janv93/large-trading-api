@@ -111,7 +111,7 @@ export default class Routes extends Base {
     const query = req.query;
     let klines: Kline[] = req.body;
 
-    for (let algorithm in (req.body as Kline[])[0].algorithms) {
+    for (const algorithm in (req.body as Kline[])[0].algorithms) {
       klines = this.backtest.calcBacktestPerformance(klines, algorithm as Algorithm, Number(query.commission), this.stringToBoolean(query.flowingProfit));
     }
 

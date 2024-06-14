@@ -88,7 +88,7 @@ class Alpaca extends Base {
    * get klines from startTime until now
    */
   private async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Kline[]> {
-    let klines: Kline[] = [];
+    const klines: Kline[] = [];
     let pageToken: string | undefined;
 
     while (true) {

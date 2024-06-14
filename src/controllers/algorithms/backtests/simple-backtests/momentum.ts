@@ -37,7 +37,7 @@ export default class Momentum extends Base {
     const range = colors.slice(index - streak + 1, index + 1);
     const rangeGreen = range.every(kline => kline >= 0);
     const rangeRed = range.every(kline => kline <= 0);
-    let signal = rangeGreen ? Signal.Sell : rangeRed ? Signal.Buy : null
+    const signal = rangeGreen ? Signal.Sell : rangeRed ? Signal.Buy : null
     return signal!;
   }
 }
