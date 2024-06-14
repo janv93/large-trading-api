@@ -15,12 +15,6 @@ class App extends Base {
     this.routes = new Routes();
     this.config();
     this.route();
-    this.log('Initializing App');
-
-    database.deleteOutdatedKlines().then((totalDeleted: number) => {
-      this.log(`${totalDeleted} outdated klines deleted`);
-      this.log('App initialized');
-    });
   }
 
   private config(): void {
@@ -63,7 +57,13 @@ class App extends Base {
 
   public start(): void {
     this.app.listen(config.port, () => {
-      this.log(`Server is listening on port ${config.port}`);
+      this.log('Initializing App');
+
+      database.deleteOutdatedKlines().then((totalDeleted: number) => {
+        this.log(`${totalDeleted} outdated klines deleted`);
+        this.log('App initialized');
+        this.log(`Server is listening on port ${config.port}`);
+      });
     });
   }
 }
