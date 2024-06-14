@@ -1,7 +1,6 @@
-import { describe, expect, it, fit, beforeEach } from '@jest/globals';
+import { describe, expect, it, beforeEach } from '@jest/globals';
 import Backtester from './backtester';
 import { Kline, Algorithm, Signal, Timeframe, BacktestData } from '../../../../interfaces';
-import { exp } from '@tensorflow/tfjs-node';
 
 
 describe('Backtester', () => {

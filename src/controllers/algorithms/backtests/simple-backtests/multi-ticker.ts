@@ -34,7 +34,7 @@ export default class MultiTicker extends Base {
     const profitBasedTrailingStopLossMax = 0.3;
     const profitBasedTrailingStopLossStep = 0.05;
 
-    let benchmarks: MultiBenchmark[] = [];
+    const benchmarks: MultiBenchmark[] = [];
 
     // run all combinations of params
     while (threshold <= thresholdMax) {

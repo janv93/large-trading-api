@@ -1,9 +1,11 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import config from 'config';
 import Routes from './controllers/routes';
 import Base from './controllers/base';
 import database from './data/database';
+
+dotenv.config();
 
 class App extends Base {
   public app: express.Application;

@@ -12,7 +12,7 @@ export default class Backtester extends Base {
     let positions: Array<Position | undefined> = [];
     let profit = 0;
 
-    klines.forEach((kline: Kline, i) => {
+    klines.forEach((kline: Kline) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       const backtestSignals: BacktestSignal[] = backtest.signals;
 
@@ -27,7 +27,7 @@ export default class Backtester extends Base {
             profit -= this.calcCloseFee(position, kline, algorithm, closeSignal, commission);
             return undefined;
           } else {
-            return this.updateExistingPosition(position, kline, closeSignal);
+            return this.updateExistingPosition(position, kline);
           }
         } else {
           return position;
@@ -168,8 +168,8 @@ export default class Backtester extends Base {
     }
   }
 
-  // update size and price of existing position or set position undefined if it was closed
-  private updateExistingPosition(position: Position, kline: Kline, closeSignal: Signal | undefined): Position {
+  // update size and price of existing position - only handles non-close case
+  private updateExistingPosition(position: Position, kline: Kline): Position {
     const entryPrice: number = position.entryPrice;
     const currentPrice: number = kline.prices.close;
     const priceChange: number = this.calcPriceChange(entryPrice, currentPrice);

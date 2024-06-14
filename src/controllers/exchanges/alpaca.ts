@@ -1,5 +1,4 @@
-import fs from 'fs';
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import { AlpacaResponse, Kline, Timeframe } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';

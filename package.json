@@ -8,7 +8,8 @@
     "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log",
     "test": "npm run remove:dist && jest",
     "remove:dist": "rm -rf dist",
-    "lint": "npx eslint \"**/*.ts\""
+    "lint": "npx eslint \"**/*.ts\"",
+    "lint:fix": "npx eslint --fix \"**/*.ts\""
   },
   "repository": {
     "type": "git",

@@ -15,6 +15,7 @@ export default class Tensorflow extends Base {
     // this.test();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
     console.log('Received ' + klines.length + ' klines');
 
