@@ -1,14 +1,17 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AlpacaResponse, Kline, Timeframe } from '../../interfaces';
 import Base from '../base';
 import database from '../../data/database';
 
 class Alpaca extends Base {
+  private baseUrlDatav1 = 'https://data.alpaca.markets/v1beta1';
+  private baseUrlDatav2 = 'https://api.alpaca.markets/v2';
+  private baseUrlv2 = 'https://data.alpaca.markets/v2';
   private rateLimitPerMinute = 190;
   private requestsSentThisMinute = 0;
 
   public async getKlines(symbol: string, timeframe: Timeframe, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
-    const baseUrl = 'https://data.alpaca.markets/v2/stocks/' + symbol + '/bars';
+    const url = `${this.baseUrlv2}/stocks/${symbol}/bars`;
 
     const query = {
       timeframe: timeframe ? this.mapTimeframe(timeframe) : '1Min',
@@ -24,20 +27,13 @@ class Alpaca extends Base {
       query['page_token'] = pageToken;
     }
 
-    const klineUrl = this.createUrl(baseUrl, query);
-
-    const options = {
-      headers: {
-        'APCA-API-KEY-ID': process.env.alpaca_api_key,
-        'APCA-API-SECRET-KEY': process.env.alpaca_api_secret
-      }
-    };
-
-    this.log('GET ' + klineUrl);
+    const finalUrl: string = this.createUrl(url, query);
+    this.log('GET ' + finalUrl);
 
     try {
       await this.waitIfRateLimitReached();
-      const res = await axios.get(klineUrl, options);
+      const options: AxiosRequestConfig = this.getRequestOptions();
+      const res: AxiosResponse = await axios.get(finalUrl, options);
       const klines = this.mapKlines(symbol, timeframe, res.data.bars);
       return { nextPageToken: res.data.next_page_token, klines };
     } catch (err) {
@@ -87,17 +83,36 @@ class Alpaca extends Base {
     const dbSymbols: string[] | null = await database.getAlpacaSymbolsIfUpToDate();
     if (dbSymbols) return dbSymbols;
 
-    const options = {
+    const url = `${this.baseUrlDatav2}/assets`;
+    const options: AxiosRequestConfig = this.getRequestOptions();
+    const res: AxiosResponse = await axios.get(url, options);
+    const assetSymbols: string[] = res.data.map(s => s.symbol);
+    await database.updateAlpacaSymbols(assetSymbols);
+    return assetSymbols;
+  }
+
+  // get {top} most active stocks by volume
+  public async getMostActiveStocks(top: number): Promise<string[]> {
+    const url = `${this.baseUrlDatav1}/screener/stocks/most-actives`;
+
+    const query = {
+      top
+    };
+
+    const finalUrl: string = this.createUrl(url, query);
+    const options: AxiosRequestConfig  = this.getRequestOptions();
+    const res: AxiosResponse = await axios.get(finalUrl, options);
+    const mostActiveSymbols: string[] = res.data.most_actives.map(m => m.symbol);
+    return mostActiveSymbols;
+  }
+
+  private getRequestOptions(): AxiosRequestConfig {
+    return {
       headers: {
         'APCA-API-KEY-ID': process.env.alpaca_api_key,
         'APCA-API-SECRET-KEY': process.env.alpaca_api_secret
       }
     };
-
-    const res = await axios.get('https://api.alpaca.markets/v2/assets', options);
-    const symbols: string[] = res.data.map(s => s.symbol);
-    await database.updateAlpacaSymbols(symbols);
-    return symbols;
   }
 
   /**

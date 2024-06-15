@@ -13,15 +13,15 @@ export default abstract class Base {
     return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
   }
 
-  protected handleError(err: any, symbol?: string, caller: any = this) {
+  protected handleError(err: any, symbol?: string) {
     if (symbol) {
-      this.logErr('Error received for symbol ' + symbol + ':', caller);
+      this.logErr('Error received for symbol ' + symbol + ':');
     }
 
     if (err.response && err.response.data) {
-      this.logErr(err.response.data, caller);
+      this.logErr(err.response.data);
     } else {
-      this.logErr(err, caller);
+      this.logErr(err);
     }
   }
 
