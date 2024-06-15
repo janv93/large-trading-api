@@ -4,14 +4,17 @@ import Base from '../base';
 import database from '../../data/database';
 
 class Alpaca extends Base {
-  private baseUrlDatav1 = 'https://data.alpaca.markets/v1beta1';
-  private baseUrlDatav2 = 'https://api.alpaca.markets/v2';
-  private baseUrlv2 = 'https://data.alpaca.markets/v2';
+  private baseUrls = {
+    baseUrlDatav1: 'https://data.alpaca.markets/v1beta1',
+    baseUrlDatav2: 'https://api.alpaca.markets/v2',
+    baseUrlv2: 'https://data.alpaca.markets/v2'
+  };
+
   private rateLimitPerMinute = 190;
   private requestsSentThisMinute = 0;
 
   public async getKlines(symbol: string, timeframe: Timeframe, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
-    const url = `${this.baseUrlv2}/stocks/${symbol}/bars`;
+    const url = `${this.baseUrls.baseUrlv2}/stocks/${symbol}/bars`;
 
     const query = {
       timeframe: timeframe ? this.mapTimeframe(timeframe) : '1Min',
@@ -83,7 +86,7 @@ class Alpaca extends Base {
     const dbSymbols: string[] | null = await database.getAlpacaSymbolsIfUpToDate();
     if (dbSymbols) return dbSymbols;
 
-    const url = `${this.baseUrlDatav2}/assets`;
+    const url = `${this.baseUrls.baseUrlDatav2}/assets`;
     const options: AxiosRequestConfig = this.getRequestOptions();
     const res: AxiosResponse = await axios.get(url, options);
     const assetSymbols: string[] = res.data.map(s => s.symbol);
@@ -93,14 +96,14 @@ class Alpaca extends Base {
 
   // get {top} most active stocks by volume
   public async getMostActiveStocks(top: number): Promise<string[]> {
-    const url = `${this.baseUrlDatav1}/screener/stocks/most-actives`;
+    const url = `${this.baseUrls.baseUrlDatav1}/screener/stocks/most-actives`;
 
     const query = {
       top
     };
 
     const finalUrl: string = this.createUrl(url, query);
-    const options: AxiosRequestConfig  = this.getRequestOptions();
+    const options: AxiosRequestConfig = this.getRequestOptions();
     const res: AxiosResponse = await axios.get(finalUrl, options);
     const mostActiveSymbols: string[] = res.data.most_actives.map(m => m.symbol);
     return mostActiveSymbols;
