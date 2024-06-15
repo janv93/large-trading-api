@@ -70,8 +70,8 @@ export default class Routes extends Base {
   public async runMultiTicker(req: Request, res: Response): Promise<void> {
     const body = req.body;
     const { timeframe, times, rank, autoParams, algorithms } = body;
-    const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'];
-    const commoditySymbols = ['GLD', 'UNG', 'USO', 'COPX']; // gold, gas, oil, copper
+    const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank);
+    const commoditySymbols = ['GLD', 'UNG', 'USO', 'COPX'].slice(0, rank); // gold, gas, oil, copper
 
     const [stocks, indexes, commodities, cryptos] = await Promise.all([
       this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
