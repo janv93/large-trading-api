@@ -83,6 +83,23 @@ class Alpaca extends Base {
     }
   }
 
+  public async getAssets(): Promise<string[]> {
+    const dbSymbols: string[] | null = await database.getAlpacaSymbolsIfUpToDate();
+    if (dbSymbols) return dbSymbols;
+
+    const options = {
+      headers: {
+        'APCA-API-KEY-ID': process.env.alpaca_api_key,
+        'APCA-API-SECRET-KEY': process.env.alpaca_api_secret
+      }
+    };
+
+    const res = await axios.get('https://api.alpaca.markets/v2/assets', options);
+    const symbols: string[] = res.data.map(s => s.symbol);
+    await database.updateAlpacaSymbols(symbols);
+    return symbols;
+  }
+
   /**
    * get klines from startTime until now
    */
@@ -105,23 +122,6 @@ class Alpaca extends Base {
 
     klines.sort((a, b) => a.times.open - b.times.open);
     return klines;
-  }
-
-  public async getAssets(): Promise<string[]> {
-    const dbSymbols: string[] | null = await database.getAlpacaSymbolsIfUpToDate();
-    if (dbSymbols) return dbSymbols;
-
-    const options = {
-      headers: {
-        'APCA-API-KEY-ID': process.env.alpaca_api_key,
-        'APCA-API-SECRET-KEY': process.env.alpaca_api_secret
-      }
-    };
-
-    const res = await axios.get('https://api.alpaca.markets/v2/assets', options);
-    const symbols: string[] = res.data.map(s => s.symbol);
-    await database.updateAlpacaSymbols(symbols);
-    return symbols;
   }
 
   private mapKlines(symbol: string, timeframe: Timeframe, klines: any): Kline[] {
