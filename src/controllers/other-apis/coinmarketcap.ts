@@ -25,7 +25,7 @@ export default class Coinmarketcap extends Base {
 
   public async getCryptosByMarketCapRank(rank: number): Promise<string[]> {
     this.log(`Get cryptos by market cap`);
-    if (!process.env.coinmarketcap_api_key) return ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'USDC', 'XRP', 'DOGE', 'TON', 'ADA']; // API key should not be required to run /multi
+    if (!process.env.coinmarketcap_api_key) return ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'USDC', 'XRP', 'DOGE', 'TON', 'ADA'].slice(0, rank); // API key should not be required to run /multi
     const url = this.baseUrl + '/cryptocurrency/listings/latest';
     const res = await axios.get(url, { headers: this.headers });
     const top = res.data.data.slice(0, rank);
