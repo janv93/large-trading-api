@@ -11,7 +11,8 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/ban-types': 'off',
-      'no-case-declarations': 'off'
+      'no-case-declarations': 'off',
+      'no-constant-condition': 'off'
     }
   }
 ];

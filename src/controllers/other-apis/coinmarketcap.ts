@@ -2,7 +2,6 @@ import axios, { AxiosResponse } from 'axios';
 import Base from '../base';
 import cryptos from './coinmarketcap-all-cryptos';
 import database from '../../data/database';
-import { Response } from 'express';
 
 
 export default class Coinmarketcap extends Base {

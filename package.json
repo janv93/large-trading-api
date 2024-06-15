@@ -4,7 +4,7 @@
   "description": "WIP",
   "main": "index.js",
   "scripts": {
-    "start": "npm run remove:dist && tsc && node --max-old-space-size=16384 dist/app.js",
+    "start": "npm run remove:dist && tsc && node --max-old-space-size=16384 --trace-warnings dist/app.js",
     "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log",
     "test": "npm run remove:dist && jest",
     "remove:dist": "rm -rf dist",
@@ -52,11 +52,11 @@
     "typescript": "latest"
   },
   "devDependencies": {
-    "@eslint/js": "^9.4.0",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
-    "eslint": "^9.4.0",
+    "@eslint/js": "latest",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "eslint": "latest",
     "globals": "^15.4.0",
-    "typescript-eslint": "^7.13.0"
+    "typescript-eslint": "latest"
   }
 }
