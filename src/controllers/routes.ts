@@ -16,7 +16,6 @@ import MeanReversion from './algorithms/backtests/investing/mean-reversion';
 import TwitterSentiment from './algorithms/backtests/sentiment/twitter-sentiment';
 import MultiTicker from './algorithms/backtests/simple-backtests/multi-ticker';
 import TrendLineBreakthrough from './algorithms/backtests/simple-backtests/trend-line';
-import Nasdaq from './other-apis/nasdaq';
 import Coinmarketcap from './other-apis/coinmarketcap';
 
 
@@ -35,7 +34,6 @@ export default class Routes extends Base {
   private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
   private trendLineBreakthrough = new TrendLineBreakthrough();
-  private nasdaq = new Nasdaq();
   private cmc = new Coinmarketcap();
 
   /**
@@ -72,7 +70,7 @@ export default class Routes extends Base {
     const { timeframe, times, rank, autoParams, algorithms } = body;
 
     // stocks
-    const stocksSymbols = await this.getMultiStocks(Number(rank));
+    const stocksSymbols: string[] = await this.getMultiStocks(Number(rank));
     const stocks: Kline[][] = await this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times);
 
     // indexes
@@ -84,7 +82,7 @@ export default class Routes extends Base {
     const commodities: Kline[][] = await this.initKlinesMulti(Exchange.Alpaca, commoditySymbols, timeframe, times);
 
     // crypto
-    const cryptosSymbols = await this.getMultiCryptos(Number(rank));
+    const cryptosSymbols: string[] = await this.getMultiCryptos(Number(rank));
     const cryptos: Kline[][] = await this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe, times);
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
@@ -199,9 +197,8 @@ export default class Routes extends Base {
   }
 
   private async getMultiStocks(rank: number): Promise<string[]> {
-    const capStocks = this.nasdaq.getStocksByMarketCapRank(rank).map(s => s.symbol);
-    const alpacaStocks = await alpaca.getAssets();
-    const stocksFiltered = alpacaStocks.filter(s => capStocks.includes(s));
+    const mostActiveStocks: string[] = await alpaca.getMostActiveStocks(rank);
+    const stocksFiltered = mostActiveStocks.filter(s => mostActiveStocks.includes(s));
     return stocksFiltered;
   }
 
