@@ -1,8 +1,10 @@
-import 'dotenv/config';
-import express, { Request, Response, NextFunction } from 'express';
 import config from 'config';
-import Routes from './controllers/routes';
+import 'dotenv/config';
+import express, { NextFunction, Request, Response } from 'express';
+import { Server } from 'http';
+import { AddressInfo } from 'net';
 import Base from './controllers/base';
+import Routes from './controllers/routes';
 import database from './data/database';
 
 class App extends Base {
@@ -55,16 +57,30 @@ class App extends Base {
     });
   }
 
-  public start(): void {
-    this.app.listen(config.port, () => {
-      this.log('Initializing App');
-
-      database.deleteOutdatedKlines().then((totalDeleted: number) => {
-        this.log(`${totalDeleted} outdated klines deleted`);
-        this.log('App initialized');
-        this.log(`Server is listening on port ${config.port}`);
+  private startServer(): Promise<Server> {
+    return new Promise((resolve) => {
+      const server: Server = this.app.listen(config.port, () => {
+        resolve(server);
       });
     });
+  }
+
+  public async start(): Promise<void> {
+    this.log('Initializing App');
+
+    const [serverStarted, totalDeleted]: [Server, number] = await Promise.all([
+      this.startServer(),
+      database.deleteOutdatedKlines()
+    ]);
+
+    this.log(`${totalDeleted} outdated klines deleted`);
+
+    const addressInfo: AddressInfo = serverStarted.address() as AddressInfo;
+    const address: string = addressInfo.address === '::' ? 'localhost' : addressInfo.address;
+    const port: number = addressInfo.port;
+
+    this.log(`Server is listening on ${address}:${port}`);
+    this.log('App initialized');
   }
 }
 
