@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Base from '../controllers/base';
 import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
-import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcStocksSchema } from './schemas';
+import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcStocksSchema, BinanceSymbolsSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
@@ -10,6 +10,7 @@ class Database extends Base {
   private kline: mongoose.Model<any>;
   private twitterUserTimeline: mongoose.Model<any>;
   private alpacaSymbols: mongoose.Model<any>;
+  private binanceSymbols: mongoose.Model<any>;
   private cmcStocks: mongoose.Model<any>;
   private appConfig: mongoose.Model<any>;
 
@@ -19,6 +20,7 @@ class Database extends Base {
     this.kline = mongoose.model('Kline', KlineSchema);
     this.twitterUserTimeline = mongoose.model('TwitterUserTimeline', TwitterUserTimelineSchema);
     this.alpacaSymbols = mongoose.model('AlpacaSymbols', AlpacaSymbolsSchema);
+    this.binanceSymbols = mongoose.model('BinanceSymbols', BinanceSymbolsSchema);
     this.cmcStocks = mongoose.model('CmcStocks', CmcStocksSchema);
     this.appConfig = mongoose.model('AppConfig', AppConfigSchema);
   }
@@ -295,7 +297,35 @@ class Database extends Base {
       await this.alpacaSymbols.findOneAndUpdate({}, { symbols, updatedAt: new Date() }, { upsert: true });
       this.log(`Updated alpaca symbols`);
     } catch (err) {
-      this.logErr('Failed to update symbols: ', err);
+      this.logErr('Failed to update alpaca symbols: ', err);
+    }
+  }
+
+  public async getBinanceSymbolsIfUpToDate(): Promise<string[] | null> {
+    const oneDayAgo: Date = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    try {
+      const document = await this.binanceSymbols.findOne({});
+
+      if (document && document.updatedAt < oneDayAgo) {
+        this.log(`Binance symbols outdated`);
+        return null;
+      }
+
+      this.log(`Read binance symbols`);
+      return document ? document.symbols : null;
+    } catch (err) {
+      this.logErr(`Failed to retrieve binance symbols`, err);
+      return null;
+    }
+  }
+
+  public async updateBinanceSymbols(symbols: string[]): Promise<void> {
+    try {
+      await this.binanceSymbols.findOneAndUpdate({}, { symbols, updatedAt: new Date() }, { upsert: true });
+      this.log(`Updated binance symbols`);
+    } catch (err) {
+      this.logErr('Failed to update binance symbols: ', err);
     }
   }
 

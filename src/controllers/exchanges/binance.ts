@@ -193,16 +193,20 @@ class Binance extends Base {
   }
 
   public async getUsdtBusdPairs(): Promise<string[]> {
+    this.log(`Get binance USDT/BUSD pairs`);
+    const dbSymbols: string[] | null = await database.getBinanceSymbolsIfUpToDate();
+    if (dbSymbols) return dbSymbols;
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res: AxiosResponse = await axios.get(baseUrl);
 
-    const symbols = res.data.symbols
+    const symbols: string[] = res.data.symbols
       .map(s => s.symbol)
       .filter(s => s.includes('USDT') || s.includes('BUSD'))
       .filter(s => (!s.includes('UP') && !s.includes('DOWN')));
 
-    const uniqueSymbols = symbols.filter((item, index) => symbols.indexOf(item) === index);
+    const uniqueSymbols: string[] = symbols.filter((symbol: string, index: number) => symbols.indexOf(symbol) === index);
     uniqueSymbols.sort();
+    await database.updateBinanceSymbols(uniqueSymbols);
     return uniqueSymbols;
   }
 

@@ -103,6 +103,13 @@ export const AlpacaSymbolsSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
+export const BinanceSymbolsSchema = new mongoose.Schema({
+  symbols: [{
+    type: String,
+    required: true
+  }]
+}, { timestamps: true });
+
 export const CmcStocksSchema = new mongoose.Schema({
   stocks: [{
     type: String,
