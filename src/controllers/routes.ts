@@ -68,25 +68,21 @@ export default class Routes extends Base {
   public async runMultiTicker(req, res): Promise<void> {
     const body = req.body;
     const { timeframe, times, rank, autoParams, algorithms } = body;
-
-    // stocks
-    const stocksSymbols: string[] = await this.getMultiStocks(Number(rank));
-    const stocks: Kline[][] = await this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times);
-
-    // indexes
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'];
-    const indexes: Kline[][] = await this.initKlinesMulti(Exchange.Alpaca, indexSymbols, timeframe, times);
-
-    // commodities
     const commoditySymbols = ['GLD', 'UNG', 'USO', 'COPX']; // gold, gas, oil, copper
-    const commodities: Kline[][] = await this.initKlinesMulti(Exchange.Alpaca, commoditySymbols, timeframe, times);
 
-    // crypto
-    const cryptosSymbols: string[] = await this.getMultiCryptos(Number(rank));
-    const cryptos: Kline[][] = await this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe, times);
+    const [stocks, indexes, commodities, cryptos] = await Promise.all([
+      this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
+        this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
+      ),
+      this.initKlinesMulti(Exchange.Alpaca, indexSymbols, timeframe, times),
+      this.initKlinesMulti(Exchange.Alpaca, commoditySymbols, timeframe, times),
+      this.getMultiCryptos(Number(rank)).then((cryptosSymbols: string[]) =>
+        this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe, times)
+      )
+    ]);
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
-
     this.reduceTickersToLimit(allTickers);
     let tickersWithSignals: Kline[][] = allTickers;
 
