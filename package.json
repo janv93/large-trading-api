@@ -1,10 +1,10 @@
 {
   "name": "large-trading-api",
   "version": "1.0.0",
-  "description": "WIP",
+  "description": "Backtesting API for cryptos, stocks etc.",
   "main": "index.js",
   "scripts": {
-    "start": "npm run remove:dist && tsc && node --max-old-space-size=16384 --trace-deprecation dist/app.js",
+    "start": "npm run remove:dist && tsc && node --max-old-space-size=16384 dist/app.js",
     "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log",
     "test": "npm run remove:dist && jest",
     "remove:dist": "rm -rf dist",
