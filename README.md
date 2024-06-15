@@ -38,7 +38,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 ## Requirements:
 
-- node
+- node (e.g. 22.3.0 + npm 10.8.1)
 - install mongodb or use its web version
 - get api keys and secret of one of 3 exchanges: binance, kucoin, alpaca (recommended binance+alpaca for all tickers)
 
