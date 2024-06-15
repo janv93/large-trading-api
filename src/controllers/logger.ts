@@ -32,7 +32,7 @@ export default class Logger {
   }
 
   private getParentLog(caller: string) {
-    const maxLength = 10;
+    const maxLength = 15;
     let color: string;
 
     switch (caller) {
@@ -40,9 +40,10 @@ export default class Logger {
       case 'Routes': color = this.colors.green; break;
       case 'Database': color = this.colors.yellow; break;
       case 'Alpaca': color = this.colors.cyan; break;
-      case 'Binance':
+      case 'Binance': // crypto
       case 'Kucoin':
-      case 'Btse': color = this.colors.magenta; break;
+      case 'Btse':
+      case 'Coinmarketcap': color = this.colors.magenta; break;
       default: color = this.colors.reset; break;
     }
 

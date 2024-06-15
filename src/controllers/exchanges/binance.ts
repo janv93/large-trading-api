@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import crypto from 'crypto';
 import { Kline, Timeframe, Tweet } from '../../interfaces';
 import Base from '../base';
@@ -30,8 +30,8 @@ class Binance extends Base {
 
     try {
       await this.waitIfRateLimitReached();
-      const response = await axios.get(klineUrl);
-      const result = this.mapKlines(symbol, timeframe, response.data);
+      const response: AxiosResponse = await axios.get(klineUrl);
+      const result: Kline[] = this.mapKlines(symbol, timeframe, response.data);
       return result;
     } catch (err) {
       this.handleError(err, symbol);
@@ -167,7 +167,7 @@ class Binance extends Base {
   }
 
   public createOrder(symbol: string, side: string, quantity: number): Promise<any> {
-    const now = Date.now();
+    const now: number = Date.now();
 
     const queryObj = {
       symbol: symbol + 'USDT',
@@ -177,8 +177,8 @@ class Binance extends Base {
       quantity: quantity
     };
 
-    const hmac = this.createHmac(this.createUrl('', queryObj));
-    const url = this.createUrl('https://fapi.binance.com/fapi/v1/order', {
+    const hmac: string = this.createHmac(this.createUrl('', queryObj));
+    const url: string = this.createUrl('https://fapi.binance.com/fapi/v1/order', {
       ...queryObj,
       signature: hmac
     });
@@ -194,7 +194,7 @@ class Binance extends Base {
 
   public async getUsdtBusdPairs(): Promise<string[]> {
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
-    const res = await axios.get(baseUrl);
+    const res: AxiosResponse = await axios.get(baseUrl);
 
     const symbols = res.data.symbols
       .map(s => s.symbol)
@@ -221,10 +221,10 @@ class Binance extends Base {
 
   // 'btc' to 'BTCUSDT' or 'BTCBUSD'
   public symbolToPair(symbol: string, pairList: string[]): string {
-    const binanceSymbolUsdt = (symbol + 'usdt').toUpperCase();
-    const binanceSymbolBusd = (symbol + 'busd').toUpperCase();
-    const usdtSymbolExists = pairList.includes(binanceSymbolUsdt);
-    const busdSymbolExists = pairList.includes(binanceSymbolBusd);
+    const binanceSymbolUsdt: string = (symbol + 'usdt').toUpperCase();
+    const binanceSymbolBusd: string = (symbol + 'busd').toUpperCase();
+    const usdtSymbolExists: boolean = pairList.includes(binanceSymbolUsdt);
+    const busdSymbolExists: boolean = pairList.includes(binanceSymbolBusd);
 
     if (usdtSymbolExists) {
       return binanceSymbolUsdt;

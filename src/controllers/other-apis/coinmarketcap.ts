@@ -24,6 +24,7 @@ export default class Coinmarketcap extends Base {
   }
 
   public async getCryptosByMarketCapRank(rank: number): Promise<any> {
+    this.log(`Get cryptos by market cap`);
     const url = this.baseUrl + '/cryptocurrency/listings/latest';
     const res = await axios.get(url, { headers: this.headers });
     const top = res.data.data.slice(0, rank);
