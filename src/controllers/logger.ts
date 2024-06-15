@@ -1,5 +1,7 @@
+import { LogLevel } from '../interfaces';
+
 export default class Logger {
-  private logLevel = 'nodb';
+  private logLevel: LogLevel = LogLevel.Default;
 
   private colors = {
     black: '\x1b[30m',
@@ -49,7 +51,7 @@ export default class Logger {
   }
 
   private passesLogLevelCheck(caller: string): boolean {
-    if (this.logLevel === 'nodb') {
+    if (this.logLevel === LogLevel.NoDb) {
       return caller !== 'Database';
     } else return true;
   }

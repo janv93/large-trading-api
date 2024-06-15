@@ -260,12 +260,12 @@ class Database extends Base {
   }
 
   public async getAlpacaSymbolsIfUpToDate(): Promise<string[] | null> {
-    const oneWeekAgo: Date = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const oneDayAgo: Date = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     try {
       const document = await this.alpacaSymbols.findOne({});
 
-      if (document && document.updatedAt < oneWeekAgo) {
+      if (document && document.updatedAt < oneDayAgo) {
         this.log(`Alpaca symbols outdated`);
         return null;
       }

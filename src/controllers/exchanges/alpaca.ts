@@ -82,30 +82,18 @@ class Alpaca extends Base {
     }
   }
 
-  public async getAssets(): Promise<string[]> {
+  // get {top} most active stocks by volume
+  public async getMostActiveStocks(top: number): Promise<string[]> {
     const dbSymbols: string[] | null = await database.getAlpacaSymbolsIfUpToDate();
     if (dbSymbols) return dbSymbols;
 
-    const url = `${this.baseUrls.baseUrlDatav2}/assets`;
-    const options: AxiosRequestConfig = this.getRequestOptions();
-    const res: AxiosResponse = await axios.get(url, options);
-    const assetSymbols: string[] = res.data.map(s => s.symbol);
-    await database.updateAlpacaSymbols(assetSymbols);
-    return assetSymbols;
-  }
-
-  // get {top} most active stocks by volume
-  public async getMostActiveStocks(top: number): Promise<string[]> {
     const url = `${this.baseUrls.baseUrlDatav1}/screener/stocks/most-actives`;
-
-    const query = {
-      top
-    };
-
+    const query = { top };
     const finalUrl: string = this.createUrl(url, query);
     const options: AxiosRequestConfig = this.getRequestOptions();
     const res: AxiosResponse = await axios.get(finalUrl, options);
     const mostActiveSymbols: string[] = res.data.most_actives.map(m => m.symbol);
+    await database.updateAlpacaSymbols(mostActiveSymbols);
     return mostActiveSymbols;
   }
 

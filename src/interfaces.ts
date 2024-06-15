@@ -64,6 +64,11 @@ export enum TrendLinePosition {
   Below = 'BELOW'
 }
 
+export enum LogLevel {
+  Default = 'DEFAULT',
+  NoDb = 'NODB'
+}
+
 export interface Kline {
   symbol: string;
   timeframe: Timeframe;
