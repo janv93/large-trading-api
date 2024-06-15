@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Base from '../controllers/base';
 import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
-import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema } from './schemas';
+import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcStocksSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
@@ -10,6 +10,7 @@ class Database extends Base {
   private kline: mongoose.Model<any>;
   private twitterUserTimeline: mongoose.Model<any>;
   private alpacaSymbols: mongoose.Model<any>;
+  private cmcStocks: mongoose.Model<any>;
   private appConfig: mongoose.Model<any>;
 
   constructor() {
@@ -18,6 +19,7 @@ class Database extends Base {
     this.kline = mongoose.model('Kline', KlineSchema);
     this.twitterUserTimeline = mongoose.model('TwitterUserTimeline', TwitterUserTimelineSchema);
     this.alpacaSymbols = mongoose.model('AlpacaSymbols', AlpacaSymbolsSchema);
+    this.cmcStocks = mongoose.model('CmcStocks', CmcStocksSchema);
     this.appConfig = mongoose.model('AppConfig', AppConfigSchema);
   }
 
@@ -294,6 +296,34 @@ class Database extends Base {
       this.log(`Updated alpaca symbols`);
     } catch (err) {
       this.logErr('Failed to update symbols: ', err);
+    }
+  }
+
+  public async getCmcStocksIfUpToDate(): Promise<string[] | null> {
+    const oneDayAgo: Date = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    try {
+      const document = await this.cmcStocks.findOne({});
+
+      if (document && document.updatedAt < oneDayAgo) {
+        this.log(`CMC stocks outdated`);
+        return null;
+      }
+
+      this.log(`Read CMC stocks`);
+      return document ? document.stocks : null;
+    } catch (err) {
+      this.logErr(`Failed to retrieve CMC stocks`, err);
+      return null;
+    }
+  }
+
+  public async updateCmcStocks(stocks: string[]): Promise<void> {
+    try {
+      await this.cmcStocks.findOneAndUpdate({}, { stocks, updatedAt: new Date() }, { upsert: true });
+      this.log(`Updated CMC stocks`);
+    } catch (err) {
+      this.logErr('Failed to update CMC stocks: ', err);
     }
   }
 

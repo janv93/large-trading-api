@@ -103,6 +103,13 @@ export const AlpacaSymbolsSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
+export const CmcStocksSchema = new mongoose.Schema({
+  stocks: [{
+    type: String,
+    required: true
+  }]
+}, { timestamps: true });
+
 export const AppConfigSchema = new mongoose.Schema({
   lastOutdatedKlineRemoval: {
     type: Date,

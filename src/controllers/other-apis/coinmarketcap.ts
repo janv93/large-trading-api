@@ -1,6 +1,8 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import Base from '../base';
 import cryptos from './coinmarketcap-all-cryptos';
+import database from '../../data/database';
+import { Response } from 'express';
 
 
 export default class Coinmarketcap extends Base {
@@ -17,19 +19,22 @@ export default class Coinmarketcap extends Base {
       slug: name.toLowerCase()
     };
 
-    const finalUrl = this.createUrl(url, query);
+    const finalUrl: string = this.createUrl(url, query);
 
-    const res = await axios.get(finalUrl, { headers: this.headers });
+    const res: AxiosResponse = await axios.get(finalUrl, { headers: this.headers });
     return res.data.data['1'].symbol.toLowerCase();
   }
 
   public async getCryptosByMarketCapRank(rank: number): Promise<string[]> {
     this.log(`Get cryptos by market cap`);
     if (!process.env.coinmarketcap_api_key) return ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'USDC', 'XRP', 'DOGE', 'TON', 'ADA'].slice(0, rank); // API key should not be required to run /multi
-    const url = this.baseUrl + '/cryptocurrency/listings/latest';
-    const res = await axios.get(url, { headers: this.headers });
-    const top = res.data.data.slice(0, rank);
-    return top.map(c => c.symbol);
+    const dbStocks: string[] | null = await database.getCmcStocksIfUpToDate();
+    if (dbStocks && dbStocks.length >= rank) return dbStocks.slice(0, rank);
+    const url: string = this.baseUrl + '/cryptocurrency/listings/latest';
+    const res: AxiosResponse = await axios.get(url, { headers: this.headers });
+    const top: string[] = res.data.data.slice(0, rank).map(c => c.symbol);
+    await database.updateCmcStocks(top);
+    return top;
   }
 
   public getAllSymbols(): any {
