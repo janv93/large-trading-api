@@ -34,23 +34,14 @@ export default class Logger {
     let color: string;
 
     switch (caller) {
-      case 'App':
-        color = this.colors.blue;
-        break;
-      case 'Database':
-        color = this.colors.yellow;
-        break;
-      case 'Alpaca':
-        color = this.colors.cyan;
-        break;
+      case 'App': color = this.colors.blue; break;
+      case 'Routes': color = this.colors.green; break;
+      case 'Database': color = this.colors.yellow; break;
+      case 'Alpaca': color = this.colors.cyan; break;
       case 'Binance':
       case 'Kucoin':
-      case 'Btse':
-        color = this.colors.magenta;
-        break;
-      default:
-        color = this.colors.reset;
-        break;
+      case 'Btse': color = this.colors.magenta; break;
+      default: color = this.colors.reset; break;
     }
 
     const paddedName = caller.toUpperCase().padEnd(maxLength);
