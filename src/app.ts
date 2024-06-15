@@ -68,12 +68,14 @@ class App extends Base {
   public async start(): Promise<void> {
     this.log('Initializing App');
 
-    const [serverStarted, totalDeleted]: [Server, number] = await Promise.all([
+    const [serverStarted, totalDeleted]: [Server, (number | null)] = await Promise.all([
       this.startServer(),
       database.deleteOutdatedKlines()
     ]);
 
-    this.log(`${totalDeleted} outdated klines deleted`);
+    if (totalDeleted) {
+      this.log(`${totalDeleted} outdated klines deleted`);
+    }
 
     const addressInfo: AddressInfo = serverStarted.address() as AddressInfo;
     const address: string = addressInfo.address === '::' ? 'localhost' : addressInfo.address;

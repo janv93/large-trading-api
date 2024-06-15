@@ -69,6 +69,10 @@ export enum LogLevel {
   NoDb = 'NODB'
 }
 
+export interface AppConfig {
+  lastOutdatedKlineRemoval: Date
+}
+
 export interface Kline {
   symbol: string;
   timeframe: Timeframe;

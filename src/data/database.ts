@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Base from '../controllers/base';
-import { Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
-import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema } from './schemas';
+import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
+import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
@@ -10,6 +10,7 @@ class Database extends Base {
   private kline: mongoose.Model<any>;
   private twitterUserTimeline: mongoose.Model<any>;
   private alpacaSymbols: mongoose.Model<any>;
+  private appConfig: mongoose.Model<any>;
 
   constructor() {
     super();
@@ -17,6 +18,7 @@ class Database extends Base {
     this.kline = mongoose.model('Kline', KlineSchema);
     this.twitterUserTimeline = mongoose.model('TwitterUserTimeline', TwitterUserTimelineSchema);
     this.alpacaSymbols = mongoose.model('AlpacaSymbols', AlpacaSymbolsSchema);
+    this.appConfig = mongoose.model('AppConfig', AppConfigSchema);
   }
 
   public async writeKlines(klines: Kline[]): Promise<void> {
@@ -94,7 +96,14 @@ class Database extends Base {
   }
 
   // delete klines before a certain time too far in the past
-  public async deleteOutdatedKlines(): Promise<number> {
+  public async deleteOutdatedKlines(): Promise<number | null> {
+    const appConfig: AppConfig | null = await this.getAppConfig();
+    const oneDayAgo: Date = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    if (appConfig && appConfig.lastOutdatedKlineRemoval > oneDayAgo) {
+      return null;
+    }
+
     this.log('Deleting outdated klines');
 
     try {
@@ -109,6 +118,7 @@ class Database extends Base {
 
       const totalDeleted = result.deletedCount;
       this.log(`${totalDeleted} outdated klines deleted`);
+      await this.updateLastOutdatedKlineRemoval();
       return totalDeleted;
     } catch (err) {
       this.logErr('Failed to delete klines: ', err);
@@ -284,6 +294,26 @@ class Database extends Base {
       this.log(`Updated alpaca symbols`);
     } catch (err) {
       this.logErr('Failed to update symbols: ', err);
+    }
+  }
+
+  private async updateLastOutdatedKlineRemoval(): Promise<void> {
+    try {
+      await this.appConfig.findOneAndUpdate({}, { lastOutdatedKlineRemoval: new Date() }, { upsert: true });
+      this.log(`Updated last outdated kline removal date`);
+    } catch (err) {
+      this.logErr(`Failed updating last outdated kline removal date`);
+    }
+  }
+
+  private async getAppConfig(): Promise<AppConfig | null> {
+    try {
+      const appConfig: AppConfig | null = await this.appConfig.findOne();
+      this.log(`Read app config`);
+      return appConfig;
+    } catch (err) {
+      this.logErr(`Failed to retrieve app config`, err);
+      return null;
     }
   }
 

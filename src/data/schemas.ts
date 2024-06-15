@@ -102,3 +102,10 @@ export const AlpacaSymbolsSchema = new mongoose.Schema({
     required: true
   }]
 }, { timestamps: true });
+
+export const AppConfigSchema = new mongoose.Schema({
+  lastOutdatedKlineRemoval: {
+    type: Date,
+    required: true
+  }
+});
