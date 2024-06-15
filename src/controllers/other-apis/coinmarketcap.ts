@@ -23,7 +23,7 @@ export default class Coinmarketcap extends Base {
     return res.data.data['1'].symbol.toLowerCase();
   }
 
-  public async getCryptosByMarketCapRank(rank: number): Promise<any> {
+  public async getCryptosByMarketCapRank(rank: number): Promise<string[]> {
     this.log(`Get cryptos by market cap`);
     const url = this.baseUrl + '/cryptocurrency/listings/latest';
     const res = await axios.get(url, { headers: this.headers });
