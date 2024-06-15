@@ -85,8 +85,7 @@ class Alpaca extends Base {
   // get {top} most active stocks by volume
   public async getMostActiveStocks(top: number): Promise<string[]> {
     const dbSymbols: string[] | null = await database.getAlpacaSymbolsIfUpToDate();
-    if (dbSymbols) return dbSymbols;
-
+    if (dbSymbols && dbSymbols.length >= top) return dbSymbols.slice(0, top);
     const url = `${this.baseUrls.baseUrlDatav1}/screener/stocks/most-actives`;
     const query = { top };
     const finalUrl: string = this.createUrl(url, query);
