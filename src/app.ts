@@ -31,27 +31,27 @@ class App extends Base {
   }
 
   private route(): void {
-    this.app.post('/klinesWithAlgorithm', (req, res) => {
+    this.app.post('/klinesWithAlgorithm', (req: Request, res: Response) => {
       this.log(req.originalUrl);
       this.routes.getKlinesWithAlgorithm(req, res);
     });
 
-    this.app.post('/multi', (req, res) => {
+    this.app.post('/multi', (req: Request, res: Response) => {
       this.log(req.originalUrl);
       this.routes.runMultiTicker(req, res);
     });
 
-    this.app.get('/trade', (req, res) => {
+    this.app.get('/trade', (req: Request, res: Response) => {
       this.log(req.originalUrl);
       this.routes.tradeStrategy(req, res);
     });
 
-    this.app.post('/backtest', (req, res) => {
+    this.app.post('/backtest', (req: Request, res: Response) => {
       this.log(req.originalUrl);
       this.routes.postBacktestData(req, res);
     });
 
-    this.app.post('/indicators', (req, res) => {
+    this.app.post('/indicators', (req: Request, res: Response) => {
       this.log(req.originalUrl);
       this.routes.postTechnicalIndicator(req, res);
     });

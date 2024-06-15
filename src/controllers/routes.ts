@@ -17,6 +17,8 @@ import TwitterSentiment from './algorithms/backtests/sentiment/twitter-sentiment
 import MultiTicker from './algorithms/backtests/simple-backtests/multi-ticker';
 import TrendLineBreakthrough from './algorithms/backtests/simple-backtests/trend-line';
 import Coinmarketcap from './other-apis/coinmarketcap';
+import { Request, Response } from 'express';
+import QueryString from 'qs';
 
 
 export default class Routes extends Base {
@@ -42,7 +44,7 @@ export default class Routes extends Base {
    * algorithm is passed through body parameter 'algorithm'
    * depending on algorithm, additional query params may be necessary
    */
-  public async getKlinesWithAlgorithm(req, res): Promise<void> {
+  public async getKlinesWithAlgorithm(req: Request, res: Response): Promise<void> {
     const body = req.body;
     const { timeframe, times, exchange, symbol, algorithms } = body;
     const allKlines = await this.initKlines(exchange, symbol, timeframe);
@@ -65,7 +67,7 @@ export default class Routes extends Base {
     }
   }
 
-  public async runMultiTicker(req, res): Promise<void> {
+  public async runMultiTicker(req: Request, res: Response): Promise<void> {
     const body = req.body;
     const { timeframe, times, rank, autoParams, algorithms } = body;
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'];
@@ -101,8 +103,8 @@ export default class Routes extends Base {
     res.send(tickersWithSignals);
   }
 
-  public postBacktestData(req, res): void {
-    const query = req.query;
+  public postBacktestData(req: Request, res: Response): void {
+    const query: QueryString.ParsedQs = req.query;
     let klines: Kline[] = req.body;
 
     for (const algorithm in (req.body as Kline[])[0].algorithms) {
@@ -112,16 +114,16 @@ export default class Routes extends Base {
     res.send(klines);
   }
 
-  public tradeStrategy(req, res): void {
+  public tradeStrategy(req: Request, res: Response): void {
     switch (req.query.strategy) {
-      case Algorithm.Ema: this.ema.trade(req.query.symbol, req.query.open ? true : false);
+      case Algorithm.Ema: this.ema.trade(req.query.symbol as string, req.query.open ? true : false);
     }
 
     res.send('Running');
   }
 
-  public postTechnicalIndicator(req, res): void {
-    const query = req.query;
+  public postTechnicalIndicator(req: Request, res: Response): void {
+    const query: QueryString.ParsedQs = req.query;
     const { indicator, length, fast, slow, signal, period } = query;
     let indicatorChart: any[] = [];
 
