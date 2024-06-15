@@ -21,7 +21,8 @@
     "api",
     "stocks",
     "crypto",
-    "algorithm"
+    "algorithm",
+    "backtest"
   ],
   "author": "janv93",
   "license": "ISC",
