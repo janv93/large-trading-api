@@ -59,7 +59,7 @@ export default class Routes extends Base {
       res.send(klinesInRange);
     } catch (err: any) {
       if (err === 'invalid') {
-        res.send('Algorithm does not exist');
+        res.status(500).json({ error: 'Algorithm does not exist' });
       } else {
         this.handleError(err);
         res.status(500).json({ error: err.message });
