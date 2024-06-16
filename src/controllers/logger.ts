@@ -12,6 +12,7 @@ export default class Logger {
     magenta: '\x1b[35m',
     cyan: '\x1b[36m',
     white: '\x1b[37m',
+    orange: '\x1b[38;5;208m',
     reset: '\x1b[0m'
   };
 
@@ -37,13 +38,13 @@ export default class Logger {
 
     switch (caller) {
       case 'App': color = this.colors.blue; break;
-      case 'Routes': color = this.colors.green; break;
-      case 'Database': color = this.colors.yellow; break;
-      case 'Alpaca': color = this.colors.cyan; break;
+      case 'Routes': color = this.colors.magenta; break;
+      case 'Database': color = this.colors.green; break;
+      case 'Alpaca': color = this.colors.orange; break;
       case 'Binance': // crypto
       case 'Kucoin':
       case 'Btse':
-      case 'Coinmarketcap': color = this.colors.magenta; break;
+      case 'Coinmarketcap': color = this.colors.yellow; break;
       default: color = this.colors.reset; break;
     }
 
