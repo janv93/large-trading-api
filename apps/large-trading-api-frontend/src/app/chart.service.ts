@@ -48,6 +48,6 @@ export class ChartService {
 
   public setErrorText(error: any) {
     this.loadingText = `Received error`;
-    this.loadingTextInfo = error.error?.error || error.error || error.message;
+    this.loadingTextInfo = error.error?.error || (typeof error.error === 'string' ? error.error : null) || error.message;
   }
 }
