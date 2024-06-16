@@ -1,3 +1,10 @@
+<div *ngIf="chartService.loading" class="h-100 d-flex flex-column align-items-center justify-content-center">
+  <loader></loader>
+  <div class="d-flex mt-5 mb-5">
+    <h2 class="d-inline-block">{{ chartService.loadingText }}</h2>
+    <code class="d-inline-block ms-5 fs-3">{{ chartService.loadingTextEndpoint }}</code>
+  </div>
+</div>
 <mixed-chart class="mixed-chart" *ngIf="!chartService.isMulti && klines" [klines]="klines"></mixed-chart>
 <div class="mixed-chart-multi-container" *ngIf="chartService.isMulti && tickers">
   <mixed-chart class="mixed-chart-multi" *ngFor="let ticker of tickers" [klines]="ticker"></mixed-chart>

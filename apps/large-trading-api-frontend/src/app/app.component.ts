@@ -36,6 +36,8 @@ export class AppComponent {
       const requests = params.map(param => this.httpService.postBacktest(klines, param.commission, param.flowingProfit));
 
       forkJoin(requests).subscribe((klinesList: Kline[][]) => {
+        this.chartService.setLoadingText();
+
         this.klines = params.map((param: any, i: number) => {
           return {
             klines: klinesList[i],
@@ -43,12 +45,18 @@ export class AppComponent {
             flowingProfit: param.flowingProfit
           };
         });
+      }, (err) => {
+        this.chartService.setLoadingText(`Received error`, err.message);
       });
+    }, (err) => {
+      this.chartService.setLoadingText(`Received error`, err.message);
     });
   }
 
   private backtestMulti() {
     this.httpService.getMulti().subscribe((tickers: Kline[][]) => {
+      this.chartService.setLoadingText();
+
       const tickersMapped: Run[][] = tickers.map((klines: Kline[]) => {
         return [{
           klines,
@@ -62,6 +70,8 @@ export class AppComponent {
       });
 
       this.tickers = tickersMapped;
+    }, (err) => {
+      this.chartService.setLoadingText(`Received error`, err.message);
     });
   }
 }

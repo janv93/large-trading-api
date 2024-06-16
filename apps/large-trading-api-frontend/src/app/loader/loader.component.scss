@@ -1,0 +1,105 @@
+.loading {
+	display: flex;
+	position: relative;
+	height: 150px;
+	.bar {
+		border-radius: 10px;
+		width: 8px;
+		background: #fff;
+		margin: 5px;
+		position: relative;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		.delta {
+			width: 2px;
+			background: inherit;
+			position: relative;
+		}
+		
+		@for $i from 1 through 7 {
+		  &:nth-child(#{$i}) {
+			  animation-delay: ($i - 1) * .5s;
+		  }
+		}
+		animation: loading .5s backwards;
+		&:nth-child(1) {
+			height: 10px;
+			top: 120px;
+			background: #f15450;
+			transform-origin: top;
+			.delta {
+				height: 10px;
+				top: 10px;
+			}
+		}
+		&:nth-child(2) {
+			height: 30px;
+			top: 100px;
+			transform-origin: bottom;
+			background: #26a89b;
+			.delta {
+				height: 20px;
+				top: -20px;
+			}
+		}
+		&:nth-child(3) {
+			height: 20px;
+			top: 80px;
+			transform-origin: bottom;
+			background: #26a89b;
+			.delta {
+				height: 10px;
+				top: -10px;
+			}
+		}
+		&:nth-child(4) {
+			height: 13px;
+			top: 80px;
+			transform-origin: top;
+			background: #f15450;
+			.delta {
+				height: 10px;
+				top: 10px;
+			}
+		}
+		&:nth-child(5) {
+			height: 27px;
+			top: 67px;
+			transform-origin: bottom;
+			background: #26a89b;
+			.delta {
+				height: 40px;
+				top: -10px;
+			}
+		}
+		&:nth-child(6) {
+			height: 38px;
+			top: 67px;
+			transform-origin: top;
+			background: #f15450;
+			.delta {
+				height: 40px;
+				top: 20px;
+			}
+		}
+		&:nth-child(7) {
+			height: 60px;
+			top: 46px;
+			transform-origin: bottom;
+			background: #26a89b;
+			.delta {
+				height: 70px;
+				top: -40px;
+			}
+		}
+	}
+}
+@keyframes loading {
+	0% {
+		transform: scaleY(0);
+	}
+	100% {
+		transform: scaleY(1);
+	}
+}

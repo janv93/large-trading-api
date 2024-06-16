@@ -28,9 +28,20 @@ export class ChartService {
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
 
   // multi
-  public isMulti = false;
+  public isMulti = true;
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
-  public multiRank = 10;  // top [rank] tickers of each category. e.g. top 10 of stocks, cryptos etc
+  public multiRank = 15;  // top {rank} tickers of each category. e.g. top 10 of stocks, cryptos etc
+
+  // loading
+  public loading = true;
+  public loadingText: string;
+  public loadingTextEndpoint: string;
 
   constructor() { }
+
+  public setLoadingText(loadingText?: string, loadingTextEndpoint?: string) {
+    if (!loadingText && !loadingTextEndpoint) this.loading = false;
+    this.loadingText = loadingText!;
+    this.loadingTextEndpoint = loadingTextEndpoint!;
+  }
 }
