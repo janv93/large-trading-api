@@ -78,10 +78,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "chart-visualizer:build:production"
+              "buildTarget": "chart-visualizer:build:production"
             },
             "development": {
-              "browserTarget": "chart-visualizer:build:development"
+              "buildTarget": "chart-visualizer:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -89,7 +89,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "chart-visualizer:build"
+            "buildTarget": "chart-visualizer:build"
           }
         },
         "test": {
