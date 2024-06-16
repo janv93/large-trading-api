@@ -17,7 +17,7 @@ export class ChartService {
   public commission = 0.04;
 
   // algorithm, [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
-  public algorithms = [Algorithm.TrendLine]; // if second algorithm is set, will draw a second profit line for comparison
+  public algorithms = [Algorithm.TrendLine, Algorithm.Dca]; // if second algorithm is set, will draw a second profit line for comparison
   public rsiLength = [7, 7];
   public emaPeriodOpen = [80, 80];
   public emaPeriodClose = [80, 80];
@@ -28,7 +28,7 @@ export class ChartService {
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
 
   // multi
-  public isMulti = true;
+  public isMulti = false;
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
   public multiRank = 15;  // top {rank} tickers of each category. e.g. top 10 of stocks, cryptos etc
 

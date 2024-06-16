@@ -43,10 +43,10 @@ export class AppComponent {
           };
         });
       }, (err) => {
-        this.chartService.setLoadingText(`Received error`, err.message);
+        this.chartService.setLoadingText(`Received error`, err.error?.error || err.message);
       });
     }, (err) => {
-      this.chartService.setLoadingText(`Received error`, err.message);
+      this.chartService.setLoadingText(`Received error`, err.error?.error || err.message);
     });
   }
 
@@ -67,7 +67,7 @@ export class AppComponent {
 
       this.tickers = tickersMapped;
     }, (err) => {
-      this.chartService.setLoadingText(`Received error`, err.message);
+      this.chartService.setLoadingText(`Received error`, err.error?.error || err.message);
     });
   }
 }

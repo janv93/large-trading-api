@@ -24,10 +24,9 @@ export class HttpService {
       symbol,
       timeframe,
       times,
-      algorithms: [this.getAlgorithmBody(0)]
+      algorithms: this.chartService.algorithms.map((a, i) => this.getAlgorithmBody(i))
     };
 
-    if (this.chartService.algorithms.length > 1) body.algorithms.push(this.getAlgorithmBody(1));
     const url = this.baseUrl + '/klinesWithAlgorithm';
     this.chartService.setLoadingText(`Getting klines with signals`, url.replace(this.baseUrl, ''));
     return this.http.post<Kline[]>(url, body);
@@ -52,10 +51,9 @@ export class HttpService {
       times,
       rank: multiRank,
       autoParams: multiAutoParams,
-      algorithms: [this.getAlgorithmBody(0)]
+      algorithms: this.chartService.algorithms.map((a, i) => this.getAlgorithmBody(i))
     };
 
-    if (this.chartService.algorithms.length > 1) body.algorithms.push(this.getAlgorithmBody(1));
     const url = this.baseUrl + '/multi';
     this.chartService.setLoadingText(`Getting multiple tickers with backtests`, url.replace(this.baseUrl, ''));
     return this.http.post<Kline[][]>(url, body);
