@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 
 @Component({
   selector: 'loader',
@@ -8,10 +8,10 @@ import { ChangeDetectorRef, Component } from '@angular/core';
 export class LoaderComponent {
   public show = true;
 
-  constructor(private cd: ChangeDetectorRef) {
+  constructor(@Inject(ChangeDetectorRef) private cd: ChangeDetectorRef) {
     setInterval(() => {
       this.show = false;
-      cd.detectChanges();
+      this.cd.detectChanges();
       this.show = true;
     }, 4000);
   }
