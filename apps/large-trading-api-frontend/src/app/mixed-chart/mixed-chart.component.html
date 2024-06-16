@@ -2,14 +2,14 @@
   <div *ngIf="ohlc" #legend class="position-absolute legend-left"
     [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
     <span>O</span>
-    <span class="text-info">{{ ohlc.open }}</span>
+    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.open }}</span>
     <span> H</span>
-    <span class="text-info">{{ ohlc.high }}</span>
+    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.high }}</span>
     <span> L</span>
-    <span class="text-info">{{ ohlc.low }}</span>
+    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.low }}</span>
     <span> C</span>
-    <span class="text-info">{{ ohlc.close }}</span>
-    <span [ngClass]="{'green': currentProfit > 0, 'red': currentProfit < 0 }"> {{ currentProfit }}</span>
+    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.close }}</span>
+    <span [ngClass]="currentProfit > 0 ? 'green' : 'red'"> {{ currentProfit }}</span>
     <span>%</span>
     <span *ngIf="openPositionSize" [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }"> {{
       openPositionSize }}</span>
