@@ -208,7 +208,6 @@ export interface StockInfo {
 export interface Run {
   klines: Kline[];
   commission: number;
-  flowingProfit: boolean;
 };
 
 export interface BacktestStats {

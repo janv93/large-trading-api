@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
+import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData } from 'lightweight-charts';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
 import { ChartService } from '../chart.service';
@@ -26,7 +26,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLineSeries: ISeriesApi<'Line'>[] = [];
   private commissionChecked = false;
-  private flowingProfitChecked = true;
   private positionSizeChecked = false;
   private finalProfit: number[] = [];
   private red = 'rgb(255, 77, 77)';
@@ -38,7 +37,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   constructor(
     public chartService: ChartService,
-    private renderer: Renderer2
+    @Inject(Renderer2) private renderer: Renderer2
   ) {
     super();
   }
@@ -104,21 +103,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
-  public onFlowingProfitChange(event: Event) {
-    const checked: boolean = (event.target as HTMLInputElement).checked;
-    this.flowingProfitChecked = checked;
-    this.setKlines();
-    this.setFinalProfits();
-    this.drawSeries();
-    this.setLegendValues();
-    this.drawChartData();
-    this.drawOpenPositionSize();
-
-    this.chartService.algorithms.forEach((algorithm, index) => {
-      this.setProfitSeriesData(index);
-    });
-  }
-
   public onShowPositionSizeChange(event: Event) {
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.positionSizeChecked = checked;
@@ -168,16 +152,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.currentKlines = this.klines[0].klines; // in case of multi, only 1 available for now
     } else {
       const commission = this.commissionChecked;
-      const flowingProfit = this.flowingProfitChecked;
 
-      if (!commission && !flowingProfit) {
+      if (!commission) {
         this.currentKlines = this.klines[0].klines;
-      } else if (commission && !flowingProfit) {
+      } else {
         this.currentKlines = this.klines[1].klines;
-      } else if (!commission && flowingProfit) {
-        this.currentKlines = this.klines[2].klines;
-      } else if (commission && flowingProfit) {
-        this.currentKlines = this.klines[3].klines;
       }
     }
   }

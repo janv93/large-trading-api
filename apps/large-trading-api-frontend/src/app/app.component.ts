@@ -27,13 +27,11 @@ export class AppComponent {
   private backtestSingle() {
     this.httpService.getKlines().subscribe((klines: Kline[]) => {
       const params = [
-        { commission: 0, flowingProfit: false },
-        { commission: this.chartService.commission, flowingProfit: false },
-        { commission: 0, flowingProfit: true },
-        { commission: this.chartService.commission, flowingProfit: true }
+        { commission: 0 },
+        { commission: this.chartService.commission }
       ];
 
-      const requests = params.map(param => this.httpService.postBacktest(klines, param.commission, param.flowingProfit));
+      const requests = params.map(param => this.httpService.postBacktest(klines, param.commission));
 
       forkJoin(requests).subscribe((klinesList: Kline[][]) => {
         this.chartService.setLoadingText();
@@ -41,8 +39,7 @@ export class AppComponent {
         this.klines = params.map((param: any, i: number) => {
           return {
             klines: klinesList[i],
-            commission: param.commission,
-            flowingProfit: param.flowingProfit
+            commission: param.commission
           };
         });
       }, (err) => {
@@ -60,8 +57,7 @@ export class AppComponent {
       const tickersMapped: Run[][] = tickers.map((klines: Kline[]) => {
         return [{
           klines,
-          commission: 0,
-          flowingProfit: true
+          commission: 0
         }];
       });
 

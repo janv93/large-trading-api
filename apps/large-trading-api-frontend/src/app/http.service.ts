@@ -33,10 +33,9 @@ export class HttpService {
     return this.http.post<Kline[]>(url, body);
   }
 
-  public postBacktest(klines: Array<Kline>, commission: number, flowingProfit: boolean): Observable<Kline[]> {
+  public postBacktest(klines: Array<Kline>, commission: number): Observable<Kline[]> {
     const query = {
-      commission: commission,
-      flowingProfit: flowingProfit
+      commission: commission
     };
 
     const url = this.baseUrl + '/backtest';
