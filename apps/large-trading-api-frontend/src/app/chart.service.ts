@@ -11,7 +11,7 @@ export class ChartService {
 
   // general
   public exchange = Exchange.Binance;
-  public symbol = 'asd';
+  public symbol = 'BTCUSDT';
   public timeframe = Timeframe._1Day;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;
@@ -47,7 +47,6 @@ export class ChartService {
 
   public setErrorText(error: any) {
     this.loadingText = `Received error`;
-    console.log(error)
     this.loadingTextInfo = error.error?.error || error.error || error.message;
   }
 }
