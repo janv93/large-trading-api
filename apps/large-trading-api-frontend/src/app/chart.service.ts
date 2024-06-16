@@ -11,7 +11,7 @@ export class ChartService {
 
   // general
   public exchange = Exchange.Binance;
-  public symbol = 'BTCUSDT';
+  public symbol = 'asd';
   public timeframe = Timeframe._1Day;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;
@@ -35,13 +35,19 @@ export class ChartService {
   // loading
   public loading = true;
   public loadingText: string;
-  public loadingTextEndpoint: string;
+  public loadingTextInfo: string;
 
   constructor() { }
 
-  public setLoadingText(loadingText?: string, loadingTextEndpoint?: string) {
-    if (!loadingText && !loadingTextEndpoint) this.loading = false;
+  public setLoadingText(loadingText?: string, loadingTextInfo?: string) {
+    if (!loadingText && !loadingTextInfo) this.loading = false;
     this.loadingText = loadingText!;
-    this.loadingTextEndpoint = loadingTextEndpoint!;
+    this.loadingTextInfo = loadingTextInfo!;
+  }
+
+  public setErrorText(error: any) {
+    this.loadingText = `Received error`;
+    console.log(error)
+    this.loadingTextInfo = error.error?.error || error.error || error.message;
   }
 }

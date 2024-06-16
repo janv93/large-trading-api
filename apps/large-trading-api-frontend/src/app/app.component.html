@@ -2,7 +2,7 @@
   <loader></loader>
   <div class="d-flex mt-5 mb-5">
     <h2 class="d-inline-block">{{ chartService.loadingText }}</h2>
-    <code class="d-inline-block ms-5 fs-3">{{ chartService.loadingTextEndpoint }}</code>
+    <code class="d-inline-block ms-5 fs-3">{{ chartService.loadingTextInfo }}</code>
   </div>
 </div>
 <mixed-chart class="mixed-chart" *ngIf="!chartService.isMulti && klines" [klines]="klines"></mixed-chart>
