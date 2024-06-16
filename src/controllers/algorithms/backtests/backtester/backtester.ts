@@ -5,32 +5,25 @@ export default class Backtester extends Base {
   /**
    * @param klines the klines returned from /klinesWithAlgorithm
    * @param commission commission of exchange, e.g. 0.04 = 0.04%
-   * @param flowingProfit when true, calculates profit for every kline (false calculates only at signals)
    * @returns the klines with profits
    */
-  public calcBacktestPerformance(klines: Kline[], algorithm: Algorithm, commission: number, flowingProfit: boolean): Kline[] {
+  public calcBacktestPerformance(klines: Kline[], algorithm: Algorithm, commission: number): Kline[] {
     let positions: Array<Position | undefined> = [];
     let profit = 0;
 
     klines.forEach((kline: Kline) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
-      const backtestSignals: BacktestSignal[] = backtest.signals;
 
       positions = (positions as Position[]).map((position: Position) => {
         const closeSignal: Signal | undefined = this.getCloseSignal(position, kline, algorithm);
+        profit += this.calcProfitChange(position, kline, algorithm, closeSignal);
 
-        if (flowingProfit || flowingProfit && closeSignal || !flowingProfit && backtestSignals.length) { // if flowing profit or (force) close, or , change existing positions
-          profit += this.calcProfitChange(position, kline, algorithm, closeSignal);
-
-          if (closeSignal) {
-            this.addOrUpdateCloseSignal(position, kline, algorithm);
-            profit -= this.calcCloseFee(position, kline, algorithm, closeSignal, commission);
-            return undefined;
-          } else {
-            return this.updateExistingPosition(position, kline);
-          }
+        if (closeSignal) {
+          this.addOrUpdateCloseSignal(position, kline, algorithm);
+          profit -= this.calcCloseFee(position, kline, algorithm, closeSignal, commission);
+          return undefined;
         } else {
-          return position;
+          return this.updateExistingPosition(position, kline);
         }
       });
 
@@ -56,7 +49,7 @@ export default class Backtester extends Base {
 
     } else {  // normal close signal
       const closeBacktestSignal: BacktestSignal = backtest.signals.find((signal: BacktestSignal) => signal.signal === Signal.Close)!;
-      
+
       if (closeBacktestSignal.openSignalReferences?.length) {
         closeBacktestSignal.openSignalReferences.push(signalReference);
       } else {
@@ -202,7 +195,7 @@ export default class Backtester extends Base {
 
     switch (closeSignal) {
       case Signal.Close:
-        const closeBacktestSignal: BacktestSignal = backtest.signals.find((signal: BacktestSignal) =>  signal.signal === Signal.Close)!;
+        const closeBacktestSignal: BacktestSignal = backtest.signals.find((signal: BacktestSignal) => signal.signal === Signal.Close)!;
         currentPrice = closeBacktestSignal.price;
         break;
       case Signal.Liquidation: currentPrice = position.liquidationPrice; break;

@@ -71,7 +71,7 @@ export default class TwitterSentiment extends Base {
       });
     });
 
-    const klinesWithProfit = this.backtester.calcBacktestPerformance(klines, algorithm, 0, false);
+    const klinesWithProfit = this.backtester.calcBacktestPerformance(klines, algorithm, 0);
     const finalProfit = klinesWithProfit[klinesWithProfit.length - 1].algorithms[algorithm]!.percentProfit;
 
     if (reset) {

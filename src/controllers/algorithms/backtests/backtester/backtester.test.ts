@@ -11,7 +11,7 @@ describe('Backtester', () => {
     backtester = new Backtester();
   });
 
-  it('should calculate percentProfit correctly with flowing profit and no commission', () => {
+  it('should calculate percentProfit correctly without commission', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1, close: 0 };
 
@@ -93,7 +93,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0, true);
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].percentProfit).toBe(0);
@@ -115,7 +115,7 @@ describe('Backtester', () => {
     expect(backtests[14].percentProfit).toBe(800);
   });
 
-  it('should calculate percentProfit correctly with flowing profit and commission', () => {
+  it('should calculate percentProfit correctly with commission', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1 };
 
@@ -197,7 +197,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0.1, true);
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0.1);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].percentProfit).toBeCloseTo(-0.1);
@@ -251,7 +251,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0, true);
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].percentProfit).toBe(0);
@@ -283,7 +283,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0, true);
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].percentProfit).toBe(0);
@@ -318,7 +318,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfitBuySl: Kline[] = backtester.calcBacktestPerformance(klinesBuySl, algorithm, 0, true);
+    const klinesWithProfitBuySl: Kline[] = backtester.calcBacktestPerformance(klinesBuySl, algorithm, 0);
     const backtestsBuySl: BacktestData[] = klinesWithProfitBuySl.map(k => k.algorithms[algorithm]!);
 
     expect(backtestsBuySl[0].percentProfit).toBeCloseTo(0);
@@ -350,7 +350,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfitBuyTp: Kline[] = backtester.calcBacktestPerformance(klinesBuyTp, algorithm, 0, true);
+    const klinesWithProfitBuyTp: Kline[] = backtester.calcBacktestPerformance(klinesBuyTp, algorithm, 0);
     const backtestsBuyTp: BacktestData[] = klinesWithProfitBuyTp.map(k => k.algorithms[algorithm]!);
 
     expect(backtestsBuyTp[0].percentProfit).toBeCloseTo(0);
@@ -382,7 +382,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfitSellSl: Kline[] = backtester.calcBacktestPerformance(klinesSellSl, algorithm, 0, true);
+    const klinesWithProfitSellSl: Kline[] = backtester.calcBacktestPerformance(klinesSellSl, algorithm, 0);
     const backtestsSellSl: BacktestData[] = klinesWithProfitSellSl.map(k => k.algorithms[algorithm]!);
 
     expect(backtestsSellSl[0].percentProfit).toBeCloseTo(0);
@@ -414,7 +414,7 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfitSellTp: Kline[] = backtester.calcBacktestPerformance(klinesSellTp, algorithm, 0, true);
+    const klinesWithProfitSellTp: Kline[] = backtester.calcBacktestPerformance(klinesSellTp, algorithm, 0);
     const backtestsSellTp: BacktestData[] = klinesWithProfitSellTp.map(k => k.algorithms[algorithm]!);
 
     expect(backtestsSellTp[0].percentProfit).toBeCloseTo(0);

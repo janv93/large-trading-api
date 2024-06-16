@@ -85,7 +85,7 @@ export default class MultiTicker extends Base {
 
     return clonedTickers.map((currentTicker: Kline[]) => {
       const klinesWithSignals = this.meanReversion.setSignals(currentTicker, algorithm, threshold, profitBasedTrailingStopLoss);
-      const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, algorithm, 0, true);
+      const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, algorithm, 0);
       return klinesWithBacktest;
     });
   }

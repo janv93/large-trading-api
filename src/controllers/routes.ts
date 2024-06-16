@@ -94,7 +94,7 @@ export default class Routes extends Base {
       } else {
         tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
           const klinesWithSignals: Kline[] = await this.handleAlgo(klines, algorithms[i]);
-          return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithms[i].algorithm, 0, true);
+          return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithms[i].algorithm, 0);
         }));
       }
     }
@@ -108,7 +108,7 @@ export default class Routes extends Base {
     let klines: Kline[] = req.body;
 
     for (const algorithm in (req.body as Kline[])[0].algorithms) {
-      klines = this.backtest.calcBacktestPerformance(klines, algorithm as Algorithm, Number(query.commission), this.stringToBoolean(query.flowingProfit as string));
+      klines = this.backtest.calcBacktestPerformance(klines, algorithm as Algorithm, Number(query.commission));
     }
 
     res.send(klines);
