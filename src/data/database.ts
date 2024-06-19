@@ -58,6 +58,7 @@ class Database extends Base {
         this.log(`Wrote <= ${klines.length} klines`);
       } catch (err) {
         this.logErr('Failed to write klines: ', err);
+        throw err;
       }
     }
   }
@@ -95,7 +96,27 @@ class Database extends Base {
       return mappedKlines;
     } catch (err) {
       this.logErr(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`, err);
-      return [];
+      throw err;
+    }
+  }
+
+  public async getAllUniqueSymbols(): Promise<string[]> {
+    try {
+      this.log(`Get all unique Symbols`);
+      return await this.kline.distinct('symbol').exec();
+    } catch (err) {
+      this.logErr(`Failed to retrieve unique symbols`, err);
+      throw err;
+    }
+  }
+
+  public async deleteAllKlinesWithSymbol(symbol: string): Promise<void> {
+    try {
+      await this.kline.deleteMany({ symbol }).exec();
+      this.log(`Delete all klines of symbol ${symbol}`);
+    } catch (err) {
+      this.logErr(`Failed deleting all klines of symbol ${symbol}`);
+      throw err;
     }
   }
 
@@ -126,7 +147,7 @@ class Database extends Base {
       return totalDeleted;
     } catch (err) {
       this.logErr('Failed to delete klines: ', err);
-      return 0;
+      throw err;
     }
   }
 
@@ -158,7 +179,7 @@ class Database extends Base {
       this.log(`Done writing ${newSentiments} sentiments`);
     } catch (err) {
       this.logErr(`Failed to write sentiments: `, err);
-      return;
+      throw err;
     }
   }
 
@@ -172,7 +193,7 @@ class Database extends Base {
       return sentiment;
     } catch (err) {
       this.logErr(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`, err);
-      return 0;
+      throw err;
     }
   }
 
@@ -200,6 +221,7 @@ class Database extends Base {
         this.log(`Done writing tweets`);
       } catch (err) {
         this.logErr(`Failed to write tweets for user ${userId}: `, err);
+        throw err;
       }
     }
   }
@@ -233,7 +255,7 @@ class Database extends Base {
       }
     } catch (err) {
       this.logErr(`Failed to retrieve Twitter user ${userId}: `, err);
-      return null;
+      throw err;
     }
   }
 
@@ -259,6 +281,7 @@ class Database extends Base {
       }
     } catch (err) {
       this.logErr(`Failed to update tweets for Twitter user ${userId}: `, err);
+      throw err;
     }
   }
 
@@ -288,7 +311,7 @@ class Database extends Base {
       return document ? document.symbols : null;
     } catch (err) {
       this.logErr(`Failed to retrieve alpaca symbols`, err);
-      return null;
+      throw err;
     }
   }
 
@@ -298,6 +321,7 @@ class Database extends Base {
       this.log(`Updated alpaca symbols`);
     } catch (err) {
       this.logErr('Failed to update alpaca symbols: ', err);
+      throw err;
     }
   }
 
@@ -316,7 +340,7 @@ class Database extends Base {
       return document ? document.symbols : null;
     } catch (err) {
       this.logErr(`Failed to retrieve binance symbols`, err);
-      return null;
+      throw err;
     }
   }
 
@@ -326,6 +350,7 @@ class Database extends Base {
       this.log(`Updated binance symbols`);
     } catch (err) {
       this.logErr('Failed to update binance symbols: ', err);
+      throw err;
     }
   }
 
@@ -344,7 +369,7 @@ class Database extends Base {
       return document ? document.stocks : null;
     } catch (err) {
       this.logErr(`Failed to retrieve CMC stocks`, err);
-      return null;
+      throw err;
     }
   }
 
@@ -354,6 +379,22 @@ class Database extends Base {
       this.log(`Updated CMC stocks`);
     } catch (err) {
       this.logErr('Failed to update CMC stocks: ', err);
+      throw err;
+    }
+  }
+
+  public async getHadStockSplitCleanup(): Promise<boolean> {
+    const appConfig: AppConfig | null = await this.getAppConfig();
+    return appConfig?.hadStockSplitCleanup ?? false;
+  }
+
+  public async setHadStockSplitCleanup(): Promise<void> {
+    try {
+      await this.appConfig.findOneAndUpdate({}, { hadStockSplitCleanup: true }, { upsert: true });
+      this.log(`Set stock split cleanup flag`);
+    } catch (err) {
+      this.logErr(`Failed setting stock split cleanup flag`);
+      throw err;
     }
   }
 
@@ -363,6 +404,7 @@ class Database extends Base {
       this.log(`Updated last outdated kline removal date`);
     } catch (err) {
       this.logErr(`Failed updating last outdated kline removal date`);
+      throw err;
     }
   }
 
@@ -373,7 +415,7 @@ class Database extends Base {
       return appConfig;
     } catch (err) {
       this.logErr(`Failed to retrieve app config`, err);
-      return null;
+      throw err;
     }
   }
 
@@ -383,6 +425,7 @@ class Database extends Base {
       this.log('Mongo connected');
     } catch (err) {
       this.logErr(err);
+      throw err;
     }
   }
 }

@@ -51,7 +51,7 @@ class Alpaca extends Base {
    */
   public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
     const startTime: number = this.calcStartTime(timeframe);
-    const dbKlines: Kline[] = await database.getKlines(symbol, timeframe);
+    let dbKlines: Kline[] = await database.getKlines(symbol, timeframe);
 
     // not in database yet
     if (!dbKlines || !dbKlines.length) {
@@ -67,9 +67,17 @@ class Alpaca extends Base {
 
     // already in database
     const lastKline: Kline = dbKlines[dbKlines.length - 1];
-    const newStart: number = lastKline.times.open;
+    const lastKlineTime: number = lastKline.times.open;
 
-    if (this.klineOutdated(timeframe, newStart)) {
+    if (this.klineOutdated(timeframe, lastKlineTime)) {
+      const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastKlineTime)).length > 0;
+
+      if (hasNewStockSplits) {
+        await database.deleteAllKlinesWithSymbol(symbol);
+        dbKlines = [];
+      }
+  
+      const newStart: number = hasNewStockSplits ? startTime : lastKlineTime;
       const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log(`${newKlines.length} new ${symbol} klines added to database`);
@@ -95,6 +103,44 @@ class Alpaca extends Base {
     const mostActiveSymbols: string[] = res.data.most_actives.map(m => m.symbol);
     await database.updateAlpacaSymbols(mostActiveSymbols);
     return mostActiveSymbols;
+  }
+
+  // 1-time cleanup of database, deletes all klines of symbols that had stock splits so that future klines use the same price multiplier as past klines
+  public async deleteStockSplitSymbols(): Promise<void> {
+    this.log(`Delete all database symbols with stock splits`);
+    const hadStockSplitCleanup: boolean = await database.getHadStockSplitCleanup();
+    if (hadStockSplitCleanup) return;
+    const allSymbols: string[] = await database.getAllUniqueSymbols();
+    const stockSymbols: string[] = allSymbols.filter((symbol: string) => !symbol.includes('USDT') && !symbol.includes('BUSD'));
+    const stockSplitSymbols: string[] = await this.getStockSplitSymbols(stockSymbols);
+
+    if (stockSplitSymbols) {
+      await Promise.all(stockSplitSymbols.map((symbol: string) => database.deleteAllKlinesWithSymbol(symbol)));
+      await database.setHadStockSplitCleanup();
+    }
+  }
+
+  // return all of the {symbols} that had a stock split
+  private async getStockSplitSymbols(symbols: string[], startTime?: number): Promise<string[]> {
+    this.log(`Get stock splits for ${symbols}`);
+    const url = `${this.baseUrls.baseUrlDatav1}/corporate-actions`;
+    const start: string = startTime ? new Date(startTime).toISOString().split('T')[0] : '2000-01-01';
+
+    const query = {
+      symbols: symbols.join(','),
+      start,
+      types: 'forward_split,reverse_split',
+      limit: 1000
+    };
+
+    const finalUrl: string = this.createUrl(url, query);
+    const options: AxiosRequestConfig = this.getRequestOptions();
+    const res: AxiosResponse = await axios.get(finalUrl, options);
+    const allSplits: any[] = [...(res.data.corporate_actions.forward_splits || []), ...(res.data.corporate_actions.reverse_splits || [])];
+    const symbolsWithSplits: string[] = allSplits.map(split => split.symbol);
+    const uniqueSymbolsWithSplits: string[] = Array.from(new Set(symbolsWithSplits));
+    if (uniqueSymbolsWithSplits.length) this.log(`Found stock splits for ${uniqueSymbolsWithSplits}`);
+    return uniqueSymbolsWithSplits;
   }
 
   private getRequestOptions(): AxiosRequestConfig {

@@ -6,6 +6,7 @@ import { AddressInfo } from 'net';
 import Base from './controllers/base';
 import Routes from './controllers/routes';
 import database from './data/database';
+import alpaca from './controllers/exchanges/alpaca';
 
 class App extends Base {
   public app: express.Application;
@@ -68,9 +69,10 @@ class App extends Base {
   public async start(): Promise<void> {
     this.log('Initializing App');
 
-    const [serverStarted, totalDeleted]: [Server, (number | null)] = await Promise.all([
+    const [serverStarted, totalDeleted, stockSplitCleanup]: [Server, (number | null), void] = await Promise.all([
       this.startServer(),
-      database.deleteOutdatedKlines()
+      database.deleteOutdatedKlines(),
+      alpaca.deleteStockSplitSymbols()
     ]);
 
     if (totalDeleted) {

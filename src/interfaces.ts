@@ -70,7 +70,8 @@ export enum LogLevel {
 }
 
 export interface AppConfig {
-  lastOutdatedKlineRemoval: Date
+  lastOutdatedKlineRemoval: Date,
+  hadStockSplitCleanup?: boolean
 }
 
 export interface Kline {

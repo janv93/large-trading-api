@@ -121,5 +121,8 @@ export const AppConfigSchema = new mongoose.Schema({
   lastOutdatedKlineRemoval: {
     type: Date,
     required: true
+  },
+  hadStockSplitCleanup: {
+    type: Boolean
   }
 });

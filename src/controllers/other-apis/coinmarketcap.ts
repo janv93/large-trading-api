@@ -12,7 +12,7 @@ export default class Coinmarketcap extends Base {
   };
 
   public async getSymbol(name: string) {
-    const url = this.baseUrl + '/cryptocurrency/info';
+    const url: string = this.baseUrl + '/cryptocurrency/info';
 
     const query = {
       slug: name.toLowerCase()
