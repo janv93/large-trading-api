@@ -107,9 +107,9 @@ class Alpaca extends Base {
 
   // 1-time cleanup of database, deletes all klines of symbols that had stock splits so that future klines use the same price multiplier as past klines
   public async deleteStockSplitSymbols(): Promise<void> {
-    this.log(`Delete all database symbols with stock splits`);
     const hadStockSplitCleanup: boolean = await database.getHadStockSplitCleanup();
     if (hadStockSplitCleanup) return;
+    this.log(`Delete all database symbols with stock splits`);
     const allSymbols: string[] = await database.getAllUniqueSymbols();
     const stockSymbols: string[] = allSymbols.filter((symbol: string) => !symbol.includes('USDT') && !symbol.includes('BUSD'));
     const stockSplitSymbols: string[] = await this.getStockSplitSymbols(stockSymbols);
