@@ -1,7 +1,7 @@
 import { LogLevel } from '../interfaces';
 
 export default class Logger {
-  private logLevel: LogLevel = LogLevel.NoDb;
+  private logLevel: LogLevel = LogLevel.Default;
 
   private colors = {
     black: '\x1b[30m',
