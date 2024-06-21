@@ -139,7 +139,7 @@ class Alpaca extends Base {
     const allSplits: any[] = [...(res.data.corporate_actions.forward_splits || []), ...(res.data.corporate_actions.reverse_splits || [])];
     const symbolsWithSplits: string[] = allSplits.map(split => split.symbol);
     const uniqueSymbolsWithSplits: string[] = Array.from(new Set(symbolsWithSplits));
-    if (uniqueSymbolsWithSplits.length) this.log(`Found stock splits for ${uniqueSymbolsWithSplits}`);
+    if (uniqueSymbolsWithSplits.length) this.log(`Found stock splits for ${uniqueSymbolsWithSplits}`); else this.log(`No stock splits for ${symbols}`);
     return uniqueSymbolsWithSplits;
   }
 
