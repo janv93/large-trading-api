@@ -11,22 +11,12 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 ## Status:
 
-### Done:
-
-- [x] Fetch stock, index and crypto candlestick data
-- [x] Caching candlesticks in data base
-- [x] Indicators
-- [x] Algorithms setting position signals on past data
-- [x] Sentiment analysis of popular Twitter traders using Twitter API and OpenAI API
-- [x] Backtesting multiple tickers at once
-- [x] Comparing algorithm profit curves
-- [x] Charting tools, e.g. backtests that test trend lines
-- [x] Deal with stock splits
+Project is no longer WIP, infrastructure for building complex backtests is complete
 
 ### Todo:
 
-- [ ] AI: Transformer as improvement to standard NNs (position encoding time steps)
-- [ ] Algorithm that builds strategies using multiple indicators and figuring out which combined indicators work the best
+- [ ] Candlesticks patterns
+- [ ] Finish and improve various backtest algos
 
 ## How to use backtests:
 
