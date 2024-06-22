@@ -62,14 +62,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   /**
    * interpolates the color between red and green, depending on value
    */
-  public getColor(value: number, maxGreen: number, maxRed: number): string {
+  public getDrawbackColor(value: number, maxGreen: number, maxRed: number): string {
     // negative value means negative profit
     if (value < 0) {
       return this.red;
     }
 
     let red, green, blue;
-    let range = maxRed - maxGreen;
+    const range: number = maxRed - maxGreen;
 
     if (value <= maxGreen) {
       red = 0;
@@ -199,13 +199,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.profitSeries.push(this.chart.addLineSeries({ priceScaleId: index === 0 ? 'left' : 'left2' }));
       this.setProfitSeriesData(index);  // init with no commission
 
-      const opacity = index === 0 ? 0.3 : 0.1;
-      let color = `rgba(255, 255, 255, ${opacity})`;
-      color = this.finalProfit[index] > 0 ? `rgba(0, 255, 0, ${opacity})` : color;
-      color = this.finalProfit[index] < 0 ? `rgba(255, 77, 77, ${opacity})` : color;
-
       this.profitSeries[index].applyOptions({
-        color,
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false
@@ -355,9 +349,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setProfitSeriesData(index: number) {
     const mapped = this.currentKlines.map((kline: Kline) => {
+      const currentProfit: number = kline.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0;
+      const opacity: number = index === 0 ? 0.3 : 0.1;
+      const color: string = currentProfit === 0 ? `rgba(255,255,255,${opacity})` : currentProfit > 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`;
+
       return {
         time: kline.times.open / 1000 as Time,
-        value: kline.algorithms[this.chartService.algorithms[index]]!.percentProfit
+        value: currentProfit,
+        color
       };
     });
 

@@ -10,8 +10,8 @@ export class ChartService {
   public baseUrl = 'http://127.0.0.1:3000';
 
   // general
-  public exchange = Exchange.Binance;
-  public symbol = 'BTCUSDT';  // ignored for multi
+  public exchange = Exchange.Alpaca;
+  public symbol = 'NVDA';  // ignored for multi
   public timeframe = Timeframe._1Day;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;

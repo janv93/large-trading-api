@@ -12,4 +12,17 @@ export class BaseComponent {
     const isCloseSignal: boolean = (this.isCloseSignal(signal));
     return isCloseSignal && signal !== Signal.Close;
   }
+
+  // interpolates source value between source range to target value between target range
+  protected interpolateValue(value: number, sourceMin: number, sourceMax: number, targetMin: number, targetMax: number): number {
+    if (value < sourceMin) return targetMin;
+    if (value > sourceMax) return targetMax;
+
+    const sourceRange: number = sourceMax - sourceMin;
+    const sourceFraction: number = value - sourceMin;
+    const factor: number = sourceFraction / sourceRange;
+    const targetRange: number = targetMax - targetMin;
+    const targetValue: number = targetMin + factor * targetRange;
+    return targetValue;
+  }
 }
