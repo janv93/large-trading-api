@@ -1,5 +1,5 @@
 import { BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
-import Base from '../../../base';
+import Base from '../../../../base';
 
 
 export default class Dca extends Base {

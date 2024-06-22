@@ -1,5 +1,5 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '../../../../interfaces';
-import Base from '../../../base';
+import Base from '../../../../base';
 import Charting from '../../patterns/charting';
 import { LinearFunction } from '../../patterns/linear-function';
 

@@ -1,5 +1,5 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe, Tweet, TwitterTimeline } from '../../../../interfaces';
-import Base from '../../../base';
+import Base from '../../../../base';
 import Twitter from '../../../other-apis/twitter';
 import OpenAi from '../../../other-apis/openai';
 import binance from '../../../exchanges/binance';

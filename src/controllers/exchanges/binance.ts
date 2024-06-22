@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import crypto from 'crypto';
 import { Kline, Timeframe, Tweet } from '../../interfaces';
-import Base from '../base';
+import Base from '../../base';
 import database from '../../data/database';
 
 class Binance extends Base {

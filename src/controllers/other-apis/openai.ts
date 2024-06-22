@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Base from '../base';
+import Base from '../../base';
 import database from '../../data/database';
 import { Tweet, TweetSymbol } from '../../interfaces';
 

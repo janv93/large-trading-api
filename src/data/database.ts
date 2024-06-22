@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import Base from '../controllers/base';
+import Base from '../base';
 import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
 import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcStocksSchema, BinanceSymbolsSchema } from './schemas';
 import { DeleteResult } from 'mongodb';

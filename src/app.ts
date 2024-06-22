@@ -3,7 +3,7 @@ import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
-import Base from './controllers/base';
+import Base from './base';
 import Routes from './controllers/routes';
 import database from './data/database';
 import alpaca from './controllers/exchanges/alpaca';

@@ -1,5 +1,5 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
-import Base from '../../../base';
+import Base from '../../../../base';
 
 enum Action {
   Buy,

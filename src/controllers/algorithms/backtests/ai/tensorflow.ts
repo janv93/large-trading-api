@@ -1,4 +1,4 @@
-import Base from '../../../base';
+import Base from '../../../../base';
 import { Algorithm, Kline } from '../../../../interfaces';
 import Plotly from '../../../other-apis/plotly';
 import Indicators from '../../../technical-analysis/indicators';

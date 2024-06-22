@@ -2,7 +2,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import btoa from 'btoa';
 import { Kline, Timeframe } from '../../interfaces';
-import Base from '../base';
+import Base from '../../base';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {

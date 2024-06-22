@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import Base from '../base';
+import Base from '../../base';
 import cryptos from './coinmarketcap-all-cryptos';
 import database from '../../data/database';
 

@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash';
-import { Algorithm, BacktestSignal, Kline, Signal, Timeframe } from '../interfaces';
-import Logger from './logger';
+import { Algorithm, BacktestSignal, Kline, Signal, Timeframe } from './interfaces';
+import Logger from './controllers/logger';
 
 export default abstract class Base {
   protected logger = new Logger();

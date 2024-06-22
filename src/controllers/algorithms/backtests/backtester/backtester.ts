@@ -1,5 +1,5 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Position, Signal, SignalReference, TakeProfitStopLoss } from '../../../../interfaces';
-import Base from '../../../base';
+import Base from '../../../../base';
 
 export default class Backtester extends Base {
   /**

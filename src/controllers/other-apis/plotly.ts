@@ -1,4 +1,4 @@
-import Base from '../base';
+import Base from '../../base';
 import plotly from 'plotly';
 
 export default class Plotly extends Base {

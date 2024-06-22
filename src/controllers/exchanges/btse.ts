@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import Base from '../base';
+import Base from '../../base';
 
 export default class Btse extends Base {
   public setLeverage(symbol: string, leverage: number): Promise<any> {

@@ -1,4 +1,4 @@
-import Base from './base';
+import Base from '../base';
 import { Algorithm, Exchange, Kline, Timeframe } from '../interfaces';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';

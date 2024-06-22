@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AlpacaResponse, Kline, Timeframe } from '../../interfaces';
-import Base from '../base';
+import Base from '../../base';
 import database from '../../data/database';
 
 class Alpaca extends Base {
