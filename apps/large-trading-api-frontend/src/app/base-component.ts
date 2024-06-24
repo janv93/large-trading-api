@@ -1,4 +1,4 @@
-import { Signal } from './interfaces';
+import { Kline, Signal } from './interfaces';
 
 export class BaseComponent {
   constructor() { }
@@ -24,5 +24,26 @@ export class BaseComponent {
     const targetRange: number = targetMax - targetMin;
     const targetValue: number = targetMin + factor * targetRange;
     return targetValue;
+  }
+
+  // binary search for performance
+  protected findKlineIndexByOpenTime(klines: Kline[], openTime: number): number {
+    let left = 0;
+    let right = klines.length - 1;
+
+    while (left <= right) {
+      const mid: number = Math.floor((left + right) / 2);
+      const midTime: number = klines[mid].times.open;
+
+      if (midTime === openTime) {
+        return mid;
+      } else if (midTime < openTime) {
+        left = mid + 1;
+      } else {
+        right = mid - 1;
+      }
+    }
+
+    return -1;
   }
 }

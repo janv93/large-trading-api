@@ -18,7 +18,7 @@ export class LinearFunction {
     return this.m * x + this.b;
   }
 
-  public isPointOnLine(x: number, y: number): boolean {
-    return this.m * x + this.b === y;
+  public isPointOnLine(x: number, y: number, tolerance?: number): boolean {
+    return this.m * x + this.b > y * (1 - (tolerance || 0)) && this.m * x + this.b < y * (1 + (tolerance || 0));
   }
 }

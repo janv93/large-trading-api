@@ -11,10 +11,10 @@
     <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.close }}</span>
     <span [ngClass]="currentProfit > 0 ? 'green' : 'red'"> {{ currentProfit }}</span>
     <span>%</span>
-    <span> i{{currentIndex}} t{{currentOhlc.time}}</span>
     <span *ngIf="openPositionSize" [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }"> {{
       openPositionSize }}</span>
     <span *ngIf="openPositionSize">$</span>
+    <span> i{{currentIndex}} t{{currentOhlc.time}}</span>
   </div>
   <div *ngIf="currentKlines" class="position-absolute d-flex justify-content-center align-items-center symbol">
     <img *ngIf="!chartService.isMulti" class="d-inline-block me-4 mt-4"

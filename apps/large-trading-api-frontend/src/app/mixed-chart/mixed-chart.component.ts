@@ -1,5 +1,5 @@
 import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, ITimeScaleApi, WhitespaceData } from 'lightweight-charts';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -34,7 +34,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private markersPivotPoints: SeriesMarker<Time>[] = [];
   private markersSignals: SeriesMarker<Time>[] = [];
   private isCrosshairSubscribed = false;
-  private drawingMarkers = false;
+  private executingCrosshairMove = false;
+  private currentHighlightedTrendLines: ISeriesApi<'Line'>[] = [];
 
   constructor(
     public chartService: ChartService,
@@ -288,13 +289,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   // combine all markers
   private drawMarkers() {
-    if (this.drawingMarkers) return;
-
-    this.drawingMarkers = true;
     const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
     allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
     this.candlestickSeries.setMarkers(allMarkers);
-    this.drawingMarkers = false;
   }
 
   private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
@@ -460,31 +457,37 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private subscribeCrosshairMove() {
     this.chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
-      this.isCrosshairSubscribed = true;
-      const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
-      const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
-      const openPositionSize: HistogramData | undefined = this.openPositionSizeSeries ? param.seriesData.get(this.openPositionSizeSeries) as HistogramData : undefined;
-      const index: number = param.logical as number;
-      const kline: Kline | undefined = this.currentKlines[index];
+      if (!this.executingCrosshairMove) {
+        this.executingCrosshairMove = true;
+        this.isCrosshairSubscribed = true;
+        const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
+        const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
+        const openPositionSize: HistogramData | undefined = this.openPositionSizeSeries ? param.seriesData.get(this.openPositionSizeSeries) as HistogramData : undefined;
+        const index: number = param.logical as number;
+        const kline: Kline | undefined = this.currentKlines[index];
 
-      if (ohlc) {
-        for (const key in ohlc) {
-          if (typeof ohlc[key] === "number") {
-            ohlc[key] = parseFloat(ohlc[key].toFixed(2));
+        if (ohlc) {
+          for (const key in ohlc) {
+            if (typeof ohlc[key] === "number") {
+              ohlc[key] = parseFloat(ohlc[key].toFixed(2));
+            }
+          }
+
+          this.currentOhlc = ohlc;
+          this.currentProfit = Number(profit.value.toFixed(2));
+          this.currentIndex = param.logical as number;
+
+          if (openPositionSize !== undefined) {
+            this.openPositionSize = Number(openPositionSize.value.toFixed(2));
           }
         }
 
-        this.currentOhlc = ohlc;
-        this.currentProfit = Number(profit.value.toFixed(2));
-        this.currentIndex = param.logical as number;
-
-        if (openPositionSize !== undefined) {
-          this.openPositionSize = Number(openPositionSize.value.toFixed(2));
+        if (kline) {
+          this.highlightOpenSignals(kline);
         }
-      }
 
-      if (kline) {
-        this.highlightOpenSignals(kline);
+        this.highlightTrendLines(param);
+        this.executingCrosshairMove = false;
       }
     });
   }
@@ -512,6 +515,30 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     this.drawMarkers();
+  }
+
+  private highlightTrendLines(param: MouseEventParams<Time>) {
+    if (!param?.point || !param.logical || !this.trendLineSeries.length) return;
+    const hoverPrice: number = this.candlestickSeries.coordinateToPrice(param.point!.y) as number;
+    const index: number = param.logical as number;
+
+    this.currentHighlightedTrendLines.forEach((trendLine: ISeriesApi<'Line'>) => trendLine.applyOptions({ color: '#2196f3' }));
+    this.currentHighlightedTrendLines = [];
+
+    this.trendLineSeries.forEach((trendLine: ISeriesApi<'Line'>) => {
+      const data: readonly (WhitespaceData<Time> | LineData<Time>)[] = trendLine.data();
+      const start: any = data[0];
+      const end: any = data[1];
+      const startIndex: number = this.findKlineIndexByOpenTime(this.currentKlines, (start.time as number) * 1000);
+      const endIndex: number = this.findKlineIndexByOpenTime(this.currentKlines, (end.time as number) * 1000);
+      const lineFunction: LinearFunction = new LinearFunction(startIndex, start.value, endIndex, end.value);
+      const isLineHovered: boolean = lineFunction.isPointOnLine(index, hoverPrice, 0.003) && index >= startIndex && index <= endIndex;
+
+      if (isLineHovered) {
+        trendLine.applyOptions({ color: 'yellow' });
+        this.currentHighlightedTrendLines.push(trendLine);
+      }
+    });
   }
 
   private calcStats(): void {
