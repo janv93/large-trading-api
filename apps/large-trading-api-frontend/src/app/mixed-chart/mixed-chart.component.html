@@ -1,16 +1,17 @@
 <div #container class="w-100 h-100 position-relative chart-container">
-  <div *ngIf="ohlc" #legend class="position-absolute legend-left"
+  <div *ngIf="currentOhlc" #legend class="position-absolute legend-left"
     [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
     <span>O</span>
-    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.open }}</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.open }}</span>
     <span> H</span>
-    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.high }}</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.high }}</span>
     <span> L</span>
-    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.low }}</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.low }}</span>
     <span> C</span>
-    <span [ngClass]="ohlc.open < ohlc.close ? 'green' : 'red'">{{ ohlc.close }}</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.close }}</span>
     <span [ngClass]="currentProfit > 0 ? 'green' : 'red'"> {{ currentProfit }}</span>
     <span>%</span>
+    <span> i{{currentIndex}} t{{currentOhlc.time}}</span>
     <span *ngIf="openPositionSize" [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }"> {{
       openPositionSize }}</span>
     <span *ngIf="openPositionSize">$</span>

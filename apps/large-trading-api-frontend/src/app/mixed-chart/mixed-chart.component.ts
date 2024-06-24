@@ -15,8 +15,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   @ViewChild('legend') legend: ElementRef;
   @Input() klines: Run[];
 
-  public ohlc: CandlestickData;
+  public currentOhlc: CandlestickData;
   public currentProfit: number;
+  public currentIndex: number;
   public openPositionSize: number;
   public stats: BacktestStats;
   public currentKlines: Kline[];
@@ -473,8 +474,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
           }
         }
 
-        this.ohlc = ohlc;
+        this.currentOhlc = ohlc;
         this.currentProfit = Number(profit.value.toFixed(2));
+        this.currentIndex = param.logical as number;
 
         if (openPositionSize !== undefined) {
           this.openPositionSize = Number(openPositionSize.value.toFixed(2));
