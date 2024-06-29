@@ -7,8 +7,9 @@ export default class TrendLineBreakthrough extends Base {
   private charting = new Charting();
 
   public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
-    this.charting.addPivotPoints(klines, 10, 10);
-    this.charting.addTrendLinesFromPivotPoints(klines, 40, 150);
+    // this.charting.addPivotPoints(klines, 10, 10);
+    // this.charting.addTrendLinesFromPivotPoints(klines, 40, 150);
+    this.charting.addTrendLines(klines, 40, 150);
     this.charting.addTrendLineBreakthroughs(klines);
     this.charting.filterTrendLinesWithoutBreakthroughs(klines);
 

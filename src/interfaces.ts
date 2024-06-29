@@ -118,6 +118,7 @@ export interface TrendLine {
   length: number;
   slope: Slope;
   position: TrendLinePosition;
+  againstTrend: boolean;
 }
 
 // information for backtest and calculated backtest data
