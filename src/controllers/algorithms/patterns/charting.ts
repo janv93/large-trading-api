@@ -231,7 +231,7 @@ export default class Charting extends Base {
     const averagePriceChange: number = this.calcAverageChangeInPercent(trendLineCloses);
 
     const lineUninterrupted = klines.slice(startIndex + 1, endIndex).every((kline: Kline, i: number) => {
-      const x: number = startIndex + i + 1;
+      const x: number = startIndex + 1 + i;
 
       if (trendLine.position === TrendLinePosition.Above) {
         const y: number = kline.prices.high;
