@@ -24,7 +24,7 @@ Project is no longer WIP, infrastructure for building complex backtests is compl
 3. Add or use existing backtests in src/controllers/algorithms/backtests
 4. When adding new backtest, add settings for backtest to frontend code
 5. npm i, npm start
-6. Start the [Frontend](https://github.com/janv93/trading-chart-visualizer)
+6. Start the [frontend](https://github.com/janv93/trading-chart-visualizer)
 
 ## Requirements:
 
