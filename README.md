@@ -9,10 +9,6 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
   <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/multi-chart.png" width="49%" /> 
 </div>
 
-## Status:
-
-Project is no longer WIP, infrastructure for building complex backtests is complete
-
 ### Todo:
 
 - [ ] Candlesticks patterns
