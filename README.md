@@ -30,7 +30,7 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 
 ## Questions:
 
-- feel free to open an issue if you have a question about how it works, if something is unclear, if you have ideas for improvements, really anything
+- feel free to open an issue or start a discussion if you have a question about how it works, if something is unclear, if you have ideas for improvements, really anything
 
 ## Notes/Learnings:
 
