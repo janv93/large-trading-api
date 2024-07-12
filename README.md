@@ -28,6 +28,10 @@ Frontend: [Trading Chart Visualizer](https://github.com/janv93/trading-chart-vis
 - install mongodb or use its web version
 - get api keys and secret of one of 3 exchanges: binance, kucoin, alpaca (recommended binance+alpaca for all tickers)
 
+## Questions:
+
+- feel free to open an issue if you have a question about how it works, if something is unclear, if you have ideas for improvements, really anything
+
 ## Notes/Learnings:
 
 - Tensorflow code commented out because of software requirements
