@@ -6,9 +6,10 @@ import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
 
 @Component({
-  selector: 'mixed-chart',
-  templateUrl: './mixed-chart.component.html',
-  styleUrls: ['./mixed-chart.component.scss']
+    selector: 'mixed-chart',
+    templateUrl: './mixed-chart.component.html',
+    styleUrls: ['./mixed-chart.component.scss'],
+    standalone: false
 })
 export class MixedChartComponent extends BaseComponent implements OnInit, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;

@@ -10,25 +10,25 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "latest",
-    "@angular/common": "latest",
-    "@angular/compiler": "latest",
-    "@angular/core": "latest",
-    "@angular/forms": "latest",
-    "@angular/platform-browser": "latest",
-    "@angular/platform-browser-dynamic": "latest",
-    "@angular/router": "latest",
+    "@angular/animations": "19.2.14",
+    "@angular/common": "19.2.14",
+    "@angular/compiler": "19.2.14",
+    "@angular/core": "19.2.14",
+    "@angular/forms": "19.2.14",
+    "@angular/platform-browser": "19.2.14",
+    "@angular/platform-browser-dynamic": "19.2.14",
+    "@angular/router": "19.2.14",
     "@types/node": "latest",
     "deepmerge": "latest",
     "lightweight-charts": "latest",
     "rxjs": "latest",
     "tslib": "latest",
-    "zone.js": "latest"
+    "zone.js": "0.15.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "latest",
-    "@angular/cli": "latest",
-    "@angular/compiler-cli": "latest",
+    "@angular-devkit/build-angular": "19.2.14",
+    "@angular/cli": "19.2.14",
+    "@angular/compiler-cli": "19.2.14",
     "@types/jasmine": "latest",
     "jasmine-core": "latest",
     "karma": "latest",
@@ -36,6 +36,6 @@
     "karma-coverage": "latest",
     "karma-jasmine": "latest",
     "karma-jasmine-html-reporter": "latest",
-    "typescript": "latest"
+    "typescript": "5.8.3"
   }
 }

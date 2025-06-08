@@ -1,9 +1,10 @@
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 
 @Component({
-  selector: 'loader',
-  templateUrl: './loader.component.html',
-  styleUrls: ['./loader.component.scss']
+    selector: 'loader',
+    templateUrl: './loader.component.html',
+    styleUrls: ['./loader.component.scss'],
+    standalone: false
 })
 export class LoaderComponent {
   public show = true;
