@@ -24,7 +24,7 @@ Frontend: [Large Trading API Frontend](https://github.com/janv93/large-trading-a
 
 ## Requirements:
 
-- node (e.g. 22.3.0 + npm 10.8.1)
+- node (e.g. 22.16.0 + npm 11.2.0)
 - install mongodb or use its web version
 - get api keys and secret of one of 3 exchanges: binance, kucoin, alpaca (recommended binance+alpaca for all tickers)
 
