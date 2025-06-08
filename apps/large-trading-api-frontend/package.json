@@ -1,5 +1,5 @@
 {
-  "name": "trading-chart-visualizer",
+  "name": "large-trading-api-frontend",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
