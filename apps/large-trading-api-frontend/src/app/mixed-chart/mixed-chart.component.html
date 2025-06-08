@@ -1,52 +1,66 @@
 <div #container class="w-100 h-100 position-relative chart-container">
-  <div *ngIf="currentOhlc" #legend class="position-absolute legend-left"
-    [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
-    <span>O</span>
-    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.open }}</span>
-    <span> H</span>
-    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.high }}</span>
-    <span> L</span>
-    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.low }}</span>
-    <span> C</span>
-    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.close }}</span>
-    <span [ngClass]="currentProfit > 0 ? 'green' : 'red'"> {{ currentProfit }}</span>
-    <span>%</span>
-    <span *ngIf="openPositionSize" [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }"> {{
-      openPositionSize }}</span>
-    <span *ngIf="openPositionSize">$</span>
-    <span> i{{currentIndex}} t{{currentOhlc.time}}</span>
-  </div>
-  <div *ngIf="currentKlines" class="position-absolute d-flex justify-content-center align-items-center symbol">
-    <img *ngIf="!chartService.isMulti" class="d-inline-block me-4 mt-4"
-      [src]="'assets/images/' + chartService.exchange.toLowerCase() + '.png'">
-    <p class="d-inline-block fw-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">{{
-      currentKlines[0].symbol }}</p>
-  </div>
-  <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
-    <div *ngIf="!chartService.isMulti">
-      <div class="text-end">
-        <label class="me-2">commission</label>
-        <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
-      </div>
-      <div class="text-end">
-        <label class="me-2">position size</label>
-        <input class="align-middle" type="checkbox" (change)="onShowPositionSizeChange($event)">
-        <label class="ms-3 me-2">charting</label>
-        <input class="align-middle" type="checkbox" (change)="onShowChartingChange($event)" checked>
-      </div>
+  @if (currentOhlc) {
+    <div #legend class="position-absolute legend-left"
+      [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
+      <span>O</span>
+      <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.open }}</span>
+      <span> H</span>
+      <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.high }}</span>
+      <span> L</span>
+      <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.low }}</span>
+      <span> C</span>
+      <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.close }}</span>
+      <span [ngClass]="currentProfit > 0 ? 'green' : 'red'"> {{ currentProfit }}</span>
+      <span>%</span>
+      @if (openPositionSize) {
+        <span [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }"> {{
+        openPositionSize }}</span>
+      }
+      @if (openPositionSize) {
+        <span>$</span>
+      }
+      <span> i{{currentIndex}} t{{currentOhlc.time}}</span>
     </div>
-    <div *ngIf="stats" class="text-end stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
-      <div>
-        <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>
-        <span>% profit</span>
+  }
+  @if (currentKlines) {
+    <div class="position-absolute d-flex justify-content-center align-items-center symbol">
+      @if (!chartService.isMulti) {
+        <img class="d-inline-block me-4 mt-4"
+          [src]="'assets/images/' + chartService.exchange.toLowerCase() + '.png'">
+        }
+        <p class="d-inline-block fw-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">{{
+        currentKlines[0].symbol }}</p>
       </div>
-      <div>
-        <span [style.color]="getDrawbackColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
-        <span>% max drawback</span>
-      </div>
-      <div>
-        <span>{{ stats.numberOfTrades }} trades</span>
-      </div>
+    }
+    <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
+      @if (!chartService.isMulti) {
+        <div>
+          <div class="text-end">
+            <label class="me-2">commission</label>
+            <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
+          </div>
+          <div class="text-end">
+            <label class="me-2">position size</label>
+            <input class="align-middle" type="checkbox" (change)="onShowPositionSizeChange($event)">
+            <label class="ms-3 me-2">charting</label>
+            <input class="align-middle" type="checkbox" (change)="onShowChartingChange($event)" checked>
+          </div>
+        </div>
+      }
+      @if (stats) {
+        <div class="text-end stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
+          <div>
+            <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>
+            <span>% profit</span>
+          </div>
+          <div>
+            <span [style.color]="getDrawbackColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
+            <span>% max drawback</span>
+          </div>
+          <div>
+            <span>{{ stats.numberOfTrades }} trades</span>
+          </div>
+        </div>
+      }
     </div>
   </div>
-</div>

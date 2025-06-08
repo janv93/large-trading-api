@@ -1,5 +1,9 @@
-<div class="loading" *ngIf="show">
-  <div *ngFor="let bar of [].constructor(7)" class="bar">
-    <div class="delta"></div>
+@if (show) {
+  <div class="loading">
+    @for (bar of [].constructor(7); track bar) {
+      <div class="bar">
+        <div class="delta"></div>
+      </div>
+    }
   </div>
-</div>
+}
