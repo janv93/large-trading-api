@@ -70,7 +70,7 @@ export default class Backtester extends Base {
       }
 
       if (size > 0) { // long
-        return closePrice < forceClosePrice! ? Signal.Close : forceCloseSignal;  // again, take the price that would result in max loss, max risk, since we can't determine intra-kline which signal was triggered first
+        return closePrice < forceClosePrice! ? Signal.Close : forceCloseSignal;  // again, take the price that would result in max loss, max risk
       } else {  // short
         return closePrice > forceClosePrice! ? Signal.Close : forceCloseSignal;
       }
