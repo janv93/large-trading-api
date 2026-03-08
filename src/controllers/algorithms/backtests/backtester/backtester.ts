@@ -48,7 +48,7 @@ export default class Backtester extends Base {
     const isTpTrigger: boolean = this.isTakeProfitTrigger(position, kline);
     const isSlTrigger: boolean = this.isStopLossTrigger(position, kline);
     const isLiquidation: boolean = this.isLiquidation(position, kline);
-    const forceCloseSignals: Signal[] = []; // all triggered close signal
+    const forceCloseSignals: Signal[] = []; // all triggered close signals
 
     if (isSlTrigger) forceCloseSignals.push(Signal.StopLoss);  // sl has precedence over liquidation because sl will always be triggered before liquidation
     if (isLiquidation) forceCloseSignals.push(Signal.Liquidation); // liquidation has precedence over take profit because we calculate with max loss, max risk, since intra-kline we can't determine which came first
