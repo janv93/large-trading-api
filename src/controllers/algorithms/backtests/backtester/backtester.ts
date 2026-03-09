@@ -1,4 +1,4 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, Position, Signal, SignalReference, TakeProfitStopLoss } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Position, Signal, SignalReference, TakeProfitStopLoss, TrailingStopLoss } from '../../../../interfaces';
 import Base from '../../../../base';
 
 export default class Backtester extends Base {
@@ -17,7 +17,7 @@ export default class Backtester extends Base {
         profit += this.calcProfitChange(position, kline, algorithm, closeSignal);
 
         if (closeSignal) {
-          this.addOrUpdateCloseSignal(position, kline, algorithm);
+          this.addOrUpdateCloseSignal(position, kline, algorithm, closeSignal);
           profit -= this.calcCloseFee(position, kline, algorithm, closeSignal, commission);
           return undefined;
         } else {
@@ -88,16 +88,14 @@ export default class Backtester extends Base {
     return profitChange;
   }
 
-  private addOrUpdateCloseSignal(position: Position, kline: Kline, algorithm: Algorithm) {
+  private addOrUpdateCloseSignal(position: Position, kline: Kline, algorithm: Algorithm, closeSignal: Signal) {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
     const backtestSignals: BacktestSignal[] = backtest.signals;
-    const closeSignal: Signal | undefined = this.getCloseSignal(position, kline, algorithm);
     const signalReference: SignalReference = position.openSignalReference;
 
     if (this.isForceCloseSignal(closeSignal)) { // add force close to kline signals
       const closePrice: number = this.getClosePrice(position, closeSignal!, kline, algorithm);
       backtestSignals.push({ signal: closeSignal!, price: closePrice, openSignalReferences: [signalReference] });
-
     } else {  // normal close signal
       const closeBacktestSignal: BacktestSignal = backtest.signals.find((signal: BacktestSignal) => signal.signal === Signal.Close)!;
 
@@ -130,21 +128,43 @@ export default class Backtester extends Base {
     }
   }
 
-  // update size and price of existing position - only handles non-close case
+  // update size and price of existing position in case it was not closed
   private updateExistingPosition(position: Position, kline: Kline): Position {
     const entryPrice: number = position.entryPrice;
-    const currentPrice: number = kline.prices.close;
-    const priceChange: number = this.calcPriceChange(entryPrice, currentPrice);
+    const currentClose: number = kline.prices.close;
+    const priceChange: number = this.calcPriceChange(entryPrice, currentClose);
 
     if (position.size > 0) {  // long
       position.size = position.entrySize * (1 + priceChange);
-      position.price = currentPrice;
     } else {  // short
       position.size = position.entrySize * (1 - priceChange);
-      position.price = currentPrice;
     }
 
+    position.price = currentClose;
+    this.updateExistingPositionTrailingStopLoss(position, kline);
     return position;
+  }
+
+  private updateExistingPositionTrailingStopLoss(position: Position, kline: Kline) {
+    const currentHigh: number = kline.prices.high;
+    const currentLow: number = kline.prices.low;
+    const trailingStopLoss: TrailingStopLoss | undefined = position.openSignalReference.signal.positionCloseTrigger?.tSl;
+
+    if (trailingStopLoss) {
+      if (position.size > 0) { // long
+        const newStopLossPrice: number = currentHigh * (1 - trailingStopLoss.stopLoss);
+
+        if (newStopLossPrice > position.stopLossPrice!) {
+          position.stopLossPrice = newStopLossPrice;
+        }
+      } else {  // short
+        const newStopLossPrice: number = currentLow * (1 + trailingStopLoss.stopLoss);
+
+        if (newStopLossPrice < position.stopLossPrice!) {
+          position.stopLossPrice = newStopLossPrice;
+        }
+      }
+    }
   }
 
   private addNewPositions(positions: Position[], kline: Kline, algorithm: Algorithm) {
@@ -182,8 +202,9 @@ export default class Backtester extends Base {
     const signalSize: number = signal.size!;
     const signalPrice: number = signal.price;
     const tpSl: TakeProfitStopLoss | undefined = signal.positionCloseTrigger?.tpSl;
+    const tSl: TrailingStopLoss | undefined = signal.positionCloseTrigger?.tSl;
     const takeProfit: number | undefined = tpSl?.takeProfit;
-    const stopLoss: number | undefined = tpSl?.stopLoss;
+    const stopLoss: number | undefined = tpSl?.stopLoss || tSl?.stopLoss;
     const openSignalReference: SignalReference = { openTime: kline.times.open, signal };
     let size: number;
     let entrySize: number;

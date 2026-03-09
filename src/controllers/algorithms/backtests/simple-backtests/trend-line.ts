@@ -5,6 +5,7 @@ import { LinearFunction } from '../../patterns/linear-function';
 
 export default class TrendLineBreakthrough extends Base {
   private charting = new Charting();
+  private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
   public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
     this.charting.addTrendLines(klines, 40, 150);
@@ -42,10 +43,14 @@ export default class TrendLineBreakthrough extends Base {
       signal: Signal.Buy,
       size: score,
       price: breakthoughPrice,
-      positionCloseTrigger: {
+      positionCloseTrigger: this.strategy === 'tpSl' ? {
         tpSl: {
           stopLoss: sl,
           takeProfit: tp
+        }
+      } : {
+        tSl: {
+          stopLoss: sl
         }
       }
     });
@@ -59,10 +64,14 @@ export default class TrendLineBreakthrough extends Base {
       signal: Signal.Sell,
       size: score,
       price: breakthoughPrice,
-      positionCloseTrigger: {
+      positionCloseTrigger: this.strategy === 'tpSl' ? {
         tpSl: {
           stopLoss: sl,
           takeProfit: tp
+        }
+      } : {
+        tSl: {
+          stopLoss: sl
         }
       }
     });

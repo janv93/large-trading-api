@@ -133,7 +133,7 @@ export interface BacktestSignal {
   size?: number;  // not required if close
   price: number;
   positionCloseTrigger?: PositionCloseTrigger;
-  openSignalReferences?: SignalReference[];  // only for closes to refer to the position which is closed
+  openSignalReferences?: SignalReference[];  // only for closes to refer to the position which is closed, currently only used be the frontend
 }
 
 export interface SignalReference {
@@ -143,10 +143,15 @@ export interface SignalReference {
 
 export interface PositionCloseTrigger {
   tpSl?: TakeProfitStopLoss;
+  tSl?: TrailingStopLoss;
 }
 
 export interface TakeProfitStopLoss {
   takeProfit: number;
+  stopLoss: number;
+}
+
+export interface TrailingStopLoss {
   stopLoss: number;
 }
 
