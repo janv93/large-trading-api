@@ -6,10 +6,10 @@ import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
 
 @Component({
-    selector: 'mixed-chart',
-    templateUrl: './mixed-chart.component.html',
-    styleUrls: ['./mixed-chart.component.scss'],
-    standalone: false
+  selector: 'mixed-chart',
+  templateUrl: './mixed-chart.component.html',
+  styleUrls: ['./mixed-chart.component.scss'],
+  standalone: false
 })
 export class MixedChartComponent extends BaseComponent implements OnInit, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;
@@ -314,6 +314,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const isLiquidation: string | undefined = hasLiquidation && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'LIQ' : undefined;
     const isTakeProfit: string | undefined = hasTakeProfit && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'TP' : undefined;
     const isStopLoss: string | undefined = hasStopLoss && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'SL' : undefined;
+    if (isStopLoss) console.log(kline);
     const isCloseBuy: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasBuy && !hasSell ? 'CBUY' : undefined;
     const isCloseSell: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasSell && !hasBuy ? 'CSELL' : undefined;
     const isMix: string | undefined = hasBuy && hasSell || hasClose && hasForceClose || hasMultipleForceClose ? 'MIX' : undefined;
@@ -328,7 +329,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     return {
       time: kline.times.open / 1000 as Time,
       position: ['BUY', 'CBUY'].includes(signal) ? 'belowBar' : 'aboveBar',
-      color: ['BUY', 'CBUY'].includes(signal) ? 'lime' : ['CLOSE', 'LIQ', 'TP', 'SL', 'MIX'].includes(signal) ? 'white' : '#ff4d4d',
+      color: ['BUY', 'CBUY'].includes(signal) ? 'lime' : ['CLOSE', 'LIQ', 'TP', 'SL', 'MIX'].includes(signal) ? 'white' : '#ffd500',
       shape: ['BUY', 'CBUY'].includes(signal) ? 'arrowUp' : 'arrowDown',
       text: signal + (totalSize ? ` ${totalSize.toFixed(2)}` : '')
     };
