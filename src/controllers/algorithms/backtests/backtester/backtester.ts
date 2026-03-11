@@ -132,6 +132,8 @@ export default class Backtester extends Base {
   private updateExistingPosition(position: Position, kline: Kline): Position {
     const entryPrice: number = position.entryPrice;
     const currentClose: number = kline.prices.close;
+    const currentHigh: number = kline.prices.high;
+    const currentLow: number = kline.prices.low;
     const priceChange: number = this.calcPriceChange(entryPrice, currentClose);
 
     if (position.size > 0) {  // long
@@ -141,24 +143,43 @@ export default class Backtester extends Base {
     }
 
     position.price = currentClose;
-    this.updateExistingPositionTrailingStopLoss(position, kline);
+    position.highestPrice = Math.max(position.highestPrice || 0, currentHigh);
+    position.lowestPrice = Math.min(position.lowestPrice || Infinity, currentLow);
+    this.updateExistingPositionTrailingStopLoss(position);
     return position;
   }
 
-  private updateExistingPositionTrailingStopLoss(position: Position, kline: Kline) {
-    const currentHigh: number = kline.prices.high;
-    const currentLow: number = kline.prices.low;
+  private updateExistingPositionTrailingStopLoss(position: Position) {
     const trailingStopLoss: TrailingStopLoss | undefined = position.openSignalReference.signal.positionCloseTrigger?.tSl;
 
     if (trailingStopLoss) {
-      if (position.size > 0) { // long
-        const newStopLossPrice: number = currentHigh * (1 - trailingStopLoss.stopLoss);
+      const baseStopLoss: number = trailingStopLoss.stopLoss;
+      const percentOfProfit: number | undefined = trailingStopLoss.percentOfProfit;
+
+      if (position.size > 0) {  // long
+        const baseSLPrice: number = position.highestPrice! * (1 - baseStopLoss);
+        let newStopLossPrice: number = baseSLPrice;
+
+        if (percentOfProfit) {
+          const absoluteProfit = position.highestPrice! - position.entryPrice;
+          const profitToKeep = absoluteProfit * percentOfProfit;
+          const percentOfProfitSLPrice = position.entryPrice + profitToKeep;
+          newStopLossPrice = Math.min(baseSLPrice, percentOfProfitSLPrice);
+        }
 
         if (newStopLossPrice > position.stopLossPrice!) {
           position.stopLossPrice = newStopLossPrice;
         }
       } else {  // short
-        const newStopLossPrice: number = currentLow * (1 + trailingStopLoss.stopLoss);
+        const baseSLPrice: number = position.lowestPrice! * (1 + baseStopLoss);
+        let newStopLossPrice: number = baseSLPrice;
+
+        if (percentOfProfit) {
+          const absoluteProfit = position.entryPrice - position.lowestPrice!;
+          const profitToKeep = absoluteProfit * percentOfProfit;
+          const percentOfProfitSLPrice = position.lowestPrice! + profitToKeep;
+          newStopLossPrice = Math.max(baseSLPrice, percentOfProfitSLPrice);
+        }
 
         if (newStopLossPrice < position.stopLossPrice!) {
           position.stopLossPrice = newStopLossPrice;

@@ -446,7 +446,7 @@ describe('Backtester', () => {
       },
       {
         ...baseKline,
-        prices: { ...basePrices, close: 130, high: 150, low: 130 },
+        prices: { ...basePrices, close: 130, high: 140, low: 130 },
         algorithms: { [Algorithm.Dca]: { signals: [] } }
       }
     ];
@@ -491,5 +491,109 @@ describe('Backtester', () => {
     expect(backtestsShortTsl[2].percentProfit).toBeCloseTo(20);
     expect(backtestsShortTsl[3].percentProfit).toBeCloseTo(12);
     expect(backtestsShortTsl[3].signals[0].signal).toBe(Signal.StopLoss);
+  });
+
+  it('should calculate percentProfit correctly with trailing stop loss and percentOfProfit', () => {
+    // long triggered by percentOfProfit
+    const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const basePrices = { open: 0 };
+
+    const klinesLongTslWithPercentProfit: Kline[] = [
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 100, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 150, high: 150, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 200, high: 200, low: 150 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 160, high: 200, low: 140 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      }
+    ];
+
+    const klinesWithProfitLongTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesLongTslWithPercentProfit, algorithm, 0);
+    const backtestsLongTslPercentProfit: BacktestData[] = klinesWithProfitLongTslPercentProfit.map(k => k.algorithms[algorithm]!);
+
+    expect(backtestsLongTslPercentProfit[0].percentProfit).toBeCloseTo(0);
+    expect(backtestsLongTslPercentProfit[1].percentProfit).toBeCloseTo(50);
+    expect(backtestsLongTslPercentProfit[2].percentProfit).toBeCloseTo(100);
+    expect(backtestsLongTslPercentProfit[3].percentProfit).toBeCloseTo(50); // Stopped out at 150 (locked in 50% of profit)
+    expect(backtestsLongTslPercentProfit[3].signals[0].signal).toBe(Signal.StopLoss);
+
+    // short triggered by percentOfProfit
+    const klinesShortTslWithPercentProfit: Kline[] = [
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 100, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 85, high: 100, low: 85 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 50, high: 85, low: 50 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 70, high: 75, low: 50 },  // 75 is exactly half the profit, so stop loss is not triggered yet
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 76, high: 80, low: 70 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      }
+    ];
+
+    const klinesWithProfitShortTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesShortTslWithPercentProfit, algorithm, 0);
+    const backtestsShortTslPercentProfit: BacktestData[] = klinesWithProfitShortTslPercentProfit.map(k => k.algorithms[algorithm]!);
+
+    expect(backtestsShortTslPercentProfit[0].percentProfit).toBeCloseTo(0);
+    expect(backtestsShortTslPercentProfit[1].percentProfit).toBeCloseTo(15);
+    expect(backtestsShortTslPercentProfit[2].percentProfit).toBeCloseTo(50);
+    expect(backtestsShortTslPercentProfit[3].percentProfit).toBeCloseTo(30);
+    expect(backtestsShortTslPercentProfit[4].percentProfit).toBeCloseTo(25);
+    expect(backtestsShortTslPercentProfit[4].signals[0].signal).toBe(Signal.StopLoss);
+
+    // long triggered by stopLoss
+    const klinesLongTslStopLossTriggersFirst: Kline[] = [
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 100, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.01, percentOfProfit: 0.5 } } }] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 101, high: 101, low: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+      {
+        ...baseKline,
+        prices: { ...basePrices, close: 100, high: 100, low: 99 },
+        algorithms: { [Algorithm.Dca]: { signals: [] } }
+      },
+    ];
+
+    const klinesWithProfitLongStopLossTriggersFirst: Kline[] = backtester.calcBacktestPerformance(klinesLongTslStopLossTriggersFirst, algorithm, 0);
+    const backtestsLongStopLossTriggersFirst: BacktestData[] = klinesWithProfitLongStopLossTriggersFirst.map(k => k.algorithms[algorithm]!);
+
+    expect(backtestsLongStopLossTriggersFirst[0].percentProfit).toBeCloseTo(0);
+    expect(backtestsLongStopLossTriggersFirst[1].percentProfit).toBeCloseTo(1);
+    expect(backtestsLongStopLossTriggersFirst[2].percentProfit).toBeCloseTo(-0.01);
+    expect(backtestsLongStopLossTriggersFirst[2].signals[0].signal).toBe(Signal.StopLoss);
   });
 });

@@ -153,6 +153,7 @@ export interface TakeProfitStopLoss {
 
 export interface TrailingStopLoss {
   stopLoss: number;
+  percentOfProfit?: number; // if set, take the larger effective sl % of both
 }
 
 export interface MultiBenchmark {
@@ -218,6 +219,8 @@ export interface Position {
   entrySize: number; // size at entry, does not change
   price: number;
   entryPrice: number;
+  highestPrice?: number; // optional because we can't evaluate intra kline if the high was reached after the entryPrice
+  lowestPrice?: number; // as above
   liquidationPrice: number;
   takeProfitPrice?: number;
   stopLossPrice?: number;
