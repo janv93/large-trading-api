@@ -12,7 +12,7 @@ export class ChartService {
   // general
   public exchange = Exchange.Binance;
   public symbol = 'ETHUSDT';  // ignored for multi
-  public timeframe = Timeframe._1Day;
+  public timeframe = Timeframe._1Hour;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;
 
