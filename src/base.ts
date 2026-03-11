@@ -56,7 +56,7 @@ export default abstract class Base {
 
     Object.keys(queryObj).forEach(param => {
       const query = param + '=' + queryObj[param];
-      firstParam ? url += '?' : url += '&';
+      url += firstParam ? '?' : '&';
       url += query;
       firstParam = false;
     });
@@ -70,7 +70,7 @@ export default abstract class Base {
 
     Object.keys(queryObj).forEach(param => {
       const query = param + '=' + queryObj[param];
-      firstParam ? url += '?' : url += '&';
+      url += firstParam ? '?' : '&';
       url += query;
       firstParam = false;
     });
@@ -264,5 +264,9 @@ export default abstract class Base {
   protected isForceCloseSignal(signal?: Signal): boolean {
     const isCloseSignal: boolean = (this.isCloseSignal(signal));
     return isCloseSignal && signal !== Signal.Close;
+  }
+
+  protected getRandomBoolean(): boolean {
+    return Math.random() < 0.5;
   }
 }
