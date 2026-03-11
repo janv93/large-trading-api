@@ -24,7 +24,7 @@ export default class TrendLineBreakthrough extends Base {
         const trendLineCloses: number[] = klines.slice(trendLine.startIndex, trendLine.endIndex).map(kline => kline.prices.close);
         const averagePriceChange: number = this.calcAverageChangeInPercent(trendLineCloses);
         const tp: number = averagePriceChange * 5;
-        const sl: number = averagePriceChange * 1;
+        const sl: number = averagePriceChange * 2;
         const slAsPercentOfProfit: number = 0.2;
 
         if (position === TrendLinePosition.Above) {
