@@ -291,309 +291,330 @@ describe('Backtester', () => {
     expect(backtests[2].percentProfit).toBe(-40);
   });
 
-  it('should calculate percentProfit correctly in case of tp/sl', () => {
+  describe('Backtester: should calculate percentProfit correctly in case of tp/sl', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
-    const klinesBuySl: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 0, low: 0 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 110, high: 100, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 100, low: 89 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 80, high: 100, low: 80 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
+    it('long sl', () => {
+      const klinesBuySl: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 0, low: 0 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 110, high: 100, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 89 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 80, high: 100, low: 80 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
 
-    const klinesWithProfitBuySl: Kline[] = backtester.calcBacktestPerformance(klinesBuySl, algorithm, 0);
-    const backtestsBuySl: BacktestData[] = klinesWithProfitBuySl.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitBuySl: Kline[] = backtester.calcBacktestPerformance(klinesBuySl, algorithm, 0);
+      const backtestsBuySl: BacktestData[] = klinesWithProfitBuySl.map(k => k.algorithms[algorithm]!);
 
-    expect(backtestsBuySl[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsBuySl[1].percentProfit).toBeCloseTo(10);
-    expect(backtestsBuySl[2].percentProfit).toBeCloseTo(-10);
-    expect(backtestsBuySl[2].signals[0].signal).toBe(Signal.StopLoss);
-    expect(backtestsBuySl[3].percentProfit).toBeCloseTo(-10);
+      expect(backtestsBuySl[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsBuySl[1].percentProfit).toBeCloseTo(10);
+      expect(backtestsBuySl[2].percentProfit).toBeCloseTo(-10);
+      expect(backtestsBuySl[2].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsBuySl[3].percentProfit).toBeCloseTo(-10);
+    });
 
-    const klinesBuyTp: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 0, low: 0 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 110, high: 100, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 130, high: 130, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 150, high: 150, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
+    it('long tp', () => {
+      const klinesBuyTp: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 0, low: 0 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 110, high: 100, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 130, high: 130, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 150, high: 150, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
 
-    const klinesWithProfitBuyTp: Kline[] = backtester.calcBacktestPerformance(klinesBuyTp, algorithm, 0);
-    const backtestsBuyTp: BacktestData[] = klinesWithProfitBuyTp.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitBuyTp: Kline[] = backtester.calcBacktestPerformance(klinesBuyTp, algorithm, 0);
+      const backtestsBuyTp: BacktestData[] = klinesWithProfitBuyTp.map(k => k.algorithms[algorithm]!);
 
-    expect(backtestsBuyTp[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsBuyTp[1].percentProfit).toBeCloseTo(10);
-    expect(backtestsBuyTp[2].percentProfit).toBeCloseTo(20);
-    expect(backtestsBuyTp[2].signals[0].signal).toBe(Signal.TakeProfit);
-    expect(backtestsBuyTp[3].percentProfit).toBeCloseTo(20);
+      expect(backtestsBuyTp[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsBuyTp[1].percentProfit).toBeCloseTo(10);
+      expect(backtestsBuyTp[2].percentProfit).toBeCloseTo(20);
+      expect(backtestsBuyTp[2].signals[0].signal).toBe(Signal.TakeProfit);
+      expect(backtestsBuyTp[3].percentProfit).toBeCloseTo(20);
 
-    const klinesSellSl: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 0, low: 0 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 110, high: 110, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 130, high: 130, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 140, high: 140, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
+    });
 
-    const klinesWithProfitSellSl: Kline[] = backtester.calcBacktestPerformance(klinesSellSl, algorithm, 0);
-    const backtestsSellSl: BacktestData[] = klinesWithProfitSellSl.map(k => k.algorithms[algorithm]!);
+    it('short sl', () => {
+      const klinesSellSl: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 0, low: 0 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 110, high: 110, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 130, high: 130, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 140, high: 140, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
 
-    expect(backtestsSellSl[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsSellSl[1].percentProfit).toBeCloseTo(-10);
-    expect(backtestsSellSl[2].percentProfit).toBeCloseTo(-10);
-    expect(backtestsSellSl[2].signals[0].signal).toBe(Signal.StopLoss);
-    expect(backtestsSellSl[3].percentProfit).toBeCloseTo(-10);
+      const klinesWithProfitSellSl: Kline[] = backtester.calcBacktestPerformance(klinesSellSl, algorithm, 0);
+      const backtestsSellSl: BacktestData[] = klinesWithProfitSellSl.map(k => k.algorithms[algorithm]!);
 
-    const klinesSellTp: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 0, low: 0 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 90, high: 100, low: 90 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 70, high: 100, low: 70 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 60, high: 100, low: 60 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
+      expect(backtestsSellSl[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsSellSl[1].percentProfit).toBeCloseTo(-10);
+      expect(backtestsSellSl[2].percentProfit).toBeCloseTo(-10);
+      expect(backtestsSellSl[2].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsSellSl[3].percentProfit).toBeCloseTo(-10);
+    });
 
-    const klinesWithProfitSellTp: Kline[] = backtester.calcBacktestPerformance(klinesSellTp, algorithm, 0);
-    const backtestsSellTp: BacktestData[] = klinesWithProfitSellTp.map(k => k.algorithms[algorithm]!);
+    it('short tp', () => {
+      const klinesSellTp: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 0, low: 0 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 90, high: 100, low: 90 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 70, high: 100, low: 70 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 60, high: 100, low: 60 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
 
-    expect(backtestsSellTp[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsSellTp[1].percentProfit).toBeCloseTo(10);
-    expect(backtestsSellTp[2].percentProfit).toBeCloseTo(20);
-    expect(backtestsSellTp[2].signals[0].signal).toBe(Signal.TakeProfit);
-    expect(backtestsSellTp[3].percentProfit).toBeCloseTo(20);
+      const klinesWithProfitSellTp: Kline[] = backtester.calcBacktestPerformance(klinesSellTp, algorithm, 0);
+      const backtestsSellTp: BacktestData[] = klinesWithProfitSellTp.map(k => k.algorithms[algorithm]!);
+
+      expect(backtestsSellTp[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsSellTp[1].percentProfit).toBeCloseTo(10);
+      expect(backtestsSellTp[2].percentProfit).toBeCloseTo(20);
+      expect(backtestsSellTp[2].signals[0].signal).toBe(Signal.TakeProfit);
+      expect(backtestsSellTp[3].percentProfit).toBeCloseTo(20);
+    });
   });
 
-  it('should calculate percentProfit correctly with trailing stop loss', () => {
+  describe('Backtester: should calculate percentProfit correctly with trailing stop loss', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
-    const klinesLongTsl: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 100, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 120, high: 120, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 150, high: 150, low: 120 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 130, high: 140, low: 130 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
+    it('long', () => {
+      const klinesLongTsl: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 120, high: 120, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 150, high: 150, low: 120 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 130, high: 140, low: 130 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
 
-    const klinesWithProfitLongTsl: Kline[] = backtester.calcBacktestPerformance(klinesLongTsl, algorithm, 0);
-    const backtestsLongTsl: BacktestData[] = klinesWithProfitLongTsl.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitLongTsl: Kline[] = backtester.calcBacktestPerformance(klinesLongTsl, algorithm, 0);
+      const backtestsLongTsl: BacktestData[] = klinesWithProfitLongTsl.map(k => k.algorithms[algorithm]!);
 
-    expect(backtestsLongTsl[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsLongTsl[1].percentProfit).toBeCloseTo(20);
-    expect(backtestsLongTsl[2].percentProfit).toBeCloseTo(50);
-    expect(backtestsLongTsl[3].percentProfit).toBeCloseTo(35); // Stopped out at 135
-    expect(backtestsLongTsl[3].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsLongTsl[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsLongTsl[1].percentProfit).toBeCloseTo(20);
+      expect(backtestsLongTsl[2].percentProfit).toBeCloseTo(50);
+      expect(backtestsLongTsl[3].percentProfit).toBeCloseTo(35); // Stopped out at 135
+      expect(backtestsLongTsl[3].signals[0].signal).toBe(Signal.StopLoss);
 
-    const klinesShortTsl: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 100, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 90, high: 90, low: 90 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 80, high: 80, low: 80 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 115, high: 115, low: 80 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
 
-    const klinesWithProfitShortTsl: Kline[] = backtester.calcBacktestPerformance(klinesShortTsl, algorithm, 0);
-    const backtestsShortTsl: BacktestData[] = klinesWithProfitShortTsl.map(k => k.algorithms[algorithm]!);
+    });
 
-    expect(backtestsShortTsl[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsShortTsl[1].percentProfit).toBeCloseTo(10);
-    expect(backtestsShortTsl[2].percentProfit).toBeCloseTo(20);
-    expect(backtestsShortTsl[3].percentProfit).toBeCloseTo(12);
-    expect(backtestsShortTsl[3].signals[0].signal).toBe(Signal.StopLoss);
+    it('short', () => {
+      const klinesShortTsl: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 90, high: 90, low: 90 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 80, high: 80, low: 80 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 115, high: 115, low: 80 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
+
+      const klinesWithProfitShortTsl: Kline[] = backtester.calcBacktestPerformance(klinesShortTsl, algorithm, 0);
+      const backtestsShortTsl: BacktestData[] = klinesWithProfitShortTsl.map(k => k.algorithms[algorithm]!);
+
+      expect(backtestsShortTsl[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsShortTsl[1].percentProfit).toBeCloseTo(10);
+      expect(backtestsShortTsl[2].percentProfit).toBeCloseTo(20);
+      expect(backtestsShortTsl[3].percentProfit).toBeCloseTo(12);
+      expect(backtestsShortTsl[3].signals[0].signal).toBe(Signal.StopLoss);
+    });
   });
 
-  it('should calculate percentProfit correctly with trailing stop loss and percentOfProfit', () => {
-    // long triggered by percentOfProfit
+  describe('Backtester: should calculate percentProfit correctly with trailing stop loss and percentOfProfit', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
-    const klinesLongTslWithPercentProfit: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 100, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 150, high: 150, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 200, high: 200, low: 150 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 160, high: 200, low: 140 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
+    it('long triggered by percentOfProfit', () => {
+      // long triggered by percentOfProfit
+      const klinesLongTslWithPercentProfit: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 150, high: 150, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 200, high: 200, low: 150 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 160, high: 200, low: 140 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
 
-    const klinesWithProfitLongTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesLongTslWithPercentProfit, algorithm, 0);
-    const backtestsLongTslPercentProfit: BacktestData[] = klinesWithProfitLongTslPercentProfit.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitLongTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesLongTslWithPercentProfit, algorithm, 0);
+      const backtestsLongTslPercentProfit: BacktestData[] = klinesWithProfitLongTslPercentProfit.map(k => k.algorithms[algorithm]!);
 
-    expect(backtestsLongTslPercentProfit[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsLongTslPercentProfit[1].percentProfit).toBeCloseTo(50);
-    expect(backtestsLongTslPercentProfit[2].percentProfit).toBeCloseTo(100);
-    expect(backtestsLongTslPercentProfit[3].percentProfit).toBeCloseTo(50); // Stopped out at 150 (locked in 50% of profit)
-    expect(backtestsLongTslPercentProfit[3].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsLongTslPercentProfit[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsLongTslPercentProfit[1].percentProfit).toBeCloseTo(50);
+      expect(backtestsLongTslPercentProfit[2].percentProfit).toBeCloseTo(100);
+      expect(backtestsLongTslPercentProfit[3].percentProfit).toBeCloseTo(50); // Stopped out at 150 (locked in 50% of profit)
+      expect(backtestsLongTslPercentProfit[3].signals[0].signal).toBe(Signal.StopLoss);
+    });
 
-    // short triggered by percentOfProfit
-    const klinesShortTslWithPercentProfit: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 100, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 85, high: 100, low: 85 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 50, high: 85, low: 50 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 70, high: 75, low: 50 },  // 75 is exactly half the profit, so stop loss is not triggered yet
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 76, high: 80, low: 70 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      }
-    ];
+    it('short triggered by percentOfProfit', () => {
+      // short triggered by percentOfProfit
+      const klinesShortTslWithPercentProfit: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 85, high: 100, low: 85 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 50, high: 85, low: 50 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 70, high: 75, low: 50 },  // 75 is exactly half the profit, so stop loss is not triggered yet
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 76, high: 80, low: 70 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
 
-    const klinesWithProfitShortTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesShortTslWithPercentProfit, algorithm, 0);
-    const backtestsShortTslPercentProfit: BacktestData[] = klinesWithProfitShortTslPercentProfit.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitShortTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesShortTslWithPercentProfit, algorithm, 0);
+      const backtestsShortTslPercentProfit: BacktestData[] = klinesWithProfitShortTslPercentProfit.map(k => k.algorithms[algorithm]!);
 
-    expect(backtestsShortTslPercentProfit[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsShortTslPercentProfit[1].percentProfit).toBeCloseTo(15);
-    expect(backtestsShortTslPercentProfit[2].percentProfit).toBeCloseTo(50);
-    expect(backtestsShortTslPercentProfit[3].percentProfit).toBeCloseTo(30);
-    expect(backtestsShortTslPercentProfit[4].percentProfit).toBeCloseTo(25);
-    expect(backtestsShortTslPercentProfit[4].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsShortTslPercentProfit[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsShortTslPercentProfit[1].percentProfit).toBeCloseTo(15);
+      expect(backtestsShortTslPercentProfit[2].percentProfit).toBeCloseTo(50);
+      expect(backtestsShortTslPercentProfit[3].percentProfit).toBeCloseTo(30);
+      expect(backtestsShortTslPercentProfit[4].percentProfit).toBeCloseTo(25);
+      expect(backtestsShortTslPercentProfit[4].signals[0].signal).toBe(Signal.StopLoss);
+    });
 
-    // long triggered by stopLoss
-    const klinesLongTslStopLossTriggersFirst: Kline[] = [
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 100, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.01, percentOfProfit: 0.5 } } }] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 101, high: 101, low: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-      {
-        ...baseKline,
-        prices: { ...basePrices, close: 100, high: 100, low: 99 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
-      },
-    ];
+    it('long triggered by stop loss', () => {
+      // long triggered by stopLoss
+      const klinesLongTslStopLossTriggersFirst: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.01, percentOfProfit: 0.5 } } }] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 101, high: 101, low: 100 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 99 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+      ];
 
-    const klinesWithProfitLongStopLossTriggersFirst: Kline[] = backtester.calcBacktestPerformance(klinesLongTslStopLossTriggersFirst, algorithm, 0);
-    const backtestsLongStopLossTriggersFirst: BacktestData[] = klinesWithProfitLongStopLossTriggersFirst.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitLongStopLossTriggersFirst: Kline[] = backtester.calcBacktestPerformance(klinesLongTslStopLossTriggersFirst, algorithm, 0);
+      const backtestsLongStopLossTriggersFirst: BacktestData[] = klinesWithProfitLongStopLossTriggersFirst.map(k => k.algorithms[algorithm]!);
 
-    expect(backtestsLongStopLossTriggersFirst[0].percentProfit).toBeCloseTo(0);
-    expect(backtestsLongStopLossTriggersFirst[1].percentProfit).toBeCloseTo(1);
-    expect(backtestsLongStopLossTriggersFirst[2].percentProfit).toBeCloseTo(-0.01);
-    expect(backtestsLongStopLossTriggersFirst[2].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsLongStopLossTriggersFirst[0].percentProfit).toBeCloseTo(0);
+      expect(backtestsLongStopLossTriggersFirst[1].percentProfit).toBeCloseTo(1);
+      expect(backtestsLongStopLossTriggersFirst[2].percentProfit).toBeCloseTo(-0.01);
+      expect(backtestsLongStopLossTriggersFirst[2].signals[0].signal).toBe(Signal.StopLoss);
+    });
   });
 });
