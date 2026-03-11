@@ -588,7 +588,8 @@ describe('Backtester', () => {
       expect(backtestsShortTslPercentProfit[4].signals[0].signal).toBe(Signal.StopLoss);
     });
 
-    fit('long triggered by stop loss', () => {
+
+    it('long triggered by stop loss', () => {
       // long triggered by stopLoss
       const klinesLongTslStopLossTriggersFirst: Kline[] = [
         {
