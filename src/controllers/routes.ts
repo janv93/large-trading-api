@@ -139,7 +139,7 @@ export default class Routes extends Base {
   }
 
   private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, percentProfit } = params;
+    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, percentOfProfit } = params;
 
     klines.forEach((kline: Kline) => {
       kline.algorithms[algorithm] = {
@@ -167,7 +167,7 @@ export default class Routes extends Base {
       case Algorithm.TwitterSentiment:
         return await this.twitterSentiment.setSignals(klines, algorithm);
       case Algorithm.TrendLine:
-        return await this.trendLineBreakthrough.setSignals(klines, algorithm, percentProfit);
+        return await this.trendLineBreakthrough.setSignals(klines, algorithm, percentOfProfit);
       default: throw 'invalid';
     }
   }

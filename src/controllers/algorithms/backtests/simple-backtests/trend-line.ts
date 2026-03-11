@@ -7,8 +7,8 @@ export default class TrendLineBreakthrough extends Base {
   private charting = new Charting();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, percentProfit: number): Kline[] {
-    this.charting.addTrendLines(klines, 40, 150);
+  public setSignals(klines: Kline[], algorithm: Algorithm, percentOfProfit: number): Kline[] {
+    this.charting.addTrendLines(klines, 100, 200);
     this.charting.addTrendLineBreakthroughs(klines);
     this.charting.filterTrendLinesWithoutBreakthroughs(klines);
 
@@ -27,9 +27,9 @@ export default class TrendLineBreakthrough extends Base {
         const sl: number = averagePriceChange * 2;
 
         if (position === TrendLinePosition.Above) {
-          this.openBuyPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentProfit);
+          this.openBuyPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
         } else if (position === TrendLinePosition.Below) {
-          this.openSellPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentProfit);
+          this.openSellPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
         }
       });
     });
@@ -37,7 +37,7 @@ export default class TrendLineBreakthrough extends Base {
     return klines;
   }
 
-  private openBuyPosition(kline: Kline, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, slAsPercentOfProfit: number): void {
+  private openBuyPosition(kline: Kline, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
 
@@ -53,12 +53,13 @@ export default class TrendLineBreakthrough extends Base {
       } : {
         tSl: {
           stopLoss: sl,
+          percentOfProfit
         }
       }
     });
   }
 
-  private openSellPosition(kline: Kline, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, slAsPercentOfProfit: number): void {
+  private openSellPosition(kline: Kline, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
 
@@ -74,7 +75,7 @@ export default class TrendLineBreakthrough extends Base {
       } : {
         tSl: {
           stopLoss: sl,
-          percentOfProfit: slAsPercentOfProfit
+          percentOfProfit
         }
       }
     });
