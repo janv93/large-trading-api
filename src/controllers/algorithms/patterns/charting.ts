@@ -170,7 +170,7 @@ export default class Charting extends Base {
     const lineFunction = trendLine.function;
     const position: TrendLinePosition = trendLine.position;
     const startIndex: number = trendLine.endIndex + 1;
-    const maxIndex: number = trendLine.endIndex + trendLine.length * 2; // the max distance of the end of the trend line to the breakthrough point, after that it is considered too far away to belong to the line
+    const maxIndex: number = trendLine.endIndex + trendLine.length * 1; // the max distance of the end of the trend line to the breakthrough point, after that it is considered too far away to belong to the line
     const candidateKlines: Kline[] = klines.slice(startIndex, maxIndex);
     let breakThroughIndex = -1;
 
@@ -210,12 +210,12 @@ export default class Charting extends Base {
     const endIndex: number = trendLine.endIndex;
     const uninterrupted = this.isTrendLineUninterrupted(klines, trendLine);
     const length = trendLine.length;
-    const leftBuffer = Math.round(length * 0.2);  // some buffer to the left of the start of the line
+    const leftBuffer = Math.round(length * 0.2);
     const leftBufferTrendLine: TrendLine = this.clone(trendLine);
     leftBufferTrendLine.startIndex = startIndex - leftBuffer;
     leftBufferTrendLine.endIndex = startIndex;
     const leftBufferUninterrupted = this.isTrendLineUninterrupted(klines, leftBufferTrendLine); // make sure line extends uninterrupted to the left beyond the start, similar to how a pivot point must have some left klines to be valid
-    const rightBuffer = Math.round(length * 0.2); // same logic to the right
+    const rightBuffer = Math.round(length * 0.2);
     const rightBufferTrendLine: TrendLine = this.clone(trendLine);
     rightBufferTrendLine.startIndex = endIndex;
     rightBufferTrendLine.endIndex = endIndex + rightBuffer;
