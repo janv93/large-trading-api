@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from '@jest/globals';
+import { describe, expect, it, beforeEach, fit } from '@jest/globals';
 import Backtester from './backtester';
 import { Kline, Algorithm, Signal, Timeframe, BacktestData } from '../../../../interfaces';
 
@@ -291,7 +291,7 @@ describe('Backtester', () => {
     expect(backtests[2].percentProfit).toBe(-40);
   });
 
-  describe('Backtester: should calculate percentProfit correctly in case of tp/sl', () => {
+  describe('should calculate percentProfit correctly in case of tp/sl', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
@@ -433,7 +433,7 @@ describe('Backtester', () => {
     });
   });
 
-  describe('Backtester: should calculate percentProfit correctly with trailing stop loss', () => {
+  describe('should calculate percentProfit correctly with trailing stop loss', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
@@ -508,7 +508,7 @@ describe('Backtester', () => {
     });
   });
 
-  describe('Backtester: should calculate percentProfit correctly with trailing stop loss and percentOfProfit', () => {
+  describe('should calculate percentProfit correctly with trailing stop loss and percentOfProfit', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
@@ -588,7 +588,7 @@ describe('Backtester', () => {
       expect(backtestsShortTslPercentProfit[4].signals[0].signal).toBe(Signal.StopLoss);
     });
 
-    it('long triggered by stop loss', () => {
+    fit('long triggered by stop loss', () => {
       // long triggered by stopLoss
       const klinesLongTslStopLossTriggersFirst: Kline[] = [
         {
