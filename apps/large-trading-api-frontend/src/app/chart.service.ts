@@ -16,6 +16,11 @@ export class ChartService {
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.04;
 
+  // multi
+  public isMulti = false;
+  public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
+  public multiRank = 15;  // top {multiRank} tickers of each category. e.g. top 10 of stocks, cryptos etc
+
   // algorithm settings
   // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
   public algorithms = [Algorithm.TrendLine]; // if second algorithm is set, will draw a second profit line for comparison
@@ -26,11 +31,6 @@ export class ChartService {
   public momentumStreak = [5, 5];
   public meanReversionThreshold = [0.15, 0.15];
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
-
-  // multi
-  public isMulti = false;
-  public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
-  public multiRank = 15;  // top {multiRank} tickers of each category. e.g. top 10 of stocks, cryptos etc
 
   // loading screen
   public loading = true;
