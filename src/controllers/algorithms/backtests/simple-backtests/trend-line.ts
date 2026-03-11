@@ -7,7 +7,7 @@ export default class TrendLineBreakthrough extends Base {
   private charting = new Charting();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
-  public setSignals(klines: Kline[], algorithm: Algorithm): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, percentProfit: number): Kline[] {
     this.charting.addTrendLines(klines, 40, 150);
     this.charting.addTrendLineBreakthroughs(klines);
     this.charting.filterTrendLinesWithoutBreakthroughs(klines);
@@ -25,12 +25,11 @@ export default class TrendLineBreakthrough extends Base {
         const averagePriceChange: number = this.calcAverageChangeInPercent(trendLineCloses);
         const tp: number = averagePriceChange * 5;
         const sl: number = averagePriceChange * 2;
-        const slAsPercentOfProfit: number = 0.2;
 
         if (position === TrendLinePosition.Above) {
-          this.openBuyPosition(kline, algorithm, score, breakthoughPrice, tp, sl, slAsPercentOfProfit);
+          this.openBuyPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentProfit);
         } else if (position === TrendLinePosition.Below) {
-          this.openSellPosition(kline, algorithm, score, breakthoughPrice, tp, sl, slAsPercentOfProfit);
+          this.openSellPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentProfit);
         }
       });
     });
