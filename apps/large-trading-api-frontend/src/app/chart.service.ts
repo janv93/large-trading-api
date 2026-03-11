@@ -31,6 +31,7 @@ export class ChartService {
   public momentumStreak = [5, 5];
   public meanReversionThreshold = [0.15, 0.15];
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
+  public trendLinePercentProfit = [0.3, 0.3];
 
   // loading screen
   public loading = true;

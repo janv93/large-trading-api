@@ -111,7 +111,8 @@ export class HttpService {
         };
       case Algorithm.TrendLine:
         return {
-          algorithm
+          algorithm,
+          percentProfit: this.chartService.trendLinePercentProfit[index]
         }
     }
   }
