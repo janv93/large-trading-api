@@ -32,7 +32,7 @@ export default class Logger {
     reset: '\x1b[0m'
   };
 
-  public log(...args: any[]) {
+  public log(...args: any[]): void {
     const caller = args.pop();
 
     if (this.passesLogLevelCheck(caller)) {
@@ -40,7 +40,7 @@ export default class Logger {
     }
   }
 
-  public logErr(...args: any[]) {
+  public logErr(...args: any[]): void {
     const caller = args.pop();
 
     if (this.passesLogLevelCheck(caller)) {
@@ -48,10 +48,7 @@ export default class Logger {
     }
   }
 
-  public logProgress(...args: any[]) {
-    const caller = args.pop();
-    const percent: number = args[0];
-
+  public logProgress(percent: number, caller: string): void {
     if (this.passesLogLevelCheck(caller)) {
       // progress bar with 20 segments, each segment represents 5%
       const filled = Math.min(20, Math.floor(percent / 5));
@@ -62,7 +59,7 @@ export default class Logger {
     }
   }
 
-  private getParentLog(caller: string) {
+  private getParentLog(caller: string): string {
     const maxLength = 15;
     let color: string;
 
@@ -78,7 +75,7 @@ export default class Logger {
       default: color = this.colors.reset; break;
     }
 
-    const paddedName = caller.toUpperCase().padEnd(maxLength);
+    const paddedName = caller.toUpperCase().slice(0, maxLength - 2).padEnd(maxLength);
     return `${color}${paddedName}|${this.colors.reset}`;
   }
 
