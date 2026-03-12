@@ -1,5 +1,5 @@
 import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, ITimeScaleApi, WhitespaceData } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, ITimeScaleApi, WhitespaceData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi } from 'lightweight-charts';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -37,6 +37,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private isCrosshairSubscribed = false;
   private executingCrosshairMove = false;
   private currentHighlightedTrendLines: ISeriesApi<'Line'>[] = [];
+  private currentHighlightedOpenTimes = new Set<number>();
+  private seriesMarkersPlugin: ISeriesMarkersPluginApi<Time> | undefined;
 
   constructor(
     public chartService: ChartService,
@@ -120,7 +122,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     } else {
       this.trendLineSeries.forEach(series => this.chart.removeSeries(series));
       this.trendLineSeries = [];
-      this.candlestickSeries.setMarkers(this.markersSignals);
+      this.seriesMarkersPlugin!.setMarkers(this.markersSignals);
     }
   }
 
@@ -184,7 +186,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.chart.removeSeries(this.candlestickSeries);
     }
 
-    this.candlestickSeries = this.chart.addCandlestickSeries({ priceScaleId: 'right' });
+    this.candlestickSeries = this.chart.addSeries(CandlestickSeries, { priceScaleId: 'right' });
+    this.seriesMarkersPlugin = createSeriesMarkers(this.candlestickSeries, []);
     this.setCandlestickSeriesData();
     this.setSignalsMarkers();
 
@@ -199,7 +202,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.profitSeries = [];
 
     this.chartService.algorithms.forEach((algorithm, index) => {
-      this.profitSeries.push(this.chart.addLineSeries({ priceScaleId: index === 0 ? 'left' : 'left2' }));
+      this.profitSeries.push(this.chart.addSeries(LineSeries, { priceScaleId: index === 0 ? 'left' : 'left2' }));
       this.setProfitSeriesData(index);  // init with no commission
 
       this.profitSeries[index].applyOptions({
@@ -218,7 +221,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.chart.removeSeries(this.openPositionSizeSeries);
       }
 
-      this.openPositionSizeSeries = this.chart.addHistogramSeries({ priceScaleId: 'histogram' });
+      this.openPositionSizeSeries = this.chart.addSeries(HistogramSeries, { priceScaleId: 'histogram' });
       this.setOpenPositionSizeSeriesData();
 
       this.openPositionSizeSeries.applyOptions({
@@ -292,7 +295,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private drawMarkers() {
     const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
     allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
-    this.candlestickSeries.setMarkers(allMarkers);
+    this.seriesMarkersPlugin!.setMarkers(allMarkers);
   }
 
   private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
@@ -314,7 +317,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const isLiquidation: string | undefined = hasLiquidation && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'LIQ' : undefined;
     const isTakeProfit: string | undefined = hasTakeProfit && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'TP' : undefined;
     const isStopLoss: string | undefined = hasStopLoss && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'SL' : undefined;
-    if (isStopLoss) console.log(kline);
     const isCloseBuy: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasBuy && !hasSell ? 'CBUY' : undefined;
     const isCloseSell: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasSell && !hasBuy ? 'CSELL' : undefined;
     const isMix: string | undefined = hasBuy && hasSell || hasClose && hasForceClose || hasMultipleForceClose ? 'MIX' : undefined;
@@ -408,7 +410,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       }
 
       const data = [start, end];
-      this.trendLineSeries.push(this.chart.addLineSeries({ priceScaleId: 'right' }));
+      this.trendLineSeries.push(this.chart.addSeries(LineSeries, { priceScaleId: 'right' }));
       this.trendLineSeries.at(-1)!.setData(data);
 
       this.trendLineSeries.at(-1)!.applyOptions({
@@ -495,25 +497,21 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private highlightOpenSignals(kline: Kline) {
-    const algorithm: Algorithm = this.chartService.algorithms[0];
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
-    const signals: BacktestSignal[] = backtest.signals;
-    const openTimes: number[] = [];
+    const backtest: BacktestData = kline.algorithms[this.chartService.algorithms[0]]!;
 
-    signals.forEach((signal: BacktestSignal) => {
-      if (signal.openSignalReferences) {
-        signal.openSignalReferences.forEach((signalReference: SignalReference) => {
-          openTimes.push(signalReference.openTime);
-        });
-      }
-    });
+    const newOpenTimes = new Set(
+      backtest.signals.flatMap(s => s.openSignalReferences?.map(r => r.openTime) ?? [])
+    );
+
+    const changed: boolean = newOpenTimes.size !== this.currentHighlightedOpenTimes.size ||
+      [...newOpenTimes].some(t => !this.currentHighlightedOpenTimes.has(t));
+
+    if (!changed) return;
+
+    this.currentHighlightedOpenTimes = newOpenTimes;
 
     this.markersSignals.forEach((marker: SeriesMarker<Time>) => {
-      marker.size = undefined;
-
-      if (openTimes.includes((marker.time as UTCTimestamp) * 1000)) {
-        marker.size = 3;
-      }
+      marker.size = newOpenTimes.has((marker.time as UTCTimestamp) * 1000) ? 3 : undefined;
     });
 
     this.drawMarkers();
