@@ -345,7 +345,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const isStopLoss: string | undefined = hasStopLoss && !hasMultipleForceClose && !hasClose && !hasBuy && !hasSell ? 'SL' : undefined;
     const isCloseBuy: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasBuy && !hasSell ? 'CBUY' : undefined;
     const isCloseSell: string | undefined = (hasClose || hasForceClose) && !hasMultipleForceClose && hasSell && !hasBuy ? 'CSELL' : undefined;
-    const isMix: string | undefined = hasBuy && hasSell || hasClose && hasForceClose || hasMultipleForceClose ? 'MIX' : undefined;
+    const isMix: string | undefined = (hasBuy && hasSell) || (hasClose && hasForceClose) || hasMultipleForceClose ? 'MIX' : undefined;
     let signal: string = (isBuy || isSell || isClose || isLiquidation || isTakeProfit || isStopLoss || isCloseBuy || isCloseSell || isMix)!;
 
     // sum up sizes of all signals of this kline
