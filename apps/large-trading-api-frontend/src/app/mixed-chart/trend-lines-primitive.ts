@@ -117,10 +117,12 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
       if (x1 === null || y1 === null || x2 === null || y2 === null) continue;
 
       let highlighted = false;
+
       if (this._hoverIndex !== null && this._hoverPrice !== null) {
-        const lf = new LinearFunction(seg.startIndex, seg.startValue, seg.endIndex, seg.endValue);
+        const linearFunction = new LinearFunction(seg.startIndex, seg.startValue, seg.endIndex, seg.endValue);
+
         highlighted =
-          lf.isPointOnLine(this._hoverIndex, this._hoverPrice, 0.003) &&
+          linearFunction.isPointOnLine(this._hoverIndex, this._hoverPrice, 0.003) &&
           this._hoverIndex >= seg.startIndex &&
           this._hoverIndex <= seg.endIndex;
       }

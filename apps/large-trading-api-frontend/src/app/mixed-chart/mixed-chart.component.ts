@@ -176,8 +176,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawSeries(): void {
-    this.drawCandlestickSeries();
     this.drawProfitSeries();
+    this.drawCandlestickSeries();
   }
 
   private drawCandlestickSeries(): void {
