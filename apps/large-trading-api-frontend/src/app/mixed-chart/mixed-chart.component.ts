@@ -237,7 +237,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawChartData() {
-    // this.setPivotPointsMarkers();
+    this.setPivotPointsMarkers();
     this.setTrendLines();
   }
 
