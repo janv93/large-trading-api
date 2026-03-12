@@ -4,6 +4,7 @@ import {
   IChartApiBase,
   IPrimitivePaneView,
   IPrimitivePaneRenderer,
+  PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
   SeriesType,
   Time
@@ -49,6 +50,10 @@ class TrendLinesPaneView implements IPrimitivePaneView {
 
   update(lines: RenderedLine[]): void {
     this._renderer = new TrendLinesPaneRenderer(lines);
+  }
+
+  zOrder(): PrimitivePaneViewZOrder {
+    return 'bottom';
   }
 
   renderer(): IPrimitivePaneRenderer {
