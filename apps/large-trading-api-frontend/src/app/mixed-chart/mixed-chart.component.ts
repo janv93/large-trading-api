@@ -182,19 +182,18 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawCandlestickSeries(): void {
-    if (this.candlestickSeries) {
-      this.chart.removeSeries(this.candlestickSeries);
+    if (!this.candlestickSeries) {
+      this.candlestickSeries = this.chart.addSeries(CandlestickSeries, {
+        priceScaleId: 'right',
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+
+      this.seriesMarkersPlugin = createSeriesMarkers(this.candlestickSeries, []);
     }
 
-    this.candlestickSeries = this.chart.addSeries(CandlestickSeries, { priceScaleId: 'right' });
-    this.seriesMarkersPlugin = createSeriesMarkers(this.candlestickSeries, []);
     this.setCandlestickSeriesData();
     this.setSignalsMarkers();
-
-    this.candlestickSeries.applyOptions({
-      priceLineVisible: false,
-      lastValueVisible: false
-    });
   }
 
   private drawProfitSeries(): void {
