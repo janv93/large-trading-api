@@ -49,14 +49,12 @@ export default class Charting extends Base {
 
   // add trend lines to klines that connect uninterrupted highs/lows
   public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
-    for (let i = 0; i < klines.length; i++) {
-      this.logProgress(i / klines.length * 100);
-      const startKline: Kline = klines[i];
+    this.forEachKline(klines, (startKline, i) => {
       const startLow: number = startKline.prices.low;
       const startHigh: number = startKline.prices.high;
       const klinesInRange: Kline[] = klines.slice(i + minLength, i + maxLength);
 
-      if (!klinesInRange.length) continue;
+      if (!klinesInRange.length) return;
 
       klinesInRange.forEach((endKline: Kline, j: number) => {
         const endIndex: number = i + minLength + j;
@@ -98,7 +96,7 @@ export default class Charting extends Base {
           startKline.chart.trendLines.push(trendLineAbove);
         }
       });
-    }
+    });
   }
 
   // add trend lines to klines that connect uninterrupted pivot points
