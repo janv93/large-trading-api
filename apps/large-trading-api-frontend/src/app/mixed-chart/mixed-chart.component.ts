@@ -1,5 +1,6 @@
 import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, ITimeScaleApi, WhitespaceData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi } from 'lightweight-charts';
+import { TrendLinesPrimitive, TrendLineSegment } from './trend-lines-primitive';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -26,7 +27,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private candlestickSeries: ISeriesApi<'Candlestick'>;
   private profitSeries: ISeriesApi<'Line'>[] = [];
   private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
-  private trendLineSeries: ISeriesApi<'Line'>[] = [];
+  private trendLinesPrimitive: TrendLinesPrimitive | undefined;
   private commissionChecked = false;
   private positionSizeChecked = false;
   private finalProfit: number[] = [];
@@ -36,7 +37,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private markersSignals: SeriesMarker<Time>[] = [];
   private isCrosshairSubscribed = false;
   private executingCrosshairMove = false;
-  private currentHighlightedTrendLines: ISeriesApi<'Line'>[] = [];
   private currentHighlightedOpenTimes = new Set<number>();
   private seriesMarkersPlugin: ISeriesMarkersPluginApi<Time> | undefined;
 
@@ -120,8 +120,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     if (checked) {
       this.drawChartData();
     } else {
-      this.trendLineSeries.forEach(series => this.chart.removeSeries(series));
-      this.trendLineSeries = [];
+      this.trendLinesPrimitive?.setSegments([]);
       this.seriesMarkersPlugin!.setMarkers(this.markersSignals);
     }
   }
@@ -190,6 +189,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       });
 
       this.seriesMarkersPlugin = createSeriesMarkers(this.candlestickSeries, []);
+      this.trendLinesPrimitive = new TrendLinesPrimitive();
+      this.candlestickSeries.attachPrimitive(this.trendLinesPrimitive);
     }
 
     this.setCandlestickSeriesData();
@@ -254,13 +255,39 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private setTrendLines() {
-    this.trendLineSeries.forEach(series => this.chart.removeSeries(series));
-    this.trendLineSeries = [];
-    const filtered = this.currentKlines.filter((kline: Kline) => kline.chart?.trendLines?.length);
+    const segments: TrendLineSegment[] = [];
 
-    filtered.forEach((kline: Kline) => {
-      this.setTrendLineSeriesData(kline);
+    this.currentKlines.forEach((kline: Kline) => {
+      if (!kline.chart?.trendLines?.length) return;
+
+      kline.chart.trendLines.forEach((trendLine: TrendLine) => {
+        const startValue = trendLine.position === TrendLinePosition.Above ? kline.prices.high : kline.prices.low;
+        const endKline: Kline = this.currentKlines[trendLine.endIndex];
+        let endTime: number;
+        let endValue: number;
+
+        if (trendLine.breakThroughIndex) {
+          const breakthroughKline: Kline = this.currentKlines[trendLine.breakThroughIndex];
+          const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
+          endTime = breakthroughKline.times.open / 1000;
+          endValue = lineFunction.getY(trendLine.breakThroughIndex);
+        } else {
+          endTime = endKline.times.open / 1000;
+          endValue = trendLine.position === TrendLinePosition.Above ? endKline.prices.high : endKline.prices.low;
+        }
+
+        segments.push({
+          startTime: kline.times.open / 1000,
+          startValue,
+          endTime,
+          endValue,
+          startIndex: trendLine.startIndex,
+          endIndex: trendLine.breakThroughIndex ?? trendLine.endIndex
+        });
+      });
     });
+
+    this.trendLinesPrimitive?.setSegments(segments);
   }
 
   private setCandlestickSeriesData(): void {
@@ -381,45 +408,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-  private setTrendLineSeriesData(kline: Kline) {
-    kline.chart!.trendLines!.forEach((trendLine: TrendLine) => {
-      const start = {
-        time: kline.times.open / 1000 as Time,
-        value: trendLine.position === TrendLinePosition.Above ? kline.prices.high : kline.prices.low
-      };
 
-      const endKline: Kline = this.currentKlines[trendLine.endIndex];
-
-      let end;
-
-      if (trendLine.breakThroughIndex) {
-        const breakthroughKline: Kline = this.currentKlines[trendLine.breakThroughIndex];
-        const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
-        const value = lineFunction.getY(trendLine.breakThroughIndex);
-
-        end = {
-          time: breakthroughKline.times.open / 1000 as Time,
-          value
-        };
-      } else {  // no breakthrough
-        end = {
-          time: endKline.times.open / 1000 as Time,
-          value: trendLine.position === TrendLinePosition.Above ? endKline.prices.high : endKline.prices.low
-        };
-      }
-
-      const data = [start, end];
-      this.trendLineSeries.push(this.chart.addSeries(LineSeries, { priceScaleId: 'right' }));
-      this.trendLineSeries.at(-1)!.setData(data);
-
-      this.trendLineSeries.at(-1)!.applyOptions({
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-        lineWidth: 1
-      });
-    });
-  }
 
   private applyDarkTheme(chart: IChartApi) {
     chart.applyOptions({
@@ -517,27 +506,16 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private highlightTrendLines(param: MouseEventParams<Time>) {
-    if (!param?.point || !param.logical || !this.trendLineSeries.length) return;
-    const hoverPrice: number = this.candlestickSeries.coordinateToPrice(param.point!.y) as number;
+    if (!this.trendLinesPrimitive) return;
+
+    if (!param?.point || !param.logical) {
+      this.trendLinesPrimitive.setHover(null, null);
+      return;
+    }
+
+    const hoverPrice: number = this.candlestickSeries.coordinateToPrice(param.point.y) as number;
     const index: number = param.logical as number;
-
-    this.currentHighlightedTrendLines.forEach((trendLine: ISeriesApi<'Line'>) => trendLine.applyOptions({ color: '#2196f3' }));
-    this.currentHighlightedTrendLines = [];
-
-    this.trendLineSeries.forEach((trendLine: ISeriesApi<'Line'>) => {
-      const data: readonly (WhitespaceData<Time> | LineData<Time>)[] = trendLine.data();
-      const start: any = data[0];
-      const end: any = data[1];
-      const startIndex: number = this.findKlineIndexByOpenTime(this.currentKlines, (start.time as number) * 1000);
-      const endIndex: number = this.findKlineIndexByOpenTime(this.currentKlines, (end.time as number) * 1000);
-      const lineFunction: LinearFunction = new LinearFunction(startIndex, start.value, endIndex, end.value);
-      const isLineHovered: boolean = lineFunction.isPointOnLine(index, hoverPrice, 0.003) && index >= startIndex && index <= endIndex;
-
-      if (isLineHovered) {
-        trendLine.applyOptions({ color: 'yellow' });
-        this.currentHighlightedTrendLines.push(trendLine);
-      }
-    });
+    this.trendLinesPrimitive.setHover(index, hoverPrice);
   }
 
   private calcStats(): void {
