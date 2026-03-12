@@ -168,6 +168,10 @@ export default abstract class Base {
     this.logger.logErr(...args, this.constructor.name);
   }
 
+  protected logProgress(percent: number) {
+    this.logger.logProgress(percent, this.constructor.name);
+  }
+
   /**
    * (positive - negative klines) * profit
    */

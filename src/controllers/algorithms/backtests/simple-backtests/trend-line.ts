@@ -12,7 +12,8 @@ export default class TrendLineBreakthrough extends Base {
     this.charting.addTrendLineBreakthroughs(klines);
     this.charting.filterTrendLinesWithoutBreakthroughs(klines);
 
-    klines.forEach((kline) => {
+    klines.forEach((kline, index) => {
+      this.logProgress((index + 1) / klines.length * 100);
       const breakthroughs: TrendLine[] | undefined = kline.chart?.trendLineBreakthroughs;
 
       breakthroughs?.forEach((trendLine: TrendLine) => {

@@ -32,6 +32,22 @@ export default class Logger {
     }
   }
 
+  public logProgress(...args: any[]) {
+    const caller = args.pop();
+    const percent: number = args[0];
+
+    if (this.passesLogLevelCheck(caller)) {
+      const filled = Math.min(20, Math.floor(percent / 5));
+      const bar = '█'.repeat(filled) + '░'.repeat(20 - filled);
+
+      if (percent >= 100) {
+        process.stdout.write('\x1b[2K\r');
+      } else {
+        process.stdout.write(`\r${this.getParentLog(caller)} [${bar}] ${percent.toFixed(1)}%`);
+      }
+    }
+  }
+
   private getParentLog(caller: string) {
     const maxLength = 15;
     let color: string;
