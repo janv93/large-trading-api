@@ -172,10 +172,10 @@ export default abstract class Base {
     this.logger.logProgress(percent, this.constructor.name);
   }
 
-  protected forEachKline(klines: Kline[], callback: (kline: Kline, index: number) => void): void {
-    klines.forEach((kline, index) => {
-      this.logProgress((index + 1) / klines.length * 100);
-      callback(kline, index);
+  protected forEachWithProgress(arr: any[], callback: (item: any, index: number) => void): void {
+    arr.forEach((item, index) => {
+      this.logProgress((index + 1) / arr.length * 100);
+      callback(item, index);
     });
   }
 
