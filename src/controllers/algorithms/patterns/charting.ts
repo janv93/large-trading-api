@@ -50,6 +50,7 @@ export default class Charting extends Base {
   // add trend lines to klines that connect uninterrupted highs/lows
   public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
     for (let i = 0; i < klines.length; i++) {
+      this.logProgress(i / klines.length * 100);
       const startKline: Kline = klines[i];
       const startLow: number = startKline.prices.low;
       const startHigh: number = startKline.prices.high;
