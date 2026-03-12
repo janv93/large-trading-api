@@ -2,6 +2,22 @@ import { LogLevel } from '../interfaces';
 
 export default class Logger {
   private logLevel: LogLevel = LogLevel.Default;
+  private progressActive = false;
+  // saving original console log is necessary to prevent recursive overrides
+  private originalConsoleLog = console.log;
+  private originalConsoleError = console.error;
+
+  constructor() {
+    console.log = (...args: any[]) => {
+      this.clearProgress();
+      this.originalConsoleLog(...args);
+    };
+
+    console.error = (...args: any[]) => {
+      this.clearProgress();
+      this.originalConsoleError(...args);
+    };
+  }
 
   private colors = {
     black: '\x1b[30m',
@@ -37,14 +53,12 @@ export default class Logger {
     const percent: number = args[0];
 
     if (this.passesLogLevelCheck(caller)) {
+      // progress bar with 20 segments, each segment represents 5%
       const filled = Math.min(20, Math.floor(percent / 5));
       const bar = '█'.repeat(filled) + '░'.repeat(20 - filled);
 
-      if (percent >= 100) {
-        process.stdout.write('\x1b[2K\r');
-      } else {
-        process.stdout.write(`\r${this.getParentLog(caller)} [${bar}] ${percent.toFixed(1)}%`);
-      }
+      this.progressActive = true;
+      process.stdout.write(`\x1b[2K\r${this.getParentLog(caller)} [${bar}] ${percent.toFixed(1)}%`);
     }
   }
 
@@ -66,6 +80,13 @@ export default class Logger {
 
     const paddedName = caller.toUpperCase().padEnd(maxLength);
     return `${color}${paddedName}|${this.colors.reset}`;
+  }
+
+  private clearProgress(): void {
+    if (this.progressActive) {
+      process.stdout.write('\x1b[2K\r');
+      this.progressActive = false;
+    }
   }
 
   private passesLogLevelCheck(caller: string): boolean {
