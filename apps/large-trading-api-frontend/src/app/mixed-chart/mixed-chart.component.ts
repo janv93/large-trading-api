@@ -351,7 +351,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     // sum up sizes of all signals of this kline
     const totalSize: number = backtestSignals.reduce((acc: number, signal: BacktestSignal) => {
       const isCloseSignal: boolean = this.isCloseSignal(signal.signal);
-      return isCloseSignal ? acc + 0 : acc + signal.size!;
+      return isCloseSignal ? acc : acc + signal.size!;
     }, 0);
 
     return {
