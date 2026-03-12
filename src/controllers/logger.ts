@@ -55,7 +55,7 @@ export default class Logger {
       const bar = '█'.repeat(filled) + '░'.repeat(20 - filled);
 
       this.progressActive = true;
-      process.stdout.write(`\x1b[?25l\x1b[2K\r${this.getParentLog(caller)} [${bar}] ${percent.toFixed(1)}%`);
+      process.stdout.write(`\x1b[?25l\x1b[2K\r${this.getParentLog(caller)} [${bar}] ${Math.round(percent)}%`);
     }
   }
 
