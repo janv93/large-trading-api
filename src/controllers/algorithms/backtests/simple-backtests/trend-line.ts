@@ -8,6 +8,8 @@ export default class TrendLineBreakthrough extends Base {
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
   public setSignals(klines: Kline[], algorithm: Algorithm, percentOfProfit: number): Kline[] {
+    // this.charting.addPivotPoints(klines, 20, 20);
+    // this.charting.addTrendLinesFromPivotPoints(klines, 40, 200);
     this.charting.addTrendLines(klines, 40, 200);
     this.charting.addTrendLineBreakthroughs(klines);
     this.charting.filterTrendLinesWithoutBreakthroughs(klines);

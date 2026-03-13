@@ -3,145 +3,136 @@ import { Kline, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition 
 import { LinearFunction } from './linear-function';
 
 export default class Charting extends Base {
+  // add pivot points defined by horizontally uninterrupted highs/lows on the left and right side
   public addPivotPoints(klines: Kline[], leftLength: number, rightLength: number): void {
     klines.forEach((kline: Kline, i: number) => {
       const currentHigh = kline.prices.high;
       const currentLow = kline.prices.low;
 
       if (klines[i - leftLength] && klines[i + rightLength]) {
-        const leftKlines = klines.slice(0, i);
-        const rightKlines = klines.slice(i + 1);
+        const isLeftHigh: boolean = klines.slice(i - leftLength + 1, i).every(k => k.prices.high <= currentHigh);
+        const isRightHigh: boolean = klines.slice(i + 1, i + rightLength).every(k => k.prices.high <= currentHigh);
+        const isLeftLow: boolean = klines.slice(i - leftLength + 1, i).every(k => k.prices.low >= currentLow);
+        const isRightLow: boolean = klines.slice(i + 1, i + rightLength).every(k => k.prices.low >= currentLow);
+        const isHigh = isLeftHigh && isRightHigh;
+        const isLow = isLeftLow && isRightLow;
 
-        let leftLengthHigh: number = leftKlines.slice().reverse().findIndex((leftKline: Kline) => leftKline.prices.high > currentHigh);
-        leftLengthHigh = leftLengthHigh === -1 ? Infinity : leftLengthHigh;
-        let rightLengthHigh: number = rightKlines.findIndex((rightKline: Kline) => rightKline.prices.high > currentHigh);
-        rightLengthHigh = rightLengthHigh === -1 ? Infinity : rightLengthHigh;
-        const isHigh = leftLengthHigh >= leftLength && rightLengthHigh >= rightLength
-
-        let leftLenthLow: number = leftKlines.slice().reverse().findIndex((leftKline: Kline) => leftKline.prices.low < currentLow);
-        leftLenthLow = leftLenthLow === -1 ? Infinity : leftLenthLow;
-        let rightLengthLow: number = rightKlines.findIndex((rightKline: Kline) => rightKline.prices.low < currentLow);
-        rightLengthLow = rightLengthLow === -1 ? Infinity : rightLengthLow;
-        const isLow = leftLenthLow >= leftLength && rightLengthLow >= rightLength;
-
-        if (isHigh) {
+        if (isHigh || isLow) {
           kline.chart = kline.chart || {};
           kline.chart.pivotPoints = kline.chart.pivotPoints || [];
 
           kline.chart.pivotPoints.push({
-            left: leftLengthHigh,
-            right: rightLengthHigh,
-            side: PivotPointSide.High
-          });
-        } else if (isLow) {
-          kline.chart = kline.chart || {};
-          kline.chart.pivotPoints = kline.chart.pivotPoints || [];
-
-          kline.chart.pivotPoints.push({
-            left: leftLenthLow,
-            right: rightLengthLow,
-            side: PivotPointSide.Low
+            left: leftLength,
+            right: rightLength,
+            side: isHigh ? PivotPointSide.High : PivotPointSide.Low
           });
         }
       }
     });
   }
 
-  // add trend lines to klines that connect uninterrupted highs/lows
+  /**
+   * add trend lines to klines that connect uninterrupted highs/lows
+   * difference to addTrendLinesFromPivotPoints: buffers are defined by slope of the trend line instead of simply horizontal (0)
+   */
   public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
-    this.forEachKline(klines, (startKline, i) => {
+    this.forEachWithProgress(klines, (startKline, i) => {
       const startLow: number = startKline.prices.low;
       const startHigh: number = startKline.prices.high;
-      const klinesInRange: Kline[] = klines.slice(i + minLength, i + maxLength);
+      let minSlopeBelow: number = Infinity;
+      let maxSlopeAbove: number = -Infinity;
+      const endIndex: number = Math.min(i + maxLength, klines.length);
 
-      if (!klinesInRange.length) return;
+      for (let j = i + 1; j < endIndex; j++) {
+        const endKline: Kline = klines[j];
+        const endKlineLow: number = endKline.prices.low;
+        const endKlineHigh: number = endKline.prices.high;
+        const dx: number = j - i;
+        const slopeBelow: number = (endKlineLow - startLow) / dx;
+        const slopeAbove: number = (endKlineHigh - startHigh) / dx;
+        const isTrendLineLongEnough: boolean = dx >= minLength;
 
-      klinesInRange.forEach((endKline: Kline, j: number) => {
-        const endIndex: number = i + minLength + j;
-        const endLow: number = endKline.prices.low;
-        const endHigh: number = endKline.prices.high;
-        const lineFunctionBelow: LinearFunction = new LinearFunction(i, startLow, endIndex, endLow);
-        const lineFunctionAbove: LinearFunction = new LinearFunction(i, startHigh, endIndex, endHigh);
+        if (isTrendLineLongEnough) {
+          const isValidBelow: boolean = slopeBelow <= minSlopeBelow && this.isTrendLineAgainstTrend(startLow, endKlineLow, TrendLinePosition.Below);
+          const isValidAbove: boolean = slopeAbove >= maxSlopeAbove && this.isTrendLineAgainstTrend(startHigh, endKlineHigh, TrendLinePosition.Above);
 
-        const trendLineBelow: TrendLine = {
-          function: lineFunctionBelow,
-          startIndex: i,
-          endIndex,
-          length: endIndex - i,
-          slope: lineFunctionBelow.m > 0 ? Slope.Ascending : Slope.Descending,
-          position: TrendLinePosition.Below,
-          againstTrend: this.isTrendLineAgainstTrend(startLow, endLow, TrendLinePosition.Below)
-        };
+          const candidates: [boolean, number, number, TrendLinePosition][] = [
+            [isValidBelow, startLow, endKlineLow, TrendLinePosition.Below],
+            [isValidAbove, startHigh, endKlineHigh, TrendLinePosition.Above],
+          ];
 
-        const trendLineAbove: TrendLine = {
-          function: lineFunctionAbove,
-          startIndex: i,
-          endIndex,
-          length: endIndex - i,
-          slope: lineFunctionAbove.m > 0 ? Slope.Ascending : Slope.Descending,
-          position: TrendLinePosition.Above,
-          againstTrend: this.isTrendLineAgainstTrend(startHigh, endHigh, TrendLinePosition.Above)
-        };
+          candidates.forEach(([isValid, startPrice, endPrice, position]) => {
+            if (!isValid) return;
+            const linearFunction: LinearFunction = new LinearFunction(i, startPrice, j, endPrice);
 
-        const validBelow: boolean = this.isValidTrendLine(klines, trendLineBelow);
-        const validAbove: boolean = this.isValidTrendLine(klines, trendLineAbove);
+            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction.m, linearFunction.b)) {
+              startKline.chart = startKline.chart || {};
+              startKline.chart.trendLines = startKline.chart.trendLines || [];
 
-        if (validBelow) {
-          startKline.chart = startKline.chart || {};
-          startKline.chart.trendLines = startKline.chart.trendLines || [];
-          startKline.chart.trendLines.push(trendLineBelow);
-        } else if (validAbove) {
-          startKline.chart = startKline.chart || {};
-          startKline.chart.trendLines = startKline.chart.trendLines || [];
-          startKline.chart.trendLines.push(trendLineAbove);
+              startKline.chart.trendLines.push({
+                function: linearFunction,
+                startIndex: i,
+                endIndex: j,
+                length: dx,
+                slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
+                position,
+                againstTrend: true
+              });
+            }
+          });
         }
-      });
+
+        minSlopeBelow = Math.min(minSlopeBelow, slopeBelow);
+        maxSlopeAbove = Math.max(maxSlopeAbove, slopeAbove);
+      }
     });
   }
 
   // add trend lines to klines that connect uninterrupted pivot points
   public addTrendLinesFromPivotPoints(klines: Kline[], minLength: number, maxLength: number): void {
-    for (let i = 0; i < klines.length; i++) {
-      const kline: Kline = klines[i];
-
-      if (!kline.chart?.pivotPoints?.length) continue;  // if no pivot points, skip kline
+    this.forEachWithProgress(klines, (kline, i) => {
+      if (!kline.chart?.pivotPoints?.length) return;  // if no pivot points, skip kline
 
       const ppStart: PivotPoint = kline.chart.pivotPoints[0];
-      const ppStartSide: PivotPointSide = ppStart.side
-      const ppStartPrice: number = ppStartSide === PivotPointSide.High ? kline.prices.high : kline.prices.low;
-      const klinesInRange: Kline[] = klines.slice(i + minLength, i + maxLength);
+      const ppStartSide: PivotPointSide = ppStart.side;
+      const isHigh: boolean = ppStartSide === PivotPointSide.High;
+      const startPrice: number = isHigh ? kline.prices.high : kline.prices.low;
+      const position: TrendLinePosition = isHigh ? TrendLinePosition.Above : TrendLinePosition.Below;
+      const endIndex: number = Math.min(i + maxLength, klines.length);
+      let extremeSlope: number = isHigh ? -Infinity : Infinity;
 
-      if (!klinesInRange.length) continue;
+      for (let j = i + 1; j < endIndex; j++) {
+        const endKline: Kline = klines[j];
+        const dx: number = j - i;
+        const endPrice: number = isHigh ? endKline.prices.high : endKline.prices.low;
+        const currentSlope: number = (endPrice - startPrice) / dx;
+        const isTrendLineLongEnough: boolean = dx >= minLength;
 
-      klinesInRange.forEach((k: Kline, j: number) => {
-        const endIndex: number = i + minLength + j;
-        const ppEnd: PivotPoint | undefined = k.chart?.pivotPoints?.[0];
-        const isSameSide: boolean = ppEnd?.side === ppStartSide;
+        if (isTrendLineLongEnough) {
+          const hasPivotPoint: boolean = endKline.chart?.pivotPoints?.[0]?.side === ppStartSide;
+          const isUninterrupted: boolean = isHigh ? currentSlope >= extremeSlope : currentSlope <= extremeSlope;
 
-        if (ppEnd && isSameSide) {
-          const ppEndPrice: number = ppStartSide === PivotPointSide.High ? k.prices.high : k.prices.low;
-          const lineFunction: LinearFunction = new LinearFunction(i, ppStartPrice, endIndex, ppEndPrice);
-          const position: TrendLinePosition = ppStartSide === PivotPointSide.High ? TrendLinePosition.Above : TrendLinePosition.Below;
+          if (hasPivotPoint && isUninterrupted && this.isTrendLineAgainstTrend(startPrice, endPrice, position)) {
+            const linearFunction: LinearFunction = new LinearFunction(i, startPrice, j, endPrice);
 
-          const trendLine: TrendLine = {
-            function: lineFunction,
-            startIndex: i,
-            endIndex,
-            length: endIndex - i,
-            slope: lineFunction.m > 0 ? Slope.Ascending : Slope.Descending,
-            position,
-            againstTrend: this.isTrendLineAgainstTrend(ppStartPrice, ppEndPrice, position)
-          };
-
-          const valid: boolean = this.isValidTrendLine(klines, trendLine);
-
-          if (valid) {
-            kline.chart!.trendLines = kline.chart!.trendLines || [];
-            kline.chart!.trendLines.push(trendLine);
+            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction.m, linearFunction.b)) {
+              kline.chart!.trendLines = kline.chart!.trendLines || [];
+              kline.chart!.trendLines.push({
+                function: linearFunction,
+                startIndex: i,
+                endIndex: j,
+                length: dx,
+                slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
+                position,
+                againstTrend: true
+              });
+            }
           }
         }
-      });
-    }
+
+        extremeSlope = isHigh ? Math.max(extremeSlope, currentSlope) : Math.min(extremeSlope, currentSlope);
+      }
+    });
   }
 
   // extends trend lines until they break through the price, marking a pivotal point
@@ -204,46 +195,13 @@ export default class Charting extends Base {
     }
   }
 
-  private isValidTrendLine(klines: Kline[], trendLine: TrendLine): boolean {
-    const startIndex: number = trendLine.startIndex;
-    const endIndex: number = trendLine.endIndex;
-    const uninterrupted = this.isTrendLineUninterrupted(klines, trendLine);
-    const length = trendLine.length;
-    const leftBuffer = Math.round(length * 0.2);
-    const leftBufferTrendLine: TrendLine = this.clone(trendLine);
-    leftBufferTrendLine.startIndex = startIndex - leftBuffer;
-    leftBufferTrendLine.endIndex = startIndex;
-    const leftBufferUninterrupted = this.isTrendLineUninterrupted(klines, leftBufferTrendLine); // make sure line extends uninterrupted to the left beyond the start, similar to how a pivot point must have some left klines to be valid
-    const rightBuffer = Math.round(length * 0.2);
-    const rightBufferTrendLine: TrendLine = this.clone(trendLine);
-    rightBufferTrendLine.startIndex = endIndex;
-    rightBufferTrendLine.endIndex = endIndex + rightBuffer;
-    const rightBufferUninterrupted = this.isTrendLineUninterrupted(klines, rightBufferTrendLine);
-    return uninterrupted && leftBufferUninterrupted && rightBufferUninterrupted && trendLine.againstTrend;
-  }
-
-  // checks if trend line from A to B has no klines in between that cross the line
-  private isTrendLineUninterrupted(klines: Kline[], trendLine: TrendLine): boolean {
-    const startIndex: number = trendLine.startIndex;
-    const endIndex: number = trendLine.endIndex;
-    const trendLineCloses: number[] = klines.slice(startIndex, endIndex).map(kline => kline.prices.close);
-    const averagePriceChange: number = this.calcAverageChangeInPercent(trendLineCloses);
-
-    const lineUninterrupted = klines.slice(startIndex + 1, endIndex).every((kline: Kline, i: number) => {
-      const x: number = startIndex + 1 + i;
-
-      if (trendLine.position === TrendLinePosition.Above) {
-        const y: number = kline.prices.high;
-        const maxY: number = trendLine.function.m * x + trendLine.function.b;
-        return y <= maxY * (1 + averagePriceChange * 0.00);
-      } else {
-        const y: number = kline.prices.low;
-        const minY: number = trendLine.function.m * x + trendLine.function.b;
-        return y >= minY * (1 - averagePriceChange * 0.00);
-      }
-    });
-
-    return lineUninterrupted;
+  private areBuffersUninterrupted(klines: Kline[], startIndex: number, endIndex: number, position: TrendLinePosition, m: number, b: number): boolean {
+    const length = endIndex - startIndex;
+    const buffer = Math.round(length * 0.2);
+    const crosses = (k: Kline, x: number) => position === TrendLinePosition.Above ? k.prices.high > m * x + b : k.prices.low < m * x + b;
+    const leftUninterrupted = klines.slice(Math.max(0, startIndex - buffer + 1), startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
+    const rightUninterrupted = klines.slice(endIndex + 1, Math.min(klines.length, endIndex + buffer)).every((k, i) => !crosses(k, endIndex + 1 + i));
+    return leftUninterrupted && rightUninterrupted;
   }
 
   // if trend line is on opposite side of trend (e.g. trend is up, line is below price)
