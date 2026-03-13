@@ -10,22 +10,22 @@ import {
   Time
 } from 'lightweight-charts';
 
-export interface CompactSignalMarker {
+export interface CompactCircleMarker {
   time: number;
   price: number;
   side: 'above' | 'below';
   color: string;
 }
 
-interface RenderedCompactSignal {
+interface RenderedCompactCircle {
   x: number;
   y: number;
   side: 'above' | 'below';
   color: string;
 }
 
-class CompactSignalsPaneRenderer implements IPrimitivePaneRenderer {
-  constructor(private readonly _items: RenderedCompactSignal[]) { }
+class CompactCirclePaneRenderer implements IPrimitivePaneRenderer {
+  constructor(private readonly _items: RenderedCompactCircle[]) { }
 
   draw(target: any): void {
     target.useBitmapCoordinateSpace(({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: any) => {
@@ -46,11 +46,11 @@ class CompactSignalsPaneRenderer implements IPrimitivePaneRenderer {
   }
 }
 
-class CompactSignalsPaneView implements IPrimitivePaneView {
-  private _renderer = new CompactSignalsPaneRenderer([]);
+class CompactCirclePaneView implements IPrimitivePaneView {
+  private _renderer = new CompactCirclePaneRenderer([]);
 
-  update(items: RenderedCompactSignal[]): void {
-    this._renderer = new CompactSignalsPaneRenderer(items);
+  update(items: RenderedCompactCircle[]): void {
+    this._renderer = new CompactCirclePaneRenderer(items);
   }
 
   zOrder(): PrimitivePaneViewZOrder {
@@ -62,12 +62,12 @@ class CompactSignalsPaneView implements IPrimitivePaneView {
   }
 }
 
-export class CompactSignalsPrimitive implements ISeriesPrimitive<Time> {
+export class CompactCirclePrimitive implements ISeriesPrimitive<Time> {
   private _chart: IChartApiBase<Time> | null = null;
   private _series: ISeriesApi<SeriesType, Time> | null = null;
   private _requestUpdate: (() => void) | null = null;
-  private _paneView = new CompactSignalsPaneView();
-  private _markers: CompactSignalMarker[] = [];
+  private _paneView = new CompactCirclePaneView();
+  private _markers: CompactCircleMarker[] = [];
 
   attached(param: SeriesAttachedParameter<Time, SeriesType>): void {
     this._chart = param.chart;
@@ -81,7 +81,7 @@ export class CompactSignalsPrimitive implements ISeriesPrimitive<Time> {
     this._requestUpdate = null;
   }
 
-  setMarkers(markers: CompactSignalMarker[]): void {
+  setMarkers(markers: CompactCircleMarker[]): void {
     this._markers = markers;
     this._requestUpdate?.();
   }
@@ -90,7 +90,7 @@ export class CompactSignalsPrimitive implements ISeriesPrimitive<Time> {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
-    const items: RenderedCompactSignal[] = [];
+    const items: RenderedCompactCircle[] = [];
 
     for (const marker of this._markers) {
       const x = timeScale.timeToCoordinate(marker.time as Time);

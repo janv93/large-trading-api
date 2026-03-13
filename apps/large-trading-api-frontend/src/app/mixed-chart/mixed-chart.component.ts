@@ -1,7 +1,7 @@
 import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi } from 'lightweight-charts';
 import { TrendLinesPrimitive, TrendLineSegment } from './trend-lines-primitive';
-import { CompactSignalsPrimitive, CompactSignalMarker } from './compact-signals-primitive';
+import { CompactCirclePrimitive, CompactCircleMarker } from './compact-circle-primitive';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -29,8 +29,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private profitSeries: ISeriesApi<'Line'>[] = [];
   private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLinesPrimitive: TrendLinesPrimitive | undefined;
-  private compactSignalsPrimitive: CompactSignalsPrimitive | undefined;
-  private compactMarkers: CompactSignalMarker[] = [];
+  private compactCirclePrimitive: CompactCirclePrimitive | undefined;
+  private compactMarkers: CompactCircleMarker[] = [];
+  private compactPivotMarkers: CompactCircleMarker[] = [];
   private commissionChecked = false;
   private positionSizeChecked = false;
   private finalProfit: number[] = [];
@@ -192,8 +193,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.seriesMarkersPlugin = createSeriesMarkers(this.candlestickSeries, []);
       this.trendLinesPrimitive = new TrendLinesPrimitive();
       this.candlestickSeries.attachPrimitive(this.trendLinesPrimitive);
-      this.compactSignalsPrimitive = new CompactSignalsPrimitive();
-      this.candlestickSeries.attachPrimitive(this.compactSignalsPrimitive);
+      this.compactCirclePrimitive = new CompactCirclePrimitive();
+      this.candlestickSeries.attachPrimitive(this.compactCirclePrimitive);
     }
 
     this.setCandlestickSeriesData();
@@ -252,14 +253,23 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setPivotPointsMarkers(): void {
     const markers: SeriesMarker<Time>[] = [];
+    const compactPivotMarkers: CompactCircleMarker[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
       if (kline.chart?.pivotPoints) {
-        markers.push(this.getPivotPointTemplate(kline));
+        const marker = this.getPivotPointTemplate(kline);
+        markers.push(marker);
+        compactPivotMarkers.push({
+          time: kline.times.open / 1000,
+          price: marker.position === 'belowBar' ? kline.prices.low : kline.prices.high,
+          side: marker.position === 'belowBar' ? 'below' : 'above',
+          color: marker.color as string
+        });
       }
     });
 
     this.markersPivotPoints = markers;
+    this.compactPivotMarkers = compactPivotMarkers;
     this.drawMarkers();
   }
 
@@ -315,7 +325,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setSignalsMarkers(): void {
     const markers: SeriesMarker<Time>[] = [];
-    const compactMarkers: CompactSignalMarker[] = [];
+    const compactMarkers: CompactCircleMarker[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
       if (kline.algorithms[this.chartService.algorithms[0]]!.signals.length) {
@@ -338,14 +348,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   // combine all markers
   private drawMarkers(): void {
     if (this.getVisibleSignalsCount() > 500) {
-      const pivots = [...this.markersPivotPoints].sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
-      this.seriesMarkersPlugin!.setMarkers(pivots);
-      this.compactSignalsPrimitive!.setMarkers(this.compactMarkers);
+      this.seriesMarkersPlugin!.setMarkers([]);
+      this.compactCirclePrimitive!.setMarkers([...this.compactMarkers, ...this.compactPivotMarkers]);
     } else {
       const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
       allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
       this.seriesMarkersPlugin!.setMarkers(allMarkers);
-      this.compactSignalsPrimitive!.setMarkers([]);
+      this.compactCirclePrimitive!.setMarkers([]);
     }
   }
 
