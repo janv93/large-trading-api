@@ -9,7 +9,7 @@ export default class Dca extends Base {
       const signals: BacktestSignal[] = backtest.signals;
       const closePrice: number = kline.prices.close;
 
-      if (i % 10 === 0) {
+      if (i % (klines.length / 100) === 0) {
         signals.push({
           signal: Signal.Buy,
           size: 1,
