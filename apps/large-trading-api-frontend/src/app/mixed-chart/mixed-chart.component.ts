@@ -347,7 +347,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   // combine all markers
   private drawMarkers(): void {
-    if (this.getVisibleSignalsCount() > 500) {
+    if (this.getVisibleMarkersCount() > 500) {
       this.seriesMarkersPlugin!.setMarkers([]);
       this.compactCirclePrimitive!.setMarkers([...this.compactMarkers, ...this.compactPivotMarkers]);
     } else {
@@ -358,13 +358,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-  private getVisibleSignalsCount(): number {
+  private getVisibleMarkersCount(): number {
     const visibleRange = this.chart?.timeScale().getVisibleRange();
 
-    return this.markersSignals.filter(m => {
-      const t = m.time as UTCTimestamp;
-      return t >= (visibleRange!.from as UTCTimestamp) && t <= (visibleRange!.to as UTCTimestamp);
-    }).length;
+    const isMarkerInRange = (marker: SeriesMarker<Time>) => {
+      const time = marker.time as UTCTimestamp;
+      return time >= (visibleRange!.from as UTCTimestamp) && time <= (visibleRange!.to as UTCTimestamp);
+    };
+
+    return this.markersSignals.filter(isMarkerInRange).length + this.markersPivotPoints.filter(isMarkerInRange).length;
   }
 
   private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
