@@ -438,32 +438,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private subscribeCrosshairMove(): void {
     this.crosshairMoveHandler = (param: MouseEventParams<Time>) => {
-      const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
-      const index = param.logical as number;
-      const kline = this.currentKlines[index];
-
-      if (ohlc) {
-        for (const key in ohlc) {
-          if (typeof ohlc[key] === 'number') {
-            ohlc[key] = parseFloat(ohlc[key].toFixed(2));
-          }
-        }
-
-        this.currentOhlc = ohlc;
-        this.currentIndex = index;
-
-        this.currentProfit = this.profitSeries.map(series => {
-          const data = param.seriesData.get(series) as LineData;
-          return data ? Number(data.value.toFixed(2)) : 0;
-        });
-
-        if (this.openPositionSizeSeries) {
-          const openPositionSize = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;
-          if (openPositionSize) {
-            this.openPositionSize = Number(openPositionSize.value.toFixed(2));
-          }
-        }
-      }
+      const index: number = param.logical as number;
+      const kline: Kline = this.currentKlines[index];
+      this.updateLegend(param, index);
 
       if (kline) {
         this.highlightOpenSignals(kline);
@@ -473,6 +450,33 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     };
 
     this.chart.subscribeCrosshairMove(this.crosshairMoveHandler);
+  }
+
+  private updateLegend(param: MouseEventParams<Time>, index: number): void {
+    const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
+
+    if (!ohlc) return;
+
+    for (const key in ohlc) {
+      if (typeof ohlc[key] === 'number') {
+        ohlc[key] = parseFloat(ohlc[key].toFixed(2));
+      }
+    }
+
+    this.currentOhlc = ohlc;
+    this.currentIndex = index;
+
+    this.currentProfit = this.profitSeries.map(series => {
+      const data = param.seriesData.get(series) as LineData;
+      return data ? Number(data.value.toFixed(2)) : 0;
+    });
+
+    if (this.openPositionSizeSeries) {
+      const openPositionSize = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;
+      if (openPositionSize) {
+        this.openPositionSize = Number(openPositionSize.value.toFixed(2));
+      }
+    }
   }
 
   private highlightOpenSignals(kline: Kline) {
