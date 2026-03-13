@@ -73,7 +73,9 @@ export default class Logger {
       case 'Routes': color = this.colors.magenta; break;
       case 'Database': color = this.colors.green; break;
       case 'Alpaca': color = this.colors.orange; break;
-      case 'Binance': // crypto
+      case 'Backtester': color = this.colors.cyan; break;
+      // crypto
+      case 'Binance':
       case 'Kucoin':
       case 'Btse':
       case 'Coinmarketcap': color = this.colors.yellow; break;
