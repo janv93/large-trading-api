@@ -18,7 +18,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   @Input() klines: Run[];
 
   public currentOhlc: CandlestickData;
-  public currentProfit: number;
+  public currentProfit: number[];
   public currentIndex: number;
   public openPositionSize: number;
   public stats: BacktestStats;
@@ -96,10 +96,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.drawSeries();
     this.setLegendValues();
     this.drawChartData();
-
-    this.chartService.algorithms.forEach((algorithm, index) => {
-      this.setProfitSeriesData(index);
-    });
+    this.setProfitSeriesData();
   }
 
   public onShowPositionSizeChange(event: Event) {
@@ -194,6 +191,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private drawProfitSeries(): void {
     this.clearProfitSeries();
     this.createAndConfigureProfitSeries();
+    this.setProfitSeriesData();
     this.calcStats();
   }
 
@@ -212,7 +210,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       });
 
       this.profitSeries.push(series);
-      this.setProfitSeriesData(index);
     });
   }
 
@@ -376,20 +373,22 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     };
   }
 
-  private setProfitSeriesData(index: number) {
-    const mapped = this.currentKlines.map((kline: Kline) => {
-      const currentProfit: number = kline.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0;
-      const opacity: number = index === 0 ? 0.3 : 0.1;
-      const color: string = currentProfit === 0 ? `rgba(255,255,255,${opacity})` : currentProfit > 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`;
+  private setProfitSeriesData() {
+    this.chartService.algorithms.forEach((_, index) => {
+      const mapped = this.currentKlines.map((kline: Kline) => {
+        const currentProfit: number = kline.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0;
+        const opacity: number = index === 0 ? 0.3 : 0.1;
+        const color: string = currentProfit === 0 ? `rgba(255,255,255,${opacity})` : currentProfit > 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`;
 
-      return {
-        time: kline.times.open / 1000 as Time,
-        value: currentProfit,
-        color
-      };
+        return {
+          time: kline.times.open / 1000 as Time,
+          value: currentProfit,
+          color
+        };
+      });
+
+      this.profitSeries[index].setData(mapped);
     });
-
-    this.profitSeries[index].setData(mapped);
   }
 
   private setOpenPositionSizeSeriesData() {
@@ -454,7 +453,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.executingCrosshairMove = true;
         this.isCrosshairSubscribed = true;
         const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
-        const profit = param.seriesData.get(this.profitSeries[0]) as LineData;
+        const profit0 = param.seriesData.get(this.profitSeries[0]) as LineData;
+        const profit1 = param.seriesData.get(this.profitSeries[1]) as LineData;
         const openPositionSize: HistogramData | undefined = this.openPositionSizeSeries ? param.seriesData.get(this.openPositionSizeSeries) as HistogramData : undefined;
         const index: number = param.logical as number;
         const kline: Kline | undefined = this.currentKlines[index];
@@ -467,7 +467,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
           }
 
           this.currentOhlc = ohlc;
-          this.currentProfit = Number(profit.value.toFixed(2));
+          this.currentProfit = [Number(profit0.value.toFixed(2)), Number(profit1.value.toFixed(2))];
           this.currentIndex = param.logical as number;
 
           if (openPositionSize !== undefined) {

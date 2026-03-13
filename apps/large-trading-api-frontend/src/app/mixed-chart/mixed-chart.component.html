@@ -9,8 +9,13 @@
     <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.low }}</span>
     <span> C</span>
     <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.close }}</span>
-    <span [ngClass]="currentProfit > 0 ? 'green' : 'red'"> {{ currentProfit }}</span>
+    <span [ngClass]="currentProfit[0] > 0 ? 'green' : 'red'"> {{ currentProfit[0] }}</span>
     <span>%</span>
+    @if (currentProfit[1] !== undefined) {
+    <span> / </span>
+    <span [ngClass]="currentProfit[1] > 0 ? 'green' : 'red'">{{ currentProfit[1] }}</span>
+    <span>%</span>
+    }
     @if (openPositionSize) {
     <span [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }"> {{
       openPositionSize }}</span>
