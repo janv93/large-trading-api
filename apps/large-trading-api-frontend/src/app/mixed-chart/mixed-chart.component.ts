@@ -1,6 +1,7 @@
 import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi } from 'lightweight-charts';
 import { TrendLinesPrimitive, TrendLineSegment } from './trend-lines-primitive';
+import { CompactSignalsPrimitive, CompactSignalMarker } from './compact-signals-primitive';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -28,12 +29,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private profitSeries: ISeriesApi<'Line'>[] = [];
   private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLinesPrimitive: TrendLinesPrimitive | undefined;
+  private compactSignalsPrimitive: CompactSignalsPrimitive | undefined;
+  private compactMarkers: CompactSignalMarker[] = [];
   private commissionChecked = false;
   private positionSizeChecked = false;
   private finalProfit: number[] = [];
   private markersPivotPoints: SeriesMarker<Time>[] = [];
   private markersSignals: SeriesMarker<Time>[] = [];
   private crosshairMoveHandler: ((param: MouseEventParams<Time>) => void) | undefined;
+  private visibleRangeChangeHandler: (() => void) | undefined;
   private currentHighlightedOpenTimes = new Set<number>();
   private seriesMarkersPlugin: ISeriesMarkersPluginApi<Time> | undefined;
 
@@ -58,6 +62,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   ngOnDestroy(): void {
     if (this.crosshairMoveHandler && this.chart) {
       this.chart.unsubscribeCrosshairMove(this.crosshairMoveHandler);
+    }
+
+    if (this.visibleRangeChangeHandler && this.chart) {
+      this.chart.timeScale().unsubscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
     }
 
     if (this.chart) {
@@ -140,6 +148,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.drawSeries();
     this.drawMarkersAndCharting();
     this.subscribeCrosshairMove();
+    this.subscribeVisibleRangeChange();
     this.chart.timeScale().fitContent();
   }
 
@@ -183,6 +192,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.seriesMarkersPlugin = createSeriesMarkers(this.candlestickSeries, []);
       this.trendLinesPrimitive = new TrendLinesPrimitive();
       this.candlestickSeries.attachPrimitive(this.trendLinesPrimitive);
+      this.compactSignalsPrimitive = new CompactSignalsPrimitive();
+      this.candlestickSeries.attachPrimitive(this.compactSignalsPrimitive);
     }
 
     this.setCandlestickSeriesData();
@@ -304,22 +315,47 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setSignalsMarkers(): void {
     const markers: SeriesMarker<Time>[] = [];
+    const compactMarkers: CompactSignalMarker[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
       if (kline.algorithms[this.chartService.algorithms[0]]!.signals.length) {
-        markers.push(this.getSignalTemplate(kline));
+        const marker = this.getSignalTemplate(kline);
+        markers.push(marker);
+        compactMarkers.push({
+          time: kline.times.open / 1000,
+          price: marker.position === 'belowBar' ? kline.prices.low : kline.prices.high,
+          side: marker.position === 'belowBar' ? 'below' : 'above',
+          color: marker.color as string
+        });
       }
     });
 
     this.markersSignals = markers;
+    this.compactMarkers = compactMarkers;
     this.drawMarkers();
   }
 
   // combine all markers
   private drawMarkers(): void {
-    const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
-    allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
-    this.seriesMarkersPlugin!.setMarkers(allMarkers);
+    if (this.getVisibleSignalsCount() > 500) {
+      const pivots = [...this.markersPivotPoints].sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
+      this.seriesMarkersPlugin!.setMarkers(pivots);
+      this.compactSignalsPrimitive!.setMarkers(this.compactMarkers);
+    } else {
+      const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
+      allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
+      this.seriesMarkersPlugin!.setMarkers(allMarkers);
+      this.compactSignalsPrimitive!.setMarkers([]);
+    }
+  }
+
+  private getVisibleSignalsCount(): number {
+    const visibleRange = this.chart?.timeScale().getVisibleRange();
+
+    return this.markersSignals.filter(m => {
+      const t = m.time as UTCTimestamp;
+      return t >= (visibleRange!.from as UTCTimestamp) && t <= (visibleRange!.to as UTCTimestamp);
+    }).length;
   }
 
   private getSignalTemplate(kline: Kline): SeriesMarker<Time> {
@@ -432,6 +468,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         mode: CrosshairMode.Normal
       }
     });
+  }
+
+  private subscribeVisibleRangeChange(): void {
+    this.visibleRangeChangeHandler = () => {
+      this.drawMarkers();
+    };
+
+    this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
   }
 
   private subscribeCrosshairMove(): void {
