@@ -31,8 +31,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private commissionChecked = false;
   private positionSizeChecked = false;
   private finalProfit: number[] = [];
-  private red = 'rgb(255, 77, 77)';
-  private green = 'rgb(0, 255, 0)';
   private markersPivotPoints: SeriesMarker<Time>[] = [];
   private markersSignals: SeriesMarker<Time>[] = [];
   private isCrosshairSubscribed = false;
@@ -64,13 +62,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-  /**
-   * interpolates the color between red and green, depending on value
-   */
   public getDrawbackColor(value: number, maxGreen: number, maxRed: number): string {
-    // negative value means negative profit
     if (value < 0) {
-      return this.red;
+      return 'rgb(255, 77, 77)';
     }
 
     let red, green, blue;
@@ -198,21 +192,28 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawProfitSeries(): void {
+    this.clearProfitSeries();
+    this.createAndConfigureProfitSeries();
+    this.calcStats();
+  }
+
+  private clearProfitSeries(): void {
     this.profitSeries.forEach(series => this.chart.removeSeries(series));
     this.profitSeries = [];
+  }
 
-    this.chartService.algorithms.forEach((algorithm, index) => {
-      this.profitSeries.push(this.chart.addSeries(LineSeries, { priceScaleId: index === 0 ? 'left' : 'left2' }));
-      this.setProfitSeriesData(index);  // init with no commission
-
-      this.profitSeries[index].applyOptions({
+  private createAndConfigureProfitSeries(): void {
+    this.chartService.algorithms.forEach((_, index) => {
+      const series = this.chart.addSeries(LineSeries, {
+        priceScaleId: index === 0 ? 'left' : 'left2',
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false
       });
-    });
 
-    this.calcStats();
+      this.profitSeries.push(series);
+      this.setProfitSeriesData(index);
+    });
   }
 
   private drawOpenPositionSize(): void {
