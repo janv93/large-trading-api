@@ -90,9 +90,12 @@ export class CompactCirclePrimitive implements ISeriesPrimitive<Time> {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
+    const visibleRange = timeScale.getVisibleRange();
     const items: RenderedCompactCircle[] = [];
 
     for (const marker of this._markers) {
+      if (visibleRange && (marker.time < (visibleRange.from as number) || marker.time > (visibleRange.to as number))) continue;
+
       const x = timeScale.timeToCoordinate(marker.time as Time);
       const y = this._series.priceToCoordinate(marker.price);
 

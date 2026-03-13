@@ -106,9 +106,12 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
+    const visibleRange = timeScale.getVisibleRange();
     const lines: RenderedLine[] = [];
 
     for (const seg of this._segments) {
+      if (visibleRange && (seg.endTime < (visibleRange.from as number) || seg.startTime > (visibleRange.to as number))) continue;
+
       const x1 = timeScale.timeToCoordinate(seg.startTime as Time);
       const y1 = this._series.priceToCoordinate(seg.startValue);
       const x2 = timeScale.timeToCoordinate(seg.endTime as Time);
