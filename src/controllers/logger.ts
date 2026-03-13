@@ -79,7 +79,7 @@ export default class Logger {
       case 'Kucoin':
       case 'Btse':
       case 'Coinmarketcap': color = this.colors.yellow; break;
-      default: color = this.colors.reset; break;
+      default: color = this.colors.white; break;
     }
 
     const paddedName = caller.toUpperCase().slice(0, maxLength - 2).padEnd(maxLength);
