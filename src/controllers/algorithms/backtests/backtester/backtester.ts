@@ -11,7 +11,7 @@ export default class Backtester extends Base {
     let positions: Array<Position | undefined> = [];
     let profit = 0;
 
-    klines.forEach((kline: Kline) => {
+    this.forEachWithProgress(klines, (kline: Kline) => {
       positions = (positions as Position[]).map((position: Position) => {
         const closeSignal: Signal | undefined = this.getCloseSignal(position, kline, algorithm);
         profit += this.calcProfitChange(position, kline, algorithm, closeSignal);

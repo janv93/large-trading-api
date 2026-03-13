@@ -54,8 +54,13 @@ export default class Logger {
       const filled = Math.min(20, Math.floor(percent / 5));
       const bar = '█'.repeat(filled) + '░'.repeat(20 - filled);
 
-      this.progressActive = true;
-      process.stdout.write(`\x1b[?25l\x1b[2K\r${this.getParentLog(caller)} ${bar} ${Math.round(percent)}%`);
+      if (percent >= 100) {
+        process.stdout.write(`\x1b[2K\r\x1b[?25h`);
+        this.progressActive = false;
+      } else {
+        this.progressActive = true;
+        process.stdout.write(`\x1b[?25l\x1b[2K\r${this.getParentLog(caller)} ${bar} ${Math.round(percent)}%`);
+      }
     }
   }
 
