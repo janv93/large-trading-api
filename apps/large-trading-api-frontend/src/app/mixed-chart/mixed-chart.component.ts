@@ -97,7 +97,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.setFinalProfits();
     this.updateStats();
     this.drawSeries();
-    this.drawChartData();
+    this.drawMarkersAndCharting();
   }
 
   public onShowPositionSizeChange(event: Event): void {
@@ -110,7 +110,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const checked: boolean = (event.target as HTMLInputElement).checked;
 
     if (checked) {
-      this.drawChartData();
+      this.drawMarkersAndCharting();
     } else {
       this.trendLinesPrimitive?.setSegments([]);
       this.seriesMarkersPlugin!.setMarkers(this.markersSignals);
@@ -138,7 +138,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     this.applyDarkTheme(this.chart);
     this.drawSeries();
-    this.drawChartData();
+    this.drawMarkersAndCharting();
     this.subscribeCrosshairMove();
     this.chart.timeScale().fitContent();
   }
@@ -186,7 +186,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
 
     this.setCandlestickSeriesData();
-    this.setSignalsMarkers();
   }
 
   private drawProfitSeries(): void {
@@ -234,8 +233,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-  private drawChartData(): void {
+  private drawMarkersAndCharting(): void {
     this.setPivotPointsMarkers();
+    this.setSignalsMarkers();
     this.setTrendLines();
   }
 
