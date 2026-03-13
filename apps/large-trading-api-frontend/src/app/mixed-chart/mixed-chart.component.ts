@@ -1,5 +1,5 @@
 import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild, signal } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange } from 'lightweight-charts';
 import { TrendLinesPrimitive, TrendLineSegment } from './trend-lines-primitive';
 import { CompactCirclePrimitive, CompactCircleMarker } from './compact-circle-primitive';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
@@ -39,6 +39,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private markersSignals: SeriesMarker<Time>[] = [];
   private crosshairMoveHandler: ((param: MouseEventParams<Time>) => void) | undefined;
   private visibleRangeChangeHandler: (() => void) | undefined;
+  private lastVisibleRangeSize: number | undefined;
   private currentHighlightedOpenTimes = new Set<number>();
   private seriesMarkersPlugin: ISeriesMarkersPluginApi<Time> | undefined;
 
@@ -347,6 +348,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   // combine all markers
   private drawMarkers(): void {
+    console.log(1)
     if (this.getVisibleMarkersCount() > 500) {
       this.seriesMarkersPlugin!.setMarkers([]);
       this.compactCirclePrimitive!.setMarkers([...this.compactMarkers, ...this.compactPivotMarkers]);
@@ -483,6 +485,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private subscribeVisibleRangeChange(): void {
     this.visibleRangeChangeHandler = () => {
+      const visibleRange: IRange<Time> | null = this.chart.timeScale().getVisibleRange();
+      const timeRange: number | undefined = visibleRange ? (visibleRange.to as UTCTimestamp) - (visibleRange.from as UTCTimestamp) : undefined;
+
+      if (timeRange === undefined) return;
+      if (this.lastVisibleRangeSize !== undefined && Math.abs(timeRange - this.lastVisibleRangeSize) / this.lastVisibleRangeSize < 0.1) return;
+
+      this.lastVisibleRangeSize = timeRange;
       this.drawMarkers();
     };
 
