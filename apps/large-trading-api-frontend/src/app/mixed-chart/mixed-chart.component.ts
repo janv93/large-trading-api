@@ -33,8 +33,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private finalProfit: number[] = [];
   private markersPivotPoints: SeriesMarker<Time>[] = [];
   private markersSignals: SeriesMarker<Time>[] = [];
-  private isCrosshairSubscribed = false;
-  private executingCrosshairMove = false;
+  private crosshairMoveHandler: ((param: MouseEventParams<Time>) => void) | undefined;
   private currentHighlightedOpenTimes = new Set<number>();
   private seriesMarkersPlugin: ISeriesMarkersPluginApi<Time> | undefined;
 
@@ -57,6 +56,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   ngOnDestroy(): void {
+    if (this.crosshairMoveHandler && this.chart) {
+      this.chart.unsubscribeCrosshairMove(this.crosshairMoveHandler);
+    }
+
     if (this.chart) {
       this.chart.remove();
     }
@@ -89,14 +92,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   public onCommissionChange(event: Event) {
-    const checked: boolean = (event.target as HTMLInputElement).checked;
-    this.commissionChecked = checked;
+    this.commissionChecked = (event.target as HTMLInputElement).checked;
     this.setKlines();
     this.setFinalProfits();
+    this.calcStats();
     this.drawSeries();
-    this.setLegendValues();
     this.drawChartData();
-    this.setProfitSeriesData();
   }
 
   public onShowPositionSizeChange(event: Event) {
@@ -135,10 +136,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       }
     });
 
-    this.setLegendValues();
     this.applyDarkTheme(this.chart);
     this.drawSeries();
     this.drawChartData();
+    this.subscribeCrosshairMove();
     this.chart.timeScale().fitContent();
   }
 
@@ -192,7 +193,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.clearProfitSeries();
     this.createAndConfigureProfitSeries();
     this.setProfitSeriesData();
-    this.calcStats();
   }
 
   private clearProfitSeries(): void {
@@ -436,53 +436,43 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
-  // set values for top left legend
-  private setLegendValues() {
-    if (this.isCrosshairSubscribed) {
-      this.chart.unsubscribeCrosshairMove(() => {
-        this.subscribeCrosshairMove();
-      });
-    } else {
-      this.subscribeCrosshairMove();
-    }
-  }
+  private subscribeCrosshairMove(): void {
+    this.crosshairMoveHandler = (param: MouseEventParams<Time>) => {
+      const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
+      const index = param.logical as number;
+      const kline = this.currentKlines[index];
 
-  private subscribeCrosshairMove() {
-    this.chart.subscribeCrosshairMove((param: MouseEventParams<Time>) => {
-      if (!this.executingCrosshairMove) {
-        this.executingCrosshairMove = true;
-        this.isCrosshairSubscribed = true;
-        const ohlc = param.seriesData.get(this.candlestickSeries) as CandlestickData;
-        const profit0 = param.seriesData.get(this.profitSeries[0]) as LineData;
-        const profit1 = param.seriesData.get(this.profitSeries[1]) as LineData;
-        const openPositionSize: HistogramData | undefined = this.openPositionSizeSeries ? param.seriesData.get(this.openPositionSizeSeries) as HistogramData : undefined;
-        const index: number = param.logical as number;
-        const kline: Kline | undefined = this.currentKlines[index];
-
-        if (ohlc) {
-          for (const key in ohlc) {
-            if (typeof ohlc[key] === "number") {
-              ohlc[key] = parseFloat(ohlc[key].toFixed(2));
-            }
+      if (ohlc) {
+        for (const key in ohlc) {
+          if (typeof ohlc[key] === 'number') {
+            ohlc[key] = parseFloat(ohlc[key].toFixed(2));
           }
+        }
 
-          this.currentOhlc = ohlc;
-          this.currentProfit = [Number(profit0.value.toFixed(2)), Number(profit1.value.toFixed(2))];
-          this.currentIndex = param.logical as number;
+        this.currentOhlc = ohlc;
+        this.currentIndex = index;
 
-          if (openPositionSize !== undefined) {
+        this.currentProfit = this.profitSeries.map(series => {
+          const data = param.seriesData.get(series) as LineData;
+          return data ? Number(data.value.toFixed(2)) : 0;
+        });
+
+        if (this.openPositionSizeSeries) {
+          const openPositionSize = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;
+          if (openPositionSize) {
             this.openPositionSize = Number(openPositionSize.value.toFixed(2));
           }
         }
-
-        if (kline) {
-          this.highlightOpenSignals(kline);
-        }
-
-        this.highlightTrendLines(param);
-        this.executingCrosshairMove = false;
       }
-    });
+
+      if (kline) {
+        this.highlightOpenSignals(kline);
+      }
+
+      this.highlightTrendLines(param);
+    };
+
+    this.chart.subscribeCrosshairMove(this.crosshairMoveHandler);
   }
 
   private highlightOpenSignals(kline: Kline) {
