@@ -47,7 +47,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   ngOnInit(): void {
     this.setKlines();
     this.setFinalProfits();
-    this.calcStats();
+    this.updateStats();
     this.handleResize();
   }
 
@@ -91,22 +91,22 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     return `rgb(${red}, ${green}, ${blue})`;
   }
 
-  public onCommissionChange(event: Event) {
+  public onCommissionChange(event: Event): void {
     this.commissionChecked = (event.target as HTMLInputElement).checked;
     this.setKlines();
     this.setFinalProfits();
-    this.calcStats();
+    this.updateStats();
     this.drawSeries();
     this.drawChartData();
   }
 
-  public onShowPositionSizeChange(event: Event) {
+  public onShowPositionSizeChange(event: Event): void {
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.positionSizeChecked = checked;
     this.drawOpenPositionSize();
   }
 
-  public onShowChartingChange(event: Event) {
+  public onShowChartingChange(event: Event): void {
     const checked: boolean = (event.target as HTMLInputElement).checked;
 
     if (checked) {
@@ -117,7 +117,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-  private createChart() {
+  private createChart(): void {
     const container = this.containerRef.nativeElement;
     const width = Math.floor(container.getBoundingClientRect().width);
     const height = Math.floor(container.getBoundingClientRect().height);
@@ -143,7 +143,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.chart.timeScale().fitContent();
   }
 
-  private setKlines() {
+  private setKlines(): void {
     if (this.chartService.isMulti) {
       this.currentKlines = this.klines[0].klines; // in case of multi, only 1 available for now
     } else {
@@ -157,7 +157,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-  private handleResize() {
+  private handleResize(): void {
     this.renderer.listen('window', 'resize', () => {
       const container = this.containerRef.nativeElement;
 
@@ -234,12 +234,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-  private drawChartData() {
+  private drawChartData(): void {
     this.setPivotPointsMarkers();
     this.setTrendLines();
   }
 
-  private setPivotPointsMarkers() {
+  private setPivotPointsMarkers(): void {
     const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
@@ -252,7 +252,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.drawMarkers();
   }
 
-  private setTrendLines() {
+  private setTrendLines(): void {
     const segments: TrendLineSegment[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
@@ -302,7 +302,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.candlestickSeries.setData(mapped);
   }
 
-  private setSignalsMarkers() {
+  private setSignalsMarkers(): void {
     const markers: SeriesMarker<Time>[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
@@ -316,7 +316,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   // combine all markers
-  private drawMarkers() {
+  private drawMarkers(): void {
     const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
     allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
     this.seriesMarkersPlugin!.setMarkers(allMarkers);
@@ -373,7 +373,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     };
   }
 
-  private setProfitSeriesData() {
+  private setProfitSeriesData(): void {
     this.chartService.algorithms.forEach((_, index) => {
       const mapped = this.currentKlines.map((kline: Kline) => {
         const currentProfit: number = kline.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0;
@@ -391,7 +391,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
-  private setOpenPositionSizeSeriesData() {
+  private setOpenPositionSizeSeriesData(): void {
     const mapped = this.currentKlines.map((kline: Kline) => {
       const openPositionSize: number = kline.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
       const color = openPositionSize === 0 ? `transparent` : openPositionSize > 0 ? `rgba(0, 255, 162, 0.3)` : `rgba(255, 0, 170, 0.3)`;
@@ -408,9 +408,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
-
-
-  private applyDarkTheme(chart: IChartApi) {
+  private applyDarkTheme(chart: IChartApi): void {
     chart.applyOptions({
       layout: {
         background: { color: '#1a1a1a' },
@@ -473,13 +471,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     if (this.openPositionSizeSeries) {
       const openPositionSize = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;
+
       if (openPositionSize) {
         this.openPositionSize = Number(openPositionSize.value.toFixed(2));
       }
     }
   }
 
-  private highlightOpenSignals(kline: Kline) {
+  private highlightOpenSignals(kline: Kline): void {
     const backtest: BacktestData = kline.algorithms[this.chartService.algorithms[0]]!;
 
     const newOpenTimes = new Set(
@@ -500,7 +499,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.drawMarkers();
   }
 
-  private highlightTrendLines(param: MouseEventParams<Time>) {
+  private highlightTrendLines(param: MouseEventParams<Time>): void {
     if (!this.trendLinesPrimitive) return;
 
     if (!param?.point || !param.logical) {
@@ -513,7 +512,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.trendLinesPrimitive.setHover(index, hoverPrice);
   }
 
-  private calcStats(): void {
+  private updateStats(): void {
     const algorithm: Algorithm = this.chartService.algorithms[0];
 
     const tradesCount: number = this.currentKlines.reduce((acc: number, kline: Kline) => {
