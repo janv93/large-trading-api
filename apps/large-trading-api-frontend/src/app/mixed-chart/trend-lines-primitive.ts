@@ -33,12 +33,33 @@ class TrendLinesPaneRenderer implements IPrimitivePaneRenderer {
 
   draw(target: any): void {
     target.useBitmapCoordinateSpace(({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: any) => {
+      const normalLines: RenderedLine[] = [];
+      const highlightedLines: RenderedLine[] = [];
+
       for (const line of this._lines) {
+        if (line.highlighted) highlightedLines.push(line);
+        else normalLines.push(line);
+      }
+
+      ctx.lineWidth = horizontalPixelRatio;
+
+      if (normalLines.length > 0) {
         ctx.beginPath();
-        ctx.strokeStyle = line.highlighted ? 'yellow' : '#2196f3';
-        ctx.lineWidth = horizontalPixelRatio;
-        ctx.moveTo(line.x1 * horizontalPixelRatio, line.y1 * verticalPixelRatio);
-        ctx.lineTo(line.x2 * horizontalPixelRatio, line.y2 * verticalPixelRatio);
+        ctx.strokeStyle = '#2196f3';
+        for (const line of normalLines) {
+          ctx.moveTo(line.x1 * horizontalPixelRatio, line.y1 * verticalPixelRatio);
+          ctx.lineTo(line.x2 * horizontalPixelRatio, line.y2 * verticalPixelRatio);
+        }
+        ctx.stroke();
+      }
+
+      if (highlightedLines.length > 0) {
+        ctx.beginPath();
+        ctx.strokeStyle = 'yellow';
+        for (const line of highlightedLines) {
+          ctx.moveTo(line.x1 * horizontalPixelRatio, line.y1 * verticalPixelRatio);
+          ctx.lineTo(line.x2 * horizontalPixelRatio, line.y2 * verticalPixelRatio);
+        }
         ctx.stroke();
       }
     });
@@ -106,11 +127,18 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
-    const visibleRange = timeScale.getVisibleRange();
+    const visibleRange = timeScale.getVisibleRange() as { from: number, to: number } | null;
     const lines: RenderedLine[] = [];
 
-    for (const seg of this._segments) {
-      if (visibleRange && (seg.endTime < (visibleRange.from as number) || seg.startTime > (visibleRange.to as number))) continue;
+    for (let i = 0; i < this._segments.length; i++) {
+      const seg = this._segments[i];
+      if (visibleRange) {
+        // If it starts after the visible range, we can stop entirely
+        // assuming segments are sorted by startTime!
+        if (seg.startTime > visibleRange.to) break;
+        // If it ends before the visible range, just skip it
+        if (seg.endTime < visibleRange.from) continue;
+      }
 
       const x1 = timeScale.timeToCoordinate(seg.startTime as Time);
       const y1 = this._series.priceToCoordinate(seg.startValue);

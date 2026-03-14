@@ -33,13 +33,22 @@ class CompactCirclePaneRenderer implements IPrimitivePaneRenderer {
       const radius = 2 * pixelRatio;
       const offset = 5 * pixelRatio;
 
+      const itemsByColor = new Map<string, RenderedCompactCircle[]>();
       for (const item of this._items) {
-        const x = item.x * horizontalPixelRatio;
-        const baseY = item.y * verticalPixelRatio;
-        const y = item.side === 'above' ? baseY - offset : baseY + offset;
-        ctx.fillStyle = item.color;
+        if (!itemsByColor.has(item.color)) itemsByColor.set(item.color, []);
+        itemsByColor.get(item.color)!.push(item);
+      }
+
+      for (const [color, items] of itemsByColor) {
+        ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        for (const item of items) {
+          const x = item.x * horizontalPixelRatio;
+          const baseY = item.y * verticalPixelRatio;
+          const y = item.side === 'above' ? baseY - offset : baseY + offset;
+          ctx.moveTo(x + radius, y);
+          ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        }
         ctx.fill();
       }
     });
@@ -90,11 +99,27 @@ export class CompactCirclePrimitive implements ISeriesPrimitive<Time> {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
-    const visibleRange = timeScale.getVisibleRange();
+    const visibleRange = timeScale.getVisibleRange() as { from: number, to: number } | null;
     const items: RenderedCompactCircle[] = [];
 
-    for (const marker of this._markers) {
-      if (visibleRange && (marker.time < (visibleRange.from as number) || marker.time > (visibleRange.to as number))) continue;
+    let startIndex = 0;
+    if (visibleRange && this._markers.length > 0) {
+      let l = 0, r = this._markers.length - 1;
+      while (l <= r) {
+        const m = (l + r) >> 1;
+        if (this._markers[m].time < visibleRange.from) {
+          l = m + 1;
+        } else {
+          r = m - 1;
+        }
+      }
+      startIndex = Math.max(0, l - 1);
+    }
+
+    for (let i = startIndex; i < this._markers.length; i++) {
+      const marker = this._markers[i];
+      if (visibleRange && marker.time > visibleRange.to) break;
+      if (visibleRange && marker.time < visibleRange.from) continue;
 
       const x = timeScale.timeToCoordinate(marker.time as Time);
       const y = this._series.priceToCoordinate(marker.price);
