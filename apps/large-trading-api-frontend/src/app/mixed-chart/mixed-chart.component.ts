@@ -545,7 +545,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const backtest: BacktestData = kline.algorithms[this.chartService.algorithms[0]]!;
 
     const newOpenTimes = new Set(
-      backtest.signals.flatMap(s => s.openSignalReferences?.map(r => r.openTime) ?? [])
+      backtest.signals.flatMap(signal => signal.openSignalReferences?.map(openSignalReference => this.currentKlines[openSignalReference.klineIndex].times.open) ?? [])
     );
 
     const changed: boolean = newOpenTimes.size !== this.currentHighlightedOpenTimes.size ||
