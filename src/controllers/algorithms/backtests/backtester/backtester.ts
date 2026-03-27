@@ -11,7 +11,7 @@ export default class Backtester extends Base {
     let positions: Array<Position | undefined> = [];
     let profit = 0;
 
-    this.forEachWithProgress(klines, (kline: Kline) => {
+    this.forEachWithProgress(klines, (kline: Kline, index: number) => {
       positions = (positions as Position[]).map((position: Position) => {
         const closeSignal: Signal | undefined = this.getCloseSignal(position, kline, algorithm);
         profit += this.calcProfitChange(position, kline, algorithm, closeSignal);
@@ -21,12 +21,12 @@ export default class Backtester extends Base {
           profit -= this.calcCloseFee(position, kline, algorithm, closeSignal, commission);
           return undefined;
         } else {
-          return this.updateExistingPosition(position, kline);
+          return this.updateExistingPosition(position, kline, klines, algorithm);
         }
       });
 
       positions = positions.filter((position: Position | undefined) => position !== undefined); // filter out all closed positions
-      this.addNewPositions(positions as Position[], kline, algorithm);  // create new positions from signals
+      this.addNewPositions(positions as Position[], kline, algorithm, index);  // create new positions from signals
       profit -= this.calcOpenFee(kline, algorithm, commission);
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       backtest.percentProfit = profit;
@@ -90,19 +90,19 @@ export default class Backtester extends Base {
 
   private addOrUpdateCloseSignal(position: Position, kline: Kline, algorithm: Algorithm, closeSignal: Signal) {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
-    const backtestSignals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = backtest.signals;
     const signalReference: SignalReference = position.openSignalReference;
 
     if (this.isForceCloseSignal(closeSignal)) { // add force close to kline signals
       const closePrice: number = this.getClosePrice(position, closeSignal!, kline, algorithm);
-      backtestSignals.push({ signal: closeSignal!, price: closePrice, openSignalReferences: [signalReference] });
+      signals.push({ signal: closeSignal!, price: closePrice, openSignalReferences: [signalReference] });
     } else {  // normal close signal
-      const closeBacktestSignal: BacktestSignal = backtest.signals.find((signal: BacktestSignal) => signal.signal === Signal.Close)!;
+      const closeSignal: BacktestSignal = signals.find((signal: BacktestSignal) => signal.signal === Signal.Close)!;
 
-      if (closeBacktestSignal.openSignalReferences?.length) {
-        closeBacktestSignal.openSignalReferences.push(signalReference);
+      if (closeSignal.openSignalReferences?.length) {
+        closeSignal.openSignalReferences.push(signalReference);
       } else {
-        closeBacktestSignal.openSignalReferences = [signalReference];
+        closeSignal.openSignalReferences = [signalReference];
       }
     }
   }
@@ -129,7 +129,7 @@ export default class Backtester extends Base {
   }
 
   // update size and price of existing position in case it was not closed
-  private updateExistingPosition(position: Position, kline: Kline): Position {
+  private updateExistingPosition(position: Position, kline: Kline, klines: Kline[], algorithm: Algorithm): Position {
     const entryPrice: number = position.entryPrice;
     const currentClose: number = kline.prices.close;
     const currentHigh: number = kline.prices.high;
@@ -145,12 +145,13 @@ export default class Backtester extends Base {
     position.price = currentClose;
     position.highestPrice = Math.max(position.highestPrice || 0, currentHigh);
     position.lowestPrice = Math.min(position.lowestPrice || Infinity, currentLow);
-    this.updateExistingPositionTrailingStopLoss(position);
+    this.updateExistingPositionTrailingStopLoss(position, klines, algorithm);
     return position;
   }
 
-  private updateExistingPositionTrailingStopLoss(position: Position) {
-    const trailingStopLoss: TrailingStopLoss | undefined = position.openSignalReference.signal.positionCloseTrigger?.tSl;
+  private updateExistingPositionTrailingStopLoss(position: Position, klines: Kline[], algorithm: Algorithm) {
+    const openSignal: BacktestSignal = klines[position.openSignalReference.klineIndex].algorithms[algorithm]!.signals[position.openSignalReference.signalIndex];
+    const trailingStopLoss: TrailingStopLoss | undefined = openSignal.positionCloseTrigger?.tSl;
 
     if (trailingStopLoss) {
       const baseStopLoss: number = trailingStopLoss.stopLoss;
@@ -188,13 +189,13 @@ export default class Backtester extends Base {
     }
   }
 
-  private addNewPositions(positions: Position[], kline: Kline, algorithm: Algorithm) {
+  private addNewPositions(positions: Position[], kline: Kline, algorithm: Algorithm, klineIndex: number) {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
 
-    signals.forEach((signal: BacktestSignal) => {
+    signals.forEach((signal: BacktestSignal, signalIndex: number) => {
       if (!this.isCloseSignal(signal.signal)) {
-        positions.push(this.createPosition(kline, signal));
+        positions.push(this.createPosition(signal, klineIndex, signalIndex));
       }
     });
   }
@@ -219,14 +220,14 @@ export default class Backtester extends Base {
     }, 0);
   }
 
-  private createPosition(kline: Kline, signal: BacktestSignal): Position {
+  private createPosition(signal: BacktestSignal, klineIndex: number, signalIndex: number): Position {
     const signalSize: number = signal.size!;
     const signalPrice: number = signal.price;
     const tpSl: TakeProfitStopLoss | undefined = signal.positionCloseTrigger?.tpSl;
     const tSl: TrailingStopLoss | undefined = signal.positionCloseTrigger?.tSl;
     const takeProfit: number | undefined = tpSl?.takeProfit;
     const stopLoss: number | undefined = tpSl?.stopLoss || tSl?.stopLoss;
-    const openSignalReference: SignalReference = { openTime: kline.times.open, signal };
+    const openSignalReference: SignalReference = { klineIndex, signalIndex };
     let size: number;
     let entrySize: number;
     let liquidationPrice: number;

@@ -137,8 +137,8 @@ export interface BacktestSignal {
 }
 
 export interface SignalReference {
-  openTime: number;
-  signal: BacktestSignal;
+  klineIndex: number;
+  signalIndex: number;
 }
 
 export interface PositionCloseTrigger {
