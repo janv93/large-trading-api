@@ -37,7 +37,8 @@ export enum Algorithm {
   Dca = 'DCA',
   MeanReversion = 'MEANREVERSION',
   TwitterSentiment = 'TWITTERSENTIMENT',
-  TrendLine = 'TRENDLINE'
+  TrendLine = 'TRENDLINE',
+  Example = 'EXAMPLE'
 }
 
 export enum PivotPointSide {

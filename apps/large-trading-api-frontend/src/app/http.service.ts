@@ -113,7 +113,12 @@ export class HttpService {
         return {
           algorithm,
           percentProfit: this.chartService.trendLinePercentOfProfit[index]
-        }
+        };
+      case Algorithm.Example:
+        return {
+          algorithm,
+          size: this.chartService.exampleSize[index]
+        };
     }
   }
 
