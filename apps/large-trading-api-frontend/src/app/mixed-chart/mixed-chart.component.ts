@@ -377,7 +377,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const signals: Signal[] = backtestSignals.map((signal: BacktestSignal) => signal.signal);
     const hasBuy: boolean = signals.includes(Signal.Buy);
     const hasSell: boolean = signals.includes(Signal.Sell);
-    const hasClose: boolean = signals.includes(Signal.Close);
+    const hasClose: boolean = signals.includes(Signal.Close) || signals.includes(Signal.CloseAll);
     const hasLiquidation: boolean = signals.includes(Signal.Liquidation);
     const hasTakeProfit: boolean = signals.includes(Signal.TakeProfit);
     const hasStopLoss: boolean = signals.includes(Signal.StopLoss);

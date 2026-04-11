@@ -5,12 +5,12 @@ export class BaseComponent {
 
   protected isCloseSignal(signal?: Signal): boolean {
     if (!signal) return false;
-    return [Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
+    return [Signal.CloseAll, Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
   }
 
   protected isForceCloseSignal(signal?: Signal): boolean {
     const isCloseSignal: boolean = (this.isCloseSignal(signal));
-    return isCloseSignal && signal !== Signal.Close;
+    return isCloseSignal && signal !== Signal.CloseAll && signal !== Signal.Close;
   }
 
   // interpolates source value between source range to target value between target range

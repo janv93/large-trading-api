@@ -46,9 +46,11 @@ export enum PivotPointSide {
 }
 
 export enum Signal {
+  // these are set in the backtests
   Buy = 'BUY',
   Sell = 'SELL',
-  Close = 'CLOSE', // closes all open positions
+  Close = 'CLOSE',  // close a specific position
+  CloseAll = 'CLOSEALL',  // close all open positions
   // these are only set by the backtester
   Liquidation = 'LIQUIDATION',
   TakeProfit = 'TAKEPROFIT',
