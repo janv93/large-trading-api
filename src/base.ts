@@ -93,7 +93,7 @@ export default abstract class Base {
     switch (signal) {
       case Signal.Buy: return Signal.Sell;
       case Signal.Sell: return Signal.Buy;
-      case Signal.Close: return Signal.Close;
+      case Signal.CloseAll: return Signal.CloseAll;
       default: return null;
     }
   }
@@ -222,7 +222,7 @@ export default abstract class Base {
 
     klines.forEach((kline: Kline) => {
       kline.algorithms[algorithm]?.signals.forEach((signal: BacktestSignal) => {
-        if (signal.signal !== Signal.Close) totalSize += signal.size!;
+        if (!this.isCloseSignal(signal.signal)) totalSize += signal.size!;
       });
     });
 
@@ -269,12 +269,12 @@ export default abstract class Base {
 
   protected isCloseSignal(signal?: Signal): boolean {
     if (!signal) return false;
-    return [Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
+    return [Signal.CloseAll, Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
   }
 
   protected isForceCloseSignal(signal?: Signal): boolean {
     const isCloseSignal: boolean = (this.isCloseSignal(signal));
-    return isCloseSignal && signal !== Signal.Close;
+    return isCloseSignal && signal !== Signal.CloseAll && signal !== Signal.Close;
   }
 
   protected getRandomBoolean(): boolean {

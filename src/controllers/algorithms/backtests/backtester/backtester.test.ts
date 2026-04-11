@@ -24,7 +24,7 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
       },
       {
         ...baseKline,
@@ -34,17 +34,17 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       { // 4
         ...baseKline,
         prices: { ...basePrices, close: 450 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 900 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 900 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 900 }] } }
       },
       {
         ...baseKline,
@@ -59,7 +59,7 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 100 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 100 }] } }
       },
       { // 9
         ...baseKline,
@@ -84,7 +84,7 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
       },
       {
         ...baseKline,
@@ -128,7 +128,7 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200, size: 1 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200, size: 1 }] } }
       },
       {
         ...baseKline,
@@ -138,17 +138,17 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       { // 4
         ...baseKline,
         prices: { ...basePrices, close: 450 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
       },
       {
         ...baseKline,
         prices: { ...basePrices, close: 900 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 900 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 900 }] } }
       },
       {
         ...baseKline,
@@ -163,7 +163,7 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 100 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 100 }] } }
       },
       { // 9
         ...baseKline,
@@ -188,7 +188,7 @@ describe('Backtester', () => {
       {
         ...baseKline,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 200 }] } }
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
       },
       {
         ...baseKline,
@@ -617,5 +617,43 @@ describe('Backtester', () => {
       expect(backtestsLongStopLossTriggersFirst[2].percentProfit).toBeCloseTo(-0.01);
       expect(backtestsLongStopLossTriggersFirst[2].signals[0].signal).toBe(Signal.StopLoss);
     });
+  });
+
+  it('should close only the targeted position when using Signal.Close', () => {
+    const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const basePrices = { open: 0, high: 0, low: 1 };
+
+    const klines: Kline[] = [
+      { // 0: open position A
+        ...baseKline,
+        prices: { ...basePrices, close: 100 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
+      },
+      { // 1: open position B
+        ...baseKline,
+        prices: { ...basePrices, close: 200 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 1 }] } }
+      },
+      { // 2: close only position A (targeting klineIndex:0, signalIndex:0) — position B stays open
+        ...baseKline,
+        prices: { ...basePrices, close: 300 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 300, openSignalReferences: [{ klineIndex: 0, signalIndex: 0 }] }] } }
+      },
+      { // 3: close remaining position B
+        ...baseKline,
+        prices: { ...basePrices, close: 400 },
+        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 400 }] } }
+      }
+    ];
+
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
+    const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
+
+    expect(backtests[0].percentProfit).toBe(0);    // A just opened
+    expect(backtests[1].percentProfit).toBe(100);  // A unrealised: 100→200 (+100%)
+    expect(backtests[2].percentProfit).toBe(250);  // A closed (200→300, +100) + B unrealised (200→300, +50)
+    expect(backtests[2].openPositionSize).toBeCloseTo(1.5); // only B remains open (size = 1 * (1 + 0.5))
+    expect(backtests[3].percentProfit).toBe(300);  // B closed (300→400, +50)
+    expect(backtests[3].openPositionSize).toBe(0);
   });
 });

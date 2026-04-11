@@ -28,7 +28,7 @@ export default class Rsi extends Base {
       if (lastSignal === Signal.Buy) {
         if (rsiValue > rsiThresholdHigh) {
           signals.push({
-            signal: Signal.Close,
+            signal: Signal.CloseAll,
             price: closePrice
           });
 
@@ -43,7 +43,7 @@ export default class Rsi extends Base {
       } else if (lastSignal === Signal.Sell) {
         if (rsiValue < rsiThresholdLow) {
           signals.push({
-            signal: Signal.Close,
+            signal: Signal.CloseAll,
             price: closePrice
           });
 
@@ -58,7 +58,7 @@ export default class Rsi extends Base {
       } else {
         if (rsiValue > rsiThresholdHigh) {
           signals.push({
-            signal: Signal.Close,
+            signal: Signal.CloseAll,
             price: closePrice
           });
 
@@ -71,7 +71,7 @@ export default class Rsi extends Base {
           lastSignal = Signal.Sell;
         } else if (rsiValue < rsiThresholdLow) {
           signals.push({
-            signal: Signal.Close,
+            signal: Signal.CloseAll,
             price: closePrice
           });
 

@@ -39,7 +39,9 @@ export default class Backtester extends Base {
   private getCloseSignal(position: Position, kline: Kline, algorithm: Algorithm): Signal | undefined {
     const size: number = position.size;
     const isForceClose: boolean = this.isForceClose(position, kline);
-    const closeBacktestSignal: BacktestSignal | undefined = kline.algorithms[algorithm]?.signals.find((signal: BacktestSignal) => signal.signal === Signal.Close);
+    const closeBacktestSignal: BacktestSignal | undefined = this.findCloseBacktestSignal(position, kline, algorithm);
+    const closeSignal: Signal | undefined = closeBacktestSignal?.signal;
+
     if ((!isForceClose && !closeBacktestSignal) || size === 0) return undefined;
 
     const slPrice: number | undefined = position.stopLossPrice;
@@ -56,7 +58,7 @@ export default class Backtester extends Base {
 
     const forceCloseSignal: Signal | undefined = forceCloseSignals[0]; // take the first signal that was pushed, which will have precedence over the succeeding types
 
-    if (!forceCloseSignal) return Signal.Close;
+    if (!forceCloseSignal) return closeSignal;
     if (!closeBacktestSignal) return forceCloseSignal;
 
     if (forceCloseSignal && closeBacktestSignal) {
@@ -70,11 +72,24 @@ export default class Backtester extends Base {
       }
 
       if (size > 0) { // long
-        return closePrice < forceClosePrice! ? Signal.Close : forceCloseSignal;  // again, take the price that would result in max loss, max risk
+        return closePrice < forceClosePrice! ? closeSignal : forceCloseSignal;  // again, take the price that would result in max loss, max risk
       } else {  // short
-        return closePrice > forceClosePrice! ? Signal.Close : forceCloseSignal;
+        return closePrice > forceClosePrice! ? closeSignal : forceCloseSignal;
       }
     }
+  }
+
+  private findCloseBacktestSignal(position: Position, kline: Kline, algorithm: Algorithm): BacktestSignal | undefined {
+    return kline.algorithms[algorithm]?.signals.find((signal: BacktestSignal) => {
+      if (signal.signal === Signal.CloseAll) {
+        return true;
+      } else if (signal.signal === Signal.Close) {
+        return signal.openSignalReferences!.some((signalReference: SignalReference) => {
+          return signalReference.klineIndex === position.openSignalReference.klineIndex
+            && signalReference.signalIndex === position.openSignalReference.signalIndex;
+        });
+      }
+    });
   }
 
   private calcProfitChange(position: Position, kline: Kline, algorithm: Algorithm, closeSignal: Signal | undefined): number {
@@ -89,20 +104,19 @@ export default class Backtester extends Base {
   }
 
   private addOrUpdateCloseSignal(position: Position, kline: Kline, algorithm: Algorithm, closeSignal: Signal) {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = kline.algorithms[algorithm]!.signals;
     const signalReference: SignalReference = position.openSignalReference;
 
     if (this.isForceCloseSignal(closeSignal)) { // add force close to kline signals
       const closePrice: number = this.getClosePrice(position, closeSignal!, kline, algorithm);
       signals.push({ signal: closeSignal!, price: closePrice, openSignalReferences: [signalReference] });
-    } else {  // normal close signal
-      const closeSignal: BacktestSignal = signals.find((signal: BacktestSignal) => signal.signal === Signal.Close)!;
+    } else if (closeSignal === Signal.CloseAll) {  // add reference of all positions that are closed by this signal - this is mainly for completeness and the frontend using this reference
+      const closeAllBacktestSignal: BacktestSignal = signals.find((signal: BacktestSignal) => signal.signal === Signal.CloseAll)!;
 
-      if (closeSignal.openSignalReferences?.length) {
-        closeSignal.openSignalReferences.push(signalReference);
+      if (closeAllBacktestSignal.openSignalReferences?.length) {
+        closeAllBacktestSignal.openSignalReferences.push(signalReference);
       } else {
-        closeSignal.openSignalReferences = [signalReference];
+        closeAllBacktestSignal.openSignalReferences = [signalReference];
       }
     }
   }
@@ -273,13 +287,12 @@ export default class Backtester extends Base {
   }
 
   private getClosePrice(position: Position, closeSignal: Signal, kline: Kline, algorithm: Algorithm): number {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
     let currentPrice: number;
 
     switch (closeSignal) {
       case Signal.Close:
-        const closeBacktestSignal: BacktestSignal = backtest.signals.find((signal: BacktestSignal) => signal.signal === Signal.Close)!;
-        currentPrice = closeBacktestSignal.price;
+      case Signal.CloseAll:
+        currentPrice = this.findCloseBacktestSignal(position, kline, algorithm)!.price;
         break;
       case Signal.Liquidation: currentPrice = position.liquidationPrice; break;
       case Signal.StopLoss: currentPrice = position.stopLossPrice!; break;

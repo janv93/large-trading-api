@@ -127,7 +127,7 @@ export default class MeanReversion extends Base {
     const closePrice: number = kline.prices.close;
 
     signals.push({
-      signal: Signal.Close,
+      signal: Signal.CloseAll,
       price: closePrice
     });
 

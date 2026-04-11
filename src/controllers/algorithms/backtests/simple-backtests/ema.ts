@@ -61,7 +61,7 @@ export default class Ema extends Base {
 
       if (positionOpen && momentumSwitchClose && lastMoveOpen !== moveClose) {
         signals.push({
-          signal: Signal.Close,
+          signal: Signal.CloseAll,
           price: closePrice
         });
 
@@ -71,7 +71,7 @@ export default class Ema extends Base {
       if (!positionOpen && momentumSwitchOpen) {
         if (moveOpen === 'up') {
           signals.push({
-            signal: Signal.Close,
+            signal: Signal.CloseAll,
             price: closePrice
           });
 
@@ -84,7 +84,7 @@ export default class Ema extends Base {
           positionOpen = true;
         } else if (moveOpen === 'down') {
           signals.push({
-            signal: Signal.Close,
+            signal: Signal.CloseAll,
             price: closePrice
           });
 

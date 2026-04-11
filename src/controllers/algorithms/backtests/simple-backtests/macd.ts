@@ -39,7 +39,7 @@ export default class Macd extends Base {
           if (move === 'down' && h > 0) {
             if (h > 0.003) {
               signals.push({
-                signal: Signal.Close,
+                signal: Signal.CloseAll,
                 price: closePrice
               });
 
@@ -55,7 +55,7 @@ export default class Macd extends Base {
           } else if (move === 'up' && h < 0) {
             if (h < -0.003) {
               signals.push({
-                signal: Signal.Close,
+                signal: Signal.CloseAll,
                 price: closePrice
               });
 
@@ -72,7 +72,7 @@ export default class Macd extends Base {
         } else {
           if ((positionOpenType === Signal.Sell && h < 0) || (positionOpenType === Signal.Buy && h > 0)) {
             signals.push({
-              signal: Signal.Close,
+              signal: Signal.CloseAll,
               price: closePrice
             });
 
