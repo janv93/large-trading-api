@@ -5,21 +5,31 @@ export default class Example extends Base {
   public setSignals(klines: Kline[], algorithm: Algorithm, size: number): Kline[] {
     const interval = Math.floor(klines.length / 11);
 
-    klines.forEach((kline: Kline, index: number) => {
+    this.forEachWithProgress(klines, (kline: Kline, index: number) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
       const closePrice: number = kline.prices.close;
 
-      // Section 0: Buy + CloseAll
+      // Buy + CloseAll
       if (index === interval * 0) signals.push({ signal: Signal.Buy, size, price: closePrice });
       if (index === interval * 1) signals.push({ signal: Signal.CloseAll, price: closePrice });
 
-      // Section 1: Sell + CloseAll
+      // Sell + CloseAll
       if (index === interval * 2) signals.push({ signal: Signal.Sell, size, price: closePrice });
       if (index === interval * 3) signals.push({ signal: Signal.CloseAll, price: closePrice });
 
-      // Section 2: Buy + tpSl (auto-close at +5% take profit or -2% stop loss)
-      if (index === interval * 4) {
+      // Buy + Close (close one specific position by open signal reference)
+      if (index === interval * 4) signals.push({ signal: Signal.Buy, size, price: closePrice });
+      if (index === interval * 5) {
+        signals.push({
+          signal: Signal.Close,
+          price: closePrice,
+          openSignalReferences: [{ klineIndex: interval * 4, signalIndex: 0 }]
+        });
+      }
+
+      // Buy + tpSl (close at +5% take profit or -2% stop loss)
+      if (index === interval * 6) {
         signals.push({
           signal: Signal.Buy,
           size,
@@ -30,8 +40,8 @@ export default class Example extends Base {
         });
       }
 
-      // Section 3: Sell + tSl (trailing stop, trails 3% above lowest price since entry)
-      if (index === interval * 5) {
+      // Sell + trailing stoploss (trails 3% above lowest price since entry)
+      if (index === interval * 7) {
         signals.push({
           signal: Signal.Sell,
           size,
@@ -42,8 +52,8 @@ export default class Example extends Base {
         });
       }
 
-      // Section 4: Buy + tSl + percentOfProfit (trailing stop that also locks in 50% of peak profit)
-      if (index === interval * 6) {
+      // Buy + trailing stoploss + percentOfProfit (locks in 50% of peak profit)
+      if (index === interval * 8) {
         signals.push({
           signal: Signal.Buy,
           size,
@@ -51,16 +61,6 @@ export default class Example extends Base {
           positionCloseTrigger: {
             tSl: { stopLoss: 0.03, percentOfProfit: 0.5 }
           }
-        });
-      }
-
-      // Section 5: Buy + Close (close one specific position by klineIndex/signalIndex reference)
-      if (index === interval * 10) signals.push({ signal: Signal.Buy, size, price: closePrice });
-      if (index === interval * 11) {
-        signals.push({
-          signal: Signal.Close,
-          price: closePrice,
-          openSignalReferences: [{ klineIndex: interval * 10, signalIndex: 0 }]
         });
       }
     });

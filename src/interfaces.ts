@@ -155,8 +155,8 @@ export interface TakeProfitStopLoss {
 }
 
 export interface TrailingStopLoss {
-  stopLoss: number;
-  percentOfProfit?: number; // if set, take the larger effective sl % of both
+  stopLoss: number; // if percentOfProfit is set, this serves as minimum stopLoss
+  percentOfProfit?: number; // use percent of peak profit as stop loss
 }
 
 export interface MultiBenchmark {
