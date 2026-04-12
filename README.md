@@ -16,11 +16,11 @@ Frontend: [Large Trading API Frontend](https://github.com/janv93/large-trading-a
 
 ## How to use backtests:
 
-2. Add credentials file (.env) to call APIs (most importantly binance or alpaca for ticker retrieval)
-3. Add or use existing backtests in src/controllers/algorithms/backtests
-4. When adding new backtest, add settings for backtest to frontend code
-5. npm i, npm start
-6. Start the [frontend](https://github.com/janv93/trading-chart-visualizer)
+1. Add credentials file (.env) to call APIs (most importantly binance or alpaca for ticker retrieval)
+2. Add or use existing backtests in src/controllers/algorithms/backtests
+3. When adding new backtest, add settings for backtest to frontend code
+4. npm i, npm start
+5. Start the [frontend](https://github.com/janv93/trading-chart-visualizer)
 
 ## Requirements:
 
