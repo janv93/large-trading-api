@@ -14,7 +14,7 @@ export class ChartService {
   public symbol = 'BTCUSDT';  // ignored for multi
   public timeframe = Timeframe._1Hour;
   public times = 10;  // 1 = 1000 timeframes
-  public commission = 0.04;
+  public commission = 0.04; // 0.04%
 
   // multi
   public isMulti = false; // multiple charts mode
