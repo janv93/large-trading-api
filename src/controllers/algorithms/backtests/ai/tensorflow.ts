@@ -393,5 +393,4 @@ export default class Tensorflow extends Base {
       return { input, actual: actual[i], prediction: predictions[i] };
     });
   }
-
 }

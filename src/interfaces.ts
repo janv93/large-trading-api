@@ -103,6 +103,7 @@ export interface KlinePrices {
 
 export interface KlineChart {
   pivotPoints?: PivotPoint[];
+  marketStructure?: MarketStructure;
   trendLines?: TrendLine[];
   trendLineBreakthroughs?: TrendLine[];  // trend lines that break through kline
 }
@@ -111,6 +112,19 @@ export interface PivotPoint {
   left: number;
   right: number;
   side: PivotPointSide;
+}
+
+export interface MarketStructure {
+  type: MarketStructureType;
+  left: number;
+  right: number;
+}
+
+export enum MarketStructureType {
+  HH = 'HH',
+  HL = 'HL',
+  LH = 'LH',
+  LL = 'LL'
 }
 
 export interface TrendLine {

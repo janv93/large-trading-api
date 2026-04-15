@@ -1,18 +1,20 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '../../../../interfaces';
 import Base from '../../../../base';
-import Charting from '../../patterns/charting';
 import { LinearFunction } from '../../patterns/linear-function';
+import TrendLineController from '../../patterns/trendline';
+import PivotPointController from '../../patterns/pivot-point';
 
 export default class TrendLineBreakthrough extends Base {
-  private charting = new Charting();
+  private trendLineController = new TrendLineController();
+  private pivotPointController = new PivotPointController();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
   public setSignals(klines: Kline[], algorithm: Algorithm, percentOfProfit: number): Kline[] {
-    // this.charting.addPivotPoints(klines, 20, 20);
-    // this.charting.addTrendLinesFromPivotPoints(klines, 40, 200);
-    this.charting.addTrendLines(klines, 40, 200);
-    this.charting.addTrendLineBreakthroughs(klines);
-    this.charting.filterTrendLinesWithoutBreakthroughs(klines);
+    // this.pivotPointController.addPivotPoints(klines, 20, 20);
+    // this.trendLineController.addTrendLinesFromPivotPoints(klines, 40, 200);
+    this.trendLineController.addTrendLines(klines, 40, 200);
+    this.trendLineController.addTrendLineBreakthroughs(klines);
+    this.trendLineController.filterTrendLinesWithoutBreakthroughs(klines);
 
     this.forEachWithProgress(klines, (kline) => {
       const breakthroughs: TrendLine[] | undefined = kline.chart?.trendLineBreakthroughs;

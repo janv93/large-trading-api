@@ -123,9 +123,6 @@ export default class Backtester extends Base {
 
   private calcCloseFee(position: Position, kline: Kline, algorithm: Algorithm, closeSignal: Signal, commission: number): number {
     if (closeSignal === Signal.Liquidation) {
-      // in case of liquidation, you don't pay a fee.
-      // e.g. when normally closing a position that is worth 50$ from an orignal 100$, you pay the commission * 50$
-      // now when the position is worth 0$ from an original 100$, you pay 0 commission
       return 0;
     } else {
       // first determine at which price the position was closed
