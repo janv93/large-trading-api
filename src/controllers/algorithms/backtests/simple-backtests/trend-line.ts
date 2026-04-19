@@ -10,7 +10,7 @@ export default class TrendLineBreakthrough extends Base {
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
   public setSignals(klines: Kline[], algorithm: Algorithm, percentOfProfit: number): Kline[] {
-    // this.pivotPointController.addPivotPoints(klines, 20, 20);
+    // this.pivotPointController.addPivotPoints(klines, 20);
     // this.trendLineController.addTrendLinesFromPivotPoints(klines, 40, 200);
     this.trendLineController.addTrendLines(klines, 40, 200);
     this.trendLineController.addTrendLineBreakthroughs(klines);

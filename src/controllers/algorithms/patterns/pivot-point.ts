@@ -3,9 +3,9 @@ import { Kline, KlineWithIndex, MarketStructureType, PivotPoint, PivotPointSide 
 
 export default class PivotPointController extends Base {
   // add pivot points defined by horizontally uninterrupted highs/lows on the left and right side
-  public addPivotPoints(klines: Kline[], leftLength: number, rightLength: number): void {
+  public addPivotPoints(klines: Kline[], space: number): void {
     klines.forEach((kline: Kline, i: number) => {
-      const pivotPoint: PivotPoint | null = this.getPivotPoint(klines, i, leftLength, rightLength);
+      const pivotPoint: PivotPoint | null = this.getPivotPoint(klines, i, space);
 
       if (pivotPoint) {
         kline.chart = kline.chart || {};
@@ -14,12 +14,12 @@ export default class PivotPointController extends Base {
     });
   }
 
-  public addMarketStructure(klines: Kline[], length: number): void {
+  public addMarketStructure(klines: Kline[], space: number): void {
     const klinesWithPivotPoints: KlineWithIndex[] = [];
 
     klines.forEach((kline: Kline, i: number) => {
       const lastPivotPointSide: PivotPointSide | null = klinesWithPivotPoints.at(-1)?.kline.chart!.pivotPoint!.side || null;
-      const isPivotPoint: boolean = this.isMarketStructurePivotPoint(klines, i, length, lastPivotPointSide);
+      const isPivotPoint: boolean = this.isMarketStructurePivotPoint(klines, i, space, lastPivotPointSide);
 
       if (isPivotPoint) {
         klinesWithPivotPoints.push({ kline, index: i });
@@ -28,12 +28,12 @@ export default class PivotPointController extends Base {
     });
   }
 
-  private isMarketStructurePivotPoint(klines: Kline[], index: number, length: number, lastPivotPointSide: PivotPointSide | null): boolean {
+  private isMarketStructurePivotPoint(klines: Kline[], index: number, space: number, lastPivotPointSide: PivotPointSide | null): boolean {
     const currentKline = klines[index];
     const oppositeSide: PivotPointSide = lastPivotPointSide === PivotPointSide.High ? PivotPointSide.Low : PivotPointSide.High;
-    const pivotPoint: PivotPoint | null = this.getPivotPoint(klines, index, length, length, oppositeSide);
+    const pivotPoint: PivotPoint | null = this.getPivotPoint(klines, index, space, oppositeSide);
 
-    if (pivotPoint && this.nextPivotPointIsOppositeOrMinor(klines, index, pivotPoint.side, length)) {
+    if (pivotPoint && this.nextPivotPointIsOppositeOrMinor(klines, index, pivotPoint.side, space)) {
       currentKline.chart = currentKline.chart || {};
       currentKline.chart.pivotPoint = pivotPoint;
       return true;
@@ -42,13 +42,13 @@ export default class PivotPointController extends Base {
     }
   }
 
-  private nextPivotPointIsOppositeOrMinor(klines: Kline[], currentIndex: number, currentSide: PivotPointSide, length: number): boolean {
+  private nextPivotPointIsOppositeOrMinor(klines: Kline[], currentIndex: number, currentSide: PivotPointSide, space: number): boolean {
     const currentPrice = currentSide === PivotPointSide.High
       ? klines[currentIndex].prices.high
       : klines[currentIndex].prices.low;
 
     for (let i = currentIndex + 1; i < klines.length; i++) {
-      const nextPivotPoint: PivotPoint | null = this.getPivotPoint(klines, i, length, length);
+      const nextPivotPoint: PivotPoint | null = this.getPivotPoint(klines, i, space);
 
       if (nextPivotPoint) {
         if (nextPivotPoint.side !== currentSide) return true;
@@ -93,16 +93,16 @@ export default class PivotPointController extends Base {
     currentKline.kline.chart!.pivotPoint!.marketStructure = type;
   }
 
-  private getPivotPoint(klines: Kline[], i: number, leftLength: number, rightLength: number, side?: PivotPointSide): PivotPoint | null {
-    if (!klines[i - leftLength] && klines[i + rightLength]) return null;
+  private getPivotPoint(klines: Kline[], i: number, space: number, side?: PivotPointSide): PivotPoint | null {
+    if (!klines[i - space] && klines[i + space]) return null;
 
     const kline: Kline = klines[i];
     const currentHigh: number = kline.prices.high;
     const currentLow: number = kline.prices.low;
-    const isLeftHigh: boolean = klines.slice(i - leftLength + 1, i).every(k => k.prices.high <= currentHigh);
-    const isRightHigh: boolean = klines.slice(i + 1, i + rightLength).every(k => k.prices.high <= currentHigh);
-    const isLeftLow: boolean = klines.slice(i - leftLength + 1, i).every(k => k.prices.low >= currentLow);
-    const isRightLow: boolean = klines.slice(i + 1, i + rightLength).every(k => k.prices.low >= currentLow);
+    const isLeftHigh: boolean = klines.slice(i - space + 1, i).every(k => k.prices.high <= currentHigh);
+    const isRightHigh: boolean = klines.slice(i + 1, i + space).every(k => k.prices.high <= currentHigh);
+    const isLeftLow: boolean = klines.slice(i - space + 1, i).every(k => k.prices.low >= currentLow);
+    const isRightLow: boolean = klines.slice(i + 1, i + space).every(k => k.prices.low >= currentLow);
     const isHigh: boolean = isLeftHigh && isRightHigh;
     const isLow: boolean = isLeftLow && isRightLow;
     const pivotPointSide: PivotPointSide | null = isHigh ? PivotPointSide.High : isLow ? PivotPointSide.Low : null;
@@ -110,7 +110,7 @@ export default class PivotPointController extends Base {
     if (side && pivotPointSide !== side) return null;
 
     if (pivotPointSide) {
-      return { left: leftLength, right: rightLength, side: pivotPointSide };
+      return { space, side: pivotPointSide };
     }
 
     return null;

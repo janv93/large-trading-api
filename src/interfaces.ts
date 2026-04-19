@@ -113,8 +113,7 @@ export interface KlineChart {
 }
 
 export interface PivotPoint {
-  left: number;
-  right: number;
+  space: number;
   side: PivotPointSide;
   marketStructure?: MarketStructureType;
 }
