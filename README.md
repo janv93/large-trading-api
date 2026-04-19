@@ -14,7 +14,6 @@ Frontend: [Large Trading API Frontend](https://github.com/janv93/large-trading-a
 - [ ] Find smart algo for closing positions (currently static tp/sl etc.)
 - [ ] Candlesticks patterns
 - [ ] RSI divergence
-- [ ] Charting patterns like market structure
 - [ ] Enhance trend line algo with >2 line touches and retests
 - [ ] Consider more data like pausing positions during FOMC
 - [ ] Screener (?)
