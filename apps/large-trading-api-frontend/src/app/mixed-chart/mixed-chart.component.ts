@@ -2,7 +2,7 @@ import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, Vie
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange } from 'lightweight-charts';
 import { TrendLinesPrimitive, TrendLineSegment } from './trend-lines-primitive';
 import { CompactCirclePrimitive, CompactCircleMarker } from './compact-circle-primitive';
-import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference } from '../interfaces';
+import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference, MarketStructureType } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 import { LinearFunction } from '../linear-function';
@@ -415,14 +415,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private getPivotPointTemplate(kline: Kline): SeriesMarker<Time> {
     const pivotPoint: PivotPoint = kline.chart?.pivotPoint!;
-    const marketStructure = kline.chart?.marketStructure;
+    const marketStructure: MarketStructureType | undefined = pivotPoint.marketStructure;
 
     return {
       time: kline.times.open / 1000 as Time,
       position: pivotPoint.side === PivotPointSide.High ? 'aboveBar' : 'belowBar',
       color: 'white',
       shape: pivotPoint.side === PivotPointSide.High ? 'arrowDown' : 'arrowUp',
-      text: marketStructure ? marketStructure.type : 'PP'
+      text: marketStructure ? marketStructure : 'PP'
     };
   }
 
