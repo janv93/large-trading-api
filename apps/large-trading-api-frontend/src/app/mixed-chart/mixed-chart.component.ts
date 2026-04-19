@@ -30,8 +30,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLinesPrimitive: TrendLinesPrimitive | undefined;
   private compactCirclePrimitive: CompactCirclePrimitive | undefined;
-  private compactMarkers: CompactCircleMarker[] = [];
-  private compactPivotMarkers: CompactCircleMarker[] = [];
+  private compactSignalMarkers: CompactCircleMarker[] = [];
+  private compactPivotPointMarkers: CompactCircleMarker[] = [];
   private commissionChecked = false;
   private positionSizeChecked = false;
   private finalProfit: number[] = [];
@@ -254,13 +254,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setPivotPointsMarkers(): void {
     const markers: SeriesMarker<Time>[] = [];
-    const compactPivotMarkers: CompactCircleMarker[] = [];
+    const compactPivotPointMarkers: CompactCircleMarker[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
       if (kline.chart?.pivotPoint) {
         const marker = this.getPivotPointTemplate(kline);
+
         markers.push(marker);
-        compactPivotMarkers.push({
+        compactPivotPointMarkers.push({
           time: kline.times.open / 1000,
           price: marker.position === 'belowBar' ? kline.prices.low : kline.prices.high,
           side: marker.position === 'belowBar' ? 'below' : 'above',
@@ -270,7 +271,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     this.markersPivotPoints = markers;
-    this.compactPivotMarkers = compactPivotMarkers;
+    this.compactPivotPointMarkers = compactPivotPointMarkers;
     this.drawMarkers();
   }
 
@@ -326,14 +327,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setSignalsMarkers(): void {
     const markers: SeriesMarker<Time>[] = [];
-    const compactMarkers: CompactCircleMarker[] = [];
+    const compactSignalMarkers: CompactCircleMarker[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
       if (kline.algorithms[this.chartService.algorithms[0]]!.signals.length) {
         const marker = this.getSignalTemplate(kline);
         markers.push(marker);
 
-        compactMarkers.push({
+        compactSignalMarkers.push({
           time: kline.times.open / 1000,
           price: marker.position === 'belowBar' ? kline.prices.low : kline.prices.high,
           side: marker.position === 'belowBar' ? 'below' : 'above',
@@ -343,14 +344,14 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     this.markersSignals = markers;
-    this.compactMarkers = compactMarkers;
+    this.compactSignalMarkers = compactSignalMarkers;
     this.drawMarkers();
   }
 
   // combine all markers
   private drawMarkers(): void {
     if (this.getVisibleMarkersCount() > 200) {
-      const combinedCompactMarkers = [...this.compactMarkers, ...this.compactPivotMarkers];
+      const combinedCompactMarkers = [...this.compactSignalMarkers, ...this.compactPivotPointMarkers];
       combinedCompactMarkers.sort((a, b) => a.time - b.time);
       this.seriesMarkersPlugin!.setMarkers([]);
       this.compactCirclePrimitive!.setMarkers(combinedCompactMarkers);
