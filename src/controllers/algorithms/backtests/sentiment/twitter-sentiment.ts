@@ -27,7 +27,8 @@ export default class TwitterSentiment extends Base {
     let [currentSl, currentTp] = [lowestSl, lowestTp];
     const constellations: number[][] = [];
 
-    do {  // create map of all constellations of sl and tp
+    // create map of all constellations of sl and tp
+    do {
       do {
         if (currentTp > currentSl) {
           constellations.push([currentSl, currentTp]);
@@ -74,8 +75,9 @@ export default class TwitterSentiment extends Base {
     const klinesWithProfit = this.backtester.calcBacktestPerformance(klines, algorithm, 0);
     const finalProfit = klinesWithProfit[klinesWithProfit.length - 1].algorithms[algorithm]!.percentProfit;
 
+    // reset signals and profits after each run
     if (reset) {
-      klines.forEach(k => { // reset signals and profits after each run
+      klines.forEach(k => {
         k.algorithms[algorithm]! = {
           signals: []
         };

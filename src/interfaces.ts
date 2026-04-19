@@ -77,6 +77,11 @@ export interface AppConfig {
   hadStockSplitCleanup?: boolean
 }
 
+export interface KlineWithIndex {
+  kline: Kline;
+  index: number;
+}
+
 export interface Kline {
   symbol: string;
   timeframe: Timeframe;
@@ -102,7 +107,7 @@ export interface KlinePrices {
 }
 
 export interface KlineChart {
-  pivotPoints?: PivotPoint[];
+  pivotPoint?: PivotPoint;
   marketStructure?: MarketStructure;
   trendLines?: TrendLine[];
   trendLineBreakthroughs?: TrendLine[];  // trend lines that break through kline

@@ -63,9 +63,9 @@ export default class TrendLineController extends Base {
   // add trend lines to klines that connect uninterrupted pivot points
   public addTrendLinesFromPivotPoints(klines: Kline[], minLength: number, maxLength: number): void {
     this.forEachWithProgress(klines, (kline, i) => {
-      if (!kline.chart?.pivotPoints?.length) return;  // if no pivot points, skip kline
+      if (!kline.chart?.pivotPoint) return;  // if no pivot point, skip kline
 
-      const ppStart: PivotPoint = kline.chart.pivotPoints[0];
+      const ppStart: PivotPoint = kline.chart.pivotPoint;
       const ppStartSide: PivotPointSide = ppStart.side;
       const isHigh: boolean = ppStartSide === PivotPointSide.High;
       const startPrice: number = isHigh ? kline.prices.high : kline.prices.low;
@@ -81,7 +81,7 @@ export default class TrendLineController extends Base {
         const isTrendLineLongEnough: boolean = dx >= minLength;
 
         if (isTrendLineLongEnough) {
-          const hasPivotPoint: boolean = endKline.chart?.pivotPoints?.[0]?.side === ppStartSide;
+          const hasPivotPoint: boolean = endKline.chart?.pivotPoint?.side === ppStartSide;
           const isUninterrupted: boolean = isHigh ? currentSlope >= extremeSlope : currentSlope <= extremeSlope;
 
           if (hasPivotPoint && isUninterrupted && this.isTrendLineAgainstTrend(startPrice, endPrice, position)) {
