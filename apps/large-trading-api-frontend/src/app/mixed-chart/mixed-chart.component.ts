@@ -332,6 +332,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       if (kline.algorithms[this.chartService.algorithms[0]]!.signals.length) {
         const marker = this.getSignalTemplate(kline);
         markers.push(marker);
+
         compactMarkers.push({
           time: kline.times.open / 1000,
           price: marker.position === 'belowBar' ? kline.prices.low : kline.prices.high,
@@ -349,8 +350,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   // combine all markers
   private drawMarkers(): void {
     if (this.getVisibleMarkersCount() > 200) {
+      const combinedCompactMarkers = [...this.compactMarkers, ...this.compactPivotMarkers];
+      combinedCompactMarkers.sort((a, b) => a.time - b.time);
       this.seriesMarkersPlugin!.setMarkers([]);
-      this.compactCirclePrimitive!.setMarkers([...this.compactMarkers, ...this.compactPivotMarkers]);
+      this.compactCirclePrimitive!.setMarkers(combinedCompactMarkers);
     } else {
       const allMarkers = [...this.markersSignals, ...this.markersPivotPoints];
       allMarkers.sort((a, b) => (a.time as UTCTimestamp) - (b.time as UTCTimestamp));
