@@ -257,7 +257,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     const compactPivotMarkers: CompactCircleMarker[] = [];
 
     this.currentKlines.forEach((kline: Kline) => {
-      if (kline.chart?.pivotPoints) {
+      if (kline.chart?.pivotPoint) {
         const marker = this.getPivotPointTemplate(kline);
         markers.push(marker);
         compactPivotMarkers.push({
@@ -410,14 +410,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private getPivotPointTemplate(kline: Kline): SeriesMarker<Time> {
-    const pivotPoint: PivotPoint = kline.chart?.pivotPoints![0]!;
+    const pivotPoint: PivotPoint = kline.chart?.pivotPoint!;
+    const marketStructure = kline.chart?.marketStructure;
 
     return {
       time: kline.times.open / 1000 as Time,
       position: pivotPoint.side === PivotPointSide.High ? 'aboveBar' : 'belowBar',
       color: 'white',
       shape: pivotPoint.side === PivotPointSide.High ? 'arrowDown' : 'arrowUp',
-      text: 'PP'
+      text: marketStructure ? marketStructure.type : 'PP'
     };
   }
 
