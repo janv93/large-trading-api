@@ -16,6 +16,7 @@ import MeanReversion from './algorithms/backtests/investing/mean-reversion';
 import TwitterSentiment from './algorithms/backtests/sentiment/twitter-sentiment';
 import MultiTicker from './algorithms/backtests/simple-backtests/multi-ticker';
 import TrendLineBreakthrough from './algorithms/backtests/simple-backtests/trend-line';
+import MarketStructure from './algorithms/backtests/simple-backtests/market-structure';
 import Example from './algorithms/backtests/simple-backtests/example';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
@@ -37,6 +38,7 @@ export default class Routes extends Base {
   private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
   private trendLineBreakthrough = new TrendLineBreakthrough();
+  private marketStructure = new MarketStructure();
   private example = new Example();
   private cmc = new Coinmarketcap();
 
@@ -141,7 +143,7 @@ export default class Routes extends Base {
   }
 
   private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, percentOfProfit, size } = params;
+    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, percentOfProfit, size, space } = params;
 
     klines.forEach((kline: Kline) => {
       kline.algorithms[algorithm] = {
@@ -170,6 +172,8 @@ export default class Routes extends Base {
         return await this.twitterSentiment.setSignals(klines, algorithm);
       case Algorithm.TrendLine:
         return await this.trendLineBreakthrough.setSignals(klines, algorithm, percentOfProfit);
+      case Algorithm.MarketStructure:
+        return await this.marketStructure.setSignals(klines, algorithm, Number(space));
       case Algorithm.Example:
         return this.example.setSignals(klines, algorithm, Number(size));
       default: throw 'invalid';

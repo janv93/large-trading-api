@@ -37,6 +37,7 @@ export enum Algorithm {
   MeanReversion = 'MEANREVERSION',
   TwitterSentiment = 'TWITTERSENTIMENT',
   TrendLine = 'TRENDLINE',
+  MarketStructure = 'MARKETSTRUCTURE',
   Example = 'EXAMPLE'
 }
 
@@ -70,6 +71,18 @@ export enum TrendLinePosition {
 export enum LogLevel {
   Default = 'DEFAULT',
   NoDb = 'NODB'
+}
+
+export enum MarketStructureType {
+  HH = 'HH',
+  HL = 'HL',
+  LH = 'LH',
+  LL = 'LL'
+}
+
+export enum Direction {
+  Up = 'UP',
+  Down = 'DOWN'
 }
 
 export interface AppConfig {
@@ -108,8 +121,9 @@ export interface KlinePrices {
 
 export interface KlineChart {
   pivotPoint?: PivotPoint;
-  trendLines?: TrendLine[];
-  trendLineBreakthroughs?: TrendLine[];  // trend lines that break through kline
+  marketStructure?: MarketStructureStats;
+  trendLines?: TrendLine[]; // trend lines that start from this kline
+  trendLineBreakthroughs?: TrendLine[];  // trend lines that break through this kline
 }
 
 export interface PivotPoint {
@@ -118,11 +132,9 @@ export interface PivotPoint {
   marketStructure?: MarketStructureType;
 }
 
-export enum MarketStructureType {
-  HH = 'HH',
-  HL = 'HL',
-  LH = 'LH',
-  LL = 'LL'
+export interface MarketStructureStats {
+  streak: number; // # higher or lower in a row
+  direction: Direction;
 }
 
 export interface TrendLine {
@@ -145,8 +157,8 @@ export interface BacktestData {
 
 export interface BacktestSignal {
   signal: Signal;
-  size?: number;  // not required if close
   price: number;
+  size?: number;  // not required if close
   positionCloseTrigger?: PositionCloseTrigger;
   openSignalReferences?: SignalReference[];  // only for closes to refer to the position which is closed, currently only used be the frontend
 }

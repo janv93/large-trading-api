@@ -1,5 +1,5 @@
 import Base from '../../../base';
-import { Kline, KlineWithIndex, MarketStructureType, PivotPoint, PivotPointSide } from '../../../interfaces';
+import { Direction, Kline, KlineWithIndex, MarketStructureType, PivotPoint, PivotPointSide } from '../../../interfaces';
 
 export default class PivotPointController extends Base {
   // add pivot points defined by horizontally uninterrupted highs/lows on the left and right side
@@ -25,11 +25,13 @@ export default class PivotPointController extends Base {
         klinesWithPivotPoints.push({ kline, index: i });
         this.addMarketStructureFromPivotPoints(klinesWithPivotPoints);
       }
+
+      this.addStreak(kline, i, klinesWithPivotPoints, klines, space);
     });
   }
 
   private isMarketStructurePivotPoint(klines: Kline[], index: number, space: number, lastPivotPointSide: PivotPointSide | null): boolean {
-    const currentKline = klines[index];
+    const currentKline: Kline = klines[index];
     const oppositeSide: PivotPointSide = lastPivotPointSide === PivotPointSide.High ? PivotPointSide.Low : PivotPointSide.High;
     const pivotPoint: PivotPoint | null = this.getPivotPoint(klines, index, space, oppositeSide);
 
@@ -43,7 +45,7 @@ export default class PivotPointController extends Base {
   }
 
   private nextPivotPointIsOppositeOrMinor(klines: Kline[], currentIndex: number, currentSide: PivotPointSide, space: number): boolean {
-    const currentPrice = currentSide === PivotPointSide.High
+    const currentPrice: number = currentSide === PivotPointSide.High
       ? klines[currentIndex].prices.high
       : klines[currentIndex].prices.low;
 
@@ -53,7 +55,7 @@ export default class PivotPointController extends Base {
       if (nextPivotPoint) {
         if (nextPivotPoint.side !== currentSide) return true;
 
-        const nextPrice = nextPivotPoint.side === PivotPointSide.High
+        const nextPrice: number = nextPivotPoint.side === PivotPointSide.High
           ? klines[i].prices.high
           : klines[i].prices.low;
 
@@ -91,6 +93,65 @@ export default class PivotPointController extends Base {
     }
 
     currentKline.kline.chart!.pivotPoint!.marketStructure = type;
+  }
+
+  private addStreak(currentKline: Kline, currentIndex: number, klinesWithPivotPoints: KlineWithIndex[], klines: Kline[], space: number): void {
+    // remove first 2 since they have no market structure, just PP
+    // remove klines that look past currentIndex into the future because of space to the right (cheating)
+    const klinesWithMarketStructure: KlineWithIndex[] = klinesWithPivotPoints.slice(2).filter((kline: KlineWithIndex) => {
+      return kline.index < currentIndex - space;
+    });
+
+    if (klinesWithMarketStructure.length < 2) return;
+
+    let streak: number = 0;
+    let direction: Direction | undefined;
+
+    for (let i = klinesWithMarketStructure.length - 1; i >= 0; i--) {
+      const currentKline: KlineWithIndex = klinesWithMarketStructure[i];
+      const marketStructure: MarketStructureType = currentKline.kline.chart!.pivotPoint!.marketStructure!;
+      const currentDirection: Direction = [MarketStructureType.HH, MarketStructureType.HL].includes(marketStructure) ? Direction.Up : Direction.Down;
+
+      if (!direction) {
+        direction = currentDirection;
+        streak++;
+      } else {
+        if (currentDirection === direction) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    const isReversal: boolean = this.isDirectionReversalSinceLastMarketStructure(klinesWithMarketStructure, klines, currentIndex, direction!);
+
+    if (isReversal) {
+      direction = direction === Direction.Up ? Direction.Down : Direction.Up;
+      streak = 1;
+    }
+
+    currentKline.chart = currentKline.chart || {};
+    currentKline.chart!.marketStructure = { streak, direction: direction! };
+  }
+
+  // e.g. last HL was at 10, now price dips below 10 meaning we can already say we have a LL even though we don't know the exact pivot point
+  private isDirectionReversalSinceLastMarketStructure(klinesWithMarketStructure: KlineWithIndex[], klines: Kline[], currentIndex: number, direction: Direction): boolean {
+    const relevantSide: PivotPointSide = direction === Direction.Up ? PivotPointSide.Low : PivotPointSide.High;
+
+    const lastRelevantKline: KlineWithIndex = [...klinesWithMarketStructure].reverse().find(
+      k => k.kline.chart!.pivotPoint!.side === relevantSide
+    )!;
+
+    const pricesSince: Kline[] = klines.slice(klinesWithMarketStructure.at(-1)!.index + 1, currentIndex + 1);
+
+    if (direction === Direction.Up) {
+      const lastLow: number = lastRelevantKline.kline.prices.low;
+      return pricesSince.some(k => k.prices.low < lastLow);
+    } else {
+      const lastHigh: number = lastRelevantKline.kline.prices.high;
+      return pricesSince.some(k => k.prices.high > lastHigh);
+    }
   }
 
   private getPivotPoint(klines: Kline[], i: number, space: number, side?: PivotPointSide): PivotPoint | null {
