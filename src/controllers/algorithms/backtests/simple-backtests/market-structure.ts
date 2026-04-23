@@ -19,6 +19,7 @@ export default class MarketStructure extends Base {
         return;
       }
 
+      // when a big streak is broken, buy the opposite side
       if (currentMarketStructureStats!.streak === 1 && lastMarketStructureStats.streak > 4) {
         const signals: BacktestSignal[] = kline.algorithms[algorithm]!.signals;
         const closePrice: number = kline.prices.close;
