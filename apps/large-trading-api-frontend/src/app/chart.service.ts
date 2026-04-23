@@ -23,7 +23,7 @@ export class ChartService {
 
   // algorithm settings
   // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
-  public algorithms = [Algorithm.Dca]; // if second algorithm is set, will draw a second profit line for comparison
+  public algorithms = [Algorithm.MarketStructure]; // if second algorithm is set, will draw a second profit line for comparison
   public rsiLength = [7, 7];
   public emaPeriodOpen = [80, 80];
   public emaPeriodClose = [80, 80];
@@ -32,6 +32,7 @@ export class ChartService {
   public meanReversionThreshold = [0.15, 0.15];
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
   public trendLinePercentOfProfit = [0.3, 0.3];
+  public marketStructureSpace = [5, 5];
   public exampleSize = [10, 10];
 
   // loading screen

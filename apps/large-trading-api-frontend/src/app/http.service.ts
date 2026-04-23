@@ -114,6 +114,11 @@ export class HttpService {
           algorithm,
           percentProfit: this.chartService.trendLinePercentOfProfit[index]
         };
+      case Algorithm.MarketStructure:
+        return {
+          algorithm,
+          space: this.chartService.marketStructureSpace[index]
+        };
       case Algorithm.Example:
         return {
           algorithm,
