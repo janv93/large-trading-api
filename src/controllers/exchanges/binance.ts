@@ -218,26 +218,29 @@ class Binance extends Base {
 
   // 'BTCUSDT' to 'btc'
   public pairToSymbol(pair: string): string {
-    return pair.replace(/USDT|BUSD/g, '').toLowerCase();
+    return pair.replace(/USDT|BUSD|USDC/g, '').toLowerCase();
   }
 
-  public symbolsToPairs(symbols: string[], pairList: string[]): string[] {
+  public symbolsToPairs(symbols: string[], pairList: string[]): Array<string | undefined> {
     return symbols.map(s => this.symbolToPair(s, pairList));
   }
 
-  // 'btc' to 'BTCUSDT' or 'BTCBUSD'
-  public symbolToPair(symbol: string, pairList: string[]): string {
+  public symbolToPair(symbol: string, pairList: string[]): string | undefined {
     const binanceSymbolUsdt: string = (symbol + 'usdt').toUpperCase();
     const binanceSymbolBusd: string = (symbol + 'busd').toUpperCase();
+    const binanceSymbolUsdc: string = (symbol + 'usdc').toUpperCase();
     const usdtSymbolExists: boolean = pairList.includes(binanceSymbolUsdt);
     const busdSymbolExists: boolean = pairList.includes(binanceSymbolBusd);
+    const usdcSymbolExists: boolean = pairList.includes(binanceSymbolUsdc);
 
     if (usdtSymbolExists) {
       return binanceSymbolUsdt;
     } else if (busdSymbolExists) {
       return binanceSymbolBusd;
+    } else if (usdcSymbolExists) {
+      return binanceSymbolUsdc;
     } else {
-      throw ('Could not map symbol ' + symbol + ' to corresponding pair.');
+      return undefined;
     }
   }
 
