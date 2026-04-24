@@ -202,8 +202,7 @@ export default class Routes extends Base {
 
   private async getMultiStocks(rank: number): Promise<string[]> {
     const mostActiveStocks: string[] = await alpaca.getMostActiveStocks(rank);
-    const stocksFiltered = mostActiveStocks.filter(s => mostActiveStocks.includes(s));
-    return stocksFiltered;
+    return mostActiveStocks;
   }
 
   private async getMultiCryptos(rank: number): Promise<string[]> {
