@@ -221,6 +221,7 @@ class Binance extends Base {
     return pair.replace(new RegExp(this.usdPairs.join('|'), 'g'), '').toLowerCase();
   }
 
+  // 'btc' to e.g. 'BTCUSDT' or 'BTCBUSD'
   public symbolsToPairs(symbols: string[], pairList: string[]): Array<string | undefined> {
     return symbols.map(s => this.symbolToPair(s, pairList));
   }
