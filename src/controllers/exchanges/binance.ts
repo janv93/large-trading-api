@@ -5,6 +5,7 @@ import Base from '../../base';
 import database from '../../data/database';
 
 class Binance extends Base {
+  private readonly usdPairs: string[] = ['USDT', 'BUSD', 'USDC'];
   private rateLimitPerMinute = 2400;
   private requestsSentThisMinute = 0;
 
@@ -193,17 +194,16 @@ class Binance extends Base {
   }
 
   public async getPairs(): Promise<string[]> {
-    this.log(`Get binance USDT/BUSD/USDC pairs`);
+    this.log(`Get binance usd pairs`);
     const dbSymbols: string[] | null = await database.getBinanceSymbolsIfUpToDate();
     if (dbSymbols) return dbSymbols;
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res: AxiosResponse = await axios.get(baseUrl);
-    const usdCoins: string[] = ['USDT', 'BUSD', 'USDC'];
-    const invalidSubstrings: string[] = ['UP', 'DOWN', 'SHIBUSDT'];
+    const invalidSubstrings: string[] = ['UP', 'DOWN', 'SHIBUSDT', 'SHIBBUSD'];
 
     const symbols: string[] = res.data.symbols
       .map(s => s.symbol)
-      .filter(s => usdCoins.some(coin => s.includes(coin)))
+      .filter(s => this.usdPairs.some(coin => s.includes(coin)))
       .filter(s => !invalidSubstrings.some(sub => s.includes(sub)));
 
     const uniqueSymbols: string[] = symbols.filter((symbol: string, index: number) => symbols.indexOf(symbol) === index);
@@ -218,7 +218,7 @@ class Binance extends Base {
 
   // 'BTCUSDT' to 'btc'
   public pairToSymbol(pair: string): string {
-    return pair.replace(/USDT|BUSD|USDC/g, '').toLowerCase();
+    return pair.replace(new RegExp(this.usdPairs.join('|'), 'g'), '').toLowerCase();
   }
 
   public symbolsToPairs(symbols: string[], pairList: string[]): Array<string | undefined> {
@@ -226,22 +226,9 @@ class Binance extends Base {
   }
 
   public symbolToPair(symbol: string, pairList: string[]): string | undefined {
-    const binanceSymbolUsdt: string = (symbol + 'usdt').toUpperCase();
-    const binanceSymbolBusd: string = (symbol + 'busd').toUpperCase();
-    const binanceSymbolUsdc: string = (symbol + 'usdc').toUpperCase();
-    const usdtSymbolExists: boolean = pairList.includes(binanceSymbolUsdt);
-    const busdSymbolExists: boolean = pairList.includes(binanceSymbolBusd);
-    const usdcSymbolExists: boolean = pairList.includes(binanceSymbolUsdc);
-
-    if (usdtSymbolExists) {
-      return binanceSymbolUsdt;
-    } else if (busdSymbolExists) {
-      return binanceSymbolBusd;
-    } else if (usdcSymbolExists) {
-      return binanceSymbolUsdc;
-    } else {
-      return undefined;
-    }
+    return this.usdPairs
+      .map(coin => symbol.toUpperCase() + coin)
+      .find(pair => pairList.includes(pair));
   }
 
   // add all tweets with same time to their klines
