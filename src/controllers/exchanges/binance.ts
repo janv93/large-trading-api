@@ -198,11 +198,13 @@ class Binance extends Base {
     if (dbSymbols) return dbSymbols;
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res: AxiosResponse = await axios.get(baseUrl);
+    const usdCoins: string[] = ['USDT', 'BUSD', 'USDC'];
+    const invalidSubstrings: string[] = ['UP', 'DOWN', 'SHIBUSDT'];
 
     const symbols: string[] = res.data.symbols
       .map(s => s.symbol)
-      .filter(s => s.includes('USDT') || s.includes('BUSD') || s.includes('USDC'))
-      .filter(s => (!s.includes('UP') && !s.includes('DOWN')));
+      .filter(s => usdCoins.some(coin => s.includes(coin)))
+      .filter(s => !invalidSubstrings.some(sub => s.includes(sub)));
 
     const uniqueSymbols: string[] = symbols.filter((symbol: string, index: number) => symbols.indexOf(symbol) === index);
     uniqueSymbols.sort();
