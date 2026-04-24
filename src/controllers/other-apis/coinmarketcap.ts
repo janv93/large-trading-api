@@ -31,7 +31,7 @@ export default class Coinmarketcap extends Base {
     if (dbTickers && dbTickers.length >= rank) return dbTickers.slice(0, rank);
     const url: string = this.baseUrl + '/cryptocurrency/listings/latest';
     const res: AxiosResponse = await axios.get(url, { headers: this.headers });
-    const top: string[] = res.data.data.slice(0, rank).map(c => c.symbol);
+    const top: string[] = res.data.data.map(c => c.symbol).filter(coin => !['USDT', 'USDC', 'DAI', 'USD1', 'USDe', 'PYUSD', 'USDG', 'RLUSD', 'USDD', 'U', 'TUSD', 'EURC', 'FDUSD', 'XAUt', 'PAXG'].includes(coin)).slice(0, rank);  // remove stable and gold coins
     await database.updateCmcTickers(top);
     return top;
   }

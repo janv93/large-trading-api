@@ -207,10 +207,9 @@ export default class Routes extends Base {
 
   private async getMultiCryptos(rank: number): Promise<string[]> {
     const capCryptos: string[] = await this.cmc.getCryptosByMarketCapRank(rank);
-    const capCryptosFiltered: string[] = capCryptos.filter((c: string) => !['USDC', 'USDT'].includes(c));
     const binanceCryptos: string[] = await binance.getUsdtBusdPairs();
 
-    const binanceEquivalents: Array<string | undefined> = capCryptosFiltered.map((c: string) => {
+    const binanceEquivalents: Array<string | undefined> = capCryptos.map((c: string) => {
       const usdtSymbol = binanceCryptos.find(v => v === c + 'USDT');
       const busdSymbol = binanceCryptos.find(v => v === c + 'BUSD');
       return usdtSymbol || busdSymbol;
