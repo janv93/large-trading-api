@@ -216,7 +216,7 @@ export default class Routes extends Base {
   }
 
   /**
-   * express has a limit for max response length
+   * both node and angular have a limit for max response length
    */
   private reduceTickersToLimit(tickers: Kline[][]) {
     const allKlines: Kline[] = tickers.flat();
@@ -230,11 +230,11 @@ export default class Routes extends Base {
     const sorted = tickers.map((t, i) => ({ i, len: t.length })).sort((a, b) => a.len - b.len);
     let budget: number = klineLimit;
 
-    for (let j = 0; j < sorted.length; j++) {
+    sorted.forEach(({ i, len }, j) => {
       const cap: number = Math.floor(budget / (sorted.length - j));
-      const keep: number = Math.min(sorted[j].len, cap);
-      tickers[sorted[j].i] = tickers[sorted[j].i].slice(-keep);
+      const keep: number = Math.min(len, cap);
+      tickers[i] = tickers[i].slice(-keep);
       budget -= keep;
-    }
+    });
   }
 }
