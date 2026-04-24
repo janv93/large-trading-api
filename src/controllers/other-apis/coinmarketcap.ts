@@ -30,24 +30,23 @@ export default class Coinmarketcap extends Base {
     return res.data.data['1'].symbol.toLowerCase();
   }
 
-  public async getCryptosByMarketCapRank(rank: number): Promise<string[]> {
-    this.log(`Get top ${rank} cryptos by market cap`);
+  public async getCryptosByMarketCap(rank: number): Promise<string[]> {
+    this.log(`Get cryptos by market cap`);
 
-    if (!process.env.coinmarketcap_api_key) return FALLBACK_COINS.slice(0, rank);
+    if (!process.env.coinmarketcap_api_key) return FALLBACK_COINS;
 
     const dbTickers: string[] | null = await database.getCmcTickersIfUpToDate();
-    if (dbTickers && dbTickers.length >= rank) return dbTickers.slice(0, rank);
+    if (dbTickers && dbTickers.length >= rank) return dbTickers;
 
     const url: string = this.baseUrl + '/cryptocurrency/listings/latest';
     const res: AxiosResponse = await axios.get(url, { headers: this.headers });
 
-    const top: string[] = (res.data.data as { symbol: string }[])
+    const filtered: string[] = (res.data.data as { symbol: string }[])
       .map(c => c.symbol)
-      .filter(coin => !EXCLUDED_COINS.has(coin))
-      .slice(0, rank);
+      .filter(coin => !EXCLUDED_COINS.has(coin));
 
-    await database.updateCmcTickers(top);
-    return top;
+    await database.updateCmcTickers(filtered);
+    return filtered;
   }
 
   public getAllSymbols(): any {

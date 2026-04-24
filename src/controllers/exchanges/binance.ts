@@ -199,7 +199,7 @@ class Binance extends Base {
     if (dbSymbols) return dbSymbols;
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
     const res: AxiosResponse = await axios.get(baseUrl);
-    const invalidSubstrings: string[] = ['UP', 'DOWN', 'SHIBUSDT', 'SHIBBUSD'];
+    const invalidSubstrings: string[] = ['UP', 'DOWN', 'SHIBUSDT', 'SHIBBUSD', 'SHIBUSDC']; // bugged or redundant tokens
 
     const symbols: string[] = res.data.symbols
       .map(s => s.symbol)

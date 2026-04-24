@@ -206,11 +206,12 @@ export default class Routes extends Base {
   }
 
   private async getMultiCryptos(rank: number): Promise<string[]> {
-    const cmcTickers: string[] = await this.cmc.getCryptosByMarketCapRank(rank);
+    const cmcTickers: string[] = await this.cmc.getCryptosByMarketCap(rank);
     const binanceAllPairs: string[] = await binance.getPairs();
     const binancePairs: Array<string | undefined> = binance.symbolsToPairs(cmcTickers, binanceAllPairs);
     const pairsFiltered: string[] = binancePairs.filter((c: string | undefined) => c) as string[];
-    return pairsFiltered;
+    const rankPairs: string[] = pairsFiltered.slice(0, rank);
+    return rankPairs;
   }
 
   /**
