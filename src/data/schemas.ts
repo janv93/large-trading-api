@@ -110,8 +110,8 @@ export const BinanceSymbolsSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
-export const CmcStocksSchema = new mongoose.Schema({
-  stocks: [{
+export const CmcTickersSchema = new mongoose.Schema({
+  tickers: [{
     type: String,
     required: true
   }]

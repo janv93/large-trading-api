@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Base from '../base';
 import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
-import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcStocksSchema, BinanceSymbolsSchema } from './schemas';
+import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
@@ -11,7 +11,7 @@ class Database extends Base {
   private twitterUserTimeline: mongoose.Model<any>;
   private alpacaSymbols: mongoose.Model<any>;
   private binanceSymbols: mongoose.Model<any>;
-  private cmcStocks: mongoose.Model<any>;
+  private cmcTickers: mongoose.Model<any>;
   private appConfig: mongoose.Model<any>;
 
   constructor() {
@@ -21,7 +21,7 @@ class Database extends Base {
     this.twitterUserTimeline = mongoose.model('TwitterUserTimeline', TwitterUserTimelineSchema);
     this.alpacaSymbols = mongoose.model('AlpacaSymbols', AlpacaSymbolsSchema);
     this.binanceSymbols = mongoose.model('BinanceSymbols', BinanceSymbolsSchema);
-    this.cmcStocks = mongoose.model('CmcStocks', CmcStocksSchema);
+    this.cmcTickers = mongoose.model('CmcTickers', CmcTickersSchema);
     this.appConfig = mongoose.model('AppConfig', AppConfigSchema);
   }
 
@@ -354,31 +354,31 @@ class Database extends Base {
     }
   }
 
-  public async getCmcStocksIfUpToDate(): Promise<string[] | null> {
+  public async getCmcTickersIfUpToDate(): Promise<string[] | null> {
     const oneDayAgo: Date = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     try {
-      const document = await this.cmcStocks.findOne({});
+      const document = await this.cmcTickers.findOne({});
 
       if (document && document.updatedAt < oneDayAgo) {
-        this.log(`CMC stocks outdated`);
+        this.log(`CMC tickers outdated`);
         return null;
       }
 
-      this.log(`Read CMC stocks`);
-      return document ? document.stocks : null;
+      this.log(`Read CMC tickers`);
+      return document ? document.tickers : null;
     } catch (err) {
-      this.logErr(`Failed to retrieve CMC stocks`, err);
+      this.logErr(`Failed to retrieve CMC tickers`, err);
       throw err;
     }
   }
 
-  public async updateCmcStocks(stocks: string[]): Promise<void> {
+  public async updateCmcTickers(tickers: string[]): Promise<void> {
     try {
-      await this.cmcStocks.findOneAndUpdate({}, { stocks, updatedAt: new Date() }, { upsert: true });
-      this.log(`Updated CMC stocks`);
+      await this.cmcTickers.findOneAndUpdate({}, { tickers, updatedAt: new Date() }, { upsert: true });
+      this.log(`Updated CMC tickers`);
     } catch (err) {
-      this.logErr('Failed to update CMC stocks: ', err);
+      this.logErr('Failed to update CMC tickers: ', err);
       throw err;
     }
   }
