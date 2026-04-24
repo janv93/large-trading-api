@@ -75,20 +75,18 @@ export default class Routes extends Base {
     const body = req.body;
     const { timeframe, times, rank, autoParams, algorithms } = body;
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank);
-    const commoditySymbols = ['GLD', 'UNG', 'USO', 'COPX'].slice(0, rank); // gold, gas, oil, copper
 
-    const [stocks, indexes, commodities, cryptos] = await Promise.all([
+    const [stocks, indexes, cryptos] = await Promise.all([
       this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
         this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
       ),
       this.initKlinesMulti(Exchange.Alpaca, indexSymbols, timeframe, times),
-      this.initKlinesMulti(Exchange.Alpaca, commoditySymbols, timeframe, times),
       this.getMultiCryptos(Number(rank)).then((cryptosSymbols: string[]) =>
         this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe, times)
       )
     ]);
 
-    const allTickers: Kline[][] = [...stocks, ...indexes, ...commodities, ...cryptos];
+    const allTickers: Kline[][] = [...stocks, ...indexes, ...cryptos];
     this.reduceTickersToLimit(allTickers);
     let tickersWithSignals: Kline[][] = allTickers;
 
