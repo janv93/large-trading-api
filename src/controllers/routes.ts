@@ -219,10 +219,9 @@ export default class Routes extends Base {
    * both node and angular have a limit for max response length
    */
   private reduceTickersToLimit(tickers: Kline[][]) {
-    const allKlines: Kline[] = tickers.flat();
-    const totalKlines: number = allKlines.length;
-    const sampleSize: number = Math.min(100, totalKlines);
-    const avgKlineSizeChars: number = JSON.stringify(allKlines.slice(0, sampleSize)).length / sampleSize;
+    const totalKlines: number = tickers.reduce((sum, t) => sum + t.length, 0);
+    const totalChars: number = tickers.reduce((sum, t) => sum + JSON.stringify(t).length, 0);
+    const avgKlineSizeChars: number = totalChars / totalKlines;
     const klineLimit: number = Math.floor(constants.MAX_STRING_LENGTH * 0.9 / avgKlineSizeChars);
 
     if (totalKlines <= klineLimit) return;
