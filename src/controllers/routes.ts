@@ -212,7 +212,8 @@ export default class Routes extends Base {
     const binanceEquivalents: Array<string | undefined> = capCryptos.map((c: string) => {
       const usdtSymbol = binanceCryptos.find(v => v === c + 'USDT');
       const busdSymbol = binanceCryptos.find(v => v === c + 'BUSD');
-      return usdtSymbol || busdSymbol;
+      const usdcSymbol = binanceCryptos.find(v => v === c + 'USDC');
+      return usdtSymbol || busdSymbol || usdcSymbol;
     });
 
     const cryptosFiltered: string[] = binanceEquivalents.filter((c: string | undefined) => c) as string[];

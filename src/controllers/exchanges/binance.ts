@@ -201,7 +201,7 @@ class Binance extends Base {
 
     const symbols: string[] = res.data.symbols
       .map(s => s.symbol)
-      .filter(s => s.includes('USDT') || s.includes('BUSD'))
+      .filter(s => s.includes('USDT') || s.includes('BUSD') || s.includes('USDC'))
       .filter(s => (!s.includes('UP') && !s.includes('DOWN')));
 
     const uniqueSymbols: string[] = symbols.filter((symbol: string, index: number) => symbols.indexOf(symbol) === index);
