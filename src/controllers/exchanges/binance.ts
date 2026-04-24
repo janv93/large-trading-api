@@ -193,7 +193,7 @@ class Binance extends Base {
   }
 
   public async getPairs(): Promise<string[]> {
-    this.log(`Get binance USDT/BUSD pairs`);
+    this.log(`Get binance USDT/BUSD/USDC pairs`);
     const dbSymbols: string[] | null = await database.getBinanceSymbolsIfUpToDate();
     if (dbSymbols) return dbSymbols;
     const baseUrl = 'https://api.binance.com/api/v3/exchangeInfo';
