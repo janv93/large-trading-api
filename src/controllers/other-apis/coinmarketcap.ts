@@ -4,6 +4,12 @@ import cryptos from './coinmarketcap-all-cryptos';
 import database from '../../data/database';
 
 
+// stablecoins and commodity-backed tokens to exclude from market cap rankings
+const EXCLUDED_COINS = new Set(['USDT', 'USDC', 'DAI', 'USD1', 'USDe', 'PYUSD', 'USDG', 'RLUSD', 'USDD', 'U', 'TUSD', 'EURC', 'FDUSD', 'XAUt', 'PAXG']);
+
+// fallback top coins when no API key is configured (stablecoins excluded)
+const FALLBACK_COINS = ['BTC', 'ETH', 'XRP', 'BNB', 'SOL', 'TRX', 'DOGE', 'HYPE', 'LEO', 'BCH', 'ADA', 'XMR', 'LINK', 'ZEC', 'CC', 'XLM', 'M', 'LTC', 'AVAX', 'HBAR', 'SUI', 'SHIB', 'TON', 'CRO', 'TAO'];
+
 export default class Coinmarketcap extends Base {
   private baseUrl = 'https://pro-api.coinmarketcap.com/v1';
 
@@ -26,12 +32,20 @@ export default class Coinmarketcap extends Base {
 
   public async getCryptosByMarketCapRank(rank: number): Promise<string[]> {
     this.log(`Get top ${rank} cryptos by market cap`);
-    if (!process.env.coinmarketcap_api_key) return ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'USDC', 'XRP', 'DOGE', 'TON', 'ADA'].slice(0, rank); // API key should not be required to run /multi
+
+    if (!process.env.coinmarketcap_api_key) return FALLBACK_COINS.slice(0, rank);
+
     const dbTickers: string[] | null = await database.getCmcTickersIfUpToDate();
     if (dbTickers && dbTickers.length >= rank) return dbTickers.slice(0, rank);
+
     const url: string = this.baseUrl + '/cryptocurrency/listings/latest';
     const res: AxiosResponse = await axios.get(url, { headers: this.headers });
-    const top: string[] = res.data.data.map(c => c.symbol).filter(coin => !['USDT', 'USDC', 'DAI', 'USD1', 'USDe', 'PYUSD', 'USDG', 'RLUSD', 'USDD', 'U', 'TUSD', 'EURC', 'FDUSD', 'XAUt', 'PAXG'].includes(coin)).slice(0, rank);  // remove stable and gold coins
+
+    const top: string[] = (res.data.data as { symbol: string }[])
+      .map(c => c.symbol)
+      .filter(coin => !EXCLUDED_COINS.has(coin))
+      .slice(0, rank);
+
     await database.updateCmcTickers(top);
     return top;
   }
