@@ -21,6 +21,7 @@ import Example from './algorithms/backtests/simple-backtests/example';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import QueryString from 'qs';
+import { constants } from 'buffer';
 
 
 export default class Routes extends Base {
@@ -87,7 +88,6 @@ export default class Routes extends Base {
     ]);
 
     const allTickers: Kline[][] = [...stocks, ...indexes, ...cryptos];
-    this.reduceTickersToLimit(allTickers);
     let tickersWithSignals: Kline[][] = allTickers;
 
     for (let i = 0; i < algorithms.length; i++) {
@@ -101,6 +101,7 @@ export default class Routes extends Base {
       }
     }
 
+    this.reduceTickersToLimit(tickersWithSignals);
     this.log('Multi finished');
     res.send(tickersWithSignals);
   }
@@ -218,38 +219,22 @@ export default class Routes extends Base {
    * express has a limit for max response length
    */
   private reduceTickersToLimit(tickers: Kline[][]) {
-    const klineLimit = 1.6 * 10 ** 6; // 1.6 million rough limit
-    const totalKlinesLength = tickers.reduce((acc, curr) => acc + curr.length, 0);
-    let diff = totalKlinesLength - klineLimit;
-    if (diff <= 0) return;
+    const allKlines: Kline[] = tickers.flat();
+    const totalKlines: number = allKlines.length;
+    const sampleSize: number = Math.min(100, totalKlines);
+    const avgKlineSizeChars: number = JSON.stringify(allKlines.slice(0, sampleSize)).length / sampleSize;
+    const klineLimit: number = Math.floor(constants.MAX_STRING_LENGTH * 0.9 / avgKlineSizeChars);
 
-    while (diff > 0) {
-      const maxLength = Math.max(...tickers.map(t => t.length));
-      const allEqualLength = tickers.every(t => t.length === maxLength);
+    if (totalKlines <= klineLimit) return;
 
-      if (allEqualLength) {
-        const subAmountPerTicker = diff / tickers.length;
-        tickers.forEach((t, i) => tickers[i] = t.slice(subAmountPerTicker));
-        break;  // done
-      }
+    const sorted = tickers.map((t, i) => ({ i, len: t.length })).sort((a, b) => a.len - b.len);
+    let budget: number = klineLimit;
 
-      const numTickersWithMaxLength = tickers.filter(t => t.length === maxLength).length;
-
-      if (diff < numTickersWithMaxLength) break;  // done
-
-      const unique = Array.from(new Set(tickers.map(t => t.length)));
-      const sorted = unique.sort((a, b) => a - b);
-      const secondLongest = sorted[sorted.length - 2];
-      const subAmount = maxLength - secondLongest;
-      const diffPerTickerWithMaxLength = diff / numTickersWithMaxLength;
-      const finalSubAmount = Math.min(subAmount, diffPerTickerWithMaxLength);
-
-      for (let i = 0; i < tickers.length; i++) {
-        if (tickers[i].length === maxLength) {
-          tickers[i] = tickers[i].slice(finalSubAmount);
-          diff -= finalSubAmount;
-        }
-      }
+    for (let j = 0; j < sorted.length; j++) {
+      const cap: number = Math.floor(budget / (sorted.length - j));
+      const keep: number = Math.min(sorted[j].len, cap);
+      tickers[sorted[j].i] = tickers[sorted[j].i].slice(-keep);
+      budget -= keep;
     }
   }
 }
