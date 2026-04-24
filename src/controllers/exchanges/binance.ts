@@ -192,7 +192,7 @@ class Binance extends Base {
     return axios.post(url, null, options);
   }
 
-  public async getUsdtBusdPairs(): Promise<string[]> {
+  public async getPairs(): Promise<string[]> {
     this.log(`Get binance USDT/BUSD pairs`);
     const dbSymbols: string[] | null = await database.getBinanceSymbolsIfUpToDate();
     if (dbSymbols) return dbSymbols;

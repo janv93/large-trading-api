@@ -111,7 +111,7 @@ export default class Twitter extends Base {
   }
 
   public async getFriendsWithTheirTweets(userName: string, startTime: number): Promise<TwitterTimeline[]> {
-    const binanceSymbols = await binance.getUsdtBusdPairs();
+    const binanceSymbols = await binance.getPairs();
     const shortBinanceSymbols = binance.pairsToSymbols(binanceSymbols);
     const friends = await this.getFriends(userName);
     const latestUpdate = await this.database.getLatestTwitterChangeTime();
