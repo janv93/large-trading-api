@@ -20,26 +20,32 @@ class WatermarkPaneRenderer implements IPrimitivePaneRenderer {
   draw(target: any): void {
     target.useBitmapCoordinateSpace(({ context: ctx, bitmapSize }: any) => {
       const cx = bitmapSize.width / 2;
-      const cy = bitmapSize.height / 2;
+      const cy = bitmapSize.height / 6;
       const fontSize = this._isMulti ? 110 : 200;
 
       ctx.save();
-      ctx.globalAlpha = 0.07;
+      ctx.globalAlpha = 0.3;
       ctx.fillStyle = 'white';
       ctx.font = `bold ${fontSize}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
 
       if (this._image && !this._isMulti) {
         const imgSize = fontSize * 0.8;
         const gap = fontSize * 0.2;
-        const textWidth = ctx.measureText(this._symbol).width;
+        const metrics = ctx.measureText(this._symbol);
+        const textVisualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        const textWidth = metrics.width;
         const totalWidth = imgSize + gap + textWidth;
+        // alphabetic baseline position so the text's visual center aligns with cy
+        const textY = cy + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
         const imgX = cx - totalWidth / 2;
-        const imgY = cy - imgSize / 2;
+        const imgY = cy - textVisualHeight / 2;
         ctx.drawImage(this._image, imgX, imgY, imgSize, imgSize);
-        ctx.fillText(this._symbol, cx - totalWidth / 2 + imgSize + gap + textWidth / 2, cy);
+        ctx.fillText(this._symbol, imgX + imgSize + gap, textY);
       } else {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText(this._symbol, cx, cy);
       }
 
