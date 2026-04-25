@@ -131,13 +131,14 @@ export default abstract class Base {
     const value = Number(timeframe.slice(0, timeframe.length - 1));
     const ms = this.timeframeToMilliseconds(timeframe);
     const now = Date.now();
+    const minTimestamp = 1000000000000; // Sept 2001 — minimum valid 13-digit ms timestamp, relevant for kucoin
 
     switch (unit) {
-      case 'm': return now - ms * 100 * 1000; // 100k * 1 min = 69 days - 100k * 15 min = 1k days
-      case 'h': return now - ms * Math.round(100 / value) * 1000; // 100k hours = 4k days
-      case 'd': return now - ms * Math.round(10 / value) * 1000; // 10k days = 27 years
-      case 'w': return now - ms * 1000; // 1k weeks = 38 years
-      case 'M': return now - ms * 100;
+      case 'm': return Math.max(now - ms * 100 * 1000, minTimestamp); // 100k * 1 min = 69 days - 100k * 15 min = 1k days
+      case 'h': return Math.max(now - ms * Math.round(100 / value) * 1000, minTimestamp); // 100k hours = 4k days
+      case 'd': return Math.max(now - ms * Math.round(10 / value) * 1000, minTimestamp); // 10k days = 27 years
+      case 'w': return Math.max(now - ms * 1000, minTimestamp); // 1k weeks = 38 years
+      case 'M': return Math.max(now - ms * 100, minTimestamp);
       default: throw `timeframe ${timeframe} does not exist`;
     }
   }

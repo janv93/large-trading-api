@@ -37,6 +37,7 @@ class Alpaca extends Base {
       await this.waitIfRateLimitReached();
       const options: AxiosRequestConfig = this.getRequestOptions();
       const res: AxiosResponse = await axios.get(finalUrl, options);
+      if (!res.data?.bars) return { nextPageToken: '', klines: [] };
       const klines = this.mapKlines(symbol, timeframe, res.data.bars);
       return { nextPageToken: res.data.next_page_token, klines };
     } catch (err) {
@@ -76,7 +77,7 @@ class Alpaca extends Base {
         await database.deleteAllKlinesWithSymbol(symbol);
         dbKlines = [];
       }
-  
+
       const newStart: number = hasNewStockSplits ? startTime : lastKlineTime;
       const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines

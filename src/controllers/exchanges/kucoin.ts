@@ -30,7 +30,7 @@ export default class Kucoin extends Base {
       const response = await axios.get(klineUrl);
       const data = response.data.data;
 
-      if (data) {
+      if (data?.length) {
         const result = this.mapKlines(symbol, timeframe, response.data.data);
         return result;
       } else {
@@ -51,9 +51,9 @@ export default class Kucoin extends Base {
     const klines: Kline[] = [];
 
     while (true) {
-      const res = await this.getKlines(symbol, timeframe, newEndTime, newStartTime);
+      const res: Kline[] = await this.getKlines(symbol, timeframe, newEndTime, newStartTime);
 
-      if (res && res.length) {
+      if (res?.length) {
         klines.push(...res);
         const end: number = klines[klines.length - 1].times.open;
         newStartTime = end + this.timeframeToMilliseconds(timeframe);
@@ -62,14 +62,15 @@ export default class Kucoin extends Base {
       }
 
       newEndTime = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
-      const now = Date.now();
+      const now: number = Date.now();
 
       if (newStartTime >= now) {
         break;
       }
     }
 
-    const dateRange = this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
+    if (!klines.length) return [];
+    const dateRange: string = this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
     this.log(`Received total of ${klines.length} klines: ${dateRange}`);
 
     klines.sort((a, b) => a.times.open - b.times.open);
