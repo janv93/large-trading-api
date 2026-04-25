@@ -17,8 +17,8 @@
     <span>%</span>
     }
     @if (openPositionSize) {
-    <span [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }"> {{
-      openPositionSize }}</span>
+    <span [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }">
+      {{ openPositionSize }}</span>
     }
     @if (openPositionSize) {
     <span>$</span>
@@ -31,8 +31,8 @@
     @if (!chartService.isMulti) {
     <img class="d-inline-block me-4 mt-4" [src]="'assets/images/' + chartService.exchange.toLowerCase() + '.png'">
     }
-    <p class="d-inline-block fw-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">{{
-      currentKlines[0].symbol }}</p>
+    <p class="d-inline-block fw-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">
+      {{ currentKlines[0].symbol }}</p>
   </div>
   }
   <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
