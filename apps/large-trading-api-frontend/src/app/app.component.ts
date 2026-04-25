@@ -5,10 +5,10 @@ import { Kline, Run } from './interfaces';
 import { ChartService } from './chart.service';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss'],
-    standalone: false
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+  standalone: false
 })
 export class AppComponent {
   public klines: Run[];
@@ -27,6 +27,11 @@ export class AppComponent {
 
   private backtestSingle() {
     this.httpService.getKlines().subscribe((klines: Kline[]) => {
+      if (klines?.length === 0) {
+        this.chartService.setErrorText(`No klines received for symbol ${this.chartService.symbol}`);
+        return;
+      }
+
       const params = [
         { commission: 0 },
         { commission: this.chartService.commission }
