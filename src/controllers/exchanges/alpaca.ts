@@ -12,6 +12,7 @@ class Alpaca extends Base {
 
   private rateLimitPerMinute = 190;
   private requestsSentThisMinute = 0;
+  private lastFetchTime: Map<string, number> = new Map();
 
   public async getKlines(symbol: string, timeframe: Timeframe, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const url = `${this.baseUrls.baseUrlv2}/stocks/${symbol}/bars`;
@@ -70,7 +71,9 @@ class Alpaca extends Base {
     const lastKline: Kline = dbKlines[dbKlines.length - 1];
     const lastKlineTime: number = lastKline.times.open;
 
-    if (this.klineOutdated(timeframe, lastKlineTime)) {
+    const cacheKey = `${symbol}_${timeframe}`;
+
+    if (this.klineOutdated(timeframe, lastKlineTime, this.lastFetchTime.get(cacheKey))) {
       const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastKlineTime)).length > 0;
 
       if (hasNewStockSplits) {
@@ -82,6 +85,7 @@ class Alpaca extends Base {
       const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log(`${newKlines.length} new ${symbol} klines added to database`);
+      this.lastFetchTime.set(cacheKey, Date.now());
       await database.writeKlines(newKlines);
       const mergedKlines: Kline[] = dbKlines.concat(newKlines);
       return mergedKlines;

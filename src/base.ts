@@ -143,17 +143,18 @@ export default abstract class Base {
     }
   }
 
-  /**
-   * check if last kline in db is too far in the past
-   */
-  protected klineOutdated(timeframe: Timeframe, lastOpen: number): boolean {
+  protected klineOutdated(timeframe: Timeframe, lastOpen: number, lastFetch?: number): boolean {
     const unit = timeframe.slice(-1);
     const now = Date.now();
-    const diff = now - lastOpen;
+    const timeframeMs = this.timeframeToMilliseconds(timeframe);
 
+    // e.g. if timeframe 1h and last fetch < 1h ago there are no new klines
+    if (lastFetch && (now - lastFetch) < timeframeMs) return false;
+
+    const diff = now - lastOpen;
     switch (unit) {
       case 'm': return diff > 15 * 60 * 1000; // 15 min
-      default: return diff > 3 * this.timeframeToMilliseconds(timeframe); // 3 timeframes for anything > minutes
+      default: return diff > 3 * timeframeMs; // 3 timeframes for anything > minutes
     }
   }
 
