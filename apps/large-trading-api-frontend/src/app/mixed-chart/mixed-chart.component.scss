@@ -28,20 +28,6 @@
     pointer-events: none;
   }
 
-  .symbol {
-    width: 100%;
-    top: -5%;
-    z-index: 10;
-    opacity: 0.08;
-    user-select: none;
-    pointer-events: none;
-
-    img {
-      height: 140px;
-      width: 140px;
-    }
-  }
-
   .legend-right {
     top: 20px;
     z-index: 10;

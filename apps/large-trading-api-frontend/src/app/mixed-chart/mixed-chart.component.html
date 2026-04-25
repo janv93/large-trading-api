@@ -27,16 +27,6 @@
     <p>i{{currentIndex}} t{{currentOhlc.time}}</p>
   </div>
   }
-  @if (currentKlines) {
-  <div class="position-absolute d-flex justify-content-center align-items-center symbol">
-    @if (!chartService.isMulti) {
-    <img class="d-inline-block me-4 mt-4" [src]="'assets/images/' + chartService.exchange.toLowerCase() + '.png'">
-    }
-    <p class="d-inline-block fw-bold" [ngStyle]="{'font-size': chartService.isMulti ? '110px' : '200px'}">
-      {{ currentKlines[0].symbol }}
-    </p>
-  </div>
-  }
   <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
     @if (!chartService.isMulti) {
     <div>

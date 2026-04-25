@@ -2,6 +2,7 @@ import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, Vie
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, SeriesMarker, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange } from 'lightweight-charts';
 import { TrendLinesPrimitive, TrendLineSegment } from './trend-lines-primitive';
 import { CompactCirclePrimitive, CompactCircleMarker } from './compact-circle-primitive';
+import { WatermarkPrimitive } from './watermark-primitive';
 import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference, MarketStructureType } from '../interfaces';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
@@ -30,6 +31,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLinesPrimitive: TrendLinesPrimitive | undefined;
   private compactCirclePrimitive: CompactCirclePrimitive | undefined;
+  private watermarkPrimitive: WatermarkPrimitive | undefined;
   private compactSignalMarkers: CompactCircleMarker[] = [];
   private compactPivotPointMarkers: CompactCircleMarker[] = [];
   private commissionChecked = false;
@@ -166,6 +168,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.currentKlines = this.klines[1].klines;
       }
     }
+
+    this.watermarkPrimitive?.setConfig(this.currentKlines[0].symbol, this.chartService.exchange, this.chartService.isMulti);
   }
 
   private handleResize(): void {
@@ -196,6 +200,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.candlestickSeries.attachPrimitive(this.trendLinesPrimitive);
       this.compactCirclePrimitive = new CompactCirclePrimitive();
       this.candlestickSeries.attachPrimitive(this.compactCirclePrimitive);
+      this.watermarkPrimitive = new WatermarkPrimitive();
+      this.candlestickSeries.attachPrimitive(this.watermarkPrimitive);
+      this.watermarkPrimitive.setConfig(this.currentKlines[0].symbol, this.chartService.exchange, this.chartService.isMulti);
     }
 
     this.setCandlestickSeriesData();
