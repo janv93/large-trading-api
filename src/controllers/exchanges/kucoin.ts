@@ -6,6 +6,15 @@ import Base from '../../base';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {
+  public async isValidSymbol(symbol: string): Promise<boolean> {
+    try {
+      const response = await axios.get(`https://api-futures.kucoin.com/api/v1/contracts/${symbol}`);
+      return response.data?.code === '200000' && !!response.data?.data;
+    } catch {
+      return false;
+    }
+  }
+
   public async getKlines(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Kline[]> {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
 
@@ -46,6 +55,12 @@ export default class Kucoin extends Base {
    * get startTime to now timeframes
    */
   public async getKlinesFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: Timeframe): Promise<Kline[]> {
+    const valid = await this.isValidSymbol(symbol);
+    if (!valid) {
+      this.log(`Invalid symbol ${symbol}`);
+      return [];
+    }
+
     let newStartTime = startTime;
     let newEndTime = endTime;
     const klines: Kline[] = [];
