@@ -180,7 +180,6 @@ class Database extends Base {
       this.log(`Done writing ${newSentiments} sentiments`);
     } catch (err) {
       this.logErr(`Failed to write sentiments: `, err);
-      throw err;
     }
   }
 
