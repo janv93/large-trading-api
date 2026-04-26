@@ -54,8 +54,8 @@ export default class Routes extends Base {
     const { timeframe, times, exchange, symbol, algorithms } = body;
 
     try {
-      const allKlines = await this.initKlines(exchange, symbol, timeframe);
-      let klinesInRange = allKlines.slice(-1000 * Number(times));    // get last times * 1000 timeframes
+      const allKlines: Kline[] = await this.initKlines(exchange, symbol, timeframe);
+      let klinesInRange: Kline[] = allKlines.slice(-1000 * Number(times));    // get last times * 1000 timeframes
 
       for (const algorithm of algorithms) {
         klinesInRange = await this.handleAlgo(klinesInRange, algorithm);
