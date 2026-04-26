@@ -83,11 +83,11 @@ export default abstract class Base {
    * normalize to values between 0 and 1
    */
   protected normalizeBetween0And1(values: number[]): number[] {
-    const minClose = Math.min(...values);
-    const maxClose = Math.max(...values);
-    const range = maxClose - minClose;
-
-    return values.map(close => (close - minClose) / range);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    if (range === 0) return values.map(() => 0);
+    return values.map(v => (v - min) / range);
   }
 
   protected invertSignal(signal: Signal | null): Signal | null {
