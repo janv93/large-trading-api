@@ -187,7 +187,9 @@ class Database extends Base {
   public async getTweetSentiment(tweetId: number, symbol: string, model: string): Promise<number> {
     try {
       const timeline = await this.twitterUserTimeline.findOne({ 'tweets.id': tweetId });
+      if (!timeline) return 0;
       const tweet = timeline.tweets.find((t) => t.id === tweetId);
+      if (!tweet) return 0;
       const tweetSymbol = tweet.symbols.find((s) => s.symbol === symbol);
       const sentiment = tweetSymbol?.sentiments.find(s => s.model === model)?.sentiment || 0;
       return sentiment;
