@@ -34,6 +34,7 @@ export default abstract class Base {
       case 'h': return value * 60 * 60000;
       case 'd': return value * 24 * 60 * 60000;
       case 'w': return value * 7 * 24 * 60 * 60000;
+      case 'M': return value * 30 * 24 * 60 * 60000;
       default: return -1;
     }
   }
