@@ -186,6 +186,7 @@ export default class Routes extends Base {
       case Exchange.Binance: exchangeObj = binance; break;
       case Exchange.Kucoin: exchangeObj = this.kucoin; break;
       case Exchange.Alpaca: exchangeObj = alpaca; break;
+      default: throw new Error(`Invalid exchange ${exchange}`);
     }
 
     return exchangeObj.initKlinesDatabase(symbol, timeframe);
