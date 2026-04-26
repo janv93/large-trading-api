@@ -52,9 +52,9 @@ export default class Routes extends Base {
   public async getKlinesWithAlgorithm(req: Request, res: Response): Promise<void> {
     const body = req.body;
     const { timeframe, times, exchange, symbol, algorithms } = body;
-    const allKlines = await this.initKlines(exchange, symbol, timeframe);
 
     try {
+      const allKlines = await this.initKlines(exchange, symbol, timeframe);
       let klinesInRange = allKlines.slice(-1000 * Number(times));    // get last times * 1000 timeframes
 
       for (const algorithm of algorithms) {
