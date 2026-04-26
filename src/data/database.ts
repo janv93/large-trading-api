@@ -158,22 +158,23 @@ class Database extends Base {
       const timelines = await this.twitterUserTimeline.find();
       let newSentiments = 0;
 
-      await Promise.all(timelines.map(async (ti) => {
-        sentiments.forEach((se) => {
-          const tweet = ti.tweets.find((tw) => tw.id === se.id);
+      await Promise.all(timelines.map(async (timeline) => {
+        sentiments.forEach((sentiment) => {
+          const tweet = timeline.tweets.find((tweet) => tweet.id === sentiment.id);
 
           if (tweet) {
-            const symbol = tweet.symbols.find((sy) => sy.symbol === se.symbol);
-            const sentimentAlreadyExists = symbol.sentiments.find(s => s.sentiment === se.sentiment && s.model === se.model);
+            const symbol = tweet.symbols.find((symbol) => symbol.symbol === sentiment.symbol);
+            if (!symbol) return;
+            const sentimentAlreadyExists = symbol.sentiments.find(s => s.sentiment === sentiment.sentiment && s.model === sentiment.model);
 
-            if (!sentimentAlreadyExists && se.sentiment) {
-              symbol.sentiments.push({ sentiment: se.sentiment, model: se.model });
+            if (!sentimentAlreadyExists && sentiment.sentiment) {
+              symbol.sentiments.push({ sentiment: sentiment.sentiment, model: sentiment.model });
               newSentiments++;
             }
           }
         });
 
-        await ti.save();
+        await timeline.save();
       }));
 
       this.log(`Done writing ${newSentiments} sentiments`);
