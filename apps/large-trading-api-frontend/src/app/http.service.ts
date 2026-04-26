@@ -124,6 +124,10 @@ export class HttpService {
           algorithm,
           size: this.chartService.exampleSize[index]
         };
+      default:
+        return {
+          algorithm
+        };
     }
   }
 
