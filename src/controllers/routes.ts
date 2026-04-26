@@ -63,12 +63,8 @@ export default class Routes extends Base {
 
       res.send(klinesInRange);
     } catch (err: any) {
-      if (err === 'invalid') {
-        res.status(500).json({ error: 'Algorithm does not exist' });
-      } else {
-        this.handleError(err);
-        res.status(500).json({ error: err.message });
-      }
+      this.handleError(err);
+      res.status(500).json({ error: err.message || err });
     }
   }
 
@@ -175,21 +171,17 @@ export default class Routes extends Base {
         return await this.marketStructure.setSignals(klines, algorithm, Number(space));
       case Algorithm.Example:
         return this.example.setSignals(klines, algorithm, Number(size));
-      default: throw 'invalid';
+      default: throw `invalid algorithm ${algorithm}`;
     }
   }
 
   private async initKlines(exchange: string, symbol: string, timeframe: Timeframe): Promise<Kline[]> {
-    let exchangeObj;
-
     switch (exchange) {
-      case Exchange.Binance: exchangeObj = binance; break;
-      case Exchange.Kucoin: exchangeObj = this.kucoin; break;
-      case Exchange.Alpaca: exchangeObj = alpaca; break;
+      case Exchange.Binance: return binance.initKlinesDatabase(symbol, timeframe);
+      case Exchange.Kucoin: return this.kucoin.initKlinesDatabase(symbol, timeframe);
+      case Exchange.Alpaca: return alpaca.initKlinesDatabase(symbol, timeframe);
       default: throw new Error(`Invalid exchange ${exchange}`);
     }
-
-    return exchangeObj.initKlinesDatabase(symbol, timeframe);
   }
 
   private async initKlinesMulti(exchange: string, symbols: string[], timeframe: Timeframe, times: number): Promise<Kline[][]> {

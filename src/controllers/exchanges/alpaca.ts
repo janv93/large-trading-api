@@ -18,7 +18,7 @@ class Alpaca extends Base {
     const url = `${this.baseUrls.baseUrlv2}/stocks/${symbol}/bars`;
 
     const query = {
-      timeframe: timeframe ? this.mapTimeframe(timeframe) : '1Min',
+      timeframe: this.mapTimeframe(timeframe),
       end: new Date(Date.now() - 15000000).toISOString(),
       adjustment: 'split'
     };
@@ -211,7 +211,7 @@ class Alpaca extends Base {
       case 'h': return amount + 'Hour';
       case 'd': return amount + 'Day';
       case 'w': return amount + 'Week';
-      default: return 'incorrect timeframe';
+      default: throw `Invalid timeframe ${timeframe}`;
     }
   }
 
