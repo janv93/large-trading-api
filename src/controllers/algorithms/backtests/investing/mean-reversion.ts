@@ -21,7 +21,7 @@ export default class MeanReversion extends Base {
       threshold,
       profitBasedTrailingStopLoss,
       minDrop: 0.25,
-      streak: 1,
+      streak: 0,
       peak: klines[0].prices.close,
       low: klines[0].prices.close,
       isOpen: false,
