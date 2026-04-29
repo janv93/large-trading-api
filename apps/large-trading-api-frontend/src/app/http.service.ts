@@ -105,10 +105,6 @@ export class HttpService {
           threshold: this.chartService.meanReversionThreshold[index],
           profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss[index]
         };
-      case Algorithm.TwitterSentiment:
-        return {
-          algorithm
-        };
       case Algorithm.TrendLine:
         return {
           algorithm,
