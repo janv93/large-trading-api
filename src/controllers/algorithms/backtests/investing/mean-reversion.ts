@@ -63,36 +63,36 @@ export default class MeanReversion extends Base {
   }
 
   private isBuy(kline: Kline, state: any): boolean {
-    const close = kline.prices.close;
-    const diffFromPeak = (state.peak - close) / state.peak;
-    const excess = diffFromPeak - state.minDrop;
-    const thresholdMultiple = excess / state.threshold;
-    const minDropReached = diffFromPeak > state.minDrop;  // minimum drop to start buying
-    const isBuy = thresholdMultiple > state.streak; // e.g. multiple of threshold = 2, streak = 1 -> buy again
+    const close: number = kline.prices.close;
+    const diffFromPeak: number = (state.peak - close) / state.peak;
+    const excess: number = diffFromPeak - state.minDrop;
+    const thresholdMultiple: number = excess / state.threshold;
+    const minDropReached: boolean = diffFromPeak > state.minDrop;  // minimum drop to start buying
+    const isBuy: boolean = thresholdMultiple > state.streak; // e.g. multiple of threshold = 2, streak = 1 -> buy again
     return minDropReached && isBuy;
   }
 
   private isStartTrail(kline: Kline, state: any): boolean {
     if (state.isTrailing) return false;
 
-    const close = kline.prices.close;
-    const diffFromLow = (close - state.low) / state.low;
-    const diffFromLowSufficient = diffFromLow > 2 * state.threshold;
+    const close: number = kline.prices.close;
+    const diffFromLow: number = (close - state.low) / state.low;
+    const diffFromLowSufficient: boolean = diffFromLow > 2 * state.threshold;
     return state.isOpen && diffFromLowSufficient;
   }
 
   private isClose(kline: Kline, state: any): boolean {
     if (!state.isOpen || !state.isTrailing) return false;
 
-    const close = kline.prices.close;
-    const diffFromPeak = (state.peak - close) / state.peak;
-    const diffPeakLow = (state.peak - state.low) / state.peak;
-    const stopLossReached = diffFromPeak / diffPeakLow > state.profitBasedTrailingStopLoss; // stop loss as percentage of current profit
+    const close: number = kline.prices.close;
+    const diffFromPeak: number = (state.peak - close) / state.peak;
+    const diffPeakLow: number = (state.peak - state.low) / state.peak;
+    const stopLossReached: boolean = diffFromPeak / diffPeakLow > state.profitBasedTrailingStopLoss; // stop loss as percentage of current profit
     return stopLossReached;
   }
 
   private isSetHigh(kline: Kline, state: any): boolean {
-    const close = kline.prices.close;
+    const close: number = kline.prices.close;
     return (!state.isOpen || state.isTrailing) && close > state.peak;
   }
 
