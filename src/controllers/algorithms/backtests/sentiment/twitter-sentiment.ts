@@ -50,12 +50,11 @@ export default class TwitterSentiment extends Base {
 
     profits.sort((a, b) => a.profit - b.profit);
     console.log(profits.slice(-10));  // log best tp/sls
-    this.backtestTpSl(klines, algorithm, profits[profits.length - 1][0], profits[profits.length - 1][1], false);
+    this.backtestTpSl(klines, algorithm, profits[profits.length - 1].sl, profits[profits.length - 1].tp, false);
     return klines;
   }
 
   private backtestTpSl(klines: Kline[], algorithm: Algorithm, stopLoss: number, takeProfit: number, reset: boolean): number {
-
     klines.forEach((kline: Kline) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
