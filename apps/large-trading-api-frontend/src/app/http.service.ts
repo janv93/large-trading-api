@@ -103,7 +103,8 @@ export class HttpService {
         return {
           algorithm,
           threshold: this.chartService.meanReversionThreshold[index],
-          profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss[index]
+          profitBasedTrailingStopLoss: this.chartService.meanReversionProfitBasedTrailingStopLoss[index],
+          startStreak: this.chartService.meanReversionStartStreak[index]
         };
       case Algorithm.TrendLine:
         return {
