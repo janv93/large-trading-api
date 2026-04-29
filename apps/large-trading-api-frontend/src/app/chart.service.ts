@@ -31,6 +31,7 @@ export class ChartService {
   public momentumStreak = [5, 5];
   public meanReversionThreshold = [0.15, 0.15];
   public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
+  public meanReversionStartStreak = [0, 0];
   public trendLinePercentOfProfit = [0.3, 0.3];
   public marketStructureSpace = [5, 5];
   public exampleSize = [10, 10];
@@ -39,17 +40,20 @@ export class ChartService {
   public loading = true;
   public loadingText: string;
   public loadingTextInfo: string;
+  public isError = false;
 
   constructor() { }
 
   public setLoadingText(loadingText?: string, loadingTextInfo?: string) {
     if (!loadingText && !loadingTextInfo) this.loading = false;
+    this.isError = false;
     this.loadingText = loadingText!;
     this.loadingTextInfo = loadingTextInfo!;
   }
 
   public setErrorText(error: any) {
+    this.isError = true;
     this.loadingText = `Received error`;
-    this.loadingTextInfo = error.error?.error || (typeof error.error === 'string' ? error.error : null) || error.message;
+    this.loadingTextInfo = error.error?.error || (typeof error.error === 'string' ? error.error : null) || error.message || error;
   }
 }
