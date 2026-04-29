@@ -155,7 +155,7 @@ export default class PivotPointController extends Base {
   }
 
   private getPivotPoint(klines: Kline[], i: number, space: number, side?: PivotPointSide): PivotPoint | null {
-    if (!klines[i - space] && klines[i + space]) return null;
+    if (!klines[i - space] || !klines[i + space]) return null;
 
     const kline: Kline = klines[i];
     const currentHigh: number = kline.prices.high;
