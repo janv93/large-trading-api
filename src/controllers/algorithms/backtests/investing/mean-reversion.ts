@@ -10,6 +10,8 @@ enum Action {
 }
 
 export default class MeanReversion extends Base {
+  private startStreak: number = 0;
+
   /**
    * 1. wait until drop of minDrop, then buy
    * 2. if further drops, buy exponentially more
@@ -21,7 +23,7 @@ export default class MeanReversion extends Base {
       threshold,
       profitBasedTrailingStopLoss,
       minDrop: 0.25,
-      streak: 0,
+      streak: this.startStreak,
       peak: klines[0].prices.close,
       low: klines[0].prices.close,
       isOpen: false,
@@ -131,7 +133,7 @@ export default class MeanReversion extends Base {
       price: closePrice
     });
 
-    state.streak = 0;
+    state.streak = this.startStreak;
     state.isOpen = false;
     state.isTrailing = false;
     state.peak = kline.prices.close;
