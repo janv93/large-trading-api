@@ -35,7 +35,6 @@ export enum Algorithm {
   Bb = 'BB',
   Dca = 'DCA',
   MeanReversion = 'MEANREVERSION',
-  TwitterSentiment = 'TWITTERSENTIMENT',
   TrendLine = 'TRENDLINE',
   MarketStructure = 'MARKETSTRUCTURE',
   Example = 'EXAMPLE'

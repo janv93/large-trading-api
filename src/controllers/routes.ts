@@ -13,7 +13,6 @@ import Bb from './algorithms/backtests/simple-backtests/bb';
 // import Tensorflow from './algorithms/ai/tensorflow';
 import Dca from './algorithms/backtests/investing/dca';
 import MeanReversion from './algorithms/backtests/investing/mean-reversion';
-import TwitterSentiment from './algorithms/backtests/sentiment/twitter-sentiment';
 import MultiTicker from './algorithms/backtests/simple-backtests/multi-ticker';
 import TrendLineBreakthrough from './algorithms/backtests/simple-backtests/trend-line';
 import MarketStructure from './algorithms/backtests/simple-backtests/market-structure';
@@ -36,7 +35,6 @@ export default class Routes extends Base {
   // private tensorflow = new Tensorflow();
   private dca = new Dca();
   private meanReversion = new MeanReversion();
-  private twitterSentiment = new TwitterSentiment();
   private multiTicker = new MultiTicker();
   private trendLineBreakthrough = new TrendLineBreakthrough();
   private marketStructure = new MarketStructure();
@@ -163,8 +161,6 @@ export default class Routes extends Base {
         return this.dca.setSignals(klines, algorithm);
       case Algorithm.MeanReversion:
         return this.meanReversion.setSignals(klines, algorithm, Number(threshold), Number(profitBasedTrailingStopLoss));
-      case Algorithm.TwitterSentiment:
-        return await this.twitterSentiment.setSignals(klines, algorithm);
       case Algorithm.TrendLine:
         return await this.trendLineBreakthrough.setSignals(klines, algorithm, percentOfProfit);
       case Algorithm.MarketStructure:
