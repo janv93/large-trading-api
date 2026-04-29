@@ -21,7 +21,7 @@ export default class MeanReversion extends Base {
       threshold,
       profitBasedTrailingStopLoss,
       minDrop: 0.25,
-      streak: 0,
+      streak: 1,
       peak: klines[0].prices.close,
       low: klines[0].prices.close,
       isOpen: false,
@@ -103,7 +103,7 @@ export default class MeanReversion extends Base {
 
     signals.push({
       signal: Signal.Buy,
-      size: Math.pow(2, state.streak - 1),  // start at 2^0
+      size: Math.pow(2, state.streak),  // start at 2^0
       price: closePrice
     });
 
