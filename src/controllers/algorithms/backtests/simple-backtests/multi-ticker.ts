@@ -33,6 +33,7 @@ export default class MultiTicker extends Base {
     let profitBasedTrailingStopLoss = profitBasedTrailingStopLossMin;
     const profitBasedTrailingStopLossMax = 0.3;
     const profitBasedTrailingStopLossStep = 0.05;
+    const startStreak = 0;
 
     const benchmarks: MultiBenchmark[] = [];
 
@@ -42,7 +43,7 @@ export default class MultiTicker extends Base {
 
       while (profitBasedTrailingStopLoss <= profitBasedTrailingStopLossMax) {
         console.log(threshold, profitBasedTrailingStopLoss)
-        const tickersWithBacktest = this.runMeanReversion(tickers, algorithm, threshold, profitBasedTrailingStopLoss);
+        const tickersWithBacktest = this.runMeanReversion(tickers, algorithm, threshold, profitBasedTrailingStopLoss, startStreak);
         const tickersProfits: number[] = tickersWithBacktest.map(t => this.calcProfitPerAmount(t, algorithm)).filter((t): t is number => t !== undefined);
         const average = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
 
@@ -80,11 +81,11 @@ export default class MultiTicker extends Base {
     return benchmarks.at(-1)?.tickers ?? [];
   }
 
-  private runMeanReversion(tickers: Kline[][], algorithm: Algorithm, threshold: number, profitBasedTrailingStopLoss: number): Kline[][] {
+  private runMeanReversion(tickers: Kline[][], algorithm: Algorithm, threshold: number, profitBasedTrailingStopLoss: number, startStreak: number): Kline[][] {
     const clonedTickers = deepmerge({}, tickers);
 
     return clonedTickers.map((currentTicker: Kline[]) => {
-      const klinesWithSignals = this.meanReversion.setSignals(currentTicker, algorithm, threshold, profitBasedTrailingStopLoss);
+      const klinesWithSignals = this.meanReversion.setSignals(currentTicker, algorithm, threshold, profitBasedTrailingStopLoss, startStreak);
       const klinesWithBacktest = this.backtest.calcBacktestPerformance(klinesWithSignals, algorithm, 0);
       return klinesWithBacktest;
     });

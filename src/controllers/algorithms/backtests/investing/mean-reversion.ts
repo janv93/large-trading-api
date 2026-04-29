@@ -10,20 +10,18 @@ enum Action {
 }
 
 export default class MeanReversion extends Base {
-  private startStreak: number = 0;
-
   /**
    * 1. wait until drop of minDrop, then buy
    * 2. if further drops, buy exponentially more
    * 3. if increase from lowest drop sufficient, close position
    * 4. back to 1.
    */
-  public setSignals(klines: Kline[], algorithm: Algorithm, threshold: number, profitBasedTrailingStopLoss: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, threshold: number, profitBasedTrailingStopLoss: number, startStreak: number): Kline[] {
     const state = {
       threshold,
       profitBasedTrailingStopLoss,
       minDrop: 0.25,
-      streak: this.startStreak,
+      streak: startStreak,
       peak: klines[0].prices.close,
       low: klines[0].prices.close,
       isOpen: false,
@@ -36,7 +34,7 @@ export default class MeanReversion extends Base {
       switch (action) {
         case Action.Buy: this.buy(kline, state, algorithm); break;
         case Action.StartTrail: this.startTrail(kline, state); break;
-        case Action.Close: this.close(kline, state, algorithm); break;
+        case Action.Close: this.close(kline, state, algorithm, startStreak); break;
         case Action.SetHigh: this.setHigh(kline, state); break;
       }
     }
@@ -123,7 +121,7 @@ export default class MeanReversion extends Base {
     state.peak = kline.prices.close;
   }
 
-  private close(kline: Kline, state: any, algorithm: Algorithm) {
+  private close(kline: Kline, state: any, algorithm: Algorithm, startStreak: number) {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = kline.prices.close;
@@ -133,7 +131,7 @@ export default class MeanReversion extends Base {
       price: closePrice
     });
 
-    state.streak = this.startStreak;
+    state.streak = startStreak;
     state.isOpen = false;
     state.isTrailing = false;
     state.peak = kline.prices.close;

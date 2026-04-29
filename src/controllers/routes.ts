@@ -136,7 +136,7 @@ export default class Routes extends Base {
   }
 
   private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, percentOfProfit, size, space } = params;
+    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, percentOfProfit, size, space, startStreak } = params;
 
     klines.forEach((kline: Kline) => {
       kline.algorithms[algorithm] = {
@@ -160,7 +160,7 @@ export default class Routes extends Base {
       case Algorithm.Dca:
         return this.dca.setSignals(klines, algorithm);
       case Algorithm.MeanReversion:
-        return this.meanReversion.setSignals(klines, algorithm, Number(threshold), Number(profitBasedTrailingStopLoss));
+        return this.meanReversion.setSignals(klines, algorithm, Number(threshold), Number(profitBasedTrailingStopLoss), Number(startStreak));
       case Algorithm.TrendLine:
         return await this.trendLineBreakthrough.setSignals(klines, algorithm, percentOfProfit);
       case Algorithm.MarketStructure:
