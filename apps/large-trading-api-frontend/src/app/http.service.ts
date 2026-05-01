@@ -44,11 +44,12 @@ export class HttpService {
   }
 
   public getMulti(): Observable<Kline[][]> {
-    const { timeframe, times, multiRank, multiAutoParams } = this.chartService;
+    const { timeframe, times, multiRank, multiAutoParams, multiCommission } = this.chartService;
 
     const body = {
       timeframe,
       times,
+      commission: multiCommission,
       rank: multiRank,
       autoParams: multiAutoParams,
       algorithms: this.chartService.algorithms.map((a, i) => this.getAlgorithmBody(i))
