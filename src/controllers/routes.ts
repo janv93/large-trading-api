@@ -68,7 +68,7 @@ export default class Routes extends Base {
 
   public async runMultiTicker(req: Request, res: Response): Promise<void> {
     const body = req.body;
-    const { timeframe, times, rank, autoParams, algorithms } = body;
+    const { timeframe, times, commission, rank, autoParams, algorithms } = body;
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank);
 
     const [stocks, indexes, cryptos] = await Promise.all([
@@ -90,7 +90,7 @@ export default class Routes extends Base {
       } else {
         tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
           const klinesWithSignals: Kline[] = await this.handleAlgo(klines, algorithms[i]);
-          return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithms[i].algorithm, 0);
+          return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithms[i].algorithm, Number(commission));
         }));
       }
     }
