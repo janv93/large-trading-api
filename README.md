@@ -29,11 +29,11 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
    ```
 3. Start the backend:
    ```bash
-   npx nx serve large-trading-api
+   npm run be
    ```
 4. Start the frontend:
    ```bash
-   npx nx serve large-trading-api-frontend
+   npm run fe
    ```
 5. Open [http://localhost:4200](http://localhost:4200)
 

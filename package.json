@@ -5,6 +5,10 @@
   "workspaces": [
     "apps/*"
   ],
+  "scripts": {
+    "be": "npx nx serve large-trading-api",
+    "fe": "npx nx serve large-trading-api-frontend"
+  },
   "devDependencies": {
     "@angular/build": "^20.3.25",
     "@angular/compiler": "^20.0.2",
