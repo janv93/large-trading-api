@@ -3,8 +3,8 @@
 Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provides an infrastructure for backtesting. You may add your own custom algorithms.
 
 <div float="left">
-  <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/chart.png" width="49%" />
-  <img src="https://raw.githubusercontent.com/janv93/trading-chart-visualizer/main/github-content/multi-chart.png" width="49%" />
+  <img src="https://github.com/janv93/large-trading-api/blob/main/libs/shared/github-content/single.png" width="49%" />
+  <img src="https://github.com/janv93/large-trading-api/blob/main/libs/shared/github-content/multi.png" width="49%" />
 </div>
 
 ## Projects
