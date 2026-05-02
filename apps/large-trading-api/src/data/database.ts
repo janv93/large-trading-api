@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import Base from '../base';
-import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '../interfaces';
+import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
 import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 

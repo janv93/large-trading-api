@@ -1,5 +1,5 @@
 import Indicators from '../../../technical-analysis/indicators';
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '@shared';
 import Base from '../../../../base';
 import binance from '../../../exchanges/binance';
 import Btse from '../../../exchanges/btse';

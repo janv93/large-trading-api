@@ -19,6 +19,9 @@ export class LinearFunction {
   }
 
   public isPointOnLine(x: number, y: number, tolerance?: number): boolean {
-    return this.m * x + this.b > y * (1 - (tolerance || 0)) && this.m * x + this.b < y * (1 + (tolerance || 0));
+    if (tolerance !== undefined) {
+      return this.m * x + this.b > y * (1 - tolerance) && this.m * x + this.b < y * (1 + tolerance);
+    }
+    return this.m * x + this.b === y;
   }
 }

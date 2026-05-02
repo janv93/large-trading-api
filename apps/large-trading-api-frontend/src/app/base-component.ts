@@ -1,4 +1,4 @@
-import { Kline, Signal } from './interfaces';
+import { Kline, Signal } from '@shared';
 
 export class BaseComponent {
   constructor() { }

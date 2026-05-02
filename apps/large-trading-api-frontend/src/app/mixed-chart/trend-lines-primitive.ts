@@ -9,7 +9,7 @@ import {
   SeriesType,
   Time
 } from 'lightweight-charts';
-import { LinearFunction } from '../linear-function';
+import { LinearFunction } from '@shared';
 
 export interface TrendLineSegment {
   startTime: number;

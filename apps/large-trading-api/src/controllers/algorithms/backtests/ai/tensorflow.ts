@@ -1,5 +1,5 @@
 import Base from '../../../../base';
-import { Algorithm, Kline } from '../../../../interfaces';
+import { Algorithm, Kline } from '@shared';
 import Plotly from '../../../other-apis/plotly';
 import Indicators from '../../../technical-analysis/indicators';
 

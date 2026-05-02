@@ -1,4 +1,4 @@
-import { BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
+import { BacktestData, BacktestSignal, Kline, Signal } from '@shared';
 import Base from '../../../../base';
 
 

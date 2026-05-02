@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, fit } from '@jest/globals';
 import Backtester from './backtester';
-import { Kline, Algorithm, Signal, Timeframe, BacktestData } from '../../../../interfaces';
+import { Kline, Algorithm, Signal, Timeframe, BacktestData } from '@shared';
 
 
 describe('Backtester', () => {

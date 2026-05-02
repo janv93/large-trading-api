@@ -1,4 +1,4 @@
-import { LogLevel } from '../interfaces';
+import { LogLevel } from '@shared';
 
 export default class Logger {
   private logLevel: LogLevel = LogLevel.Default;

@@ -54,6 +54,7 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 
 ## Notes
 
+- This repo has merged into a monorepo with the frontend
 - Tensorflow code commented out due to software requirements
 - Tried C++ NAPI addons for calculations — much slower than TypeScript due to serialization overhead
 - Tried worker threads — much slower due to serialization between main thread and worker

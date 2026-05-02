@@ -3,10 +3,10 @@ import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEve
 import { TrendLinesPrimitive, TrendLineSegment } from './trend-lines-primitive';
 import { CompactCirclePrimitive, CompactCircleMarker } from './compact-circle-primitive';
 import { WatermarkPrimitive } from './watermark-primitive';
-import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference, MarketStructureType } from '../interfaces';
+import { BacktestStats, Kline, Run, PivotPoint, PivotPointSide, TrendLinePosition, Signal, TrendLine, Algorithm, BacktestSignal, BacktestData, SignalReference, MarketStructureType } from '@shared';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
-import { LinearFunction } from '../linear-function';
+import { LinearFunction } from '@shared';
 
 @Component({
   selector: 'mixed-chart',

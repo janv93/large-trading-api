@@ -1,4 +1,4 @@
-import { BacktestSignal, Direction, Kline, MarketStructureStats, Signal } from '../../../../interfaces';
+import { BacktestSignal, Direction, Kline, MarketStructureStats, Signal } from '@shared';
 import Base from '../../../../base';
 import PivotPointController from '../../patterns/pivot-point';
 

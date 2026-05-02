@@ -1,6 +1,6 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../../../../base';
-import { LinearFunction } from '../../patterns/linear-function';
+import { LinearFunction } from '@shared';
 import TrendLineController from '../../patterns/trendline';
 import PivotPointController from '../../patterns/pivot-point';
 

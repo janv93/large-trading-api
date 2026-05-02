@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { AlpacaResponse, Kline, Timeframe } from '../../interfaces';
+import { AlpacaResponse, Kline, Timeframe } from '@shared';
 import Base from '../../base';
 import database from '../../data/database';
 

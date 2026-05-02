@@ -1,5 +1,5 @@
 import Base from '../base';
-import { Algorithm, Exchange, Kline, Timeframe } from '../interfaces';
+import { Algorithm, Exchange, Kline, Timeframe } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';

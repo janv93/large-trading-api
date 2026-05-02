@@ -1,4 +1,4 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '../../../../interfaces';
+import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
 import Base from '../../../../base';
 
 export default class Momentum extends Base {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import btoa from 'btoa';
-import { Kline, Timeframe } from '../../interfaces';
+import { Kline, Timeframe } from '@shared';
 import Base from '../../base';
 import database from '../../data/database';
 

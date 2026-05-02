@@ -5,7 +5,7 @@ import Base from '../../base';
 import binance from '../exchanges/binance';
 import database from '../../data/database';
 import Coinmarketcap from './coinmarketcap';
-import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '../../interfaces';
+import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '@shared';
 
 export default class Twitter extends Base {
   private database = database;

@@ -1,6 +1,6 @@
 import Base from '../../../base';
-import { Kline, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition } from '../../../interfaces';
-import { LinearFunction } from './linear-function';
+import { Kline, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition } from '@shared';
+import { LinearFunction } from '@shared';
 
 export default class TrendLineController extends Base {
   /**

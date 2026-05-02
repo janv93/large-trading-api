@@ -1,4 +1,4 @@
-import { LinearFunction } from './controllers/algorithms/patterns/linear-function';
+import { LinearFunction } from './linear-function';
 
 export enum Exchange {
   Binance = 'BINANCE',
@@ -57,6 +57,13 @@ export enum Signal {
   StopLoss = 'STOPLOSS'
 }
 
+export enum CloseType {
+  Close = 'CLOSE',
+  StopLoss = 'STOPLOSS',
+  TakeProfit = 'TAKEPROFIT',
+  Liquidation = 'LIQUIDATION'
+}
+
 export enum Slope {
   Ascending = 'ASC',
   Descending = 'DESC'
@@ -85,8 +92,8 @@ export enum Direction {
 }
 
 export interface AppConfig {
-  lastOutdatedKlineRemoval: Date,
-  hadStockSplitCleanup?: boolean
+  lastOutdatedKlineRemoval: Date;
+  hadStockSplitCleanup?: boolean;
 }
 
 export interface KlineWithIndex {
@@ -144,7 +151,7 @@ export interface TrendLine {
   length: number;
   slope: Slope;
   position: TrendLinePosition;
-  againstTrend: boolean;
+  againstTrend?: boolean;
 }
 
 // information for backtest and calculated backtest data
@@ -159,7 +166,7 @@ export interface BacktestSignal {
   price: number;
   size?: number;  // not required if close
   positionCloseTrigger?: PositionCloseTrigger;
-  openSignalReferences?: SignalReference[];  // only for closes to refer to the position which is closed, currently only used be the frontend
+  openSignalReferences?: SignalReference[];  // only for closes to refer to the position which is closed
 }
 
 export interface SignalReference {
@@ -251,4 +258,15 @@ export interface Position {
   takeProfitPrice?: number;
   stopLossPrice?: number;
   openSignalReference: SignalReference;
+}
+
+export interface Run {
+  klines: Kline[];
+  commission: number;
+}
+
+export interface BacktestStats {
+  profit: number;
+  numberOfTrades: number;
+  maxDrawback: number;
 }

@@ -4,6 +4,14 @@
   "compilerOptions": {
     "resolveJsonModule": true,
     "baseUrl": "./",
+    "paths": {
+      "@large-trading-api/shared": [
+        "../../libs/shared/src/index.ts"
+      ],
+      "@shared": [
+        "../../libs/shared/src/index.ts"
+      ]
+    },
     "outDir": "./dist/out-tsc",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

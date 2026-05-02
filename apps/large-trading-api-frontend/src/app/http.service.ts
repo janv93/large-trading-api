@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ChartService } from './chart.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Algorithm, Kline } from './interfaces';
+import { Algorithm, Kline } from '@shared';
 
 
 @Injectable({
