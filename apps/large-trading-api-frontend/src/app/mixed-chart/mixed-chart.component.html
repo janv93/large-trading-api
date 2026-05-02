@@ -1,0 +1,61 @@
+<div #container class="w-100 h-100 position-relative chart-container">
+  @if (currentOhlc) {
+  <div #legend class="position-absolute legend-left" [ngStyle]="{'left': chartService.isMulti ? '20px' : '100px'}">
+    <span>O</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.open }}</span>
+    <span> H</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.high }}</span>
+    <span> L</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.low }}</span>
+    <span> C</span>
+    <span [ngClass]="currentOhlc.open < currentOhlc.close ? 'green' : 'red'">{{ currentOhlc.close }}</span>
+    <span [ngClass]="currentProfit[0] > 0 ? 'green' : 'red'"> {{ currentProfit[0] }}</span>
+    <span>%</span>
+    @if (currentProfit[1] !== undefined) {
+    <span> / </span>
+    <span [ngClass]="currentProfit[1] > 0 ? 'green' : 'red'">{{ currentProfit[1] }}</span>
+    <span>%</span>
+    }
+    @if (openPositionSize) {
+    <span [ngClass]="{'turquoise': openPositionSize > 0, 'pink': openPositionSize < 0 }">
+      {{ openPositionSize }}
+    </span>
+    }
+    @if (openPositionSize) {
+    <span>$</span>
+    }
+    <p>i{{currentIndex}} t{{currentOhlc.time}}</p>
+  </div>
+  }
+  <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
+    @if (!chartService.isMulti) {
+    <div>
+      <div class="text-end">
+        <label class="me-2">commission</label>
+        <input class="align-middle" type="checkbox" (change)="onCommissionChange($event)">
+      </div>
+      <div class="text-end">
+        <label class="me-2">position size</label>
+        <input class="align-middle" type="checkbox" (change)="onShowPositionSizeChange($event)">
+        <label class="ms-3 me-2">charting</label>
+        <input class="align-middle" type="checkbox" (change)="onShowChartingChange($event)" checked>
+      </div>
+    </div>
+    }
+    @if (stats) {
+    <div class="text-end stats" [ngClass]="{'mt-4': !this.chartService.isMulti}">
+      <div>
+        <span [ngClass]="{'green': stats.profit > 0, 'red': stats.profit < 0 }">{{ stats.profit }}</span>
+        <span>% profit</span>
+      </div>
+      <div>
+        <span [style.color]="getDrawbackColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
+        <span>% max drawback</span>
+      </div>
+      <div>
+        <span>{{ stats.numberOfTrades }} trades</span>
+      </div>
+    </div>
+    }
+  </div>
+</div>

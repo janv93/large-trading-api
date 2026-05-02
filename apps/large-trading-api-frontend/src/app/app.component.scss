@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+code {
+  color: #26a89b;
+}
+
+.error-text {
+  color: #f15450;
+}
+
+.mixed-chart {
+  height: 100%;
+}
+
+.mixed-chart-multi-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  .mixed-chart-multi {
+    height: 500px;
+  }
+}

@@ -1,0 +1,33 @@
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: #1a1a1a;
+  color: white;
+}
+
+p {
+  margin: 0;
+}
+
+::-webkit-scrollbar {
+  width: 20px;
+}
+
+::-webkit-scrollbar-track {
+  background: #292929;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(0deg, #a4a4a4, #525252);
+  border-radius: 12px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(0deg, #b0b0b0, #636363);
+}
+
+* {
+  scrollbar-width: 20px;
+}
