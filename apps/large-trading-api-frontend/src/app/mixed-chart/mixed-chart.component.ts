@@ -184,7 +184,18 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private drawSeries(): void {
     this.drawProfitSeries();
+    this.initHistogramSeries();
     this.drawCandlestickSeries();
+  }
+
+  private initHistogramSeries(): void {
+    if (!this.openPositionSizeSeries) {
+      this.openPositionSizeSeries = this.chart.addSeries(HistogramSeries, {
+        priceScaleId: 'histogram',
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+    }
   }
 
   private drawCandlestickSeries(): void {
@@ -234,21 +245,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private drawOpenPositionSize(): void {
     if (this.positionSizeChecked) {
-      if (this.openPositionSizeSeries) {
-        this.chart.removeSeries(this.openPositionSizeSeries);
-      }
-
-      this.openPositionSizeSeries = this.chart.addSeries(HistogramSeries, { priceScaleId: 'histogram' });
       this.setOpenPositionSizeSeriesData();
-
-      this.openPositionSizeSeries.applyOptions({
-        priceLineVisible: false,
-        lastValueVisible: false
-      });
     } else {
       if (this.openPositionSizeSeries) {
-        this.chart.removeSeries(this.openPositionSizeSeries);
-        this.openPositionSizeSeries = undefined;
+        this.openPositionSizeSeries.setData([]);
       }
     }
   }
@@ -451,10 +451,22 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
   }
 
+  private getPositionSizeAlpha(): number {
+    const logicalRange = this.chart.timeScale().getVisibleLogicalRange();
+    const numVisibleBars = logicalRange ? logicalRange.to - logicalRange.from : 100;
+    const chartWidth: number = this.containerRef?.nativeElement?.clientWidth || 1000;
+    const barsPerPixel = numVisibleBars / chartWidth;
+    if (barsPerPixel <= 1) return 0.15;
+    // Compensate for alpha accumulation across overlapping bars per pixel:
+    // target effective alpha per pixel = 0.15  =>  alpha = 1 - 0.85^(1/barsPerPixel)
+    return Math.max(0.01, 1 - Math.pow(0.85, 1 / barsPerPixel));
+  }
+
   private setOpenPositionSizeSeriesData(): void {
+    const alpha = this.getPositionSizeAlpha();
     const mapped = this.currentKlines.map((kline: Kline) => {
       const openPositionSize: number = kline.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
-      const color = openPositionSize === 0 ? `transparent` : openPositionSize > 0 ? `rgba(0, 255, 162, 0.3)` : `rgba(255, 0, 170, 0.3)`;
+      const color = openPositionSize === 0 ? `transparent` : openPositionSize > 0 ? `rgba(0, 255, 162, ${alpha})` : `rgba(255, 0, 170, ${alpha})`;
 
       return {
         time: kline.times.open / 1000 as Time,
@@ -504,6 +516,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
       this.lastVisibleRangeSize = timeRange;
       this.drawMarkers();
+
+      if (this.openPositionSizeSeries && this.positionSizeChecked) {
+        this.setOpenPositionSizeSeriesData();
+      }
     };
 
     this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
