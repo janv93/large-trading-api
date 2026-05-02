@@ -1,4 +1,3 @@
-dist
 node_modules
-.env
-log
+apps/large-trading-api/dist
+apps/large-trading-api/.env
