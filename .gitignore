@@ -1,3 +1,6 @@
 node_modules
-apps/large-trading-api/dist
+dist
+.nx/cache
+.nx/workspace-data
+.angular/cache
 apps/large-trading-api/.env

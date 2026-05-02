@@ -60,7 +60,7 @@ class App extends Base {
 
   private startServer(): Promise<Server> {
     return new Promise((resolve) => {
-      const server: Server = this.app.listen(config.port, () => {
+      const server: Server = this.app.listen((config as any).port, () => {
         resolve(server);
       });
     });

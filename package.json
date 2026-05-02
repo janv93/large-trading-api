@@ -1,0 +1,16 @@
+{
+  "name": "large-trading-api",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "devDependencies": {
+    "@angular/build": "^20.3.25",
+    "@angular/compiler": "^20.0.2",
+    "@angular/compiler-cli": "^20.0.2",
+    "@nx/angular": "^22.7.1",
+    "@nx/node": "^22.7.1",
+    "nx": "22.7.1"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "large-trading-api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/large-trading-api/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/apps/large-trading-api",
+        "tsConfig": "apps/large-trading-api/tsconfig.json",
+        "main": "apps/large-trading-api/src/app.ts"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run start",
+        "cwd": "apps/large-trading-api"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "apps/large-trading-api/jest.config.js"
+      }
+    }
+  }
+}

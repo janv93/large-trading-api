@@ -1,0 +1,70 @@
+{
+  "name": "large-trading-api-frontend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/large-trading-api-frontend/src",
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/large-trading-api-frontend"
+      ],
+      "options": {
+        "outputPath": {
+          "base": "dist/apps/large-trading-api-frontend"
+        },
+        "index": "apps/large-trading-api-frontend/src/main/index.html",
+        "browser": "apps/large-trading-api-frontend/src/main/main.ts",
+        "polyfills": [
+          "apps/large-trading-api-frontend/src/main/polyfills.ts"
+        ],
+        "tsConfig": "apps/large-trading-api-frontend/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          "apps/large-trading-api-frontend/src/assets"
+        ],
+        "styles": [
+          "node_modules/bootstrap/dist/css/bootstrap.min.css",
+          "apps/large-trading-api-frontend/src/main/styles.scss"
+        ],
+        "scripts": [
+          "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
+        ],
+        "allowedCommonJsDependencies": [
+          "apexcharts",
+          "deepmerge"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/large-trading-api-frontend/src/environments/environment.ts",
+              "with": "apps/large-trading-api-frontend/src/environments/environment.prod.ts"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "namedChunks": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "large-trading-api-frontend:build:production"
+        },
+        "development": {
+          "buildTarget": "large-trading-api-frontend:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    }
+  }
+}
