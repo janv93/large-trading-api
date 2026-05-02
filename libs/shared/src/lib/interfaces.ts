@@ -79,6 +79,11 @@ export enum LogLevel {
   NoDb = 'NODB'
 }
 
+export interface AlgorithmConfig {
+  single: Record<string, any>;
+  multi?: Record<string, any>;
+}
+
 export enum MarketStructureType {
   HH = 'HH',
   HL = 'HL',

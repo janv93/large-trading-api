@@ -17,25 +17,14 @@ export class ChartService {
   public commission = 0.04; // 0.04%
 
   // multi
-  public isMulti = false; // multiple charts mode
+  public isMulti = true; // multiple charts mode
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
   public multiRank = 15;  // top <multiRank> tickers of each category. e.g. top 10 of stocks, cryptos etc
   public multiCommission = 0.00;
 
   // algorithm settings
   // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
-  public algorithms = [Algorithm.TrendLine]; // if second algorithm is set, will draw a second profit line for comparison
-  public rsiLength = [7, 7];
-  public emaPeriodOpen = [80, 80];
-  public emaPeriodClose = [80, 80];
-  public bbPeriod = [21, 21];
-  public momentumStreak = [5, 5];
-  public meanReversionThreshold = [0.15, 0.15];
-  public meanReversionProfitBasedTrailingStopLoss = [0.3, 0.3];
-  public meanReversionStartStreak = [0, 0];
-  public trendLinePercentOfProfit = [0.3, 0.3];
-  public marketStructureSpace = [5, 5];
-  public exampleSize = [10, 10];
+  public algorithms = [Algorithm.TrendLine];
 
   // loading screen
   public loading = true;

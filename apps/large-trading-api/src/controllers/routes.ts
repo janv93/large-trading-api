@@ -122,7 +122,7 @@ export default class Routes extends Base {
   public postTechnicalIndicator(req: Request, res: Response): void {
     const query: QueryString.ParsedQs = req.query;
     const { indicator, length, fast, slow, signal, period } = query;
-    let indicatorChart: any[] = [];
+    let indicatorChart: any[];
 
     switch (indicator) {
       case Algorithm.Rsi: indicatorChart = this.indicators.rsi(req.body, Number(length)); break;

@@ -22,7 +22,7 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 - API keys for at least one exchange: Binance, KuCoin, or Alpaca (Binance + Alpaca recommended for full ticker coverage)
 
 ### Setup
-1. Add credentials to `apps/large-trading-api/.env` (copy from `apps/large-trading-api/_.env`)
+1. Add credentials of at least 1 exchange and MongoDB connection string to `apps/large-trading-api/.env` (copy from `apps/large-trading-api/_.env`)
 2. Install dependencies from the monorepo root:
    ```bash
    npm install
@@ -37,13 +37,14 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
    ```
 5. Open [http://localhost:4200](http://localhost:4200)
 
-## Using Backtests
+## Add and use backtests
 
 1. Add or use existing backtests in `apps/large-trading-api/src/controllers/algorithms/backtests/` — see `simple-backtests/example.ts` for reference
-2. When adding a new backtest, add its settings to the frontend `ChartService`
-3. Set parameters in `ChartService` to select which backtest to run
+2. Add algo to `libs/shared/src/lib/algorithm-configs.ts` which contains the variable parameters sent over the API
+3. Add algo to `apps/large-trading-api/src/controllers/routes.ts`
+4. Set generic parameters in `apps/large-trading-api-frontend/src/app/chart.service.ts`
 
-## Todo
+## Todos
 
 - [ ] Find smart algo for closing positions (currently static tp/sl etc.)
 - [ ] Candlesticks patterns
