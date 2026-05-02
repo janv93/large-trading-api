@@ -3,7 +3,7 @@
   "compileOnSave": false,
   "compilerOptions": {
     "resolveJsonModule": true,
-    "baseUrl": "./",
+    "rootDir": "../..",
     "paths": {
       "@large-trading-api/shared": [
         "../../libs/shared/src/index.ts"
