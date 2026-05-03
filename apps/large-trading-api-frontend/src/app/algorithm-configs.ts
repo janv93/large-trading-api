@@ -16,6 +16,13 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   [Algorithm.Rsi]: {
     single: {
       length: 7
+    },
+    multi: {
+      length: {
+        min: 5,
+        max: 15,
+        step: 5
+      }
     }
   },
   [Algorithm.Ema]: {

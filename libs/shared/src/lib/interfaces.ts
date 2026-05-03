@@ -208,10 +208,7 @@ export interface MultiBenchmark {
 }
 
 // custom params for each algorithm
-export interface MultiBenchmarkParams {
-  threshold?: number;
-  profitBasedTrailingStopLoss?: number;
-}
+export type MultiBenchmarkParams = Record<string, number>;
 
 export interface AlpacaResponse {
   nextPageToken: string;
