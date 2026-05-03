@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ChartService } from './chart.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Kline } from '@shared';
+import { Algorithm, Kline } from '@shared';
 import { AlgorithmConfigs } from './algorithm-configs';
 
 
@@ -62,8 +62,10 @@ export class HttpService {
   }
 
   private getAlgorithmBody(index: number): any {
-    const algorithm = this.chartService.algorithms[index];
-    return { algorithm, ...AlgorithmConfigs[algorithm]?.single };
+    const algorithm: Algorithm = this.chartService.algorithms[index];
+    const algorithmConfig = AlgorithmConfigs[algorithm];
+    const isAutoParams = this.chartService.multiAutoParams[index];
+    return { algorithm, ...(isAutoParams ? algorithmConfig?.multi : algorithmConfig?.single) };
   }
 
   private createUrl(url: string, queryObj: any): string {

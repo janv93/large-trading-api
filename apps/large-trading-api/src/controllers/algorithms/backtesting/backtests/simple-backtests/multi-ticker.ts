@@ -1,4 +1,4 @@
-import { Algorithm, Kline, MultiBenchmark } from '@shared';
+import { Algorithm, AlgorithmConfigMulti, Kline, MultiBenchmark } from '@shared';
 import Base from '../../../../../base';
 import Backtester from '../../backtester/backtester';
 import MeanReversion from '../investing/mean-reversion';
@@ -8,7 +8,9 @@ export default class MultiTicker extends Base {
   private backtest = new Backtester();
   private meanReversion = new MeanReversion();
 
-  public async handleAlgo(tickers: Kline[][], algorithm: Algorithm): Promise<Kline[][]> {
+  public async handleAlgo(tickers: Kline[][], params: Record<string, AlgorithmConfigMulti | Algorithm>): Promise<Kline[][]> {
+    const algorithm: Algorithm = params.algorithm as Algorithm;
+
     tickers.forEach((klines: Kline[]) => {
       klines.forEach((kline: Kline) => {
         kline.algorithms[algorithm] = {
