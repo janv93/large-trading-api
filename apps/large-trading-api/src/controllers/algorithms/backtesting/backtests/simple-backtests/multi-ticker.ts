@@ -34,7 +34,7 @@ export default class MultiTicker extends Base {
     // log top 10 performers
     benchmarks.slice(-10).forEach(b => {
       const paramStr: string = Object.entries(b.params ?? {}).map(([k, v]) => `${k}=${v}`).join(' ');
-      this.log(paramStr, `avgProfit=${Math.round(b.averageProfit * 10) / 10}`, `score=${Math.round(b.score)}`);
+      this.log(paramStr, 'avgProfit:', Math.round(b.averageProfit * 10) / 10, 'score:', Math.round(b.score));
     });
 
     this.log();
