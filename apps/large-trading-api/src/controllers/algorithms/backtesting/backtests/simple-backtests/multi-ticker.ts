@@ -14,7 +14,7 @@ export default class MultiTicker extends Base {
     const benchmarks: MultiBenchmark[] = [];
 
     for (const combo of combinations) {
-      console.log(combo);
+      this.log(combo);
       const tickersWithBacktest: Kline[][] = this.runAlgo(tickers, algorithm, combo, algoInstance);
       const tickersProfits: number[] = tickersWithBacktest.map(t => this.getLastProfit(t, algorithm)).filter((t): t is number => t !== undefined);
       const average: number = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
@@ -29,15 +29,15 @@ export default class MultiTicker extends Base {
 
     benchmarks.sort((a, b) => a.score - b.score);
 
-    console.log();
+    this.log();
 
     // log top 10 performers
     benchmarks.slice(-10).forEach(b => {
       const paramStr: string = Object.entries(b.params ?? {}).map(([k, v]) => `${k}=${v}`).join(' ');
-      console.log(paramStr, Math.round(b.averageProfit * 10) / 10, Math.round(b.score));
+      this.log(paramStr, `avgProfit=${Math.round(b.averageProfit * 10) / 10}`, `score=${Math.round(b.score)}`);
     });
 
-    console.log();
+    this.log();
 
     return benchmarks.at(-1)?.tickers ?? [];
   }
