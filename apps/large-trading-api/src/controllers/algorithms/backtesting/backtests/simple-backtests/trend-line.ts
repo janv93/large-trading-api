@@ -1,8 +1,8 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '@shared';
-import Base from '../../../../base';
+import Base from '../../../../../base';
 import { LinearFunction } from '@shared';
-import TrendLineController from '../../patterns/trendline';
-import PivotPointController from '../../patterns/pivot-point';
+import TrendLineController from '../../../patterns/trendline';
+import PivotPointController from '../../../patterns/pivot-point';
 
 export default class TrendLineBreakthrough extends Base {
   private trendLineController = new TrendLineController();

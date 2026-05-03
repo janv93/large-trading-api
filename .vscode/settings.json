@@ -1,0 +1,5 @@
+{
+  "terminal.integrated.env.windows": {
+    "NX_DAEMON": "false"
+  }
+}

@@ -1,6 +1,6 @@
 import { BacktestSignal, Direction, Kline, MarketStructureStats, Signal } from '@shared';
-import Base from '../../../../base';
-import PivotPointController from '../../patterns/pivot-point';
+import Base from '../../../../../base';
+import PivotPointController from '../../../patterns/pivot-point';
 
 
 export default class MarketStructure extends Base {
