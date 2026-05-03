@@ -32,30 +32,25 @@ class App extends Base {
   }
 
   private route(): void {
-    this.app.post('/klinesWithAlgorithm', (req: Request, res: Response) => {
-      this.log(req.originalUrl);
-      this.routes.getKlinesWithAlgorithm(req, res);
-    });
+    this.app.post('/klinesWithAlgorithm', this.handle((req, res) => this.routes.getKlinesWithAlgorithm(req, res)));
+    this.app.post('/multi', this.handle((req, res) => this.routes.runMultiTicker(req, res)));
+    this.app.get('/trade', this.handle((req, res) => this.routes.tradeStrategy(req, res)));
+    this.app.post('/backtest', this.handle((req, res) => this.routes.postBacktestData(req, res)));
+    this.app.post('/indicators', this.handle((req, res) => this.routes.postTechnicalIndicator(req, res)));
+  }
 
-    this.app.post('/multi', (req: Request, res: Response) => {
+  private handle(fn: (req: Request, res: Response) => void | Promise<void>) {
+    return async (req: Request, res: Response): Promise<void> => {
       this.log(req.originalUrl);
-      this.routes.runMultiTicker(req, res);
-    });
 
-    this.app.get('/trade', (req: Request, res: Response) => {
-      this.log(req.originalUrl);
-      this.routes.tradeStrategy(req, res);
-    });
-
-    this.app.post('/backtest', (req: Request, res: Response) => {
-      this.log(req.originalUrl);
-      this.routes.postBacktestData(req, res);
-    });
-
-    this.app.post('/indicators', (req: Request, res: Response) => {
-      this.log(req.originalUrl);
-      this.routes.postTechnicalIndicator(req, res);
-    });
+      try {
+        await fn(req, res);
+      } catch (err) {
+        const origin = err instanceof Error ? err.stack?.split('\n')[1]?.trim() : undefined;
+        this.log(`Error on ${req.originalUrl}: ${err}${origin ? ` (${origin})` : ''}`);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    };
   }
 
   private startServer(): Promise<Server> {
