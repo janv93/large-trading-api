@@ -238,6 +238,10 @@ export default class Backtester extends Base {
     const tSl: TrailingStopLoss | undefined = signal.positionCloseTrigger?.tSl;
     const takeProfit: number | undefined = tpSl?.takeProfit;
     const stopLoss: number | undefined = tpSl?.stopLoss || tSl?.stopLoss;
+
+    this.assertParam({ takeProfit });
+    this.assertParam({ stopLoss });
+    this.assertParam({ percentOfProfit: tSl?.percentOfProfit });
     const openSignalReference: SignalReference = { klineIndex, signalIndex };
     let size: number;
     let entrySize: number;
@@ -364,5 +368,10 @@ export default class Backtester extends Base {
     }
 
     return false;
+  }
+
+  private assertParam(param: Record<string, number | undefined>): void {
+    const [name, value] = Object.entries(param)[0];
+    if (value !== undefined && isNaN(value)) throw new Error(`${name} is NaN`);
   }
 }
