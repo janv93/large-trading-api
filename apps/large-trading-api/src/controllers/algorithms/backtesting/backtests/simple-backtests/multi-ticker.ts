@@ -8,7 +8,7 @@ export default class MultiTicker extends Base {
   private backtest = new Backtester();
   private meanReversion = new MeanReversion();
 
-  public handleAlgo(tickers: Kline[][], algorithm: Algorithm): Kline[][] {
+  public async handleAlgo(tickers: Kline[][], algorithm: Algorithm): Promise<Kline[][]> {
     tickers.forEach((klines: Kline[]) => {
       klines.forEach((kline: Kline) => {
         kline.algorithms[algorithm] = {

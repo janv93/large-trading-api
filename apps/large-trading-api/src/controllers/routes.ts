@@ -97,7 +97,7 @@ export default class Routes extends Base {
 
     for (let i = 0; i < algorithms.length; i++) {
       if (autoParams[i]) {
-        tickersWithSignals = this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i].algorithm);
+        tickersWithSignals = await this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i].algorithm);
       } else {
         tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
           const klinesWithSignals: Kline[] = await this.handleAlgo(klines, algorithms[i]);
@@ -157,7 +157,7 @@ export default class Routes extends Base {
 
     const algo = this.backtests[algorithm];
     if (!algo?.setSignals) throw `invalid algorithm ${algorithm}`;
-    return algo.setSignals(klines, algorithm, params);
+    return await algo.setSignals(klines, algorithm, params);
   }
 
   private async initKlines(exchange: string, symbol: string, timeframe: Timeframe): Promise<Kline[]> {

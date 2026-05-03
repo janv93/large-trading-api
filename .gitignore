@@ -4,3 +4,4 @@ dist
 .nx/workspace-data
 .angular/cache
 apps/large-trading-api/.env
+*.stackdump
