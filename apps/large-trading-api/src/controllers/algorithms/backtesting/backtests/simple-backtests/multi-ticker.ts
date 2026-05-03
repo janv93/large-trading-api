@@ -15,9 +15,9 @@ export default class MultiTicker extends Base {
 
     for (const combo of combinations) {
       console.log(combo);
-      const tickersWithBacktest = this.runAlgo(tickers, algorithm, combo, algoInstance);
+      const tickersWithBacktest: Kline[][] = this.runAlgo(tickers, algorithm, combo, algoInstance);
       const tickersProfits: number[] = tickersWithBacktest.map(t => this.getLastProfit(t, algorithm)).filter((t): t is number => t !== undefined);
-      const average = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
+      const average: number = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
 
       benchmarks.push({
         tickers: tickersWithBacktest,
@@ -33,7 +33,7 @@ export default class MultiTicker extends Base {
 
     // log top 10 performers
     benchmarks.slice(-10).forEach(b => {
-      const paramStr = Object.entries(b.params ?? {}).map(([k, v]) => `${k}=${v}`).join(' ');
+      const paramStr: string = Object.entries(b.params ?? {}).map(([k, v]) => `${k}=${v}`).join(' ');
       console.log(paramStr, Math.round(b.averageProfit * 10) / 10, Math.round(b.score));
     });
 
@@ -43,12 +43,14 @@ export default class MultiTicker extends Base {
   }
 
   private generateCombinations(configs: [string, AlgorithmConfigMulti][]): Record<string, number>[] {
-    const ranges = configs.map(([key, config]) => {
+    const ranges: { key: string; values: number[] }[] = configs.map(([key, config]) => {
       const values: number[] = [];
-      const step = config.step ?? 1;
+      const step: number = config.step ?? 1;
+
       for (let v = config.min; v <= config.max + step * 0.5; v += step) {
         values.push(Math.round(v * 1e10) / 1e10);
       }
+
       return { key, values };
     });
 
@@ -58,7 +60,8 @@ export default class MultiTicker extends Base {
   }
 
   private runAlgo(tickers: Kline[][], algorithm: Algorithm, params: Record<string, number>, algoInstance: any): Kline[][] {
-    const clonedTickers = deepmerge([], tickers);
+    const clonedTickers: Kline[][] = deepmerge([], tickers);
+
     return clonedTickers.map((currentTicker: Kline[]) => {
       currentTicker.forEach((kline: Kline) => { kline.algorithms[algorithm] = { signals: [] }; });
       const klinesWithSignals = algoInstance.setSignals(currentTicker, algorithm, params);
