@@ -30,11 +30,13 @@ export default class MultiTicker extends Base {
     benchmarks.sort((a, b) => a.score - b.score);
 
     console.log();
+
     // log top 10 performers
     benchmarks.slice(-10).forEach(b => {
       const paramStr = Object.entries(b.params ?? {}).map(([k, v]) => `${k}=${v}`).join(' ');
-      console.log(paramStr, Math.round(b.averageProfit), Math.round(b.score));
+      console.log(paramStr, Math.round(b.averageProfit * 10) / 10, Math.round(b.score));
     });
+
     console.log();
 
     return benchmarks.at(-1)?.tickers ?? [];
