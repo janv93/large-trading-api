@@ -3,43 +3,54 @@ import { Algorithm, Exchange, Kline, Timeframe } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
-import Momentum from './algorithms/backtesting/backtests/simple-backtests/momentum';
 import Backtester from './algorithms/backtesting/backtester/backtester';
 import Indicators from './technical-analysis/indicators';
-import Macd from './algorithms/backtesting/backtests/simple-backtests/macd';
-import Rsi from './algorithms/backtesting/backtests/simple-backtests/rsi';
-import Ema from './algorithms/backtesting/backtests/simple-backtests/ema';
-import Bb from './algorithms/backtesting/backtests/simple-backtests/bb';
-// import Tensorflow from './algorithms/ai/tensorflow';
-import Dca from './algorithms/backtesting/backtests/investing/dca';
-import MeanReversion from './algorithms/backtesting/backtests/investing/mean-reversion';
-import MultiTicker from './algorithms/backtesting/backtests/simple-backtests/multi-ticker';
-import TrendLineBreakthrough from './algorithms/backtesting/backtests/simple-backtests/trend-line';
-import MarketStructure from './algorithms/backtesting/backtests/simple-backtests/market-structure';
-import Example from './algorithms/backtesting/backtests/simple-backtests/example';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import QueryString from 'qs';
 import { constants } from 'buffer';
+import * as fs from 'fs';
+import * as path from 'path';
 
 
 export default class Routes extends Base {
   private kucoin = new Kucoin();
   private indicators = new Indicators();
-  private momentum = new Momentum();
   private backtest = new Backtester();
-  private macd = new Macd();
-  private rsi = new Rsi();
-  private ema = new Ema();
-  private bb = new Bb();
-  // private tensorflow = new Tensorflow();
-  private dca = new Dca();
-  private meanReversion = new MeanReversion();
-  private multiTicker = new MultiTicker();
-  private trendLineBreakthrough = new TrendLineBreakthrough();
-  private marketStructure = new MarketStructure();
-  private example = new Example();
   private cmc = new Coinmarketcap();
+  private backtests: Record<string, any> = {};
+
+  constructor() {
+    super();
+    this.loadBacktests();
+  }
+
+  private loadBacktests(): void {
+    const backtestsDir = path.join(__dirname, 'algorithms/backtesting/backtests');
+    this.scanDir(backtestsDir);
+  }
+
+  private scanDir(dir: string): void {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        this.scanDir(fullPath);
+      } else if (entry.name.endsWith('.js')) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const mod = require(fullPath);
+          const ExportedClass = mod.default;
+          if (typeof ExportedClass === 'function' && ExportedClass.name) {
+            const key = ExportedClass.name.charAt(0).toLowerCase() + ExportedClass.name.slice(1);
+            this.backtests[key] = new ExportedClass();
+          }
+        } catch (err: any) {
+          console.warn(`Failed to load backtest from ${fullPath}:`, err);
+        }
+      }
+    }
+  }
 
   /**
    * get list of klines / candlesticks and add buy and sell signals
@@ -86,7 +97,7 @@ export default class Routes extends Base {
 
     for (let i = 0; i < algorithms.length; i++) {
       if (autoParams[i]) {
-        tickersWithSignals = this.multiTicker.handleAlgo(tickersWithSignals, algorithms[i].algorithm);
+        tickersWithSignals = this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i].algorithm);
       } else {
         tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
           const klinesWithSignals: Kline[] = await this.handleAlgo(klines, algorithms[i]);
@@ -113,7 +124,7 @@ export default class Routes extends Base {
 
   public tradeStrategy(req: Request, res: Response): void {
     switch (req.query.strategy) {
-      case Algorithm.Ema: this.ema.trade(req.query.symbol as string, req.query.open ? true : false);
+      case Algorithm.Ema: this.backtests.ema.trade(req.query.symbol as string, req.query.open ? true : false);
     }
 
     res.send('Running');
@@ -136,7 +147,7 @@ export default class Routes extends Base {
   }
 
   private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {
-    const { algorithm, fast, slow, signal, length, period, periodOpen, periodClose, threshold, profitBasedTrailingStopLoss, streak, percentOfProfit, size, space, startStreak } = params;
+    const algorithm: Algorithm = params.algorithm;
 
     klines.forEach((kline: Kline) => {
       kline.algorithms[algorithm] = {
@@ -144,31 +155,9 @@ export default class Routes extends Base {
       };
     });
 
-    switch (algorithm) {
-      case Algorithm.Momentum:
-        return this.momentum.setSignals(klines, algorithm, streak);
-      case Algorithm.Macd:
-        return this.macd.setSignals(klines, algorithm, fast, slow, signal);
-      case Algorithm.Rsi:
-        return this.rsi.setSignals(klines, algorithm, Number(length));
-      case Algorithm.Ema:
-        return this.ema.setSignals(klines, algorithm, Number(periodOpen), Number(periodClose));
-      case Algorithm.Bb:
-        return this.bb.setSignals(klines, algorithm, Number(period));
-      //   case Algorithm.DeepTrend:
-      //   return this.tensorflow.setSignals(klines, algorithm);
-      case Algorithm.Dca:
-        return this.dca.setSignals(klines, algorithm);
-      case Algorithm.MeanReversion:
-        return this.meanReversion.setSignals(klines, algorithm, Number(threshold), Number(profitBasedTrailingStopLoss), Number(startStreak));
-      case Algorithm.TrendLine:
-        return await this.trendLineBreakthrough.setSignals(klines, algorithm, percentOfProfit);
-      case Algorithm.MarketStructure:
-        return await this.marketStructure.setSignals(klines, algorithm, Number(space));
-      case Algorithm.Example:
-        return this.example.setSignals(klines, algorithm, Number(size));
-      default: throw `invalid algorithm ${algorithm}`;
-    }
+    const algo = this.backtests[algorithm];
+    if (!algo?.setSignals) throw `invalid algorithm ${algorithm}`;
+    return algo.setSignals(klines, algorithm, params);
   }
 
   private async initKlines(exchange: string, symbol: string, timeframe: Timeframe): Promise<Kline[]> {

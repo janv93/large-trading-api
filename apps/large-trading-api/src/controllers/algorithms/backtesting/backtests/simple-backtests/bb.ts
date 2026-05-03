@@ -5,7 +5,8 @@ import Base from '../../../../../base';
 export default class Bb extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, period: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+    const period = Number(params.period);
     const bb = this.indicators.bb(klines, period);
     const klinesWithBb = klines.slice(-bb.length);
 

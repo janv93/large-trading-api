@@ -32,8 +32,6 @@
   "homepage": "https://github.com/janv93/large-trading-api#readme",
   "dependencies": {
     "@jest/globals": "latest",
-    "@tensorflow/tfjs-node": "latest",
-    "@tensorflow/tfjs-node-gpu": "latest",
     "@types/express": "latest",
     "axios": "latest",
     "body-parser": "latest",

@@ -12,7 +12,9 @@ export default class Ema extends Base {
   /**
    * sets position signals depending on emas going up or down
    */
-  public setSignals(klines: Kline[], algorithm: Algorithm, periodOpen: number, periodClose: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+    const periodOpen = Number(params.periodOpen);
+    const periodClose = Number(params.periodClose);
     const emaOpenFull = this.indicators.ema(klines, periodOpen);
     const emaCloseFull = this.indicators.ema(klines, periodClose);
     const maxLength = Math.min(emaOpenFull.length, emaCloseFull.length);

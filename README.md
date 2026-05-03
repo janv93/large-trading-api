@@ -40,8 +40,8 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 ## Add and use backtests
 
 1. Add or use existing backtests in `apps/large-trading-api/src/controllers/algorithms/backtesting/backtests` — see `simple-backtests/example.ts` for reference
-2. Add algo to `apps/large-trading-api-frontend/src/app/algorithm-configs.ts` which contains the variable parameters sent over the API
-3. Add algo to `apps/large-trading-api/src/controllers/routes.ts`
+2. Add algo to the Algorithm enum in `libs/shared/src/lib/interfaces.ts` and make sure the value is the exact same name as your backtest class. Your backtest class will then be instantiated automatically.
+3. Add algo to `apps/large-trading-api-frontend/src/app/algorithm-configs.ts` which contains the variable parameters sent over the API
 4. Set generic parameters in `apps/large-trading-api-frontend/src/app/chart.service.ts`
 
 ## Todos
@@ -56,7 +56,6 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 ## Notes
 
 - This repo has merged into a monorepo with the frontend
-- Tensorflow code commented out due to software requirements
 - Tried C++ NAPI addons for calculations — much slower than TypeScript due to serialization overhead
 - Tried worker threads — much slower due to serialization between main thread and worker
 

@@ -5,7 +5,10 @@ import Base from '../../../../../base';
 export default class Macd extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, fast: number, slow: number, signal: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+    const fast = Number(params.fast);
+    const slow = Number(params.slow);
+    const signal = Number(params.signal);
     const histogram = this.indicators.macd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.slice(-histogram.length);
 

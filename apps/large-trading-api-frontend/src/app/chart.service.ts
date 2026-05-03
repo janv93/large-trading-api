@@ -17,14 +17,14 @@ export class ChartService {
   public commission = 0.04; // 0.04%
 
   // multi
-  public isMulti = false; // multiple charts mode
+  public isMulti = true; // multiple charts mode
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are chosen automatically or from this service
   public multiRank = 15;  // top <multiRank> tickers of each category. e.g. top 10 of stocks, cryptos etc
   public multiCommission = 0.00;
 
   // algorithm settings
   // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
-  public algorithms = [Algorithm.TrendLine];
+  public algorithms = [Algorithm.TrendLineBreakthrough];
 
   // loading screen
   public loading = true;

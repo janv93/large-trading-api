@@ -2,8 +2,9 @@ import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared'
 import Base from '../../../../../base';
 
 export default class Momentum extends Base {
-  public setSignals(klines: Kline[], algorithm: Algorithm, streak: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
     const colors: number[] = klines.map(kline => this.getKlineColor(kline));
+    const streak = Number(params.streak);
 
     klines.forEach((kline: any, index: number) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;

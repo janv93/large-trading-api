@@ -5,7 +5,8 @@ import Base from '../../../../../base';
 export default class Rsi extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, length: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+    const length = Number(params.length);
     const rsi = this.indicators.rsi(klines, length);
     const klinesWithRsi = klines.slice(-rsi.length);
     this.setSignalsOverBoughtOverSold(klinesWithRsi, algorithm, rsi);

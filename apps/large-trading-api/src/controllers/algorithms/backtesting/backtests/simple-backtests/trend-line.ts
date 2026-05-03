@@ -1,7 +1,7 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../../../../../base';
 import { LinearFunction } from '@shared';
-import TrendLineController from '../../../patterns/trendline';
+import TrendLineController from '../../../patterns/trend-line';
 import PivotPointController from '../../../patterns/pivot-point';
 
 export default class TrendLineBreakthrough extends Base {
@@ -9,7 +9,8 @@ export default class TrendLineBreakthrough extends Base {
   private pivotPointController = new PivotPointController();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, percentOfProfit: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+    const percentOfProfit: number = Number(params.percentOfProfit);
     // this.pivotPointController.addPivotPoints(klines, 20);
     // this.trendLineController.addTrendLinesFromPivotPoints(klines, 40, 200);
     this.trendLineController.addTrendLines(klines, 40, 200);

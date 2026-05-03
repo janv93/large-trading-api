@@ -3,7 +3,7 @@ import Base from '../../../../../base';
 
 
 export default class Dca extends Base {
-  public setSignals(klines: Kline[], algorithm): Kline[] {
+  public setSignals(klines: Kline[], algorithm, params: any): Kline[] {
     klines.forEach((kline: Kline, i: number) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;

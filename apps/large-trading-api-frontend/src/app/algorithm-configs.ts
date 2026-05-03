@@ -40,9 +40,25 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       threshold: 0.15,
       profitBasedTrailingStopLoss: 0.3,
       startStreak: 0
+    },
+    multi: {
+      threshold: {
+        min: 0.1,
+        max: 0.2,
+        step: 0.05
+      },
+      profitBasedTrailingStopLoss: {
+        min: 0.1,
+        max: 0.3,
+        step: 0.05
+      },
+      startStreak: {
+        min: 0,
+        max: 0
+      }
     }
   },
-  [Algorithm.TrendLine]: {
+  [Algorithm.TrendLineBreakthrough]: {
     single: {
       percentProfit: 0.3
     }

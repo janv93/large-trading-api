@@ -16,7 +16,11 @@ export default class MeanReversion extends Base {
    * 3. if increase from lowest drop sufficient, close position
    * 4. back to 1.
    */
-  public setSignals(klines: Kline[], algorithm: Algorithm, threshold: number, profitBasedTrailingStopLoss: number, startStreak: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+    const threshold: number = Number(params.threshold);
+    const profitBasedTrailingStopLoss: number = Number(params.profitBasedTrailingStopLoss);
+    const startStreak: number = Number(params.startStreak);
+
     const state = {
       threshold,
       profitBasedTrailingStopLoss,

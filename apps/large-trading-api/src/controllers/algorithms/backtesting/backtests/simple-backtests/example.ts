@@ -2,7 +2,8 @@ import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared'
 import Base from '../../../../../base';
 
 export default class Example extends Base {
-  public setSignals(klines: Kline[], algorithm: Algorithm, size: number): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+    const size: number = Number(params.size);
     const interval = Math.floor(klines.length / 11);
 
     this.forEachWithProgress(klines, (kline: Kline, index: number) => {

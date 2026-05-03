@@ -27,17 +27,17 @@ export enum Timeframe {
 }
 
 export enum Algorithm {
-  Momentum = 'MOMENTUM',
-  Macd = 'MACD',
-  Rsi = 'RSI',
-  Ema = 'EMA',
-  DeepTrend = 'DEEPTREND',
-  Bb = 'BB',
-  Dca = 'DCA',
-  MeanReversion = 'MEANREVERSION',
-  TrendLine = 'TRENDLINE',
-  MarketStructure = 'MARKETSTRUCTURE',
-  Example = 'EXAMPLE'
+  Momentum = 'momentum',
+  Macd = 'macd',
+  Rsi = 'rsi',
+  Ema = 'ema',
+  DeepTrend = 'deepTrend',
+  Bb = 'bb',
+  Dca = 'dca',
+  MeanReversion = 'meanReversion',
+  TrendLineBreakthrough = 'trendLineBreakthrough',
+  MarketStructure = 'marketStructure',
+  Example = 'example'
 }
 
 export enum PivotPointSide {
@@ -81,7 +81,13 @@ export enum LogLevel {
 
 export interface AlgorithmConfig {
   single: Record<string, any>;
-  multi?: Record<string, any>;
+  multi?: Record<string, AlgorithmConfigMulti>;
+}
+
+export interface AlgorithmConfigMulti {
+  min: number;
+  max: number;
+  step?: number;
 }
 
 export enum MarketStructureType {
