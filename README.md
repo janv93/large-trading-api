@@ -40,7 +40,7 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 ## Add and use backtests
 
 1. Add or use existing backtests in `apps/large-trading-api/src/controllers/algorithms/backtests/` — see `simple-backtests/example.ts` for reference
-2. Add algo to `libs/shared/src/lib/algorithm-configs.ts` which contains the variable parameters sent over the API
+2. Add algo to `apps/large-trading-api-frontend/src/app/algorithm-configs.ts` which contains the variable parameters sent over the API
 3. Add algo to `apps/large-trading-api/src/controllers/routes.ts`
 4. Set generic parameters in `apps/large-trading-api-frontend/src/app/chart.service.ts`
 

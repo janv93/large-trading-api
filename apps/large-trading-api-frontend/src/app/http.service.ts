@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { ChartService } from './chart.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AlgorithmConfigs, Kline } from '@shared';
+import { Kline } from '@shared';
+import { AlgorithmConfigs } from './algorithm-configs';
 
 
 @Injectable({

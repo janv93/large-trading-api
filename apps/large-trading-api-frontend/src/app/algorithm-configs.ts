@@ -1,4 +1,4 @@
-import { Algorithm, AlgorithmConfig } from './interfaces';
+import { Algorithm, AlgorithmConfig } from '../../../../libs/shared/src/lib/interfaces';
 
 export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   [Algorithm.Momentum]: { single: { streak: 5 } },
