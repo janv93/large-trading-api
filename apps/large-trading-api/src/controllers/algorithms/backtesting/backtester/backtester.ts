@@ -172,7 +172,7 @@ export default class Backtester extends Base {
         const baseSLPrice: number = position.highestPrice! * (1 - baseStopLoss);
         let newStopLossPrice: number = baseSLPrice;
 
-        if (percentOfProfit) {
+        if (percentOfProfit != null) {
           const absoluteProfit = position.highestPrice! - position.entryPrice;
           const profitToKeep = absoluteProfit * percentOfProfit;
           const percentOfProfitSLPrice = position.entryPrice + profitToKeep;
@@ -186,7 +186,7 @@ export default class Backtester extends Base {
         const baseSLPrice: number = position.lowestPrice! * (1 + baseStopLoss);
         let newStopLossPrice: number = baseSLPrice;
 
-        if (percentOfProfit) {
+        if (percentOfProfit != null) {
           const absoluteProfit = position.entryPrice - position.lowestPrice!;
           const profitToKeep = absoluteProfit * percentOfProfit;
           const percentOfProfitSLPrice = position.lowestPrice! + profitToKeep;
