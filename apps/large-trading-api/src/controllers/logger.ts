@@ -3,6 +3,7 @@ import { LogLevel } from '@shared';
 export default class Logger {
   private logLevel: LogLevel = LogLevel.Default;
   private progressActive = false;
+  private lastLoggedPercent = -1;
   // saving original console log is necessary to prevent recursive overrides
   private originalConsoleLog = console.log;
   private originalConsoleError = console.error;
@@ -51,15 +52,18 @@ export default class Logger {
   public logProgress(percent: number, caller: string): void {
     if (this.passesLogLevelCheck(caller)) {
       // progress bar with 20 segments, each segment represents 5%
-      const filled = Math.min(20, Math.floor(percent / 5));
-      const bar = '█'.repeat(filled) + '░'.repeat(20 - filled);
+      const filled: number = Math.min(20, Math.floor(percent / 5));
+      const bar: string = '█'.repeat(filled) + '░'.repeat(20 - filled);
+      const rounded: number = Math.round(percent);
 
       if (percent >= 100) {
         process.stdout.write(`\x1b[2K\r\x1b[?25h`);
         this.progressActive = false;
-      } else {
+        this.lastLoggedPercent = -1;
+      } else if (rounded !== this.lastLoggedPercent) {
         this.progressActive = true;
-        process.stdout.write(`\x1b[?25l\x1b[2K\r${this.getParentLog(caller)} ${bar} ${Math.round(percent)}%`);
+        this.lastLoggedPercent = rounded;
+        process.stdout.write(`\x1b[?25l\x1b[2K\r${this.getParentLog(caller)} ${bar} ${rounded}%`);
       }
     }
   }
