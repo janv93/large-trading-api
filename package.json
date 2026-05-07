@@ -7,7 +7,8 @@
   ],
   "scripts": {
     "be": "npx nx serve large-trading-api",
-    "fe": "npx nx serve large-trading-api-frontend"
+    "fe": "npx nx serve large-trading-api-frontend",
+    "test:be": "npx nx test large-trading-api"
   },
   "devDependencies": {
     "@angular/build": "^20.3.25",
