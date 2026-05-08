@@ -1,4 +1,4 @@
-import Indicators from '../../../../technical-analysis/indicators';
+import Indicators from '../../../patterns/indicators';
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
 import Base from '../../../../../base';
 
@@ -7,8 +7,8 @@ export default class Bb extends Base {
 
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
     const period = Number(params.period);
-    const bb = this.indicators.bb(klines, period);
-    const klinesWithBb = klines.slice(-bb.length);
+    this.indicators.bb(klines, period);
+    const klinesWithBb = klines.filter(k => k.indicators?.bb !== undefined);
 
     const threshold = 0.003; // percent that the price has fall below lower band / rise above upper band for position to open
     const takeProfit = threshold * 4;
@@ -19,7 +19,7 @@ export default class Bb extends Base {
       const signals: BacktestSignal[] = backtest.signals;
       const closePrice: number = kline.prices.close;
 
-      if (kline.prices.close < bb[index].bb.lower - bb[index].bb.lower * threshold) { // price crosses lower band
+      if (kline.prices.close < kline.indicators!.bb!.lower - kline.indicators!.bb!.lower * threshold) { // price crosses lower band
         signals.push({
           signal: Signal.Buy,
           size: 1,
@@ -31,7 +31,7 @@ export default class Bb extends Base {
             }
           }
         });
-      } else if (kline.prices.close > bb[index].bb.upper + bb[index].bb.upper * threshold) {  // price crosses upper band
+      } else if (kline.prices.close > kline.indicators!.bb!.upper + kline.indicators!.bb!.upper * threshold) {  // price crosses upper band
         signals.push({
           signal: Signal.Sell,
           size: 1,

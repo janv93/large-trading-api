@@ -1,4 +1,4 @@
-import Indicators from '../../../../technical-analysis/indicators';
+import Indicators from '../../../patterns/indicators';
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
 import Base from '../../../../../base';
 
@@ -9,8 +9,8 @@ export default class Macd extends Base {
     const fast = Number(params.fast);
     const slow = Number(params.slow);
     const signal = Number(params.signal);
-    const histogram = this.indicators.macd(klines, fast, slow, signal);
-    const klinesWithHistogram = klines.slice(-histogram.length);
+    this.indicators.macd(klines, fast, slow, signal);
+    const klinesWithHistogram = klines.filter(k => k.indicators?.macd !== undefined);
 
     let lastHistogram: number;
     let lastMove: string;
@@ -21,7 +21,7 @@ export default class Macd extends Base {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
       const closePrice: number = kline.prices.close;
-      const h = histogram[index].histogram;
+      const h = kline.indicators!.macd!.histogram;
 
       if (!lastHistogram) {
         lastHistogram = h;

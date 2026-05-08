@@ -4,7 +4,6 @@ import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Backtester from './algorithms/backtesting/backtester/backtester';
-import Indicators from './technical-analysis/indicators';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import QueryString from 'qs';
@@ -15,7 +14,6 @@ import * as path from 'path';
 
 export default class Routes extends Base {
   private kucoin = new Kucoin();
-  private indicators = new Indicators();
   private backtest = new Backtester();
   private cmc = new Coinmarketcap();
   private backtests: Record<string, any> = {};
@@ -129,22 +127,6 @@ export default class Routes extends Base {
     }
 
     res.send('Running');
-  }
-
-  public postTechnicalIndicator(req: Request, res: Response): void {
-    const query: QueryString.ParsedQs = req.query;
-    const { indicator, length, fast, slow, signal, period } = query;
-    let indicatorChart: any[];
-
-    switch (indicator) {
-      case Algorithm.Rsi: indicatorChart = this.indicators.rsi(req.body, Number(length)); break;
-      case Algorithm.Macd: indicatorChart = this.indicators.macd(req.body, Number(fast), Number(slow), Number(signal)); break;
-      case Algorithm.Ema: indicatorChart = this.indicators.ema(req.body, Number(period)); break;
-      case Algorithm.Bb: indicatorChart = this.indicators.bb(req.body, Number(period)); break;
-      default: res.send(`Indicator "${indicator}" does not exist`); return;
-    }
-
-    res.send(indicatorChart);
   }
 
   private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {

@@ -1,4 +1,4 @@
-import Indicators from '../../../../technical-analysis/indicators';
+import Indicators from '../../../patterns/indicators';
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
 import Base from '../../../../../base';
 
@@ -7,24 +7,24 @@ export default class Rsi extends Base {
 
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
     const length = Number(params.length);
-    const rsi = this.indicators.rsi(klines, length);
-    const klinesWithRsi = klines.slice(-rsi.length);
-    this.setSignalsOverBoughtOverSold(klinesWithRsi, algorithm, rsi);
+    this.indicators.rsi(klines, length);
+    const klinesWithRsi = klines.filter(k => k.indicators?.rsi !== undefined);
+    this.setSignalsOverBoughtOverSold(klinesWithRsi, algorithm);
 
     return klines;
   }
 
-  private setSignalsOverBoughtOverSold(klines: Kline[], algorithm: Algorithm, rsi: any[]): Kline[] {
+  private setSignalsOverBoughtOverSold(klines: Kline[], algorithm: Algorithm): Kline[] {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 
     let lastSignal: Signal;
 
-    klines.forEach((kline, index) => {
+    klines.forEach((kline) => {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
       const closePrice: number = kline.prices.close;
-      const rsiValue = rsi[index].rsi;
+      const rsiValue = kline.indicators!.rsi!;
 
       if (lastSignal === Signal.Buy) {
         if (rsiValue > rsiThresholdHigh) {

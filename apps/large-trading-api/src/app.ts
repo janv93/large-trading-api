@@ -36,7 +36,6 @@ class App extends Base {
     this.app.post('/multi', this.handle((req, res) => this.routes.runMultiTicker(req, res)));
     this.app.get('/trade', this.handle((req, res) => this.routes.tradeStrategy(req, res)));
     this.app.post('/backtest', this.handle((req, res) => this.routes.postBacktestData(req, res)));
-    this.app.post('/indicators', this.handle((req, res) => this.routes.postTechnicalIndicator(req, res)));
   }
 
   private handle(fn: (req: Request, res: Response) => void | Promise<void>) {

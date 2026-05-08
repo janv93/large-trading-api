@@ -1,4 +1,4 @@
-import Indicators from '../../../../technical-analysis/indicators';
+import Indicators from '../../../patterns/indicators';
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '@shared';
 import Base from '../../../../../base';
 import binance from '../../../../exchanges/binance';
@@ -15,12 +15,9 @@ export default class Ema extends Base {
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
-    const emaOpenFull = this.indicators.ema(klines, periodOpen);
-    const emaCloseFull = this.indicators.ema(klines, periodClose);
-    const maxLength = Math.min(emaOpenFull.length, emaCloseFull.length);
-    const emaOpen = emaOpenFull.slice(-maxLength);
-    const emaClose = emaCloseFull.slice(-maxLength);
-    const klinesWithEma = klines.slice(-maxLength);
+    this.indicators.ema(klines, periodOpen);
+    this.indicators.ema(klines, periodClose);
+    const klinesWithEma = klines.filter(k => k.indicators?.ema?.[periodOpen] !== undefined && k.indicators?.ema?.[periodClose] !== undefined);
 
     let lastMoveOpen: string;
     let lastMoveClose: string;
@@ -32,8 +29,8 @@ export default class Ema extends Base {
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
       const closePrice: number = kline.prices.close;
-      const eOpen = emaOpen[i].ema;
-      const eClose = emaClose[i].ema;
+      const eOpen = kline.indicators!.ema![periodOpen];
+      const eClose = kline.indicators!.ema![periodClose];
 
       // init
 
@@ -143,11 +140,13 @@ export default class Ema extends Base {
     const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
     klines.splice(-1);  // remove running timeframe
     console.log(klines.slice(-3))
-    const ema = this.indicators.ema(klines, 80);
-    console.log(ema.slice(-3))
+    const emaPeriod = 80;
+    this.indicators.ema(klines, emaPeriod);
+    const klinesWithEma = klines.filter(k => k.indicators?.ema?.[emaPeriod] !== undefined);
+    console.log(klinesWithEma.slice(-3))
 
-    const move = ema[ema.length - 1].ema - ema[ema.length - 2].ema > 0 ? 'up' : 'down';
-    const lastMove = ema[ema.length - 2].ema - ema[ema.length - 3].ema > 0 ? 'up' : 'down';
+    const move = klinesWithEma[klinesWithEma.length - 1].indicators!.ema![emaPeriod] - klinesWithEma[klinesWithEma.length - 2].indicators!.ema![emaPeriod] > 0 ? 'up' : 'down';
+    const lastMove = klinesWithEma[klinesWithEma.length - 2].indicators!.ema![emaPeriod] - klinesWithEma[klinesWithEma.length - 3].indicators!.ema![emaPeriod] > 0 ? 'up' : 'down';
     console.log(lastMove);
     console.log(move);
 

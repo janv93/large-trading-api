@@ -29,6 +29,18 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
     single: {
       periodOpen: 80,
       periodClose: 80
+    },
+    multi: {
+      periodOpen: {
+        min: 50,
+        max: 200,
+        step: 10
+      },
+      periodClose: {
+        min: 50,
+        max: 200,
+        step: 10
+      }
     }
   },
   [Algorithm.Bb]: {

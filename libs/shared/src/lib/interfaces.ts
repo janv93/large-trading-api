@@ -122,6 +122,7 @@ export interface Kline {
   numberOfTrades?: number;
   tweets?: Tweet[];
   chart?: KlineChart;
+  indicators?: KlineIndicators;
 }
 
 export interface KlineTimes {
@@ -152,6 +153,27 @@ export interface PivotPoint {
 export interface MarketStructureStats {
   streak: number; // # higher or lower in a row
   direction: Direction;
+}
+
+export interface KlineIndicators {
+  ema?: Record<number, number>;   // keyed by period, e.g. ema[20] = value
+  sma?: Record<number, number>;   // keyed by period, e.g. sma[50] = value
+  macd?: MacdValues;
+  rsi?: number;
+  bb?: BollingerBands;
+  atr?: number;
+}
+
+export interface BollingerBands {
+  upper: number;
+  middle: number;
+  lower: number;
+}
+
+export interface MacdValues {
+  macdLine: number;
+  signal: number;
+  histogram: number;
 }
 
 export interface TrendLine {

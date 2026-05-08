@@ -44,7 +44,6 @@
     "mongoose": "latest",
     "oauth": "latest",
     "plotly": "latest",
-    "technicalindicators": "latest",
     "ts-jest": "latest",
     "typescript": "latest"
   },

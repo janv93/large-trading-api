@@ -25,6 +25,9 @@
     <span>$</span>
     }
     <p>i{{currentIndex}} t{{currentOhlc.time}}</p>
+    @for (indicator of currentIndicatorValues; track indicator.label) {
+    <p><span class="indicator-label">{{indicator.label}}</span> {{indicator.value}}</p>
+    }
   </div>
   }
   <div class="position-absolute legend-right" [ngStyle]="{'right': chartService.isMulti ? '20px' : '100px'}">
@@ -39,6 +42,8 @@
         <input class="align-middle" type="checkbox" (change)="onShowPositionSizeChange($event)">
         <label class="ms-3 me-2">charting</label>
         <input class="align-middle" type="checkbox" (change)="onShowChartingChange($event)" checked>
+        <label class="ms-3 me-2">indicators</label>
+        <input class="align-middle" type="checkbox" (change)="onShowIndicatorsChange($event)" checked>
       </div>
     </div>
     }
@@ -49,7 +54,7 @@
         <span>% profit</span>
       </div>
       <div>
-        <span [style.color]="getDrawbackColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
+        <span [style.color]="statsService.getDrawbackColor(stats.maxDrawback, 0, 100)">{{ stats.maxDrawback }}</span>
         <span>% max drawback</span>
       </div>
       <div>
