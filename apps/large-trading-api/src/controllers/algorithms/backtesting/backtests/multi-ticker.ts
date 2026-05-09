@@ -1,6 +1,6 @@
 import { Algorithm, AlgorithmConfigMulti, Kline, MultiBenchmark } from '@shared';
-import Base from '../../../../../base';
-import Backtester from '../../backtester/backtester';
+import Base from '../../../../base';
+import Backtester from '../backtester/backtester';
 import deepmerge from 'deepmerge';
 
 export default class MultiTicker extends Base {
@@ -12,19 +12,22 @@ export default class MultiTicker extends Base {
     const multiConfigs = Object.entries(params).filter(([key]) => key !== 'algorithm') as [string, AlgorithmConfigMulti][];
     const combinations = this.generateCombinations(multiConfigs);
     const benchmarks: MultiBenchmark[] = [];
+    let bestTickers: Kline[][] = [];
+    let bestScore = -Infinity;
 
     for (const combo of combinations) {
       this.log(combo);
       const tickersWithBacktest: Kline[][] = this.runAlgo(tickers, algorithm, combo, algoInstance);
       const tickersProfits: number[] = tickersWithBacktest.map(t => this.getLastProfit(t, algorithm)).filter((t): t is number => t !== undefined);
       const average: number = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
+      const score = this.calcAverageLogarithmicProfit(tickersProfits);
 
-      benchmarks.push({
-        tickers: tickersWithBacktest,
-        averageProfit: average,
-        score: this.calcAverageLogarithmicProfit(tickersProfits),
-        params: combo
-      });
+      benchmarks.push({ averageProfit: average, score, params: combo });
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestTickers = tickersWithBacktest;
+      }
     }
 
     benchmarks.sort((a, b) => a.score - b.score);
@@ -39,7 +42,7 @@ export default class MultiTicker extends Base {
 
     this.log();
 
-    return benchmarks.at(-1)?.tickers ?? [];
+    return bestTickers;
   }
 
   private generateCombinations(configs: [string, AlgorithmConfigMulti][]): Record<string, number>[] {

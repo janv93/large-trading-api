@@ -223,7 +223,6 @@ export interface TrailingStopLoss {
 }
 
 export interface MultiBenchmark {
-  tickers: Kline[][];
   score: number;
   averageProfit: number;
   params?: MultiBenchmarkParams;
