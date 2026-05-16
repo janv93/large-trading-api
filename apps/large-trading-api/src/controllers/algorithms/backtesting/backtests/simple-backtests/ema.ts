@@ -12,7 +12,7 @@ export default class Ema extends Base {
   /**
    * sets position signals depending on emas going up or down
    */
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
     this.indicators.ema(klines, periodOpen);
@@ -105,7 +105,6 @@ export default class Ema extends Base {
       lastEmaClose = eClose;
     });
 
-    return klines;
   }
 
   /**

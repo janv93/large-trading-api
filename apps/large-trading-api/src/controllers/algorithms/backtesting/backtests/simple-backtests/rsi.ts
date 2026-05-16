@@ -5,16 +5,15 @@ import Base from '../../../../../base';
 export default class Rsi extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const length = Number(params.length);
     this.indicators.rsi(klines, length);
     const klinesWithRsi = klines.filter(k => k.indicators?.rsi !== undefined);
     this.setSignalsOverBoughtOverSold(klinesWithRsi, algorithm);
 
-    return klines;
   }
 
-  private setSignalsOverBoughtOverSold(klines: Kline[], algorithm: Algorithm): Kline[] {
+  private setSignalsOverBoughtOverSold(klines: Kline[], algorithm: Algorithm): void {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
 
@@ -87,7 +86,6 @@ export default class Rsi extends Base {
       }
     });
 
-    return klines;
   }
 
 }

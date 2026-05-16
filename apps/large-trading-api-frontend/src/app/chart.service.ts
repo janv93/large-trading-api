@@ -13,13 +13,13 @@ export class ChartService {
   public exchange = Exchange.Binance;  // ignored for multi
   public symbol = 'BTCUSDT';  // ignored for multi
   public timeframe = Timeframe._1Hour;
-  public times = 10;  // 1 = 1000 timeframes
+  public times = 1;  // 1 = 1000 timeframes
   public commission = 0.04; // 0.04%
   public algorithms = [Algorithm.TrendLineBreakthrough];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
 
   // multi
-  public isMulti = false; // multiple charts mode
-  public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are single or multi
+  public isMulti = true; // multiple charts mode
+  public multiAutoParams = [true, false];  // primary algorithm and optional second algorithm, determines if algo parameters are single or multi
   public multiRank = 15;  // top <multiRank> tickers of each category. e.g. top 10 of stocks, cryptos etc
   public multiCommission = 0.00;
 

@@ -62,10 +62,10 @@ export default class Routes extends Base {
 
     try {
       const allKlines: Kline[] = await this.initKlines(exchange, symbol, timeframe);
-      let klinesInRange: Kline[] = allKlines.slice(-1000 * Number(times));    // get last times * 1000 timeframes
+      const klinesInRange: Kline[] = allKlines.slice(-1000 * Number(times));    // get last times * 1000 timeframes
 
       for (const algorithm of algorithms) {
-        klinesInRange = await this.handleAlgo(klinesInRange, algorithm);
+        await this.handleAlgo(klinesInRange, algorithm);
       }
 
       res.send(klinesInRange);
@@ -99,8 +99,8 @@ export default class Routes extends Base {
         tickersWithSignals = await this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i], algoInstance);
       } else {
         tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
-          const klinesWithSignals: Kline[] = await this.handleAlgo(klines, algorithms[i]);
-          return this.backtest.calcBacktestPerformance(klinesWithSignals, algorithms[i].algorithm, Number(commission));
+          await this.handleAlgo(klines, algorithms[i]);
+          return this.backtest.calcBacktestPerformance(klines, algorithms[i].algorithm, Number(commission));
         }));
       }
     }
@@ -129,7 +129,7 @@ export default class Routes extends Base {
     res.send('Running');
   }
 
-  private async handleAlgo(klines: Kline[], params): Promise<Kline[]> {
+  private async handleAlgo(klines: Kline[], params): Promise<void> {
     const algorithm: Algorithm = params.algorithm;
 
     klines.forEach((kline: Kline) => {
@@ -140,7 +140,7 @@ export default class Routes extends Base {
 
     const algo = this.backtests[algorithm];
     if (!algo?.setSignals) throw `invalid algorithm ${algorithm}`;
-    return await algo.setSignals(klines, algorithm, params);
+    await algo.setSignals(klines, algorithm, params);
   }
 
   private async initKlines(exchange: string, symbol: string, timeframe: Timeframe): Promise<Kline[]> {

@@ -2,7 +2,7 @@ import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared'
 import Base from '../../../../../base';
 
 export default class Momentum extends Base {
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const colors: number[] = klines.map(kline => this.getKlineColor(kline));
     const streak = Number(params.streak);
 
@@ -27,7 +27,6 @@ export default class Momentum extends Base {
       }
     });
 
-    return klines;
   }
 
   private getEntrySignal(colors: number[], index: number, streak: number): Signal | undefined {

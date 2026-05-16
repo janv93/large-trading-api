@@ -6,7 +6,7 @@ import PivotPointController from '../../../patterns/pivot-point';
 export default class MarketStructure extends Base {
   private pivotPointController = new PivotPointController();
 
-  public setSignals(klines: Kline[], algorithm, params: any): Kline[] {
+  public setSignals(klines: Kline[], algorithm, params: any): void {
     const space: number = Number(params.space);
     this.pivotPointController.addMarketStructure(klines, space);
     let lastMarketStructureStats: MarketStructureStats | undefined = undefined;
@@ -43,6 +43,5 @@ export default class MarketStructure extends Base {
       lastMarketStructureStats = currentMarketStructureStats;
     });
 
-    return klines;
   }
 }

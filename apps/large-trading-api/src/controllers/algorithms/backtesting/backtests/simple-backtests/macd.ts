@@ -5,7 +5,7 @@ import Base from '../../../../../base';
 export default class Macd extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const fast = Number(params.fast);
     const slow = Number(params.slow);
     const signal = Number(params.signal);
@@ -88,7 +88,6 @@ export default class Macd extends Base {
       lastMove = move;
     });
 
-    return klines;
   }
 
   /**

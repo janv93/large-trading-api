@@ -9,7 +9,7 @@ export default class TrendLineBreakthrough extends Base {
   private pivotPointController = new PivotPointController();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const percentOfProfit: number = Number(params.percentOfProfit);
     // this.pivotPointController.addPivotPoints(klines, 20);
     // this.trendLineController.addTrendLinesFromPivotPoints(klines, 40, 200);
@@ -39,7 +39,6 @@ export default class TrendLineBreakthrough extends Base {
       });
     });
 
-    return klines;
   }
 
   private openBuyPosition(kline: Kline, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {

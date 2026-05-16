@@ -2,7 +2,7 @@ import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared'
 import Base from '../../../../../base';
 
 export default class Example extends Base {
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): Kline[] {
+  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const size: number = Number(params.size);
     const interval = Math.floor(klines.length / 11);
 
@@ -66,6 +66,5 @@ export default class Example extends Base {
       }
     });
 
-    return klines;
   }
 }
