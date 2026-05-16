@@ -10,7 +10,6 @@ if (!isMainThread) {
   const { sharedBuffer, bufferLength, combos, algorithm, algoModulePath } = workerData;
 
   const bytes = new Uint8Array(sharedBuffer, 0, bufferLength);
-  const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const AlgoClass = require(algoModulePath).default;
@@ -18,15 +17,15 @@ if (!isMainThread) {
   const backtester = new Backtester();
 
   const results: MultiBenchmark[] = combos.map((combo: Record<string, number>) => {
-    const clonedTickers: Kline[][] = deepmerge([], tickers);
+    const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
 
-    clonedTickers.forEach((currentTicker: Kline[]) => {
+    tickers.forEach((currentTicker: Kline[]) => {
       currentTicker.forEach((kline: Kline) => { kline.algorithms[algorithm] = { signals: [] }; });
       algoInstance.setSignals(currentTicker, algorithm, combo);
       backtester.calcBacktestPerformance(currentTicker, algorithm, 0);
     });
 
-    const profits: number[] = clonedTickers
+    const profits: number[] = tickers
       .map((t: Kline[]) => t.at(-1)?.algorithms[algorithm]?.percentProfit)
       .filter((t): t is number => t !== undefined);
 
