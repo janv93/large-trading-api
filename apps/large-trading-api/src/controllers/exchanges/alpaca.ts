@@ -72,8 +72,9 @@ class Alpaca extends Base {
     const lastKlineTime: number = lastKline.times.open;
 
     const cacheKey = `${symbol}_${timeframe}`;
+    const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getKlineFetchTime(symbol, timeframe);
 
-    if (this.klineOutdated(timeframe, lastKlineTime, this.lastFetchTime.get(cacheKey))) {
+    if (this.klineOutdated(timeframe, lastKlineTime, lastFetch)) {
       const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastKlineTime)).length > 0;
 
       if (hasNewStockSplits) {
@@ -86,6 +87,7 @@ class Alpaca extends Base {
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log(`${newKlines.length} new ${symbol} klines added to database`);
       this.lastFetchTime.set(cacheKey, Date.now());
+      await database.updateKlineFetchTime(symbol, timeframe);
       await database.writeKlines(newKlines);
       const mergedKlines: Kline[] = dbKlines.concat(newKlines);
       return mergedKlines;

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Base from '../base';
 import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
-import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema } from './schemas';
+import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema, KlineFetchTimesSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
@@ -13,6 +13,7 @@ class Database extends Base {
   private binanceSymbols: mongoose.Model<any>;
   private cmcTickers: mongoose.Model<any>;
   private appConfig: mongoose.Model<any>;
+  private klineFetchTimes: mongoose.Model<any>;
 
   constructor() {
     super();
@@ -23,6 +24,7 @@ class Database extends Base {
     this.binanceSymbols = mongoose.model('BinanceSymbols', BinanceSymbolsSchema);
     this.cmcTickers = mongoose.model('CmcTickers', CmcTickersSchema);
     this.appConfig = mongoose.model('AppConfig', AppConfigSchema);
+    this.klineFetchTimes = mongoose.model('KlineFetchTimes', KlineFetchTimesSchema);
   }
 
   public async writeKlines(klines: Kline[]): Promise<void> {
@@ -381,6 +383,25 @@ class Database extends Base {
       this.log(`Updated CMC tickers`);
     } catch (err) {
       this.logErr('Failed to update CMC tickers: ', err);
+      throw err;
+    }
+  }
+
+  public async getKlineFetchTime(symbol: string, timeframe: string): Promise<number | undefined> {
+    try {
+      const document = await this.klineFetchTimes.findOne({ symbol, timeframe });
+      return document ? new Date(document.updatedAt).getTime() : undefined;
+    } catch (err) {
+      this.logErr(`Failed to get kline fetch time for ${symbol}`, err);
+      return undefined;
+    }
+  }
+
+  public async updateKlineFetchTime(symbol: string, timeframe: string): Promise<void> {
+    try {
+      await this.klineFetchTimes.findOneAndUpdate({ symbol, timeframe }, { $set: { updatedAt: new Date() } }, { upsert: true });
+    } catch (err) {
+      this.logErr(`Failed to update kline fetch time for ${symbol}`, err);
       throw err;
     }
   }

@@ -126,3 +126,16 @@ export const AppConfigSchema = new mongoose.Schema({
     type: Boolean
   }
 });
+
+export const KlineFetchTimesSchema = new mongoose.Schema({
+  symbol: {
+    type: String,
+    required: true,
+    index: true
+  },
+  timeframe: {
+    type: String,
+    required: true,
+    index: true
+  }
+}, { timestamps: true });
