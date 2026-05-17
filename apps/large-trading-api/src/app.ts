@@ -49,7 +49,9 @@ class App extends Base {
       } catch (err) {
         const origin = err instanceof Error ? err.stack?.split('\n')[1]?.trim() : undefined;
         this.log(`Error on ${req.originalUrl}: ${err}${origin ? ` (${origin})` : ''}`);
-        res.status(500).json({ error: 'Internal server error' });
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Internal server error' });
+        }
       }
     };
   }

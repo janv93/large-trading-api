@@ -14,6 +14,27 @@ export class AppComponent {
   public klines: Run[];
   public tickers: Run[][];
 
+  public readonly pageSize = 50;
+  public currentPage = 0;
+
+  get totalPages(): number {
+    return this.tickers ? Math.ceil(this.tickers.length / this.pageSize) : 0;
+  }
+
+  get pagedTickers(): Run[][] {
+    if (!this.tickers) return [];
+    const start = this.currentPage * this.pageSize;
+    return this.tickers.slice(start, start + this.pageSize);
+  }
+
+  public prevPage(): void {
+    if (this.currentPage > 0) this.currentPage--;
+  }
+
+  public nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) this.currentPage++;
+  }
+
   constructor(
     public chartService: ChartService,
     private httpService: HttpService

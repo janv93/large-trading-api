@@ -67,6 +67,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   ngOnDestroy(): void {
+    this.resizeUnlisten?.();
+
     if (this.crosshairMoveHandler && this.chart) {
       this.chart.unsubscribeCrosshairMove(this.crosshairMoveHandler);
     }
@@ -77,6 +79,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     if (this.chart) {
       this.chart.remove();
+      this.chart = undefined as any;
     }
   }
 
@@ -140,8 +143,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.watermarkPrimitive?.setConfig(this.currentKlines[0].symbol, this.chartService.exchange, this.chartService.isMulti);
   }
 
+  private resizeUnlisten: (() => void) | undefined;
+
   private handleResize(): void {
-    this.renderer.listen('window', 'resize', () => {
+    this.resizeUnlisten = this.renderer.listen('window', 'resize', () => {
       const container = this.containerRef.nativeElement;
       if (this.chart) {
         this.chart.resize(container.clientWidth, container.clientHeight);

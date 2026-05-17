@@ -12,9 +12,18 @@
 <mixed-chart class="mixed-chart" [klines]="klines"></mixed-chart>
 }
 @if (chartService.isMulti && tickers) {
-<div class="mixed-chart-multi-container">
-  @for (ticker of tickers; track ticker) {
-  <mixed-chart class="mixed-chart-multi" [klines]="ticker"></mixed-chart>
+<div class="mixed-chart-multi-wrapper">
+  <div class="mixed-chart-multi-container">
+    @for (ticker of pagedTickers; track ticker) {
+    <mixed-chart class="mixed-chart-multi" [klines]="ticker"></mixed-chart>
+    }
+  </div>
+  @if (totalPages > 1) {
+  <div class="pagination-bar">
+    <button (click)="prevPage()" [disabled]="currentPage === 0">&#8592; Prev</button>
+    <span>{{ currentPage + 1 }} / {{ totalPages }} &nbsp;({{ tickers.length }} tickers)</span>
+    <button (click)="nextPage()" [disabled]="currentPage === totalPages - 1">Next &#8594;</button>
+  </div>
   }
 </div>
 }

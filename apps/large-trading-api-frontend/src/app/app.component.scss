@@ -15,11 +15,60 @@ code {
   height: 100%;
 }
 
+.mixed-chart-multi-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .mixed-chart-multi-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  flex: 1;
+  overflow: auto;
 
   .mixed-chart-multi {
     height: 500px;
+  }
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 0.5rem 0;
+  background: #111;
+  border-top: 2px solid #bbb;
+
+  span {
+    color: #ccc;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+  }
+
+  button {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid #bbb;
+    padding: 0.25rem 1.1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    transition:
+      background 0.15s,
+      color 0.15s;
+
+    &:disabled {
+      color: #333;
+      border-color: #333;
+      cursor: default;
+    }
+
+    &:not(:disabled):hover {
+      background: #666;
+      color: #fff;
+    }
   }
 }

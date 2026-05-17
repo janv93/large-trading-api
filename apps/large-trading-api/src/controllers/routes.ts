@@ -82,37 +82,53 @@ export default class Routes extends Base {
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     res.setHeader('Transfer-Encoding', 'chunked');
+    req.headers['accept-encoding'] = 'identity'; // disable gzip for this streaming response
 
-    const [stocks, indexes, cryptos] = await Promise.all([
-      this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
-        this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
-      ),
-      this.initKlinesMulti(Exchange.Alpaca, indexSymbols, timeframe, times),
-      this.getMultiCryptos(Number(rank)).then((cryptosSymbols: string[]) =>
-        this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe, times)
-      )
-    ]);
+    // Keep the connection alive during long processing to prevent idle timeouts (~60s in Chrome/OS)
+    const heartbeat = setInterval(() => res.write('\n'), 20_000);
 
-    let tickersWithSignals: Kline[][] = [...stocks, ...indexes, ...cryptos];
+    try {
+      const [stocks, indexes, cryptos] = await Promise.all([
+        this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
+          this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
+        ),
+        this.initKlinesMulti(Exchange.Alpaca, indexSymbols, timeframe, times),
+        this.getMultiCryptos(Number(rank)).then((cryptosSymbols: string[]) =>
+          this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe, times)
+        )
+      ]);
 
-    for (let i = 0; i < algorithms.length; i++) {
-      if (autoParams[i]) {
-        const algoInstance = this.backtests[algorithms[i].algorithm];
-        tickersWithSignals = await this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i], algoInstance);
-      } else {
-        tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
-          await this.handleAlgo(klines, algorithms[i]);
-          return this.backtest.calcBacktestPerformance(klines, algorithms[i].algorithm, Number(commission));
-        }));
+      let tickersWithSignals: Kline[][] = [...stocks, ...indexes, ...cryptos];
+
+      for (let i = 0; i < algorithms.length; i++) {
+        if (autoParams[i]) {
+          const algoInstance = this.backtests[algorithms[i].algorithm];
+          tickersWithSignals = await this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i], algoInstance);
+        } else {
+          tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
+            await this.handleAlgo(klines, algorithms[i]);
+            return this.backtest.calcBacktestPerformance(klines, algorithms[i].algorithm, Number(commission));
+          }));
+        }
       }
-    }
 
-    for (const ticker of tickersWithSignals) {
-      res.write(JSON.stringify(ticker) + '\n');
-    }
+      for (let i = 0; i < tickersWithSignals.length; i++) {
+        const line = JSON.stringify(tickersWithSignals[i]) + '\n';
+        (tickersWithSignals[i] as any) = null; // free memory as we go
+        const drained = res.write(line);
+        if (!drained) await new Promise<void>((resolve, reject) => {
+          const onDrain = () => { res.removeListener('error', onError); resolve(); };
+          const onError = (err: Error) => { res.removeListener('drain', onDrain); reject(err); };
+          res.once('drain', onDrain);
+          res.once('error', onError);
+        });
+      }
 
-    this.log(`Multi finished in ${this.formatDuration(Date.now() - startTime)}`);
-    res.end();
+      this.log(`Multi finished in ${this.formatDuration(Date.now() - startTime)}`);
+    } finally {
+      clearInterval(heartbeat);
+      res.end();
+    }
   }
 
   public postBacktestData(req: Request, res: Response): void {
