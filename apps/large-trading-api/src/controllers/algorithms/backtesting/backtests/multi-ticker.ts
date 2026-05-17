@@ -49,11 +49,9 @@ export default class MultiTicker extends Base {
 
   public async handleAlgo(tickers: Kline[][], params: Record<string, AlgorithmConfigMulti | Algorithm>, algoInstance: any): Promise<Kline[][]> {
     const algorithm: Algorithm = params.algorithm as Algorithm;
-
     const multiConfigs = Object.entries(params).filter(([key]) => key !== 'algorithm') as [string, AlgorithmConfigMulti][];
     const benchmarks: MultiBenchmark[] = [];
     let bestTickers: Kline[][] = [];
-
     const algoModulePath = this.resolveAlgoModulePath(algoInstance);
 
     const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, this.generateCombinations(multiConfigs), algoModulePath!);
@@ -65,7 +63,6 @@ export default class MultiTicker extends Base {
     }
 
     benchmarks.sort((a, b) => a.score - b.score);
-
     this.log();
 
     benchmarks.slice(-10).forEach(b => {
@@ -74,7 +71,6 @@ export default class MultiTicker extends Base {
     });
 
     this.log();
-
     return bestTickers;
   }
 

@@ -76,6 +76,7 @@ export default class Routes extends Base {
   }
 
   public async runMultiTicker(req: Request, res: Response): Promise<void> {
+    const startTime = Date.now();
     const body = req.body;
     const { timeframe, times, commission, rank, autoParams, algorithms } = body;
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank);
@@ -106,7 +107,7 @@ export default class Routes extends Base {
     }
 
     this.reduceTickersToLimit(tickersWithSignals);
-    this.log('Multi finished');
+    this.log(`Multi finished in ${this.formatDuration(Date.now() - startTime)}`);
     res.send(tickersWithSignals);
   }
 
