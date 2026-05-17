@@ -16,11 +16,16 @@ if (!isMainThread) {
   const algoInstance = new AlgoClass();
   const backtester = new Backtester();
 
-  const results: MultiBenchmark[] = combos.map((combo: Record<string, number>) => {
-    const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
+  const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
 
+  const results: MultiBenchmark[] = combos.map((combo: Record<string, number>) => {
     tickers.forEach((currentTicker: Kline[]) => {
-      currentTicker.forEach((kline: Kline) => { kline.algorithms[algorithm] = { signals: [] }; });
+      currentTicker.forEach((kline: Kline) => {
+        kline.algorithms[algorithm] = { signals: [] };
+        kline.indicators = undefined;
+        kline.chart = undefined;
+      });
+
       algoInstance.setSignals(currentTicker, algorithm, combo);
       backtester.calcBacktestPerformance(currentTicker, algorithm, 0);
     });
