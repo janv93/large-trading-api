@@ -46,43 +46,23 @@ export default class MultiTicker extends Base {
     const algorithm: Algorithm = params.algorithm as Algorithm;
 
     const multiConfigs = Object.entries(params).filter(([key]) => key !== 'algorithm') as [string, AlgorithmConfigMulti][];
-    const combinations = this.generateCombinations(multiConfigs);
     const benchmarks: MultiBenchmark[] = [];
     let bestTickers: Kline[][] = [];
-    let bestScore = -Infinity;
 
     const algoModulePath = this.resolveAlgoModulePath(algoInstance);
 
-    if (algoModulePath && combinations.length > 1) {
-      const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, combinations, algoModulePath);
-      benchmarks.push(...workerBenchmarks);
+    const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, this.generateCombinations(multiConfigs), algoModulePath!);
+    benchmarks.push(...workerBenchmarks);
 
-      const best = workerBenchmarks.reduce((b, c) => c.score > b.score ? c : b, workerBenchmarks[0]);
-      if (best?.params) {
-        bestTickers = this.runAlgo(tickers, algorithm, best.params, algoInstance);
-      }
-    } else {
-      for (const combo of combinations) {
-        this.log(combo);
-        const tickersWithBacktest: Kline[][] = this.runAlgo(tickers, algorithm, combo, algoInstance);
-        const tickersProfits: number[] = tickersWithBacktest.map(t => this.getLastProfit(t, algorithm)).filter((t): t is number => t !== undefined);
-        const average: number = tickersProfits.reduce((a, c) => a + c, 0) / tickersProfits.length;
-        const score = this.calcAverageLogarithmicProfit(tickersProfits);
-
-        benchmarks.push({ averageProfit: average, score, params: combo });
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestTickers = tickersWithBacktest;
-        }
-      }
+    const best = workerBenchmarks.reduce((b, c) => c.score > b.score ? c : b, workerBenchmarks[0]);
+    if (best?.params) {
+      bestTickers = this.runAlgo(tickers, algorithm, best.params, algoInstance);
     }
 
     benchmarks.sort((a, b) => a.score - b.score);
 
     this.log();
 
-    // log top 10 performers
     benchmarks.slice(-10).forEach(b => {
       const paramStr: string = Object.entries(b.params ?? {}).map(([k, v]) => `${k}=${v}`).join(' ');
       this.log(paramStr, 'avgProfit:', Math.round(b.averageProfit * 10) / 10, 'score:', Math.round(b.score));
@@ -96,30 +76,52 @@ export default class MultiTicker extends Base {
   private async runWithWorkers(
     tickers: Kline[][],
     algorithm: Algorithm,
-    combinations: Record<string, number>[],
+    combinations: Generator<Record<string, number>>,
     algoModulePath: string
   ): Promise<MultiBenchmark[]> {
-    // Serialize tickers once into a SharedArrayBuffer that all workers read without copying
     const encoded = Buffer.from(JSON.stringify(tickers), 'utf-8');
     const sharedBuffer = new SharedArrayBuffer(encoded.byteLength);
     new Uint8Array(sharedBuffer).set(encoded);
 
-    const numWorkers = Math.min(os.cpus().length, combinations.length);
-    const batchSize = Math.ceil(combinations.length / numWorkers);
-    const batches = Array.from({ length: numWorkers }, (_, i) =>
-      combinations.slice(i * batchSize, (i + 1) * batchSize)
-    ).filter(batch => batch.length > 0);
+    // Estimate memory per worker: V8 isolate overhead + tickers deserialisation cost.
+    const memPerWorker = encoded.byteLength + 128 * 1024 * 1024;
+    const allResults: MultiBenchmark[] = [];
 
-    const results = await Promise.all(batches.map(combos =>
-      new Promise<MultiBenchmark[]>((resolve, reject) => {
-        const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combos, algorithm, algoModulePath } });
-        worker.on('message', resolve);
-        worker.on('error', reject);
-        worker.on('exit', code => { if (code !== 0) reject(new Error(`Worker exited with code ${code}`)); });
-      })
-    ));
+    while (true) {
+      // Derive concurrency from current free memory — fully dynamic, no static cap.
+      const maxWorkers = Math.max(1, Math.min(os.cpus().length, Math.floor(os.freemem() * 0.75 / memPerWorker)));
 
-    return results.flat();
+      // Pull one batch per worker slot from the lazy generator.
+      const batches: Record<string, number>[][] = [];
+      let exhausted = false;
+      for (let i = 0; i < maxWorkers; i++) {
+        const batch: Record<string, number>[] = [];
+        for (let j = 0; j < maxWorkers; j++) {
+          const next = combinations.next();
+          if (next.done) { exhausted = true; break; }
+          batch.push(next.value);
+        }
+        if (batch.length > 0) batches.push(batch);
+        if (exhausted) break;
+      }
+
+      if (batches.length === 0) break;
+
+      // Spawn this wave, await all — workers die afterwards and memory is freed.
+      const results = await Promise.all(batches.map(combos =>
+        new Promise<MultiBenchmark[]>((resolve, reject) => {
+          const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combos, algorithm, algoModulePath } });
+          worker.on('message', resolve);
+          worker.on('error', reject);
+          worker.on('exit', code => { if (code !== 0) reject(new Error(`Worker exited with code ${code}`)); });
+        })
+      ));
+
+      allResults.push(...results.flat());
+      if (exhausted) break;
+    }
+
+    return allResults;
   }
 
   private resolveAlgoModulePath(algoInstance: any): string | undefined {
@@ -131,21 +133,32 @@ export default class MultiTicker extends Base {
     );
   }
 
-  private generateCombinations(configs: [string, AlgorithmConfigMulti][]): Record<string, number>[] {
-    const ranges: { key: string; values: number[] }[] = configs.map(([key, config]) => {
+  private *generateCombinations(configs: [string, AlgorithmConfigMulti][]): Generator<Record<string, number>> {
+    const ranges = configs.map(([key, config]) => {
+      const step = config.step ?? 1;
       const values: number[] = [];
-      const step: number = config.step ?? 1;
-
       for (let v = config.min; v <= config.max + step * 0.5; v += step) {
         values.push(Math.round(v * 1e10) / 1e10);
       }
-
       return { key, values };
     });
 
-    return ranges.reduce<Record<string, number>[]>((combos, { key, values }) => {
-      return combos.flatMap(combo => values.map(v => ({ ...combo, [key]: v })));
-    }, [{}]);
+    if (ranges.length === 0) { yield {}; return; }
+
+    const indices = new Array(ranges.length).fill(0);
+
+    while (true) {
+      const combo: Record<string, number> = {};
+      for (let i = 0; i < ranges.length; i++) combo[ranges[i].key] = ranges[i].values[indices[i]];
+      yield combo;
+
+      let carry = 1;
+      for (let i = ranges.length - 1; i >= 0 && carry; i--) {
+        indices[i]++;
+        if (indices[i] >= ranges[i].values.length) { indices[i] = 0; } else { carry = 0; }
+      }
+      if (carry) break;
+    }
   }
 
   private runAlgo(tickers: Kline[][], algorithm: Algorithm, params: Record<string, number>, algoInstance: any): Kline[][] {
