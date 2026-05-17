@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { ChartService } from './chart.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -14,7 +14,8 @@ export class HttpService {
 
   constructor(
     private chartService: ChartService,
-    private http: HttpClient
+    private http: HttpClient,
+    private ngZone: NgZone
   ) { }
 
   public getKlines(): Observable<Kline[]> {
@@ -44,7 +45,7 @@ export class HttpService {
     return this.http.post<Kline[]>(urlWithQuery, klines);
   }
 
-  public getMulti(): Observable<Kline[][]> {
+  public getMultiStream(): Observable<Kline[]> {
     const { timeframe, times, multiRank, multiAutoParams, multiCommission } = this.chartService;
 
     const body = {
@@ -57,8 +58,44 @@ export class HttpService {
     };
 
     const url = this.baseUrl + '/multi';
-    this.chartService.setLoadingText(`Getting multiple tickers with backtests`, url.replace(this.baseUrl, ''));
-    return this.http.post<Kline[][]>(url, body);
+    this.chartService.setLoadingText(`Getting multiple tickers with backtests`, '/multi');
+
+    return new Observable<Kline[]>(observer => {
+      const controller = new AbortController();
+
+      (async () => {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
+
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          for await (const chunk of response.body as any) {
+            buffer += decoder.decode(chunk, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop()!;
+
+            for (const line of lines) {
+              if (line.trim()) this.ngZone.run(() => observer.next(JSON.parse(line)));
+            }
+          }
+
+          if (buffer.trim()) this.ngZone.run(() => observer.next(JSON.parse(buffer)));
+          this.ngZone.run(() => observer.complete());
+        } catch (err: any) {
+          if (err?.name !== 'AbortError') this.ngZone.run(() => observer.error(err));
+        }
+      })();
+
+      return () => controller.abort();
+    });
   }
 
   private getAlgorithmBody(index: number): any {

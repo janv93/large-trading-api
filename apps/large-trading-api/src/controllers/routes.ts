@@ -7,7 +7,6 @@ import Backtester from './algorithms/backtesting/backtester/backtester';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import QueryString from 'qs';
-import { constants } from 'buffer';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -81,6 +80,9 @@ export default class Routes extends Base {
     const { timeframe, times, commission, rank, autoParams, algorithms } = body;
     const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank);
 
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
     const [stocks, indexes, cryptos] = await Promise.all([
       this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
         this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
@@ -91,8 +93,7 @@ export default class Routes extends Base {
       )
     ]);
 
-    const allTickers: Kline[][] = [...stocks, ...indexes, ...cryptos];
-    let tickersWithSignals: Kline[][] = allTickers;
+    let tickersWithSignals: Kline[][] = [...stocks, ...indexes, ...cryptos];
 
     for (let i = 0; i < algorithms.length; i++) {
       if (autoParams[i]) {
@@ -106,9 +107,12 @@ export default class Routes extends Base {
       }
     }
 
-    this.reduceTickersToLimit(tickersWithSignals);
+    for (const ticker of tickersWithSignals) {
+      res.write(JSON.stringify(ticker) + '\n');
+    }
+
     this.log(`Multi finished in ${this.formatDuration(Date.now() - startTime)}`);
-    res.send(tickersWithSignals);
+    res.end();
   }
 
   public postBacktestData(req: Request, res: Response): void {
@@ -177,25 +181,4 @@ export default class Routes extends Base {
     return rankPairs;
   }
 
-  /**
-   * both node and angular have a limit for max response length
-   */
-  private reduceTickersToLimit(tickers: Kline[][]) {
-    const totalKlines: number = tickers.reduce((sum, t) => sum + t.length, 0);
-    const totalChars: number = tickers.reduce((sum, t) => sum + JSON.stringify(t).length, 0);
-    const avgKlineSizeChars: number = totalChars / totalKlines;
-    const klineLimit: number = Math.floor(constants.MAX_STRING_LENGTH * 0.9 / avgKlineSizeChars);
-
-    if (totalKlines <= klineLimit) return;
-
-    const sorted = tickers.map((t, i) => ({ i, len: t.length })).sort((a, b) => a.len - b.len);
-    let budget: number = klineLimit;
-
-    sorted.forEach(({ i, len }, j) => {
-      const cap: number = Math.floor(budget / (sorted.length - j));
-      const keep: number = Math.min(len, cap);
-      tickers[i] = tickers[i].slice(-keep);
-      budget -= keep;
-    });
-  }
 }

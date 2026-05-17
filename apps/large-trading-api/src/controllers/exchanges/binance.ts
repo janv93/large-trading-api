@@ -6,7 +6,7 @@ import database from '../../data/database';
 
 class Binance extends Base {
   private readonly usdPairs: string[] = ['USDT', 'BUSD', 'USDC'];
-  private rateLimitPerMinute = 2400;
+  private rateLimitPerMinute = 400; // 2400 is per minute limit, but fetching 1k klines costs 5 weight, 2400/5 = 480, plus some buffer
   private requestsSentThisMinute = 0;
 
   public async getKlines(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Kline[]> {
@@ -276,7 +276,7 @@ class Binance extends Base {
     // wait at rate limit
     if (this.requestsSentThisMinute >= this.rateLimitPerMinute) {
       this.log('Rate limit reached, waiting');
-      await this.sleep(60000);
+      await this.sleep(61000);
       this.requestsSentThisMinute = 0;
     }
   }

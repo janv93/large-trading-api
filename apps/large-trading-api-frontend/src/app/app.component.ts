@@ -57,23 +57,21 @@ export class AppComponent {
   }
 
   private backtestMulti() {
-    this.httpService.getMulti().subscribe((tickers: Kline[][]) => {
-      this.chartService.setLoadingText();
+    this.tickers = [];
 
-      const tickersMapped: Run[][] = tickers.map((klines: Kline[]) => {
-        return [{
-          klines,
-          commission: 0
-        }];
-      });
-
-      tickersMapped.sort((a: Run[], b: Run[]) => {
-        return (a[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0) - (b[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0);
-      });
-
-      this.tickers = tickersMapped;
-    }, (err) => {
-      this.chartService.setErrorText(err);
+    this.httpService.getMultiStream().subscribe({
+      next: (klines: Kline[]) => {
+        this.tickers.push([{ klines, commission: 0 }]);
+      },
+      error: (err) => {
+        this.chartService.setErrorText(err);
+      },
+      complete: () => {
+        this.tickers.sort((a: Run[], b: Run[]) => {
+          return (a[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0) - (b[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0);
+        });
+        this.chartService.setLoadingText();
+      }
     });
   }
 }
