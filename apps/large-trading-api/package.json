@@ -32,10 +32,12 @@
   "homepage": "https://github.com/janv93/large-trading-api#readme",
   "dependencies": {
     "@jest/globals": "latest",
+    "@types/compression": "^1.8.1",
     "@types/express": "latest",
     "axios": "latest",
     "body-parser": "latest",
     "btoa": "latest",
+    "compression": "^1.8.1",
     "config": "latest",
     "deepmerge": "latest",
     "dotenv": "latest",

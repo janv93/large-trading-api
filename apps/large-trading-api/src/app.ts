@@ -1,3 +1,4 @@
+import compression from 'compression';
 import config from 'config';
 import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
@@ -21,6 +22,7 @@ class App extends Base {
   }
 
   private config(): void {
+    this.app.use(compression());
     this.app.use(express.json({ limit: '50mb' }));
 
     this.app.use((req: Request, res: Response, next: NextFunction) => {
