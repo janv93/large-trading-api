@@ -19,6 +19,9 @@ if (!isMainThread) {
   const backtester = new Backtester();
 
   const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
+  // Capture RSS here — after deserialization (the dominant allocation) and before
+  // combos.map(), so GC has not had a chance to deflate the value yet.
+  const peakRss = process.memoryUsage().rss;
 
   const results: MultiBenchmark[] = combos.map((combo: Record<string, number>) => {
     tickers.forEach((currentTicker: Kline[]) => {
@@ -36,7 +39,7 @@ if (!isMainThread) {
     return { score, params: combo };
   });
 
-  parentPort!.postMessage(results);
+  parentPort!.postMessage({ results, peakRss });
 }
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -80,24 +83,34 @@ export default class MultiTicker extends Base {
     const sharedBuffer = new SharedArrayBuffer(encoded.byteLength);
     new Uint8Array(sharedBuffer).set(encoded);
 
-    // Estimate memory per worker: V8 isolate overhead + tickers deserialisation cost.
-    const memPerWorker = encoded.byteLength + 128 * 1024 * 1024;
-    const allResults: MultiBenchmark[] = [];
+    const spawnWorker = (combos: Record<string, number>[]): Promise<{ results: MultiBenchmark[], peakRss: number }> =>
+      new Promise((resolve, reject) => {
+        const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combos, algorithm, algoModulePath } });
+        worker.on('message', resolve);
+        worker.on('error', reject);
+        worker.on('exit', code => { if (code !== 0) reject(new Error(`Worker exited with code ${code}`)); });
+      });
+
+    // Probe a single worker to measure its real RSS — all workers are identical so this is exact.
+    const firstCombo = combinations.next();
+    if (firstCombo.done) return [];
+    const probe = await spawnWorker([firstCombo.value]);
+    const memPerWorker = probe.peakRss;
+    const allResults: MultiBenchmark[] = [...probe.results];
 
     while (true) {
       // Derive concurrency from current free memory — reserve 2 cores for MongoDB/OS.
-      const maxWorkers = Math.max(1, Math.min(Math.max(1, os.cpus().length - 2), Math.floor(os.freemem() * 0.75 / memPerWorker)));
-
-      // Pull one batch per worker slot from the lazy generator.
+      const maxWorkers = Math.max(1, Math.min(Math.max(1, os.cpus().length - 2), Math.floor(os.freemem() * 0.85 / memPerWorker)));
       const batches: Record<string, number>[][] = [];
       let exhausted = false;
+
       for (let i = 0; i < maxWorkers; i++) {
         const batch: Record<string, number>[] = [];
-        for (let j = 0; j < maxWorkers; j++) {
-          const next = combinations.next();
-          if (next.done) { exhausted = true; break; }
-          batch.push(next.value);
-        }
+
+        const next = combinations.next();
+        if (next.done) { exhausted = true; break; }
+        batch.push(next.value);
+
         if (batch.length > 0) batches.push(batch);
         if (exhausted) break;
       }
@@ -105,16 +118,9 @@ export default class MultiTicker extends Base {
       if (batches.length === 0) break;
 
       // Spawn this wave, await all — workers die afterwards and memory is freed.
-      const results = await Promise.all(batches.map(combos =>
-        new Promise<MultiBenchmark[]>((resolve, reject) => {
-          const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combos, algorithm, algoModulePath } });
-          worker.on('message', resolve);
-          worker.on('error', reject);
-          worker.on('exit', code => { if (code !== 0) reject(new Error(`Worker exited with code ${code}`)); });
-        })
-      ));
+      const results = await Promise.all(batches.map(combos => spawnWorker(combos)));
 
-      allResults.push(...results.flat());
+      allResults.push(...results.flatMap(r => r.results));
       if (exhausted) break;
     }
 
