@@ -1,9 +1,10 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
+import { getKlineColor } from '../../../../../utils';
 import Base from '../../../../../base';
 
 export default class Momentum extends Base {
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
-    const colors: number[] = klines.map(kline => this.getKlineColor(kline));
+    const colors: number[] = klines.map(kline => getKlineColor(kline));
     const streak = Number(params.streak);
 
     klines.forEach((kline: any, index: number) => {

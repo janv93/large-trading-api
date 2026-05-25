@@ -1,7 +1,9 @@
 import { BollingerBands, KlineIndicators, Kline, MacdValues } from '@shared';
+import Base from '../../../base';
 
-export default class Indicators {
+export default class Indicators extends Base {
   constructor() {
+    super();
   }
 
   public rsi(klines: Kline[], period: number): void {

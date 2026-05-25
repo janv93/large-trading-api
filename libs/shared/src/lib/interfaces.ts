@@ -299,3 +299,9 @@ export interface BacktestStats {
   numberOfTrades: number;
   maxDrawback: number;
 }
+
+export interface TickerMetrics {
+  sqrtProfit: number;
+  maxDrawdownRatio: number;
+  signalCount: number;
+}

@@ -1,4 +1,5 @@
 import Base from '../base';
+import { formatDuration } from '../utils';
 import { Algorithm, Exchange, Kline, Timeframe } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
@@ -124,7 +125,7 @@ export default class Routes extends Base {
         });
       }
 
-      this.log(`Multi finished in ${this.formatDuration(Date.now() - startTime)}`);
+      this.log(`Multi finished in ${formatDuration(Date.now() - startTime)}`);
     } finally {
       clearInterval(heartbeat);
       res.end();

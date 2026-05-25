@@ -2,6 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import crypto from 'crypto';
 import { Kline, Timeframe, Tweet } from '@shared';
 import Base from '../../base';
+import { createUrl, calcStartTime, isKlineOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep } from '../../utils';
 import database from '../../data/database';
 
 class Binance extends Base {
@@ -26,7 +27,7 @@ class Binance extends Base {
       query['startTime'] = startTime;
     }
 
-    const klineUrl = this.createUrl(baseUrl, query);
+    const klineUrl = createUrl(baseUrl, query);
     this.log('GET ' + klineUrl);
 
     try {
@@ -52,7 +53,7 @@ class Binance extends Base {
       startTime
     };
 
-    const klineUrl = this.createUrl(baseUrl, query);
+    const klineUrl = createUrl(baseUrl, query);
 
     this.log('GET ' + klineUrl);
     return axios.get(klineUrl);
@@ -64,7 +65,7 @@ class Binance extends Base {
   public async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Kline[]> {
     const klines: Kline[] = [];
     let nextStart = startTime;
-    const now = Date.now() - this.timeframeToMilliseconds(timeframe);
+    const now = Date.now() - timeframeToMilliseconds(timeframe);
 
     while (nextStart < now) {
       const newKlines = await this.getKlines(symbol, timeframe, undefined, nextStart);
@@ -72,7 +73,7 @@ class Binance extends Base {
 
       if (newKlines.length) {
         const end = newKlines[newKlines.length - 1].times.open;
-        nextStart = end + this.timeframeToMilliseconds(timeframe);
+        nextStart = end + timeframeToMilliseconds(timeframe);
       } else {
         nextStart = now;  // no klines found
       }
@@ -82,7 +83,7 @@ class Binance extends Base {
       return [];
     }
 
-    const dateRange = this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
+    const dateRange = timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
     this.log(`${klines.length} ${symbol} klines received - ${dateRange}`);
 
     klines.sort((a, b) => a.times.open - b.times.open);
@@ -94,7 +95,7 @@ class Binance extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
-    const startTime: number = this.calcStartTime(timeframe);
+    const startTime: number = calcStartTime(timeframe);
     const dbKlines: Kline[] = await database.getKlines(symbol, timeframe);
 
     // not in database yet
@@ -113,7 +114,7 @@ class Binance extends Base {
     const lastKline: Kline = dbKlines[dbKlines.length - 1];
     const newStart: number = lastKline.times.open;
 
-    if (this.klineOutdated(timeframe, newStart)) {
+    if (isKlineOutdated(timeframe, newStart)) {
       const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log(`${newKlines.length} new ${symbol} klines added to database`);
@@ -143,7 +144,7 @@ class Binance extends Base {
       }
     };
 
-    const url = this.createUrl('https://fapi.binance.com/fapi/v1/leverage', { ...query, signature: hmac });
+    const url = createUrl('https://fapi.binance.com/fapi/v1/leverage', { ...query, signature: hmac });
     return axios.post(url, null, options);
   }
 
@@ -178,8 +179,8 @@ class Binance extends Base {
       quantity: quantity
     };
 
-    const hmac: string = this.createHmac(this.createUrl('', queryObj));
-    const url: string = this.createUrl('https://fapi.binance.com/fapi/v1/order', {
+    const hmac: string = this.createHmac(createUrl('', queryObj));
+    const url: string = createUrl('https://fapi.binance.com/fapi/v1/order', {
       ...queryObj,
       signature: hmac
     });
@@ -276,7 +277,7 @@ class Binance extends Base {
     // wait at rate limit
     if (this.requestsSentThisMinute >= this.rateLimitPerMinute) {
       this.log('Rate limit reached, waiting');
-      await this.sleep(61000);
+      await sleep(61000);
       this.requestsSentThisMinute = 0;
     }
   }

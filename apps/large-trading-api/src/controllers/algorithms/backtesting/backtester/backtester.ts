@@ -1,5 +1,6 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Position, Signal, SignalReference, TakeProfitStopLoss, TrailingStopLoss } from '@shared';
 import Base from '../../../../base';
+import { isCloseSignal, isForceCloseSignal, calcPriceChange } from '../../../../utils';
 
 export default class Backtester extends Base {
   /**
@@ -107,7 +108,7 @@ export default class Backtester extends Base {
     const signals: BacktestSignal[] = kline.algorithms[algorithm]!.signals;
     const signalReference: SignalReference = position.openSignalReference;
 
-    if (this.isForceCloseSignal(closeSignal)) { // add force close to kline signals
+    if (isForceCloseSignal(closeSignal)) { // add force close to kline signals
       const closePrice: number = this.getClosePrice(position, closeSignal!, kline, algorithm);
       signals.push({ signal: closeSignal!, price: closePrice, openSignalReferences: [signalReference] });
     } else if (closeSignal === Signal.CloseAll) {  // add reference of all positions that are closed by this signal - this is mainly for completeness and the frontend using this reference
@@ -130,7 +131,7 @@ export default class Backtester extends Base {
       const entrySize: number = position.entrySize;
       const currentSize: number = position.size;
       const currentPrice: number = this.getClosePrice(position, closeSignal, kline, algorithm);
-      const priceChange: number = this.calcPriceChange(entryPrice, currentPrice!);
+      const priceChange: number = calcPriceChange(entryPrice, currentPrice!);
       // then determine the size of the position at close
       const sizeAtClose: number = currentSize > 0 ? entrySize * (1 + priceChange) : entrySize * (1 - priceChange);
       // then calculate commission on the final size
@@ -145,7 +146,7 @@ export default class Backtester extends Base {
     const currentClose: number = kline.prices.close;
     const currentHigh: number = kline.prices.high;
     const currentLow: number = kline.prices.low;
-    const priceChange: number = this.calcPriceChange(entryPrice, currentClose);
+    const priceChange: number = calcPriceChange(entryPrice, currentClose);
 
     if (position.size > 0) {  // long
       position.size = position.entrySize * (1 + priceChange);
@@ -205,7 +206,7 @@ export default class Backtester extends Base {
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal, signalIndex: number) => {
-      if (!this.isCloseSignal(signal.signal)) {
+      if (!isCloseSignal(signal.signal)) {
         positions.push(this.createPosition(signal, klineIndex, signalIndex));
       }
     });
@@ -217,7 +218,7 @@ export default class Backtester extends Base {
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal) => {
-      if (!this.isCloseSignal(signal.signal)) {
+      if (!isCloseSignal(signal.signal)) {
         totalOpenFee += commission * signal.size!
       }
     });

@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import btoa from 'btoa';
 import { Kline, Timeframe } from '@shared';
 import Base from '../../base';
+import { createUrl, createQuery, calcStartTime, timeframeToMinutes, timeframeToMilliseconds, timestampsToDateRange } from '../../utils';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {
@@ -19,7 +20,7 @@ export default class Kucoin extends Base {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
 
     const query = {
-      granularity: this.timeframeToMinutes(timeframe),
+      granularity: timeframeToMinutes(timeframe),
       symbol: symbol
     };
 
@@ -31,7 +32,7 @@ export default class Kucoin extends Base {
       query['from'] = startTime;
     }
 
-    const klineUrl = this.createUrl(baseUrl, query);
+    const klineUrl = createUrl(baseUrl, query);
 
     this.log('GET ' + klineUrl);
 
@@ -71,12 +72,12 @@ export default class Kucoin extends Base {
       if (res?.length) {
         klines.push(...res);
         const end: number = klines[klines.length - 1].times.open;
-        newStartTime = end + this.timeframeToMilliseconds(timeframe);
+        newStartTime = end + timeframeToMilliseconds(timeframe);
       } else {
-        newStartTime = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
+        newStartTime = newStartTime + timeframeToMilliseconds(timeframe) * 200;
       }
 
-      newEndTime = newStartTime + this.timeframeToMilliseconds(timeframe) * 200;
+      newEndTime = newStartTime + timeframeToMilliseconds(timeframe) * 200;
       const now: number = Date.now();
 
       if (newStartTime >= now) {
@@ -85,7 +86,7 @@ export default class Kucoin extends Base {
     }
 
     if (!klines.length) return [];
-    const dateRange: string = this.timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
+    const dateRange: string = timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
     this.log(`Received total of ${klines.length} klines: ${dateRange}`);
 
     klines.sort((a, b) => a.times.open - b.times.open);
@@ -97,8 +98,8 @@ export default class Kucoin extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
-    const startTime = this.calcStartTime(timeframe);
-    const endTime = startTime + this.timeframeToMilliseconds(timeframe) * 200;
+    const startTime = calcStartTime(timeframe);
+    const endTime = startTime + timeframeToMilliseconds(timeframe) * 200;
     const dbKlines = await database.getKlines(symbol, timeframe);
 
     if (!dbKlines?.length) {
@@ -112,7 +113,7 @@ export default class Kucoin extends Base {
       return newKlines;
     } else {
       const lastKline = dbKlines[dbKlines.length - 1];
-      const endTime = lastKline.times.open + this.timeframeToMilliseconds(timeframe) * 200;
+      const endTime = lastKline.times.open + timeframeToMilliseconds(timeframe) * 200;
       const newKlines = await this.getKlinesFromStartUntilNow(symbol, lastKline.times.open, endTime, timeframe);
       newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
       this.log(`Added ${newKlines.length} new klines to the database`);
@@ -148,7 +149,7 @@ export default class Kucoin extends Base {
     };
 
     const kcApiPassphrase = btoa(this.createHmac(process.env.kucoin_api_passphrase));
-    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + this.createQuery(query) + JSON.stringify(query)
+    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + createQuery(query) + JSON.stringify(query)
     const kcApiSign = btoa(this.createHmac(kcApiSignContent));
 
     const options = {
@@ -162,7 +163,7 @@ export default class Kucoin extends Base {
       }
     };
 
-    const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
+    const url = createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
 
     this.log('POST ' + url);
     return axios.post(url, query, options);
@@ -182,7 +183,7 @@ export default class Kucoin extends Base {
     };
 
     const kcApiPassphrase = btoa(this.createHmac(process.env.kucoin_api_passphrase));
-    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + this.createQuery(query) + JSON.stringify(query)
+    const kcApiSignContent = now + 'POST' + '/api/v1/orders' + createQuery(query) + JSON.stringify(query)
     const kcApiSign = btoa(this.createHmac(kcApiSignContent));
 
     const options = {
@@ -196,7 +197,7 @@ export default class Kucoin extends Base {
       }
     };
 
-    const url = this.createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
+    const url = createUrl('https://api-futures.kucoin.com/api/v1/orders', query);
 
     this.log('POST ' + url);
     return axios.post(url, query, options);

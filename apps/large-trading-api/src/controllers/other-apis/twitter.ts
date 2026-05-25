@@ -1,11 +1,12 @@
 import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
-import Base from '../../base';
+import { createUrl } from '../../utils';
 import binance from '../exchanges/binance';
 import database from '../../data/database';
 import Coinmarketcap from './coinmarketcap';
 import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '@shared';
+import Base from '../../base';
 
 export default class Twitter extends Base {
   private database = database;
@@ -37,7 +38,7 @@ export default class Twitter extends Base {
       start_time: new Date(startTime).toISOString().slice(0, -5) + 'Z'
     };
 
-    const finalUrl = this.createUrl(url, query);
+    const finalUrl = createUrl(url, query);
     const oauth = this.buildOAuth2();
     const accessToken = await this.getOAuth2Token();
 
@@ -92,7 +93,7 @@ export default class Twitter extends Base {
       count: 200
     };
 
-    const finalUrl = this.createUrl(url, query);
+    const finalUrl = createUrl(url, query);
 
     try {
       const res = await axios.get(finalUrl, { headers: this.headers });
@@ -102,7 +103,7 @@ export default class Twitter extends Base {
           id: user.id_str,
           followers: user.followers_count,
           following: user.friends_count
-        }
+        };
       });
     } catch (err) {
       this.handleError(err);

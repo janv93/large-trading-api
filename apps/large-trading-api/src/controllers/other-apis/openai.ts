@@ -1,7 +1,7 @@
 import axios from 'axios';
-import Base from '../../base';
 import database from '../../data/database';
 import { Tweet, TweetSymbol } from '@shared';
+import Base from '../../base';
 
 
 export default class OpenAi extends Base {

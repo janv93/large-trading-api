@@ -1,9 +1,11 @@
 import { Algorithm, AlgorithmConfigMulti, Kline, MultiBenchmark } from '@shared';
 import Base from '../../../../base';
+import { calcScore } from '../../../../utils';
 import Backtester from '../backtester/backtester';
 import deepmerge from 'deepmerge';
 import { Worker, isMainThread, workerData, parentPort } from 'worker_threads';
 import * as os from 'os';
+
 
 // ── Worker thread entry point ────────────────────────────────────────────────
 if (!isMainThread) {
@@ -30,14 +32,8 @@ if (!isMainThread) {
       backtester.calcBacktestPerformance(currentTicker, algorithm, 0);
     });
 
-    const profits: number[] = tickers
-      .map((t: Kline[]) => t.at(-1)?.algorithms[algorithm]?.percentProfit)
-      .filter((t): t is number => t !== undefined);
-
-    const averageProfit = profits.length > 0 ? profits.reduce((a, c) => a + c, 0) / profits.length : 0;
-    const score = profits.reduce((a, c) => a + (Math.sign(c) * Math.log(Math.abs(c) + 1) ** 4), 0) / profits.length;
-
-    return { averageProfit, score, params: combo };
+    const score: number = calcScore(tickers, algorithm);
+    return { score, params: combo };
   });
 
   parentPort!.postMessage(results);
@@ -67,7 +63,7 @@ export default class MultiTicker extends Base {
 
     benchmarks.slice(-10).forEach(b => {
       const paramStr: string = Object.entries(b.params ?? {}).map(([k, v]) => `${k}=${v}`).join(' ');
-      this.log(paramStr, 'avgProfit:', Math.round(b.averageProfit * 10) / 10, 'score:', Math.round(b.score));
+      this.log(paramStr, 'score:', Math.round(b.score * 1000) / 1000);
     });
 
     this.log();

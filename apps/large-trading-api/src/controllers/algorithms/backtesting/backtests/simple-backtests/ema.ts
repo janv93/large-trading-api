@@ -1,8 +1,8 @@
 import Indicators from '../../../patterns/indicators';
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '@shared';
-import Base from '../../../../../base';
 import binance from '../../../../exchanges/binance';
 import Btse from '../../../../exchanges/btse';
+import Base from '../../../../../base';
 
 export default class Ema extends Base {
   private indicators = new Indicators();

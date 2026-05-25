@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AlpacaResponse, Kline, Timeframe } from '@shared';
 import Base from '../../base';
+import { createUrl, calcStartTime, isKlineOutdated, timestampsToDateRange, sleep } from '../../utils';
 import database from '../../data/database';
 
 class Alpaca extends Base {
@@ -31,7 +32,7 @@ class Alpaca extends Base {
       query['page_token'] = pageToken;
     }
 
-    const finalUrl: string = this.createUrl(url, query);
+    const finalUrl: string = createUrl(url, query);
     this.log('GET ' + finalUrl);
 
     try {
@@ -52,7 +53,7 @@ class Alpaca extends Base {
    * allows to cache already requested klines and only request recent klines
    */
   public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
-    const startTime: number = this.calcStartTime(timeframe);
+    const startTime: number = calcStartTime(timeframe);
     let dbKlines: Kline[] = await database.getKlines(symbol, timeframe);
 
     // not in database yet
@@ -74,7 +75,7 @@ class Alpaca extends Base {
     const cacheKey = `${symbol}_${timeframe}`;
     const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getKlineFetchTime(symbol, timeframe);
 
-    if (this.klineOutdated(timeframe, lastKlineTime, lastFetch)) {
+    if (isKlineOutdated(timeframe, lastKlineTime, lastFetch)) {
       const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastKlineTime)).length > 0;
 
       if (hasNewStockSplits) {
@@ -104,7 +105,7 @@ class Alpaca extends Base {
     if (dbSymbols && dbSymbols.length >= top) return dbSymbols.slice(0, top);
     const url = `${this.baseUrls.baseUrlDatav1}/screener/stocks/most-actives`;
     const query = { top };
-    const finalUrl: string = this.createUrl(url, query);
+    const finalUrl: string = createUrl(url, query);
     const options: AxiosRequestConfig = this.getRequestOptions();
     const res: AxiosResponse = await axios.get(finalUrl, options);
     const mostActiveSymbols: string[] = res.data.most_actives.map(m => m.symbol);
@@ -140,7 +141,7 @@ class Alpaca extends Base {
       limit: 1000
     };
 
-    const finalUrl: string = this.createUrl(url, query);
+    const finalUrl: string = createUrl(url, query);
     const options: AxiosRequestConfig = this.getRequestOptions();
     const res: AxiosResponse = await axios.get(finalUrl, options);
     const allSplits: any[] = [...(res.data.corporate_actions.forward_splits || []), ...(res.data.corporate_actions.reverse_splits || [])];
@@ -176,7 +177,7 @@ class Alpaca extends Base {
       }
     }
 
-    const dateRange = this.timestampsToDateRange(klines[0]?.times.open, klines[klines.length - 1]?.times.open)
+    const dateRange = timestampsToDateRange(klines[0]?.times.open, klines[klines.length - 1]?.times.open)
     this.log(`${klines.length} ${symbol} klines received - ${dateRange}`);
 
     klines.sort((a, b) => a.times.open - b.times.open);
@@ -223,7 +224,7 @@ class Alpaca extends Base {
     // wait at rate limit
     if (this.requestsSentThisMinute >= this.rateLimitPerMinute) {
       this.log('Rate limit reached, waiting');
-      await this.sleep(60000);
+      await sleep(60000);
       this.requestsSentThisMinute = 0;
     }
   }

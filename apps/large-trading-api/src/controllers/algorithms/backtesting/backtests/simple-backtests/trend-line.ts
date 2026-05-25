@@ -1,5 +1,6 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../../../../../base';
+import { calcAverageChangeInPercent } from '../../../../../utils';
 import { LinearFunction } from '@shared';
 import TrendLineController from '../../../patterns/trend-line';
 import PivotPointController from '../../../patterns/pivot-point';
@@ -27,7 +28,7 @@ export default class TrendLineBreakthrough extends Base {
         const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
         const breakthoughPrice: number = lineFunction.getY(trendLine.breakThroughIndex!);
         const trendLineCloses: number[] = klines.slice(trendLine.startIndex, trendLine.endIndex).map(kline => kline.prices.close);
-        const averagePriceChange: number = this.calcAverageChangeInPercent(trendLineCloses);
+        const averagePriceChange: number = calcAverageChangeInPercent(trendLineCloses);
         const tp: number = averagePriceChange * 5;
         const sl: number = averagePriceChange * 2;
 

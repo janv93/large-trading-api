@@ -1,5 +1,5 @@
-import Base from '../../../base';
 import { Direction, Kline, KlineWithIndex, MarketStructureType, PivotPoint, PivotPointSide } from '@shared';
+import Base from '../../../base';
 
 export default class PivotPointController extends Base {
   // add pivot points defined by horizontally uninterrupted highs/lows on the left and right side

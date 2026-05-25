@@ -1,7 +1,6 @@
 import { BacktestData, BacktestSignal, Kline, Signal } from '@shared';
 import Base from '../../../../../base';
 
-
 export default class Dca extends Base {
   public setSignals(klines: Kline[], algorithm, params: any): void {
     klines.forEach((kline: Kline, i: number) => {

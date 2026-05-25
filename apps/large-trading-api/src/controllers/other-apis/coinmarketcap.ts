@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import Base from '../../base';
+import { createUrl } from '../../utils';
 import cryptos from './coinmarketcap-all-cryptos';
 import database from '../../data/database';
 
@@ -24,7 +25,7 @@ export default class Coinmarketcap extends Base {
       slug: name.toLowerCase()
     };
 
-    const finalUrl: string = this.createUrl(url, query);
+    const finalUrl: string = createUrl(url, query);
 
     const res: AxiosResponse = await axios.get(finalUrl, { headers: this.headers });
     return res.data.data['1'].symbol.toLowerCase();

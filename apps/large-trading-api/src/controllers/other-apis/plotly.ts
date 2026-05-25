@@ -1,5 +1,5 @@
-import Base from '../../base';
 import plotly from 'plotly';
+import Base from '../../base';
 
 export default class Plotly extends Base {
   private _plotly = new plotly(process.env.plotly_username, process.env.plotly_api_key);

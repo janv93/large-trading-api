@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Base from '../base';
+import { calcStartTime } from '../utils';
 import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
 import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema, KlineFetchTimesSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
@@ -136,7 +137,7 @@ class Database extends Base {
     try {
       const deleteConditions = Object.values(Timeframe).map(timeframe => ({
         timeframe,
-        openTime: { $lt: this.calcStartTime(timeframe) }
+        openTime: { $lt: calcStartTime(timeframe) }
       }));
 
       const result: DeleteResult = await this.kline.deleteMany({
