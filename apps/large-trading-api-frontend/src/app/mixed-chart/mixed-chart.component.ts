@@ -233,7 +233,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.chart,
       this.seriesMarkersPlugin!,
       this.compactCirclePrimitive!,
-      this.trendLinesPrimitive
+      this.trendLinesPrimitive,
+      this.chartService.isMulti
     );
   }
 
@@ -307,7 +308,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       if (this.lastVisibleRangeSize !== undefined && Math.abs(timeRange - this.lastVisibleRangeSize) / this.lastVisibleRangeSize < 0.1) return;
 
       this.lastVisibleRangeSize = timeRange;
-      this.markersChartingService.drawMarkers(this.chart, this.seriesMarkersPlugin!, this.compactCirclePrimitive!);
+      this.markersChartingService.drawMarkers(this.chart, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.chartService.isMulti);
 
       if (this.openPositionSizeSeries && this.positionSizeChecked) {
         this.setOpenPositionSizeSeriesData();
@@ -327,7 +328,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.updateLegend(param, index);
 
       if (kline) {
-        this.markersChartingService.highlightOpenSignals(kline, this.currentKlines, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.chart);
+        this.markersChartingService.highlightOpenSignals(kline, this.currentKlines, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.chart, this.chartService.isMulti);
       }
 
       this.markersChartingService.highlightTrendLines(param, this.candlestickSeries, this.trendLinesPrimitive);

@@ -18,20 +18,24 @@ export class MarkersChartingService {
     chart: IChartApi,
     seriesMarkersPlugin: ISeriesMarkersPluginApi<Time>,
     compactCirclePrimitive: CompactCirclePrimitive,
-    trendLinesPrimitive: TrendLinesPrimitive | undefined
+    trendLinesPrimitive: TrendLinesPrimitive | undefined,
+    isMulti: boolean
   ): void {
     this.setPivotPointMarkers(klines);
     this.setSignalMarkers(klines, algorithm);
-    this.drawMarkers(chart, seriesMarkersPlugin, compactCirclePrimitive);
+    this.drawMarkers(chart, seriesMarkersPlugin, compactCirclePrimitive, isMulti);
     this.setTrendLines(klines, trendLinesPrimitive);
   }
 
   public drawMarkers(
     chart: IChartApi,
     seriesMarkersPlugin: ISeriesMarkersPluginApi<Time>,
-    compactCirclePrimitive: CompactCirclePrimitive
+    compactCirclePrimitive: CompactCirclePrimitive,
+    isMulti: boolean
   ): void {
-    if (this.getVisibleMarkersCount(chart) > 200) {
+    const threshold: number = isMulti ? 50 : 200;
+
+    if (this.getVisibleMarkersCount(chart) > threshold) {
       const combinedCompactMarkers: CompactCircleMarker[] = [...this.compactSignalMarkers, ...this.compactPivotPointMarkers];
       combinedCompactMarkers.sort((a, b) => a.time - b.time);
       seriesMarkersPlugin.setMarkers([]);
@@ -53,7 +57,8 @@ export class MarkersChartingService {
     klines: Kline[],
     seriesMarkersPlugin: ISeriesMarkersPluginApi<Time>,
     compactCirclePrimitive: CompactCirclePrimitive,
-    chart: IChartApi
+    chart: IChartApi,
+    isMulti: boolean
   ): void {
     const backtest: BacktestData = kline.algorithms[Object.keys(kline.algorithms)[0]]!;
 
@@ -75,7 +80,7 @@ export class MarkersChartingService {
       marker.size = newOpenTimes.has((marker.time as UTCTimestamp) * 1000) ? 3 : undefined;
     });
 
-    this.drawMarkers(chart, seriesMarkersPlugin, compactCirclePrimitive);
+    this.drawMarkers(chart, seriesMarkersPlugin, compactCirclePrimitive, isMulti);
   }
 
   public highlightTrendLines(

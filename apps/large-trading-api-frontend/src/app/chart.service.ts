@@ -18,8 +18,8 @@ export class ChartService {
   public algorithms = [Algorithm.TrendLineBreakthrough];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
 
   // multi
-  public isMulti = true; // multiple charts mode
-  public multiAutoParams = [true, false];  // primary algorithm and optional second algorithm, determines if algo parameters are single or multi
+  public isMulti = false; // multiple charts mode
+  public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are single or multi
   public multiRank = 15;  // top <multiRank> tickers of each category. e.g. top 10 of stocks, cryptos etc
   public multiCommission = 0.00;
 
