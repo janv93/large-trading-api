@@ -9,7 +9,7 @@ import * as os from 'os';
 
 // ── Worker thread entry point ────────────────────────────────────────────────
 if (!isMainThread) {
-  const { sharedBuffer, bufferLength, combos, algorithm, algoModulePath } = workerData;
+  const { sharedBuffer, bufferLength, combo, algorithm, algoModulePath } = workerData;
 
   const bytes = new Uint8Array(sharedBuffer, 0, bufferLength);
 
@@ -22,26 +22,24 @@ if (!isMainThread) {
 
   const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
   // Capture RSS here — after deserialization (the dominant allocation) and before
-  // combos.map(), so GC has not had a chance to deflate the value yet.
+  // processing, so GC has not had a chance to deflate the value yet.
   const peakRss = process.memoryUsage().rss;
 
-  const results: MultiBenchmark[] = combos.map((combo: Record<string, number>) => {
-    tickers.forEach((currentTicker: Kline[]) => {
-      currentTicker.forEach((kline: Kline) => {
-        kline.algorithms[algorithm] = { signals: [] };
-        kline.indicators = undefined;
-        kline.chart = undefined;
-      });
-
-      algoInstance.setSignals(currentTicker, algorithm, combo);
-      backtester.calcBacktestPerformance(currentTicker, algorithm, 0);
+  tickers.forEach((currentTicker: Kline[]) => {
+    currentTicker.forEach((kline: Kline) => {
+      kline.algorithms[algorithm] = { signals: [] };
+      kline.indicators = undefined;
+      kline.chart = undefined;
     });
 
-    const score: number = calcScore(tickers, algorithm);
-    return { score, params: combo };
+    algoInstance.setSignals(currentTicker, algorithm, combo);
+    backtester.calcBacktestPerformance(currentTicker, algorithm, 0);
   });
 
-  parentPort!.postMessage({ results, peakRss });
+  const score: number = calcScore(tickers, algorithm);
+  const result: MultiBenchmark = { score, params: combo };
+
+  parentPort!.postMessage({ result, peakRss });
 }
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -87,9 +85,9 @@ export default class MultiTicker extends Base {
     const sharedBuffer = new SharedArrayBuffer(encoded.byteLength);
     new Uint8Array(sharedBuffer).set(encoded);
 
-    const spawnWorker = (combos: Record<string, number>[]): Promise<{ results: MultiBenchmark[], peakRss: number }> =>
+    const spawnWorker = (combo: Record<string, number>): Promise<{ result: MultiBenchmark, peakRss: number }> =>
       new Promise((resolve, reject) => {
-        const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combos, algorithm, algoModulePath } });
+        const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combo, algorithm, algoModulePath } });
         worker.on('message', resolve);
         worker.on('error', reject);
         worker.on('exit', code => { if (code !== 0) reject(new Error(`Worker exited with code ${code}`)); });
@@ -98,36 +96,31 @@ export default class MultiTicker extends Base {
     // Probe a single worker to measure its real RSS — all workers are identical so this is exact.
     const firstCombo = combinations.next();
     if (firstCombo.done) return [];
-    const probe = await spawnWorker([firstCombo.value]);
+    const probe = await spawnWorker(firstCombo.value);
     const memPerWorker = probe.peakRss;
-    const allResults: MultiBenchmark[] = [...probe.results];
-    let processed = probe.results.length;
+    const allResults: MultiBenchmark[] = [probe.result];
+    let processed = 1;
     this.logProgress(processed / total * 100);
 
     while (true) {
       // Derive concurrency from current free memory — reserve 2 cores for MongoDB/OS.
       const maxWorkers = Math.max(1, Math.min(Math.max(1, os.cpus().length - 2), Math.floor(os.freemem() * 0.85 / memPerWorker)));
-      const batches: Record<string, number>[][] = [];
+      const batch: Record<string, number>[] = [];
       let exhausted = false;
 
       for (let i = 0; i < maxWorkers; i++) {
-        const batch: Record<string, number>[] = [];
-
         const next = combinations.next();
         if (next.done) { exhausted = true; break; }
         batch.push(next.value);
-
-        if (batch.length > 0) batches.push(batch);
-        if (exhausted) break;
       }
 
-      if (batches.length === 0) break;
+      if (batch.length === 0) break;
 
       // Spawn this wave, await all — workers die afterwards and memory is freed.
-      const results = await Promise.all(batches.map(combos => spawnWorker(combos)));
+      const results = await Promise.all(batch.map(combo => spawnWorker(combo)));
 
-      allResults.push(...results.flatMap(r => r.results));
-      processed += results.reduce((sum, r) => sum + r.results.length, 0);
+      allResults.push(...results.map(r => r.result));
+      processed += results.length;
       this.logProgress(processed / total * 100);
       if (exhausted) break;
     }
