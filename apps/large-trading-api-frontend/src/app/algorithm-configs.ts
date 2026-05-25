@@ -79,7 +79,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   },
   [Algorithm.TrendLineBreakthrough]: {
     single: {
-      percentOfProfit: 0.3
+      percentOfProfit: 0.5
     },
     multi: {
       percentOfProfit: {
