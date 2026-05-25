@@ -84,7 +84,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
     multi: {
       percentOfProfit: {
         min: 0.1,
-        max: 0.5,
+        max: 0.7,
         step: 0.1
       }
     }
