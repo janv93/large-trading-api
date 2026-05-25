@@ -1,6 +1,5 @@
 import Indicators from '../../../patterns/indicators';
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '@shared';
-import binance from '../../../../exchanges/binance';
 import Btse from '../../../../exchanges/btse';
 import Base from '../../../../../base';
 
@@ -135,6 +134,8 @@ export default class Ema extends Base {
    * run trading algorithm in selected interval
    */
   private async tradeInterval(symbol: string, timeframe: Timeframe, quantityUSD: number, leverage: number) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const binance = require('../../../../exchanges/binance').default;
     const klines = await binance.getKlines(symbol, timeframe);
     const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
     klines.splice(-1);  // remove running timeframe

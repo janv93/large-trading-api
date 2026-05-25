@@ -85,8 +85,8 @@ export default class MultiTicker extends Base {
     const allResults: MultiBenchmark[] = [];
 
     while (true) {
-      // Derive concurrency from current free memory — fully dynamic, no static cap.
-      const maxWorkers = Math.max(1, Math.min(os.cpus().length, Math.floor(os.freemem() * 0.75 / memPerWorker)));
+      // Derive concurrency from current free memory — reserve 2 cores for MongoDB/OS.
+      const maxWorkers = Math.max(1, Math.min(Math.max(1, os.cpus().length - 2), Math.floor(os.freemem() * 0.75 / memPerWorker)));
 
       // Pull one batch per worker slot from the lazy generator.
       const batches: Record<string, number>[][] = [];
