@@ -17,6 +17,8 @@ if (!isMainThread) {
   const AlgoClass = require(algoModulePath).default;
   const algoInstance = new AlgoClass();
   const backtester = new Backtester();
+  algoInstance.silent = true;
+  backtester.silent = true;
 
   const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
   // Capture RSS here — after deserialization (the dominant allocation) and before
@@ -53,7 +55,8 @@ export default class MultiTicker extends Base {
     let bestTickers: Kline[][] = [];
     const algoModulePath = this.resolveAlgoModulePath(algoInstance);
 
-    const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, this.generateCombinations(multiConfigs), algoModulePath!);
+    const total = multiConfigs.reduce((acc, [, config]) => acc * (Math.round((config.max - config.min) / (config.step ?? 1)) + 1), 1);
+    const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, this.generateCombinations(multiConfigs), algoModulePath!, total);
     benchmarks.push(...workerBenchmarks);
 
     const best = workerBenchmarks.reduce((b, c) => c.score > b.score ? c : b, workerBenchmarks[0]);
@@ -77,7 +80,8 @@ export default class MultiTicker extends Base {
     tickers: Kline[][],
     algorithm: Algorithm,
     combinations: Generator<Record<string, number>>,
-    algoModulePath: string
+    algoModulePath: string,
+    total: number
   ): Promise<MultiBenchmark[]> {
     const encoded = Buffer.from(JSON.stringify(tickers), 'utf-8');
     const sharedBuffer = new SharedArrayBuffer(encoded.byteLength);
@@ -97,6 +101,8 @@ export default class MultiTicker extends Base {
     const probe = await spawnWorker([firstCombo.value]);
     const memPerWorker = probe.peakRss;
     const allResults: MultiBenchmark[] = [...probe.results];
+    let processed = probe.results.length;
+    this.logProgress(processed / total * 100);
 
     while (true) {
       // Derive concurrency from current free memory — reserve 2 cores for MongoDB/OS.
@@ -121,6 +127,8 @@ export default class MultiTicker extends Base {
       const results = await Promise.all(batches.map(combos => spawnWorker(combos)));
 
       allResults.push(...results.flatMap(r => r.results));
+      processed += results.reduce((sum, r) => sum + r.results.length, 0);
+      this.logProgress(processed / total * 100);
       if (exhausted) break;
     }
 
@@ -156,10 +164,12 @@ export default class MultiTicker extends Base {
       yield combo;
 
       let carry = 1;
+
       for (let i = ranges.length - 1; i >= 0 && carry; i--) {
         indices[i]++;
         if (indices[i] >= ranges[i].values.length) { indices[i] = 0; } else { carry = 0; }
       }
+
       if (carry) break;
     }
   }

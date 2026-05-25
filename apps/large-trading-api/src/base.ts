@@ -2,6 +2,7 @@ import Logger from './controllers/logger';
 
 export default class Base {
   private logger = new Logger();
+  public silent = false;
 
   protected log(...args: any[]): void {
     this.logger.log(...args, this.constructor.name);
@@ -12,6 +13,7 @@ export default class Base {
   }
 
   protected logProgress(percent: number): void {
+    if (this.silent) return;
     this.logger.logProgress(percent, this.constructor.name);
   }
 
