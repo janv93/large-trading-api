@@ -48,9 +48,6 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       period: 21
     }
   },
-  [Algorithm.DeepTrend]: {
-    single: {}
-  },
   [Algorithm.Dca]: {
     single: {}
   },

@@ -31,7 +31,6 @@ export enum Algorithm {
   Macd = 'macd',
   Rsi = 'rsi',
   Ema = 'ema',
-  DeepTrend = 'deepTrend',
   Bb = 'bb',
   Dca = 'dca',
   MeanReversion = 'meanReversion',
