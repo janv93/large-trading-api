@@ -109,14 +109,14 @@ export function calcTickerMetrics(klines: Kline[], algorithm: Algorithm): Ticker
   let signalCount = 0;
 
   for (const kline of klines) {
-    const profit = kline.algorithms[algorithm]?.percentProfit ?? 0;
+    const profit = kline.algorithms[algorithm]?.profit ?? 0;
     if (profit > peak) peak = profit;
     const drawdown = peak - profit;
     if (drawdown > maxDrawdown) maxDrawdown = drawdown;
     signalCount += kline.algorithms[algorithm]?.signals?.length ?? 0;
   }
 
-  const rawProfit = klines.at(-1)?.algorithms[algorithm]?.percentProfit ?? 0;
+  const rawProfit = klines.at(-1)?.algorithms[algorithm]?.profit ?? 0;
   const sign = rawProfit >= 0 ? 1 : -1;
   const sqrtProfit = rawProfit === 0 ? 0 : sign * Math.sqrt(Math.abs(rawProfit));
   const maxDrawdownRatio = peak <= 0 ? 1 : Math.min(maxDrawdown / peak, 1);

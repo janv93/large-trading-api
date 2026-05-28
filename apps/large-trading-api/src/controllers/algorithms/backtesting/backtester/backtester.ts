@@ -5,7 +5,7 @@ import { isCloseSignal, isForceCloseSignal, calcPriceChange } from '../../../../
 export default class Backtester extends Base {
   /**
    * @param klines the klines returned from /klinesWithAlgorithm
-   * @param commission commission of exchange, e.g. 0.04 = 0.04%
+   * @param commission commission of exchange, e.g. 0.0004 = 0.04%
    * @returns the klines with profits
    */
   public calcBacktestPerformance(klines: Kline[], algorithm: Algorithm, commission: number): Kline[] {
@@ -30,7 +30,7 @@ export default class Backtester extends Base {
       this.addNewPositions(positions as Position[], kline, algorithm, index);  // create new positions from signals
       profit -= this.calcOpenFee(kline, algorithm, commission);
       const backtest: BacktestData = kline.algorithms[algorithm]!;
-      backtest.percentProfit = profit;
+      backtest.profit = profit;
       backtest.openPositionSize = this.calcPositionSize(positions as Position[]);
     });
 
@@ -100,7 +100,7 @@ export default class Backtester extends Base {
     const currentPrice: number = closeSignal ? this.getClosePrice(position, closeSignal, kline, algorithm) : kline.prices.close;
     const diff: number = currentPrice - lastPrice;
     const change: number = diff / entryPrice;
-    const profitChange: number = change * entrySize * 100;
+    const profitChange: number = change * entrySize;
     return profitChange;
   }
 
@@ -337,7 +337,7 @@ export default class Backtester extends Base {
     return isTpTrigger || isSlTrigger;
   }
 
-  private isTakeProfitTrigger(position, kline: Kline): boolean {
+  private isTakeProfitTrigger(position: Position, kline: Kline): boolean {
     const takeProfitPrice: number | undefined = position.takeProfitPrice;
     if (!takeProfitPrice) return false;
 
@@ -354,7 +354,7 @@ export default class Backtester extends Base {
     return false;
   }
 
-  private isStopLossTrigger(position, kline: Kline): boolean {
+  private isStopLossTrigger(position: Position, kline: Kline): boolean {
     const stopLossPrice: number | undefined = position.stopLossPrice;
     if (!stopLossPrice) return false;
 

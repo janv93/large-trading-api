@@ -11,7 +11,7 @@ describe('Backtester', () => {
     backtester = new Backtester();
   });
 
-  it('should calculate percentProfit correctly without commission', () => {
+  it('should calculate profit correctly without commission', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1, close: 0 };
 
@@ -96,26 +96,26 @@ describe('Backtester', () => {
     const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
-    expect(backtests[0].percentProfit).toBe(0);
-    expect(backtests[1].percentProfit).toBe(100);
-    expect(backtests[2].percentProfit).toBe(100);
-    expect(backtests[3].percentProfit).toBe(50);
-    expect(backtests[4].percentProfit).toBe(100);
-    expect(backtests[5].percentProfit).toBe(0);
+    expect(backtests[0].profit).toBe(0);
+    expect(backtests[1].profit).toBe(1);
+    expect(backtests[2].profit).toBe(1);
+    expect(backtests[3].profit).toBe(0.5);
+    expect(backtests[4].profit).toBe(1);
+    expect(backtests[5].profit).toBe(0);
     // with amount + signalPrice
-    expect(backtests[6].percentProfit).toBe(0);
-    expect(backtests[7].percentProfit).toBe(1000);
-    expect(backtests[8].percentProfit).toBe(500);
+    expect(backtests[6].profit).toBe(0);
+    expect(backtests[7].profit).toBe(10);
+    expect(backtests[8].profit).toBe(5);
     // multiple positions at once
-    expect(backtests[9].percentProfit).toBe(500);
-    expect(backtests[10].percentProfit).toBe(700);
-    expect(backtests[11].percentProfit).toBe(1300);
-    expect(backtests[12].percentProfit).toBe(1300);
-    expect(backtests[13].percentProfit).toBe(800);
-    expect(backtests[14].percentProfit).toBe(800);
+    expect(backtests[9].profit).toBe(5);
+    expect(backtests[10].profit).toBe(7);
+    expect(backtests[11].profit).toBe(13);
+    expect(backtests[12].profit).toBe(13);
+    expect(backtests[13].profit).toBe(8);
+    expect(backtests[14].profit).toBe(8);
   });
 
-  it('should calculate percentProfit correctly with commission', () => {
+  it('should calculate profit correctly with commission', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1 };
 
@@ -197,29 +197,29 @@ describe('Backtester', () => {
       }
     ];
 
-    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0.1);
+    const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0.001);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
-    expect(backtests[0].percentProfit).toBeCloseTo(-0.1);
-    expect(backtests[1].percentProfit).toBeCloseTo(99.7);
-    expect(backtests[2].percentProfit).toBeCloseTo(99.6);
-    expect(backtests[3].percentProfit).toBeCloseTo(49.45);
-    expect(backtests[4].percentProfit).toBeCloseTo(99.2);
-    expect(backtests[5].percentProfit).toBeCloseTo(-0.8);
+    expect(backtests[0].profit).toBeCloseTo(-0.001);
+    expect(backtests[1].profit).toBeCloseTo(0.997);
+    expect(backtests[2].profit).toBeCloseTo(0.996);
+    expect(backtests[3].profit).toBeCloseTo(0.4945);
+    expect(backtests[4].profit).toBeCloseTo(0.992);
+    expect(backtests[5].profit).toBeCloseTo(-0.008);
     // with amount + signalPrice
-    expect(backtests[6].percentProfit).toBeCloseTo(-1.8);
-    expect(backtests[7].percentProfit).toBeCloseTo(997.2);
-    expect(backtests[8].percentProfit).toBeCloseTo(494.7);
+    expect(backtests[6].profit).toBeCloseTo(-0.018);
+    expect(backtests[7].profit).toBeCloseTo(9.972);
+    expect(backtests[8].profit).toBeCloseTo(4.947);
     // multiple positions at once
-    expect(backtests[9].percentProfit).toBeCloseTo(494.5);
-    expect(backtests[10].percentProfit).toBeCloseTo(694.3);
-    expect(backtests[11].percentProfit).toBeCloseTo(1294.3);
-    expect(backtests[12].percentProfit).toBeCloseTo(1294.1);
-    expect(backtests[13].percentProfit).toBeCloseTo(793.2);
-    expect(backtests[14].percentProfit).toBeCloseTo(793.2);
+    expect(backtests[9].profit).toBeCloseTo(4.945);
+    expect(backtests[10].profit).toBeCloseTo(6.943);
+    expect(backtests[11].profit).toBeCloseTo(12.943);
+    expect(backtests[12].profit).toBeCloseTo(12.941);
+    expect(backtests[13].profit).toBeCloseTo(7.932);
+    expect(backtests[14].profit).toBeCloseTo(7.932);
   });
 
-  it('should calculate percentProfit correctly in case of liquidation', () => {
+  it('should calculate profit correctly in case of liquidation', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
@@ -254,14 +254,14 @@ describe('Backtester', () => {
     const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
-    expect(backtests[0].percentProfit).toBe(0);
-    expect(backtests[1].percentProfit).toBe(-50);
-    expect(backtests[2].percentProfit).toBe(-100);
-    expect(backtests[3].percentProfit).toBe(-100);
-    expect(backtests[4].percentProfit).toBe(-200);
+    expect(backtests[0].profit).toBe(0);
+    expect(backtests[1].profit).toBe(-0.5);
+    expect(backtests[2].profit).toBe(-1);
+    expect(backtests[3].profit).toBe(-1);
+    expect(backtests[4].profit).toBe(-2);
   });
 
-  it('should calculate percentProfit correctly in case of shrinking short position', () => {
+  it('should calculate profit correctly in case of shrinking short position', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 0 };
 
@@ -286,12 +286,12 @@ describe('Backtester', () => {
     const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
-    expect(backtests[0].percentProfit).toBe(0);
-    expect(backtests[1].percentProfit).toBe(-20);
-    expect(backtests[2].percentProfit).toBe(-40);
+    expect(backtests[0].profit).toBe(0);
+    expect(backtests[1].profit).toBe(-0.2);
+    expect(backtests[2].profit).toBe(-0.4);
   });
 
-  describe('should calculate percentProfit correctly in case of tp/sl', () => {
+  describe('should calculate profit correctly in case of tp/sl', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
@@ -322,11 +322,11 @@ describe('Backtester', () => {
       const klinesWithProfitBuySl: Kline[] = backtester.calcBacktestPerformance(klinesBuySl, algorithm, 0);
       const backtestsBuySl: BacktestData[] = klinesWithProfitBuySl.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsBuySl[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsBuySl[1].percentProfit).toBeCloseTo(10);
-      expect(backtestsBuySl[2].percentProfit).toBeCloseTo(-10);
+      expect(backtestsBuySl[0].profit).toBeCloseTo(0);
+      expect(backtestsBuySl[1].profit).toBeCloseTo(0.1);
+      expect(backtestsBuySl[2].profit).toBeCloseTo(-0.1);
       expect(backtestsBuySl[2].signals[0].signal).toBe(Signal.StopLoss);
-      expect(backtestsBuySl[3].percentProfit).toBeCloseTo(-10);
+      expect(backtestsBuySl[3].profit).toBeCloseTo(-0.1);
     });
 
     it('long tp', () => {
@@ -356,11 +356,11 @@ describe('Backtester', () => {
       const klinesWithProfitBuyTp: Kline[] = backtester.calcBacktestPerformance(klinesBuyTp, algorithm, 0);
       const backtestsBuyTp: BacktestData[] = klinesWithProfitBuyTp.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsBuyTp[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsBuyTp[1].percentProfit).toBeCloseTo(10);
-      expect(backtestsBuyTp[2].percentProfit).toBeCloseTo(20);
+      expect(backtestsBuyTp[0].profit).toBeCloseTo(0);
+      expect(backtestsBuyTp[1].profit).toBeCloseTo(0.1);
+      expect(backtestsBuyTp[2].profit).toBeCloseTo(0.2);
       expect(backtestsBuyTp[2].signals[0].signal).toBe(Signal.TakeProfit);
-      expect(backtestsBuyTp[3].percentProfit).toBeCloseTo(20);
+      expect(backtestsBuyTp[3].profit).toBeCloseTo(0.2);
 
     });
 
@@ -391,11 +391,11 @@ describe('Backtester', () => {
       const klinesWithProfitSellSl: Kline[] = backtester.calcBacktestPerformance(klinesSellSl, algorithm, 0);
       const backtestsSellSl: BacktestData[] = klinesWithProfitSellSl.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsSellSl[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsSellSl[1].percentProfit).toBeCloseTo(-10);
-      expect(backtestsSellSl[2].percentProfit).toBeCloseTo(-10);
+      expect(backtestsSellSl[0].profit).toBeCloseTo(0);
+      expect(backtestsSellSl[1].profit).toBeCloseTo(-0.1);
+      expect(backtestsSellSl[2].profit).toBeCloseTo(-0.1);
       expect(backtestsSellSl[2].signals[0].signal).toBe(Signal.StopLoss);
-      expect(backtestsSellSl[3].percentProfit).toBeCloseTo(-10);
+      expect(backtestsSellSl[3].profit).toBeCloseTo(-0.1);
     });
 
     it('short tp', () => {
@@ -425,15 +425,15 @@ describe('Backtester', () => {
       const klinesWithProfitSellTp: Kline[] = backtester.calcBacktestPerformance(klinesSellTp, algorithm, 0);
       const backtestsSellTp: BacktestData[] = klinesWithProfitSellTp.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsSellTp[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsSellTp[1].percentProfit).toBeCloseTo(10);
-      expect(backtestsSellTp[2].percentProfit).toBeCloseTo(20);
+      expect(backtestsSellTp[0].profit).toBeCloseTo(0);
+      expect(backtestsSellTp[1].profit).toBeCloseTo(0.1);
+      expect(backtestsSellTp[2].profit).toBeCloseTo(0.2);
       expect(backtestsSellTp[2].signals[0].signal).toBe(Signal.TakeProfit);
-      expect(backtestsSellTp[3].percentProfit).toBeCloseTo(20);
+      expect(backtestsSellTp[3].profit).toBeCloseTo(0.2);
     });
   });
 
-  describe('should calculate percentProfit correctly with trailing stop loss', () => {
+  describe('should calculate profit correctly with trailing stop loss', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
@@ -464,10 +464,10 @@ describe('Backtester', () => {
       const klinesWithProfitLongTsl: Kline[] = backtester.calcBacktestPerformance(klinesLongTsl, algorithm, 0);
       const backtestsLongTsl: BacktestData[] = klinesWithProfitLongTsl.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsLongTsl[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsLongTsl[1].percentProfit).toBeCloseTo(20);
-      expect(backtestsLongTsl[2].percentProfit).toBeCloseTo(50);
-      expect(backtestsLongTsl[3].percentProfit).toBeCloseTo(35); // Stopped out at 135
+      expect(backtestsLongTsl[0].profit).toBeCloseTo(0);
+      expect(backtestsLongTsl[1].profit).toBeCloseTo(0.2);
+      expect(backtestsLongTsl[2].profit).toBeCloseTo(0.5);
+      expect(backtestsLongTsl[3].profit).toBeCloseTo(0.35); // Stopped out at 135
       expect(backtestsLongTsl[3].signals[0].signal).toBe(Signal.StopLoss);
 
 
@@ -500,21 +500,21 @@ describe('Backtester', () => {
       const klinesWithProfitShortTsl: Kline[] = backtester.calcBacktestPerformance(klinesShortTsl, algorithm, 0);
       const backtestsShortTsl: BacktestData[] = klinesWithProfitShortTsl.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsShortTsl[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsShortTsl[1].percentProfit).toBeCloseTo(10);
-      expect(backtestsShortTsl[2].percentProfit).toBeCloseTo(20);
-      expect(backtestsShortTsl[3].percentProfit).toBeCloseTo(12);
+      expect(backtestsShortTsl[0].profit).toBeCloseTo(0);
+      expect(backtestsShortTsl[1].profit).toBeCloseTo(0.1);
+      expect(backtestsShortTsl[2].profit).toBeCloseTo(0.2);
+      expect(backtestsShortTsl[3].profit).toBeCloseTo(0.12);
       expect(backtestsShortTsl[3].signals[0].signal).toBe(Signal.StopLoss);
     });
   });
 
-  describe('should calculate percentProfit correctly with trailing stop loss and percentOfProfit', () => {
+  describe('should calculate profit correctly with trailing stop loss and percentOfProfit', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
     it('long triggered by percentOfProfit', () => {
       // long triggered by percentOfProfit
-      const klinesLongTslWithPercentProfit: Kline[] = [
+      const klinesLongTslWithPercentOfProfit: Kline[] = [
         {
           ...baseKline,
           prices: { ...basePrices, close: 100, high: 100, low: 100 },
@@ -537,19 +537,19 @@ describe('Backtester', () => {
         }
       ];
 
-      const klinesWithProfitLongTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesLongTslWithPercentProfit, algorithm, 0);
-      const backtestsLongTslPercentProfit: BacktestData[] = klinesWithProfitLongTslPercentProfit.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitLongTslPercentOfProfit: Kline[] = backtester.calcBacktestPerformance(klinesLongTslWithPercentOfProfit, algorithm, 0);
+      const backtestsLongTslPercentOfProfit: BacktestData[] = klinesWithProfitLongTslPercentOfProfit.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsLongTslPercentProfit[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsLongTslPercentProfit[1].percentProfit).toBeCloseTo(50);
-      expect(backtestsLongTslPercentProfit[2].percentProfit).toBeCloseTo(100);
-      expect(backtestsLongTslPercentProfit[3].percentProfit).toBeCloseTo(50); // Stopped out at 150 (locked in 50% of profit)
-      expect(backtestsLongTslPercentProfit[3].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsLongTslPercentOfProfit[0].profit).toBeCloseTo(0);
+      expect(backtestsLongTslPercentOfProfit[1].profit).toBeCloseTo(0.5);
+      expect(backtestsLongTslPercentOfProfit[2].profit).toBeCloseTo(1);
+      expect(backtestsLongTslPercentOfProfit[3].profit).toBeCloseTo(0.5); // Stopped out at 150 (locked in 50% of profit)
+      expect(backtestsLongTslPercentOfProfit[3].signals[0].signal).toBe(Signal.StopLoss);
     });
 
     it('short triggered by percentOfProfit', () => {
       // short triggered by percentOfProfit
-      const klinesShortTslWithPercentProfit: Kline[] = [
+      const klinesShortTslWithPercentOfProfit: Kline[] = [
         {
           ...baseKline,
           prices: { ...basePrices, close: 100, high: 100, low: 100 },
@@ -577,15 +577,15 @@ describe('Backtester', () => {
         }
       ];
 
-      const klinesWithProfitShortTslPercentProfit: Kline[] = backtester.calcBacktestPerformance(klinesShortTslWithPercentProfit, algorithm, 0);
-      const backtestsShortTslPercentProfit: BacktestData[] = klinesWithProfitShortTslPercentProfit.map(k => k.algorithms[algorithm]!);
+      const klinesWithProfitShortTslPercentOfProfit: Kline[] = backtester.calcBacktestPerformance(klinesShortTslWithPercentOfProfit, algorithm, 0);
+      const backtestsShortTslPercentOfProfit: BacktestData[] = klinesWithProfitShortTslPercentOfProfit.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsShortTslPercentProfit[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsShortTslPercentProfit[1].percentProfit).toBeCloseTo(15);
-      expect(backtestsShortTslPercentProfit[2].percentProfit).toBeCloseTo(50);
-      expect(backtestsShortTslPercentProfit[3].percentProfit).toBeCloseTo(30);
-      expect(backtestsShortTslPercentProfit[4].percentProfit).toBeCloseTo(25);
-      expect(backtestsShortTslPercentProfit[4].signals[0].signal).toBe(Signal.StopLoss);
+      expect(backtestsShortTslPercentOfProfit[0].profit).toBeCloseTo(0);
+      expect(backtestsShortTslPercentOfProfit[1].profit).toBeCloseTo(0.15);
+      expect(backtestsShortTslPercentOfProfit[2].profit).toBeCloseTo(0.5);
+      expect(backtestsShortTslPercentOfProfit[3].profit).toBeCloseTo(0.3);
+      expect(backtestsShortTslPercentOfProfit[4].profit).toBeCloseTo(0.25);
+      expect(backtestsShortTslPercentOfProfit[4].signals[0].signal).toBe(Signal.StopLoss);
     });
 
 
@@ -612,9 +612,9 @@ describe('Backtester', () => {
       const klinesWithProfitLongStopLossTriggersFirst: Kline[] = backtester.calcBacktestPerformance(klinesLongTslStopLossTriggersFirst, algorithm, 0);
       const backtestsLongStopLossTriggersFirst: BacktestData[] = klinesWithProfitLongStopLossTriggersFirst.map(k => k.algorithms[algorithm]!);
 
-      expect(backtestsLongStopLossTriggersFirst[0].percentProfit).toBeCloseTo(0);
-      expect(backtestsLongStopLossTriggersFirst[1].percentProfit).toBeCloseTo(1);
-      expect(backtestsLongStopLossTriggersFirst[2].percentProfit).toBeCloseTo(-0.01);
+      expect(backtestsLongStopLossTriggersFirst[0].profit).toBeCloseTo(0);
+      expect(backtestsLongStopLossTriggersFirst[1].profit).toBeCloseTo(0.01);
+      expect(backtestsLongStopLossTriggersFirst[2].profit).toBeCloseTo(-0.0001);
       expect(backtestsLongStopLossTriggersFirst[2].signals[0].signal).toBe(Signal.StopLoss);
     });
   });
@@ -649,11 +649,11 @@ describe('Backtester', () => {
     const klinesWithProfit: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
     const backtests: BacktestData[] = klinesWithProfit.map(k => k.algorithms[algorithm]!);
 
-    expect(backtests[0].percentProfit).toBe(0);    // A just opened
-    expect(backtests[1].percentProfit).toBe(100);  // A unrealised: 100→200 (+100%)
-    expect(backtests[2].percentProfit).toBe(250);  // A closed (200→300, +100) + B unrealised (200→300, +50)
+    expect(backtests[0].profit).toBe(0);    // A just opened
+    expect(backtests[1].profit).toBe(1);    // A unrealised: 100→200 (+100%)
+    expect(backtests[2].profit).toBe(2.5);  // A closed (200→300, +100%) + B unrealised (200→300, +50%)
     expect(backtests[2].openPositionSize).toBeCloseTo(1.5); // only B remains open (size = 1 * (1 + 0.5))
-    expect(backtests[3].percentProfit).toBe(300);  // B closed (300→400, +50)
+    expect(backtests[3].profit).toBe(3);    // B closed (300→400, +50%)
     expect(backtests[3].openPositionSize).toBe(0);
   });
 });

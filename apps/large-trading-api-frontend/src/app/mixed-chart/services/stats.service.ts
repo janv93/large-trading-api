@@ -36,7 +36,7 @@ export class StatsService {
     let maxDrawback: number = 0;
 
     klines.forEach((kline: Kline) => {
-      const profit: number = kline.algorithms[algorithm]!.percentProfit || 0;
+      const profit: number = (kline.algorithms[algorithm]!.profit || 0) * 100;
       high = Math.max(high, profit);
       maxDrawback = Math.max(maxDrawback, high - profit);
     });

@@ -215,7 +215,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
     this.chartService.algorithms.forEach((_, index) => {
       const mapped = this.currentKlines.map((kline: Kline) => {
-        const currentProfit: number = kline.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0;
+        const currentProfit: number = (kline.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100;
         const opacity: number = index === 0 ? 0.3 : 0.1;
         const color: string = currentProfit === 0
           ? `rgba(255,255,255,${opacity})`
@@ -292,7 +292,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setFinalProfits(): void {
     this.finalProfit = this.chartService.algorithms.map((_, index) =>
-      this.currentKlines.at(-1)!.algorithms[this.chartService.algorithms[index]]!.percentProfit || 0
+      (this.currentKlines.at(-1)!.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100
     );
   }
 

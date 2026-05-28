@@ -89,7 +89,7 @@ export class AppComponent {
       },
       complete: () => {
         this.tickers.sort((a: Run[], b: Run[]) => {
-          return (a[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0) - (b[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.percentProfit || 0);
+          return (a[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.profit || 0) - (b[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.profit || 0);
         });
         this.chartService.setLoadingText();
       }

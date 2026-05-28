@@ -190,7 +190,7 @@ export interface TrendLine {
 // information for backtest and calculated backtest data
 export interface BacktestData {
   signals: BacktestSignal[];  // allow multiple independent signals for multiple independent positions
-  percentProfit?: number; // calculated profit at current kline
+  profit?: number; // calculated profit at current kline
   openPositionSize?: number;  // calculated position size open at current kline
 }
 
@@ -294,7 +294,7 @@ export interface Run {
 }
 
 export interface BacktestStats {
-  profit: number;
+  profit: number; // 1 = 100%
   numberOfTrades: number;
   maxDrawback: number;
 }
