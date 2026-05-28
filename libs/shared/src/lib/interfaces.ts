@@ -224,7 +224,6 @@ export interface TrailingStopLoss {
 
 export interface MultiBenchmark {
   score: number;
-  averageProfit: number;
   params?: MultiBenchmarkParams;
 }
 
