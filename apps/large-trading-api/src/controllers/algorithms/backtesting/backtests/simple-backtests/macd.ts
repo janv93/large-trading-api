@@ -9,7 +9,7 @@ export default class Macd extends Base {
     const fast = Number(params.fast);
     const slow = Number(params.slow);
     const signal = Number(params.signal);
-    this.indicators.macd(klines, fast, slow, signal);
+    this.indicators.addMacd(klines, fast, slow, signal);
     const klinesWithHistogram = klines.filter(k => k.indicators?.macd !== undefined);
 
     let lastHistogram: number;

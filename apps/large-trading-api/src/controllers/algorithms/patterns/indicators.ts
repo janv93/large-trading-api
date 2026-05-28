@@ -1,4 +1,4 @@
-import { BollingerBands, KlineIndicators, Kline, MacdValues } from '@shared';
+import { BollingerBands, DivergenceType, Kline, KlineIndicators, KlineWithIndex, MacdValues, MarketStructureType, PivotPointSide } from '@shared';
 import Base from '../../../base';
 
 export default class Indicators extends Base {
@@ -6,7 +6,7 @@ export default class Indicators extends Base {
     super();
   }
 
-  public rsi(klines: Kline[], period: number): void {
+  public addRsi(klines: Kline[], period: number): void {
     // seed initial average gain/loss from first `period` price changes
     let avgGain: number = 0;
     let avgLoss: number = 0;
@@ -38,7 +38,7 @@ export default class Indicators extends Base {
     }
   }
 
-  public sma(klines: Kline[], period: number): void {
+  public addSma(klines: Kline[], period: number): void {
     for (let i = period - 1; i < klines.length; i++) {
       const sum: number = klines.slice(i - period + 1, i + 1).reduce((acc, k) => acc + k.prices.close, 0);
       const smaValue: number = sum / period;
@@ -48,7 +48,7 @@ export default class Indicators extends Base {
     }
   }
 
-  public ema(klines: Kline[], period: number): void {
+  public addEma(klines: Kline[], period: number): void {
     const smoothingFactor: number = 2 / (period + 1);
     let currentEma: number = klines.slice(0, period).reduce((sum, k) => sum + k.prices.close, 0) / period;
 
@@ -67,7 +67,7 @@ export default class Indicators extends Base {
     }
   }
 
-  public macd(klines: Kline[], fast: number, slow: number, signal: number): void {
+  public addMacd(klines: Kline[], fast: number, slow: number, signal: number): void {
     const closes: number[] = klines.map(k => k.prices.close);
 
     const fastEmas: number[] = this.calcEmaFromValues(closes, fast);
@@ -110,7 +110,7 @@ export default class Indicators extends Base {
     return result;
   }
 
-  public atr(klines: Kline[], period: number): void {
+  public addAtr(klines: Kline[], period: number): void {
     const trueRanges: number[] = [];
 
     for (let i = 1; i < klines.length; i++) {
@@ -132,7 +132,7 @@ export default class Indicators extends Base {
     }
   }
 
-  public bb(klines: Kline[], period: number): void {
+  public addBb(klines: Kline[], period: number): void {
     for (let i = period - 1; i < klines.length; i++) {
       const windowKlines: Kline[] = klines.slice(i - period + 1, i + 1);
       const middleBand: number = windowKlines.reduce((sum, k) => sum + k.prices.close, 0) / period;
@@ -142,5 +142,47 @@ export default class Indicators extends Base {
       const existingIndicators: KlineIndicators | undefined = kline.indicators;
       kline.indicators = { ...existingIndicators, bb: { upper: middleBand + 2 * stdDev, middle: middleBand, lower: middleBand - 2 * stdDev } as BollingerBands };
     }
+  }
+
+  /**
+   * Detects RSI divergence at pivot points that have market structure assigned.
+   * Requires rsi() and addMarketStructure() to have been called first.
+   * - Bullish: price LL but RSI higher low → momentum recovering
+   * - Bearish: price HH but RSI lower high → momentum weakening
+   */
+  public addRsiDivergence(klines: Kline[]): void {
+    const pivotKlines: KlineWithIndex[] = klines
+      .map((kline: Kline, index: number) => ({ kline, index }))
+      .filter(({ kline }: KlineWithIndex) => kline.chart?.pivotPoint?.marketStructure !== undefined);
+
+    pivotKlines.forEach(({ kline, index }: KlineWithIndex) => {
+      const structure: MarketStructureType = kline.chart!.pivotPoint!.marketStructure!;
+      const side: PivotPointSide = kline.chart!.pivotPoint!.side;
+      const currentRsi: number = kline.indicators!.rsi!;
+
+      const previousSameSide: KlineWithIndex | undefined = [...pivotKlines]
+        .filter((pk: KlineWithIndex) => pk.index < index && pk.kline.chart!.pivotPoint!.side === side)
+        .at(-1);
+
+      if (!previousSameSide) return;
+
+      const previousRsi: number = previousSameSide.kline.indicators!.rsi!;
+
+      let divergence: DivergenceType | undefined;
+
+      if (structure === MarketStructureType.LL && currentRsi > previousRsi) {
+        divergence = DivergenceType.Bullish;
+      } else if (structure === MarketStructureType.HH && currentRsi < previousRsi) {
+        divergence = DivergenceType.Bearish;
+      } else if (structure === MarketStructureType.HL && currentRsi < previousRsi) {
+        divergence = DivergenceType.HiddenBullish;
+      } else if (structure === MarketStructureType.LH && currentRsi > previousRsi) {
+        divergence = DivergenceType.HiddenBearish;
+      }
+
+      if (divergence !== undefined) {
+        kline.indicators = { ...kline.indicators, rsiDivergence: divergence };
+      }
+    });
   }
 }

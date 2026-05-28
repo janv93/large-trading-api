@@ -101,6 +101,13 @@ export enum Direction {
   Down = 'DOWN'
 }
 
+export enum DivergenceType {
+  Bullish = 'BULLISH',             // price LL, RSI higher low → potential reversal up
+  Bearish = 'BEARISH',             // price HH, RSI lower high → potential reversal down
+  HiddenBullish = 'HIDDEN_BULLISH', // price HL, RSI lower low → trend continuation up
+  HiddenBearish = 'HIDDEN_BEARISH'  // price LH, RSI higher high → trend continuation down
+}
+
 export interface AppConfig {
   lastOutdatedKlineRemoval: Date;
   hadStockSplitCleanup?: boolean;
@@ -161,6 +168,7 @@ export interface KlineIndicators {
   rsi?: number;
   bb?: BollingerBands;
   atr?: number;
+  rsiDivergence?: DivergenceType;
 }
 
 export interface BollingerBands {

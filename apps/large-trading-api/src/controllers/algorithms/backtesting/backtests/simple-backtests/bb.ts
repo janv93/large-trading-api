@@ -7,7 +7,7 @@ export default class Bb extends Base {
 
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const period = Number(params.period);
-    this.indicators.bb(klines, period);
+    this.indicators.addBb(klines, period);
     const klinesWithBb = klines.filter(k => k.indicators?.bb !== undefined);
 
     const threshold = 0.003; // percent that the price has fall below lower band / rise above upper band for position to open

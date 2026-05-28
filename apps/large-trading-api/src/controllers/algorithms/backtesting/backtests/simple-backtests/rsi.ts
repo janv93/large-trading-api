@@ -7,7 +7,7 @@ export default class Rsi extends Base {
 
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const length = Number(params.length);
-    this.indicators.rsi(klines, length);
+    this.indicators.addRsi(klines, length);
     const klinesWithRsi = klines.filter(k => k.indicators?.rsi !== undefined);
     this.setSignalsOverBoughtOverSold(klinesWithRsi, algorithm);
 

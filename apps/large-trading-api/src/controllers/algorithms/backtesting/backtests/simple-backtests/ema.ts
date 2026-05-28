@@ -14,8 +14,8 @@ export default class Ema extends Base {
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
-    this.indicators.ema(klines, periodOpen);
-    this.indicators.ema(klines, periodClose);
+    this.indicators.addEma(klines, periodOpen);
+    this.indicators.addEma(klines, periodClose);
     const klinesWithEma = klines.filter(k => k.indicators?.ema?.[periodOpen] !== undefined && k.indicators?.ema?.[periodClose] !== undefined);
 
     let lastMoveOpen: string;
@@ -141,7 +141,7 @@ export default class Ema extends Base {
     klines.splice(-1);  // remove running timeframe
     console.log(klines.slice(-3))
     const emaPeriod = 80;
-    this.indicators.ema(klines, emaPeriod);
+    this.indicators.addEma(klines, emaPeriod);
     const klinesWithEma = klines.filter(k => k.indicators?.ema?.[emaPeriod] !== undefined);
     console.log(klinesWithEma.slice(-3))
 
