@@ -158,9 +158,9 @@ export default class Indicators extends Base {
       const trendLines: TrendLine[] | undefined = klines[i].chart?.trendLines;
       if (!trendLines) continue;
 
-      for (const trendLine of trendLines) {
-        this.accumulateDivergenceStrength(klines, trendLine, minStrength, bullishStrengths, bearishStrengths, hiddenBullishStrengths, hiddenBearishStrengths);
-      }
+      klines[i].chart!.trendLines = trendLines.filter(trendLine =>
+        this.accumulateDivergenceStrength(klines, trendLine, minStrength, bullishStrengths, bearishStrengths, hiddenBullishStrengths, hiddenBearishStrengths)
+      );
     }
 
     // collect all end indices that have any divergence
@@ -191,7 +191,7 @@ export default class Indicators extends Base {
     bearishStrengths: Map<number, number>,
     hiddenBullishStrengths: Map<number, number>,
     hiddenBearishStrengths: Map<number, number>,
-  ): void {
+  ): boolean {
     const startIndex: number = trendLine.startIndex;
     const endIndex: number = trendLine.endIndex;
     const length: number = trendLine.length;
@@ -201,12 +201,12 @@ export default class Indicators extends Base {
     const startPrice: number = trendLine.function.getY(startIndex);
     const endPrice: number = trendLine.function.getY(endIndex);
 
-    if (startRsi === undefined || endRsi === undefined) return;
+    if (startRsi === undefined || endRsi === undefined) return false;
 
     const priceStdDev: number = this.calcCloseChangeStdDev(klines, startIndex, endIndex);
     const rsiStdDev: number = this.calcRsiChangeStdDev(klines, startIndex, endIndex);
 
-    if (priceStdDev === 0 || rsiStdDev === 0) return;
+    if (priceStdDev === 0 || rsiStdDev === 0) return false;
 
     const sqrtLength: number = Math.sqrt(length);
     const normalizedPriceSlope: number = Math.tanh((endPrice - startPrice) / (priceStdDev * sqrtLength));
@@ -215,9 +215,9 @@ export default class Indicators extends Base {
     const rsiGoesUp: boolean = normalizedRsiSlope > 0;
     const isDivergence: boolean = priceGoesUp !== rsiGoesUp;
 
-    if (!isDivergence) return;
-    if (Math.abs(normalizedPriceSlope) < minStrength || Math.abs(normalizedRsiSlope) < minStrength) return;
-    if (!this.isRsiLineUninterrupted(klines, startIndex, endIndex, rsiGoesUp)) return;
+    if (!isDivergence) return false;
+    if (Math.abs(normalizedPriceSlope) < minStrength || Math.abs(normalizedRsiSlope) < minStrength) return false;
+    if (!this.isRsiLineUninterrupted(klines, startIndex, endIndex, rsiGoesUp)) return false;
 
     const strength: number = Math.abs(normalizedPriceSlope - normalizedRsiSlope);
     const position: TrendLinePosition = trendLine.position;
@@ -238,6 +238,8 @@ export default class Indicators extends Base {
     else if (position === TrendLinePosition.Above && !priceGoesUp && rsiGoesUp) {
       hiddenBearishStrengths.set(endIndex, (hiddenBearishStrengths.get(endIndex) ?? 0) + strength);
     }
+
+    return true;
   }
 
   private buildRsiDivergenceData(
