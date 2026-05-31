@@ -9,7 +9,6 @@ import {
   SeriesType,
   Time
 } from 'lightweight-charts';
-import { LinearFunction } from '@shared';
 
 export interface TrendLineSegment {
   startTime: number;
@@ -26,6 +25,15 @@ interface RenderedLine {
   x2: number;
   y2: number;
   highlighted: boolean;
+}
+
+function pointToSegmentDistance(px: number, py: number, x1: number, y1: number, x2: number, y2: number): number {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 
 class TrendLinesPaneRenderer implements IPrimitivePaneRenderer {
@@ -88,8 +96,8 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
   private _requestUpdate: (() => void) | null = null;
   private _paneView = new TrendLinesPaneView();
   private _segments: TrendLineSegment[] = [];
-  private _hoverIndex: number | null = null;
-  private _hoverPrice: number | null = null;
+  private _hoverX: number | null = null;
+  private _hoverY: number | null = null;
 
   /**
    * Lifecycle hook called automatically by lightweight-charts when attachPrimitive() is invoked.
@@ -116,10 +124,10 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
     this._requestUpdate?.();
   }
 
-  setHover(index: number | null, price: number | null): void {
-    if (this._hoverIndex === index && this._hoverPrice === price) return;
-    this._hoverIndex = index;
-    this._hoverPrice = price;
+  setHover(x: number | null, y: number | null): void {
+    if (this._hoverX === x && this._hoverY === y) return;
+    this._hoverX = x;
+    this._hoverY = y;
     this._requestUpdate?.();
   }
 
@@ -149,13 +157,8 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
 
       let highlighted = false;
 
-      if (this._hoverIndex !== null && this._hoverPrice !== null) {
-        const linearFunction = new LinearFunction(seg.startIndex, seg.startValue, seg.endIndex, seg.endValue);
-
-        highlighted =
-          linearFunction.isPointOnLine(this._hoverIndex, this._hoverPrice, 0.003) &&
-          this._hoverIndex >= seg.startIndex &&
-          this._hoverIndex <= seg.endIndex;
+      if (this._hoverX !== null && this._hoverY !== null) {
+        highlighted = pointToSegmentDistance(this._hoverX, this._hoverY, x1, y1, x2, y2) <= 5;
       }
 
       lines.push({ x1, y1, x2, y2, highlighted });

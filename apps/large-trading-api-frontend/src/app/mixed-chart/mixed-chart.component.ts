@@ -332,7 +332,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.markersChartingService.highlightOpenSignals(kline, this.currentKlines, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.chart, this.chartService.isMulti);
       }
 
-      this.markersChartingService.highlightTrendLines(param, this.candlestickSeries, this.trendLinesPrimitive);
+      this.markersChartingService.highlightTrendLines(param, this.trendLinesPrimitive);
     };
 
     this.chart.subscribeCrosshairMove(this.crosshairMoveHandler);

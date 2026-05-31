@@ -85,7 +85,6 @@ export class MarkersChartingService {
 
   public highlightTrendLines(
     param: MouseEventParams<Time>,
-    candlestickSeries: ISeriesApi<'Candlestick'>,
     trendLinesPrimitive: TrendLinesPrimitive | undefined
   ): void {
     if (!trendLinesPrimitive) return;
@@ -95,9 +94,7 @@ export class MarkersChartingService {
       return;
     }
 
-    const hoverPrice: number = candlestickSeries.coordinateToPrice(param.point.y) as number;
-    const index: number = param.logical as number;
-    trendLinesPrimitive.setHover(index, hoverPrice);
+    trendLinesPrimitive.setHover(param.point.x, param.point.y);
   }
 
   private setPivotPointMarkers(klines: Kline[]): void {
