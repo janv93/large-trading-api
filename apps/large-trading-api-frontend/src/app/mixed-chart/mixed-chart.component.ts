@@ -325,6 +325,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.crosshairMoveHandler = (param: MouseEventParams<Time>) => {
       const index: number = param.logical as number;
       const kline: Kline = this.currentKlines[index];
+      this.indicatorSeriesService.setRsiHover(param.hoveredSeries === this.indicatorSeriesService.getRsiSeries());
       this.updateLegend(param, index);
 
       if (kline) {

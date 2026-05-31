@@ -7,6 +7,7 @@ export class IndicatorSeriesService {
   private bbSeries: { upper: ISeriesApi<'Line'>; middle: ISeriesApi<'Line'>; lower: ISeriesApi<'Line'> } | undefined;
   private rsiSeries: ISeriesApi<'Line'> | undefined;
   private rsiKlines: Kline[] = [];
+  private rsiHovered: boolean = false;
   private atrSeries: ISeriesApi<'Line'> | undefined;
   private macdHistogramSeries: ISeriesApi<'Histogram'> | undefined;
 
@@ -144,6 +145,20 @@ export class IndicatorSeriesService {
     if (hasMacd && this.macdHistogramSeries) {
       this.setMacdData(klines, macdAlpha);
     }
+  }
+
+  public getRsiSeries(): ISeriesApi<'Line'> | undefined {
+    return this.rsiSeries;
+  }
+
+  public setRsiHover(hovered: boolean): void {
+    if (!this.rsiSeries || this.rsiHovered === hovered) return;
+    this.rsiHovered = hovered;
+    this.rsiSeries.applyOptions(
+      hovered
+        ? { color: 'rgba(155, 89, 182, 1.0)', lineWidth: 2 }
+        : { color: 'rgba(155, 89, 182, 0.4)', lineWidth: 1 }
+    );
   }
 
   public setRsiData(numVisibleBars: number): void {
