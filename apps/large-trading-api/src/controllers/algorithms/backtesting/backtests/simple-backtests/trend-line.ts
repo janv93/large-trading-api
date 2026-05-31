@@ -13,9 +13,9 @@ export default class TrendLineBreakthrough extends Base {
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const percentOfProfit: number = Number(params.percentOfProfit);
     // this.pivotPointController.addPivotPoints(klines, 20);
-    // this.trendLineController.addTrendLinesFromPivotPoints(klines, 40, 200);
-    this.trendLineController.addTrendLines(klines, 40, 200);
-    this.trendLineController.addTrendLineBreakthroughs(klines);
+    // this.trendLineController.addTrendLinesFromPivotPoints(klines, 40, 200, true, true);
+    this.trendLineController.addTrendLines(klines, 40, 200, true, true);
+    this.trendLineController.addTrendLineBreakthroughs(klines, true);
     this.trendLineController.filterTrendLinesWithoutBreakthroughs(klines);
 
     this.forEachWithProgress(klines, (kline) => {

@@ -91,6 +91,12 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       space: 5
     }
   },
+  [Algorithm.RsiDivergence]: {
+    single: {
+    },
+    multi: {
+    }
+  },
   [Algorithm.Example]: {
     single: {
       size: 10

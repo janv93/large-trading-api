@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { forkJoin } from 'rxjs';
-import { HttpService } from './http.service';
+import { HttpService } from '../http.service';
 import { Kline, Run } from '@shared';
-import { ChartService } from './chart.service';
+import { ChartService } from '../chart.service';
 
 @Component({
   selector: 'app-root',

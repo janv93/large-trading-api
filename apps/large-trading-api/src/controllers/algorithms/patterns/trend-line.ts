@@ -3,11 +3,13 @@ import { Kline, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition 
 import { LinearFunction } from '@shared';
 
 export default class TrendLineController extends Base {
+  private readonly bufferPercentage = 0.2;
+
   /**
    * add trend lines to klines that connect uninterrupted highs/lows
    * difference to addTrendLinesFromPivotPoints: buffers are defined by slope of the trend line instead of simply horizontal (0)
    */
-  public addTrendLines(klines: Kline[], minLength: number, maxLength: number): void {
+  public addTrendLines(klines: Kline[], minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
     this.forEachWithProgress(klines, (startKline, i) => {
       const startLow: number = startKline.prices.low;
       const startHigh: number = startKline.prices.high;
@@ -25,8 +27,8 @@ export default class TrendLineController extends Base {
         const isTrendLineLongEnough: boolean = dx >= minLength;
 
         if (isTrendLineLongEnough) {
-          const isValidBelow: boolean = slopeBelow <= minSlopeBelow && this.isTrendLineAgainstTrend(startLow, endKlineLow, TrendLinePosition.Below);
-          const isValidAbove: boolean = slopeAbove >= maxSlopeAbove && this.isTrendLineAgainstTrend(startHigh, endKlineHigh, TrendLinePosition.Above);
+          const isValidBelow: boolean = slopeBelow <= minSlopeBelow && (!againstTrend || this.isTrendLineAgainstTrend(startLow, endKlineLow, TrendLinePosition.Below));
+          const isValidAbove: boolean = slopeAbove >= maxSlopeAbove && (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endKlineHigh, TrendLinePosition.Above));
 
           const candidates: [boolean, number, number, TrendLinePosition][] = [
             [isValidBelow, startLow, endKlineLow, TrendLinePosition.Below],
@@ -37,7 +39,7 @@ export default class TrendLineController extends Base {
             if (!isValid) return;
             const linearFunction: LinearFunction = new LinearFunction(i, startPrice, j, endPrice);
 
-            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction.m, linearFunction.b)) {
+            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction, rightBuffer)) {
               startKline.chart = startKline.chart || {};
               startKline.chart.trendLines = startKline.chart.trendLines || [];
 
@@ -48,7 +50,7 @@ export default class TrendLineController extends Base {
                 length: dx,
                 slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
                 position,
-                againstTrend: true
+                againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position)
               });
             }
           });
@@ -61,7 +63,7 @@ export default class TrendLineController extends Base {
   }
 
   // add trend lines to klines that connect uninterrupted pivot points
-  public addTrendLinesFromPivotPoints(klines: Kline[], minLength: number, maxLength: number): void {
+  public addTrendLinesFromPivotPoints(klines: Kline[], minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
     this.forEachWithProgress(klines, (startKline, i) => {
       if (!startKline.chart?.pivotPoint) return;  // if no pivot point, skip kline
 
@@ -84,10 +86,10 @@ export default class TrendLineController extends Base {
           const hasPivotPoint: boolean = endKline.chart?.pivotPoint?.side === ppStartSide;
           const isUninterrupted: boolean = isHigh ? currentSlope >= extremeSlope : currentSlope <= extremeSlope;
 
-          if (hasPivotPoint && isUninterrupted && this.isTrendLineAgainstTrend(startPrice, endPrice, position)) {
+          if (hasPivotPoint && isUninterrupted && (!againstTrend || this.isTrendLineAgainstTrend(startPrice, endPrice, position))) {
             const linearFunction: LinearFunction = new LinearFunction(i, startPrice, j, endPrice);
 
-            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction.m, linearFunction.b)) {
+            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction, rightBuffer)) {
               startKline.chart!.trendLines = startKline.chart!.trendLines || [];
               startKline.chart!.trendLines.push({
                 function: linearFunction,
@@ -96,7 +98,7 @@ export default class TrendLineController extends Base {
                 length: dx,
                 slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
                 position,
-                againstTrend: true
+                againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position)
               });
             }
           }
@@ -108,13 +110,13 @@ export default class TrendLineController extends Base {
   }
 
   // extends trend lines until they break through the price, marking a pivotal point
-  public addTrendLineBreakthroughs(klines: Kline[]) {
+  public addTrendLineBreakthroughs(klines: Kline[], rightBuffer: boolean) {
     klines.forEach((kline: Kline) => {
       const trendLines: TrendLine[] | undefined = kline.chart?.trendLines;
 
       if (trendLines?.length) {
         trendLines.forEach((trendLine: TrendLine) => {
-          this.extendTrendLineUntilBreakthrough(klines, trendLine);
+          this.extendTrendLineUntilBreakthrough(klines, trendLine, rightBuffer);
         });
       }
     });
@@ -128,11 +130,12 @@ export default class TrendLineController extends Base {
     });
   }
 
-  private extendTrendLineUntilBreakthrough(klines: Kline[], trendLine: TrendLine) {
-    const lineFunction = trendLine.function;
+  private extendTrendLineUntilBreakthrough(klines: Kline[], trendLine: TrendLine, rightBuffer: boolean) {
+    const lineFunction: LinearFunction = trendLine.function;
     const position: TrendLinePosition = trendLine.position;
-    const startIndex: number = trendLine.endIndex + 1;
-    const maxIndex: number = trendLine.endIndex + trendLine.length * 1; // the max distance of the end of the trend line to the breakthrough point, after that it is considered too far away to belong to the line
+    const buffer: number = rightBuffer ? Math.round(trendLine.length * this.bufferPercentage) : 0;
+    const startIndex: number = trendLine.endIndex + 1 + buffer;
+    const maxIndex: number = trendLine.endIndex + trendLine.length; // the max distance of the end of the trend line to the breakthrough point, after that it is considered too far away to belong to the line
     const candidateKlines: Kline[] = klines.slice(startIndex, maxIndex);
     let breakThroughIndex = -1;
 
@@ -163,16 +166,16 @@ export default class TrendLineController extends Base {
       breakThroughKline.chart.trendLineBreakthroughs.push(trendLine);
 
       // equally add reference to breakthough point to trend line
-      trendLine.breakThroughIndex = trendLine.endIndex + 1 + breakThroughIndex;
+      trendLine.breakThroughIndex = startIndex + breakThroughIndex;
     }
   }
 
-  private areBuffersUninterrupted(klines: Kline[], startIndex: number, endIndex: number, position: TrendLinePosition, m: number, b: number): boolean {
-    const length = endIndex - startIndex;
-    const buffer = Math.round(length * 0.2);
-    const crosses = (k: Kline, x: number) => position === TrendLinePosition.Above ? k.prices.high > m * x + b : k.prices.low < m * x + b;
-    const leftUninterrupted = klines.slice(Math.max(0, startIndex - buffer + 1), startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
-    const rightUninterrupted = klines.slice(endIndex + 1, Math.min(klines.length, endIndex + buffer)).every((k, i) => !crosses(k, endIndex + 1 + i));
+  private areBuffersUninterrupted(klines: Kline[], startIndex: number, endIndex: number, position: TrendLinePosition, linearFunction: LinearFunction, rightBuffer: boolean): boolean {
+    const length: number = endIndex - startIndex;
+    const buffer: number = Math.round(length * this.bufferPercentage);
+    const crosses = (k: Kline, x: number) => position === TrendLinePosition.Above ? k.prices.high > linearFunction.getY(x) : k.prices.low < linearFunction.getY(x);
+    const leftUninterrupted: boolean = klines.slice(Math.max(0, startIndex - buffer + 1), startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
+    const rightUninterrupted: boolean = !rightBuffer || klines.slice(endIndex + 1, Math.min(klines.length, endIndex + 1 + buffer)).every((k, i) => !crosses(k, endIndex + 1 + i));
     return leftUninterrupted && rightUninterrupted;
   }
 

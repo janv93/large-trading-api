@@ -1,4 +1,5 @@
-import { BollingerBands, DivergenceType, Kline, KlineIndicators, KlineWithIndex, MacdValues, MarketStructureType, PivotPointSide } from '@shared';
+import { BollingerBands, Kline, KlineIndicators, MacdValues, RsiDivergenceData, RsiDivergenceType, TrendLine, TrendLinePosition } from '@shared';
+import { LinearFunction } from '@shared';
 import Base from '../../../base';
 
 export default class Indicators extends Base {
@@ -144,45 +145,169 @@ export default class Indicators extends Base {
     }
   }
 
-  /**
-   * Detects RSI divergence at pivot points that have market structure assigned.
-   * Requires rsi() and addMarketStructure() to have been called first.
-   * - Bullish: price LL but RSI higher low → momentum recovering
-   * - Bearish: price HH but RSI lower high → momentum weakening
-   */
-  public addRsiDivergence(klines: Kline[]): void {
-    const pivotKlines: KlineWithIndex[] = klines
-      .map((kline: Kline, index: number) => ({ kline, index }))
-      .filter(({ kline }: KlineWithIndex) => kline.chart?.pivotPoint?.marketStructure !== undefined);
+  public addRsiDivergence(klines: Kline[], rsiPeriod: number, minStrength: number): void {
+    this.addRsi(klines, rsiPeriod);
 
-    pivotKlines.forEach(({ kline, index }: KlineWithIndex) => {
-      const structure: MarketStructureType = kline.chart!.pivotPoint!.marketStructure!;
-      const side: PivotPointSide = kline.chart!.pivotPoint!.side;
-      const currentRsi: number = kline.indicators!.rsi!;
+    // accumulate divergence strengths per end-kline index
+    const bullishStrengths: Map<number, number> = new Map();
+    const bearishStrengths: Map<number, number> = new Map();
+    const hiddenBullishStrengths: Map<number, number> = new Map();
+    const hiddenBearishStrengths: Map<number, number> = new Map();
 
-      const previousSameSide: KlineWithIndex | undefined = [...pivotKlines]
-        .filter((pk: KlineWithIndex) => pk.index < index && pk.kline.chart!.pivotPoint!.side === side)
-        .at(-1);
+    for (let i = 0; i < klines.length; i++) {
+      const trendLines: TrendLine[] | undefined = klines[i].chart?.trendLines;
+      if (!trendLines) continue;
 
-      if (!previousSameSide) return;
-
-      const previousRsi: number = previousSameSide.kline.indicators!.rsi!;
-
-      let divergence: DivergenceType | undefined;
-
-      if (structure === MarketStructureType.LL && currentRsi > previousRsi) {
-        divergence = DivergenceType.Bullish;
-      } else if (structure === MarketStructureType.HH && currentRsi < previousRsi) {
-        divergence = DivergenceType.Bearish;
-      } else if (structure === MarketStructureType.HL && currentRsi < previousRsi) {
-        divergence = DivergenceType.HiddenBullish;
-      } else if (structure === MarketStructureType.LH && currentRsi > previousRsi) {
-        divergence = DivergenceType.HiddenBearish;
+      for (const trendLine of trendLines) {
+        this.accumulateDivergenceStrength(klines, trendLine, minStrength, bullishStrengths, bearishStrengths, hiddenBullishStrengths, hiddenBearishStrengths);
       }
+    }
 
-      if (divergence !== undefined) {
-        kline.indicators = { ...kline.indicators, rsiDivergence: divergence };
+    // collect all end indices that have any divergence
+    const allEndIndices: Set<number> = new Set([
+      ...bullishStrengths.keys(),
+      ...bearishStrengths.keys(),
+      ...hiddenBullishStrengths.keys(),
+      ...hiddenBearishStrengths.keys(),
+    ]);
+
+    for (const endIndex of allEndIndices) {
+      const rsiDivergence: RsiDivergenceData = this.buildRsiDivergenceData(
+        bullishStrengths.get(endIndex) ?? 0,
+        bearishStrengths.get(endIndex) ?? 0,
+        hiddenBullishStrengths.get(endIndex) ?? 0,
+        hiddenBearishStrengths.get(endIndex) ?? 0,
+      );
+      const kline: Kline = klines[endIndex];
+      kline.indicators = { ...kline.indicators, rsiDivergence };
+    }
+  }
+
+  private accumulateDivergenceStrength(
+    klines: Kline[],
+    trendLine: TrendLine,
+    minStrength: number,
+    bullishStrengths: Map<number, number>,
+    bearishStrengths: Map<number, number>,
+    hiddenBullishStrengths: Map<number, number>,
+    hiddenBearishStrengths: Map<number, number>,
+  ): void {
+    const startIndex: number = trendLine.startIndex;
+    const endIndex: number = trendLine.endIndex;
+    const length: number = trendLine.length;
+
+    const startRsi: number | undefined = klines[startIndex].indicators?.rsi;
+    const endRsi: number | undefined = klines[endIndex].indicators?.rsi;
+    const startPrice: number = trendLine.function.getY(startIndex);
+    const endPrice: number = trendLine.function.getY(endIndex);
+
+    if (startRsi === undefined || endRsi === undefined) return;
+
+    const priceStdDev: number = this.calcCloseChangeStdDev(klines, startIndex, endIndex);
+    const rsiStdDev: number = this.calcRsiChangeStdDev(klines, startIndex, endIndex);
+
+    if (priceStdDev === 0 || rsiStdDev === 0) return;
+
+    const sqrtLength: number = Math.sqrt(length);
+    const normalizedPriceSlope: number = Math.tanh((endPrice - startPrice) / (priceStdDev * sqrtLength));
+    const normalizedRsiSlope: number = Math.tanh((endRsi - startRsi) / (rsiStdDev * sqrtLength));
+    const priceGoesUp: boolean = normalizedPriceSlope > 0;
+    const rsiGoesUp: boolean = normalizedRsiSlope > 0;
+    const isDivergence: boolean = priceGoesUp !== rsiGoesUp;
+
+    if (!isDivergence) return;
+    if (Math.abs(normalizedPriceSlope) < minStrength || Math.abs(normalizedRsiSlope) < minStrength) return;
+    if (!this.isRsiLineUninterrupted(klines, startIndex, endIndex, rsiGoesUp)) return;
+
+    const strength: number = Math.abs(normalizedPriceSlope - normalizedRsiSlope);
+    const position: TrendLinePosition = trendLine.position;
+
+    // regular bullish: price LL (below line going down), RSI higher low
+    if (position === TrendLinePosition.Below && !priceGoesUp && rsiGoesUp) {
+      bullishStrengths.set(endIndex, (bullishStrengths.get(endIndex) ?? 0) + strength);
+    }
+    // regular bearish: price HH (above line going up), RSI lower high
+    else if (position === TrendLinePosition.Above && priceGoesUp && !rsiGoesUp) {
+      bearishStrengths.set(endIndex, (bearishStrengths.get(endIndex) ?? 0) + strength);
+    }
+    // hidden bullish: price HL (below line going up), RSI lower low
+    else if (position === TrendLinePosition.Below && priceGoesUp && !rsiGoesUp) {
+      hiddenBullishStrengths.set(endIndex, (hiddenBullishStrengths.get(endIndex) ?? 0) + strength);
+    }
+    // hidden bearish: price LH (above line going down), RSI higher high
+    else if (position === TrendLinePosition.Above && !priceGoesUp && rsiGoesUp) {
+      hiddenBearishStrengths.set(endIndex, (hiddenBearishStrengths.get(endIndex) ?? 0) + strength);
+    }
+  }
+
+  private buildRsiDivergenceData(
+    bullish: number,
+    bearish: number,
+    hiddenBullish: number,
+    hiddenBearish: number,
+  ): RsiDivergenceData {
+    const rsiDivergence: RsiDivergenceData = {};
+
+    const regularNet: number = bullish - bearish;
+    const regularStrength: number = Math.abs(regularNet);
+    if (regularStrength > 0) {
+      rsiDivergence.regular = {
+        type: regularNet > 0 ? RsiDivergenceType.Bullish : RsiDivergenceType.Bearish,
+        strength: regularStrength,
+      };
+    }
+
+    const hiddenNet: number = hiddenBullish - hiddenBearish;
+    const hiddenStrength: number = Math.abs(hiddenNet);
+    if (hiddenStrength > 0) {
+      rsiDivergence.hidden = {
+        type: hiddenNet > 0 ? RsiDivergenceType.HiddenBullish : RsiDivergenceType.HiddenBearish,
+        strength: hiddenStrength,
+      };
+    }
+
+    return rsiDivergence;
+  }
+
+  private isRsiLineUninterrupted(klines: Kline[], startIndex: number, endIndex: number, rsiGoesUp: boolean): boolean {
+    const startRsi: number = klines[startIndex].indicators!.rsi!;
+    const endRsi: number = klines[endIndex].indicators!.rsi!;
+    const rsiLine: LinearFunction = new LinearFunction(startIndex, startRsi, endIndex, endRsi);
+
+    for (let i = startIndex + 1; i < endIndex; i++) {
+      const rsi: number = klines[i].indicators!.rsi!;
+      const lineValue: number = rsiLine.getY(i);
+      if (rsiGoesUp && rsi < lineValue) return false;
+      if (!rsiGoesUp && rsi > lineValue) return false;
+    }
+
+    return true;
+  }
+
+  private calcCloseChangeStdDev(klines: Kline[], startIndex: number, endIndex: number): number {
+    const changes: number[] = [];
+    for (let i = startIndex + 1; i <= endIndex; i++) {
+      changes.push(klines[i].prices.close - klines[i - 1].prices.close);
+    }
+    return this.calcStdDev(changes);
+  }
+
+  private calcRsiChangeStdDev(klines: Kline[], startIndex: number, endIndex: number): number {
+    const changes: number[] = [];
+    for (let i = startIndex + 1; i <= endIndex; i++) {
+      const prevRsi: number | undefined = klines[i - 1].indicators?.rsi;
+      const currRsi: number | undefined = klines[i].indicators?.rsi;
+      if (prevRsi !== undefined && currRsi !== undefined) {
+        changes.push(currRsi - prevRsi);
       }
-    });
+    }
+    return this.calcStdDev(changes);
+  }
+
+  private calcStdDev(values: number[]): number {
+    if (values.length < 2) return 0;
+    const mean: number = values.reduce((sum, v) => sum + v, 0) / values.length;
+    const variance: number = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
+    return Math.sqrt(variance);
   }
 }

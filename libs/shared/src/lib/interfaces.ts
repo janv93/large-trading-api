@@ -36,6 +36,7 @@ export enum Algorithm {
   MeanReversion = 'meanReversion',
   TrendLineBreakthrough = 'trendLineBreakthrough',
   MarketStructure = 'marketStructure',
+  RsiDivergence = 'rsiDivergence',
   Example = 'example'
 }
 
@@ -101,7 +102,7 @@ export enum Direction {
   Down = 'DOWN'
 }
 
-export enum DivergenceType {
+export enum RsiDivergenceType {
   Bullish = 'BULLISH',             // price LL, RSI higher low → potential reversal up
   Bearish = 'BEARISH',             // price HH, RSI lower high → potential reversal down
   HiddenBullish = 'HIDDEN_BULLISH', // price HL, RSI lower low → trend continuation up
@@ -161,6 +162,16 @@ export interface MarketStructureStats {
   direction: Direction;
 }
 
+export interface RsiDivergenceData {
+  regular?: RsiDivergenceTypeWithStrength;
+  hidden?: RsiDivergenceTypeWithStrength;
+}
+
+export interface RsiDivergenceTypeWithStrength {
+  type: RsiDivergenceType;
+  strength: number;
+}
+
 export interface KlineIndicators {
   ema?: Record<number, number>;   // keyed by period, e.g. ema[20] = value
   sma?: Record<number, number>;   // keyed by period, e.g. sma[50] = value
@@ -168,7 +179,7 @@ export interface KlineIndicators {
   rsi?: number;
   bb?: BollingerBands;
   atr?: number;
-  rsiDivergence?: DivergenceType;
+  rsiDivergence?: RsiDivergenceData;
 }
 
 export interface BollingerBands {
