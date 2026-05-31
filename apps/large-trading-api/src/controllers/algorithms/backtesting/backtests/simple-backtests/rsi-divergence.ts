@@ -8,9 +8,9 @@ export default class RsiDivergence extends Base {
   private trendLineController = new TrendLineController();
 
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
-    const rsiPeriod: number = Number(params.rsiPeriod ?? 50);
     const minLength: number = Number(params.minLength ?? 50);
     const maxLength: number = Number(params.maxLength ?? 100);
+    const rsiPeriod: number = Number(params.rsiPeriod ?? minLength / 2);  // wilders original logic: half candles up half down, rsi = price length / 2
     const minStrength: number = Number(params.minStrength ?? 0.2);
     const stopLoss: number = Number(params.stopLoss ?? 0.02);
 

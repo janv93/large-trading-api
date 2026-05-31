@@ -13,9 +13,9 @@ export class ChartService {
   public exchange = Exchange.Binance;  // ignored for multi
   public symbol = 'BTCUSDT';  // ignored for multi
   public timeframe = Timeframe._1Hour;
-  public times = 100;  // 1 = 1000 timeframes
+  public times = 10;  // 1 = 1000 timeframes
   public commission = 0.0004; // 0.04%
-  public algorithms = [Algorithm.RsiDivergence];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
+  public algorithms = [Algorithm.TrendLineBreakthrough];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
 
   // multi
   public isMulti = false; // multiple charts mode
