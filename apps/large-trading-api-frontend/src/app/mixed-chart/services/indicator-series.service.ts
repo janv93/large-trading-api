@@ -114,7 +114,7 @@ export class IndicatorSeriesService {
         // skip the O(n) visible-range data scan — return fixed range immediately
         autoscaleInfoProvider: () => ({ priceRange: { minValue: 0, maxValue: 100 } })
       });
-      chart.priceScale('rsi').applyOptions({ visible: false });
+      chart.priceScale('rsi').applyOptions({ visible: false, scaleMargins: { top: 0, bottom: 0 } });
     }
     if (hasRsi) {
       this.rsiKlines = klines.filter(k => k.indicators?.rsi !== undefined);
@@ -205,9 +205,10 @@ export class IndicatorSeriesService {
         values.push({ label: 'BB', value: `${upper.value.toFixed(2)} / ${middle.value.toFixed(2)} / ${lower.value.toFixed(2)}` });
       }
     }
-    if (this.rsiSeries) {
-      const d = param.seriesData.get(this.rsiSeries) as LineData;
-      if (d) values.push({ label: 'RSI', value: d.value.toFixed(2) });
+    if (this.rsiSeries && this.rsiKlines.length && param.time !== undefined) {
+      const hoveredTime = param.time as number;
+      const kline = this.rsiKlines.find(k => k.times.open / 1000 === hoveredTime);
+      if (kline) values.push({ label: 'RSI', value: kline.indicators!.rsi!.toFixed(2) });
     }
     if (this.atrSeries) {
       const d = param.seriesData.get(this.atrSeries) as LineData;
