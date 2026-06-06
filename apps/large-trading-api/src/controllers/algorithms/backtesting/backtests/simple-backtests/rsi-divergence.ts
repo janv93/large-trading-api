@@ -9,8 +9,8 @@ export default class RsiDivergence extends Base {
 
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const minLength: number = Number(params.minLength ?? 50);
-    const maxLength: number = Number(params.maxLength ?? 100);
-    const minStrength: number = Number(params.minStrength ?? 0.2);
+    const maxLength: number = Number(params.maxLength ?? 200);
+    const minStrength: number = Number(params.minStrength ?? 0.5);
     const stopLoss: number = Number(params.stopLoss ?? 0.02);
 
     this.trendLineController.addTrendLines(klines, minLength, maxLength, false, false);
