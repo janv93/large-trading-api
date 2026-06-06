@@ -10,12 +10,11 @@ export default class RsiDivergence extends Base {
   public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
     const minLength: number = Number(params.minLength ?? 50);
     const maxLength: number = Number(params.maxLength ?? 100);
-    const rsiPeriod: number = Number(params.rsiPeriod ?? minLength / 2);  // wilders original logic: half candles up half down, rsi = price length / 2
     const minStrength: number = Number(params.minStrength ?? 0.2);
     const stopLoss: number = Number(params.stopLoss ?? 0.02);
 
     this.trendLineController.addTrendLines(klines, minLength, maxLength, false, false);
-    this.indicators.addRsiDivergence(klines, rsiPeriod, minStrength);
+    this.indicators.addRsiDivergence(klines, minStrength);
 
     const klinesWithDivergence = klines.filter(k => k.indicators?.rsiDivergence !== undefined);
 

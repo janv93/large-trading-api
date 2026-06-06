@@ -145,9 +145,7 @@ export default class Indicators extends Base {
     }
   }
 
-  public addRsiDivergence(klines: Kline[], rsiPeriod: number, minStrength: number): void {
-    this.addRsi(klines, rsiPeriod);
-
+  public addRsiDivergence(klines: Kline[], minStrength: number): void {
     // accumulate divergence strengths per end-kline index
     const bullishStrengths: Map<number, number> = new Map();
     const bearishStrengths: Map<number, number> = new Map();
@@ -195,16 +193,16 @@ export default class Indicators extends Base {
     const startIndex: number = trendLine.startIndex;
     const endIndex: number = trendLine.endIndex;
     const length: number = trendLine.length;
+    const period: number = Math.floor(length / 2);
 
-    const startRsi: number | undefined = klines[startIndex].indicators?.rsi;
-    const endRsi: number | undefined = klines[endIndex].indicators?.rsi;
+    const localRsi: number[] = this.calcLocalRsi(klines, startIndex, endIndex, period);
+    const startRsi: number = localRsi[0];
+    const endRsi: number = localRsi[localRsi.length - 1];
     const startPrice: number = trendLine.function.getY(startIndex);
     const endPrice: number = trendLine.function.getY(endIndex);
 
-    if (startRsi === undefined || endRsi === undefined) return false;
-
     const priceStdDev: number = this.calcCloseChangeStdDev(klines, startIndex, endIndex);
-    const rsiStdDev: number = this.calcRsiChangeStdDev(klines, startIndex, endIndex);
+    const rsiStdDev: number = this.calcRsiChangeStdDev(localRsi);
 
     if (priceStdDev === 0 || rsiStdDev === 0) return false;
 
@@ -217,7 +215,7 @@ export default class Indicators extends Base {
 
     if (!isDivergence) return false;
     if (Math.abs(normalizedPriceSlope) < minStrength || Math.abs(normalizedRsiSlope) < minStrength) return false;
-    if (!this.isRsiLineUninterrupted(klines, startIndex, endIndex, rsiGoesUp)) return false;
+    if (!this.isRsiLineUninterrupted(localRsi, startIndex, endIndex, rsiGoesUp)) return false;
 
     const strength: number = Math.abs(normalizedPriceSlope - normalizedRsiSlope);
     const position: TrendLinePosition = trendLine.position;
@@ -271,19 +269,58 @@ export default class Indicators extends Base {
     return rsiDivergence;
   }
 
-  private isRsiLineUninterrupted(klines: Kline[], startIndex: number, endIndex: number, rsiGoesUp: boolean): boolean {
-    const startRsi: number = klines[startIndex].indicators!.rsi!;
-    const endRsi: number = klines[endIndex].indicators!.rsi!;
+  private isRsiLineUninterrupted(localRsi: number[], startIndex: number, endIndex: number, rsiGoesUp: boolean): boolean {
+    const startRsi: number = localRsi[0];
+    const endRsi: number = localRsi[localRsi.length - 1];
     const rsiLine: LinearFunction = new LinearFunction(startIndex, startRsi, endIndex, endRsi);
 
-    for (let i = startIndex + 1; i < endIndex; i++) {
-      const rsi: number = klines[i].indicators!.rsi!;
-      const lineValue: number = rsiLine.getY(i);
+    for (let i = 1; i < localRsi.length - 1; i++) {
+      const rsi: number = localRsi[i];
+      const lineValue: number = rsiLine.getY(startIndex + i);
       if (rsiGoesUp && rsi < lineValue) return false;
       if (!rsiGoesUp && rsi > lineValue) return false;
     }
 
     return true;
+  }
+
+  // compute RSI values for indices [startIndex..endIndex], seeded from the `period` candles before startIndex
+  private calcLocalRsi(klines: Kline[], startIndex: number, endIndex: number, period: number): number[] {
+    const seedStart: number = Math.max(0, startIndex - period);
+    const seedCount: number = startIndex - seedStart;
+
+    let avgGain: number = 0;
+    let avgLoss: number = 0;
+
+    for (let i = seedStart + 1; i <= startIndex; i++) {
+      const change: number = klines[i].prices.close - klines[i - 1].prices.close;
+      if (change > 0) avgGain += change;
+      else avgLoss += Math.abs(change);
+    }
+
+    if (seedCount > 0) {
+      avgGain /= seedCount;
+      avgLoss /= seedCount;
+    }
+
+    const getRsi = (): number => {
+      const rs: number = avgLoss === 0 ? Infinity : avgGain / avgLoss;
+      return 100 - 100 / (1 + rs);
+    };
+
+    const rsiValues: number[] = new Array(endIndex - startIndex + 1);
+    rsiValues[0] = getRsi();
+
+    for (let i = startIndex + 1; i <= endIndex; i++) {
+      const change: number = klines[i].prices.close - klines[i - 1].prices.close;
+      const gain: number = change > 0 ? change : 0;
+      const loss: number = change < 0 ? Math.abs(change) : 0;
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+      rsiValues[i - startIndex] = getRsi();
+    }
+
+    return rsiValues;
   }
 
   private calcCloseChangeStdDev(klines: Kline[], startIndex: number, endIndex: number): number {
@@ -294,14 +331,10 @@ export default class Indicators extends Base {
     return this.calcStdDev(changes);
   }
 
-  private calcRsiChangeStdDev(klines: Kline[], startIndex: number, endIndex: number): number {
+  private calcRsiChangeStdDev(localRsi: number[]): number {
     const changes: number[] = [];
-    for (let i = startIndex + 1; i <= endIndex; i++) {
-      const prevRsi: number | undefined = klines[i - 1].indicators?.rsi;
-      const currRsi: number | undefined = klines[i].indicators?.rsi;
-      if (prevRsi !== undefined && currRsi !== undefined) {
-        changes.push(currRsi - prevRsi);
-      }
+    for (let i = 1; i < localRsi.length; i++) {
+      changes.push(localRsi[i] - localRsi[i - 1]);
     }
     return this.calcStdDev(changes);
   }
