@@ -47,8 +47,6 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 ## Todos
 
 - [ ] Find smart algo for closing positions (currently static tp/sl etc.)
-- [ ] Candlesticks patterns
-- [ ] RSI divergence
 - [ ] Enhance trend line algo with >2 line touches and retests
 - [ ] Consider more data like pausing positions during FOMC
 - [ ] Screener (?)
