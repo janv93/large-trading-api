@@ -54,7 +54,6 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 ## Notes
 
 - This repo has merged into a monorepo with the frontend
-- Tried C++ NAPI addons for calculations — much slower than TypeScript due to serialization overhead
 
 ## Questions
 
