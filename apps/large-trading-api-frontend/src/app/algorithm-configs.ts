@@ -102,4 +102,16 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       size: 10
     }
   },
+  [Algorithm.CandlestickPatterns]: {
+    single: {
+      minScore: 3
+    },
+    multi: {
+      minScore: {
+        min: 2,
+        max: 3,
+        step: 1
+      }
+    }
+  },
 };

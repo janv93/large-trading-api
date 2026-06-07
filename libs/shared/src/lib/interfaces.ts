@@ -37,7 +37,8 @@ export enum Algorithm {
   TrendLineBreakthrough = 'trendLineBreakthrough',
   MarketStructure = 'marketStructure',
   RsiDivergence = 'rsiDivergence',
-  Example = 'example'
+  Example = 'example',
+  CandlestickPatterns = 'candlestickPatterns'
 }
 
 export enum PivotPointSide {
@@ -130,6 +131,7 @@ export interface Kline {
   tweets?: Tweet[];
   chart?: KlineChart;
   indicators?: KlineIndicators;
+  candlestickPatterns?: KlineCandlestickPatterns;
 }
 
 export interface KlineTimes {
@@ -180,6 +182,32 @@ export interface KlineIndicators {
   bb?: BollingerBands;
   atr?: number;
   rsiDivergence?: RsiDivergenceData;
+}
+
+export interface KlineCandlestickPatterns {
+  // single-candle
+  doji?: boolean;
+  hammer?: boolean;
+  hangingMan?: boolean;
+  invertedHammer?: boolean;
+  shootingStar?: boolean;
+  bullishMarubozu?: boolean;
+  bearishMarubozu?: boolean;
+  spinningTop?: boolean;
+  // two-candle
+  bullishEngulfing?: boolean;
+  bearishEngulfing?: boolean;
+  bullishHarami?: boolean;
+  bearishHarami?: boolean;
+  piercingLine?: boolean;
+  darkCloudCover?: boolean;
+  tweezersTop?: boolean;
+  tweezersBottom?: boolean;
+  // three-candle
+  morningStar?: boolean;
+  eveningStar?: boolean;
+  threeWhiteSoldiers?: boolean;
+  threeBlackCrows?: boolean;
 }
 
 export interface BollingerBands {
@@ -233,6 +261,7 @@ export interface PositionCloseTrigger {
 export interface TakeProfitStopLoss {
   takeProfit: number;
   stopLoss: number;
+  asVolatilityFactor?: boolean;  // if true, tp/sl are multiplied by (ATR / price) at entry — requires ATR indicator to be calculated
 }
 
 export interface TrailingStopLoss {

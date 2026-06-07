@@ -11,6 +11,7 @@ export default class Backtester extends Base {
   public calcBacktestPerformance(klines: Kline[], algorithm: Algorithm, commission: number): Kline[] {
     let positions: Array<Position | undefined> = [];
     let profit = 0;
+    let volatility: number = 0;
 
     this.forEachWithProgress(klines, (kline: Kline, index: number) => {
       positions = (positions as Position[]).map((position: Position) => {
@@ -27,11 +28,12 @@ export default class Backtester extends Base {
       });
 
       positions = positions.filter((position: Position | undefined) => position !== undefined); // filter out all closed positions
-      this.addNewPositions(positions as Position[], kline, algorithm, index);  // create new positions from signals
+      this.addNewPositions(positions as Position[], kline, algorithm, index, volatility);  // create new positions from signals
       profit -= this.calcOpenFee(kline, algorithm, commission);
       const backtest: BacktestData = kline.algorithms[algorithm]!;
       backtest.profit = profit;
       backtest.openPositionSize = this.calcPositionSize(positions as Position[]);
+      volatility = this.calcVolatility(klines, index);  // update after kline is complete, used for next kline's positions
     });
 
     return klines;
@@ -201,13 +203,13 @@ export default class Backtester extends Base {
     }
   }
 
-  private addNewPositions(positions: Position[], kline: Kline, algorithm: Algorithm, klineIndex: number) {
+  private addNewPositions(positions: Position[], kline: Kline, algorithm: Algorithm, klineIndex: number, volatility: number) {
     const backtest: BacktestData = kline.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal, signalIndex: number) => {
       if (!isCloseSignal(signal.signal)) {
-        positions.push(this.createPosition(signal, klineIndex, signalIndex));
+        positions.push(this.createPosition(signal, klineIndex, signalIndex, volatility));
       }
     });
   }
@@ -232,13 +234,31 @@ export default class Backtester extends Base {
     }, 0);
   }
 
-  private createPosition(signal: BacktestSignal, klineIndex: number, signalIndex: number): Position {
+  private calcVolatility(klines: Kline[], klineIndex: number): number {
+    const period = 14;
+    const start: number = Math.max(1, klineIndex - period + 1);
+    let atrSum: number = 0;
+    let count: number = 0;
+
+    for (let i = start; i <= klineIndex; i++) {
+      const high: number = klines[i].prices.high;
+      const low: number = klines[i].prices.low;
+      const prevClose: number = klines[i - 1].prices.close;
+      atrSum += Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
+      count++;
+    }
+
+    const atr: number = count > 0 ? atrSum / count : 0;
+    return atr / klines[klineIndex].prices.close;  // normalized ATR as fraction of price
+  }
+
+  private createPosition(signal: BacktestSignal, klineIndex: number, signalIndex: number, volatility: number): Position {
     const signalSize: number = signal.size!;
     const signalPrice: number = signal.price;
     const tpSl: TakeProfitStopLoss | undefined = signal.positionCloseTrigger?.tpSl;
     const tSl: TrailingStopLoss | undefined = signal.positionCloseTrigger?.tSl;
-    const takeProfit: number | undefined = tpSl?.takeProfit;
-    const stopLoss: number | undefined = tpSl?.stopLoss || tSl?.stopLoss;
+
+    const { takeProfit, stopLoss } = this.resolveTpSl(tpSl, tSl, volatility);
 
     this.assertParam({ takeProfit });
     this.assertParam({ stopLoss });
@@ -254,26 +274,14 @@ export default class Backtester extends Base {
       size = signalSize;
       entrySize = signalSize;
       liquidationPrice = 0;
-
-      if (takeProfit) {
-        takeProfitPrice = signalPrice * (1 + takeProfit);
-      }
-
-      if (stopLoss) {
-        stopLossPrice = signalPrice * (1 - stopLoss);
-      }
+      takeProfitPrice = this.calcTakeProfitPrice(signalPrice, takeProfit, signal.signal);
+      stopLossPrice = this.calcStopLossPrice(signalPrice, stopLoss, signal.signal);
     } else if (signal.signal === Signal.Sell) {
       size = -signalSize;
       entrySize = -signalSize;
       liquidationPrice = signalPrice * 2;
-
-      if (takeProfit) {
-        takeProfitPrice = signalPrice * (1 - takeProfit);
-      }
-
-      if (stopLoss) {
-        stopLossPrice = signalPrice * (1 + stopLoss);
-      }
+      takeProfitPrice = this.calcTakeProfitPrice(signalPrice, takeProfit, signal.signal);
+      stopLossPrice = this.calcStopLossPrice(signalPrice, stopLoss, signal.signal);
     }
 
     return {
@@ -369,6 +377,27 @@ export default class Backtester extends Base {
     }
 
     return false;
+  }
+
+  private resolveTpSl(tpSl: TakeProfitStopLoss | undefined, tSl: TrailingStopLoss | undefined, volatility: number): { takeProfit: number | undefined, stopLoss: number | undefined } {
+    if (tpSl?.asVolatilityFactor) {
+      return { takeProfit: tpSl.takeProfit * volatility, stopLoss: tpSl.stopLoss * volatility };
+    } else if (tpSl) {
+      return { takeProfit: tpSl.takeProfit, stopLoss: tpSl.stopLoss };
+    } else if (tSl) {
+      return { takeProfit: undefined, stopLoss: tSl.stopLoss };
+    }
+    return { takeProfit: undefined, stopLoss: undefined };
+  }
+
+  private calcTakeProfitPrice(entryPrice: number, takeProfit: number | undefined, signal: Signal.Buy | Signal.Sell): number | undefined {
+    if (takeProfit === undefined) return undefined;
+    return signal === Signal.Buy ? entryPrice * (1 + takeProfit) : entryPrice * (1 - takeProfit);
+  }
+
+  private calcStopLossPrice(entryPrice: number, stopLoss: number | undefined, signal: Signal.Buy | Signal.Sell): number | undefined {
+    if (stopLoss === undefined) return undefined;
+    return signal === Signal.Buy ? entryPrice * (1 - stopLoss) : entryPrice * (1 + stopLoss);
   }
 
   private assertParam(param: Record<string, number | undefined>): void {

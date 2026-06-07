@@ -619,6 +619,79 @@ describe('Backtester', () => {
     });
   });
 
+  describe('should scale tp/sl by volatility when asVolatilityFactor is true', () => {
+    const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const basePrices = { open: 0 };
+
+    // klines 0–1 establish ATR=20 on price=100 → volatility=0.2 at end of kline 1.
+    // The Buy signal on kline 2 uses tp/sl factors of 1, so effective tp=0.2 and sl=0.2,
+    // giving tpPrice=120 and slPrice=80.
+
+    it('long tp triggered', () => {
+      const klines: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 90 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        { // true range=20, volatility=20/100=0.2 at end of this kline
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 110, low: 90 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        { // Buy: effective tp=1*0.2→tpPrice=120, sl=1*0.2→slPrice=80; no trigger this kline
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 105, low: 95 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 1, stopLoss: 1, asVolatilityFactor: true } } }] } }
+        },
+        { // high=125 > tpPrice(120) → take profit triggers
+          ...baseKline,
+          prices: { ...basePrices, close: 125, high: 125, low: 95 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
+
+      const result: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
+      const backtests: BacktestData[] = result.map(k => k.algorithms[algorithm]!);
+
+      expect(backtests[2].profit).toBeCloseTo(0);
+      expect(backtests[3].profit).toBeCloseTo(0.2);
+      expect(backtests[3].signals[0].signal).toBe(Signal.TakeProfit);
+    });
+
+    it('long sl triggered', () => {
+      const klines: Kline[] = [
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 100, low: 90 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 110, low: 90 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        },
+        {
+          ...baseKline,
+          prices: { ...basePrices, close: 100, high: 105, low: 95 },
+          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 1, stopLoss: 1, asVolatilityFactor: true } } }] } }
+        },
+        { // low=75 < slPrice(80) → stop loss triggers
+          ...baseKline,
+          prices: { ...basePrices, close: 75, high: 90, low: 75 },
+          algorithms: { [Algorithm.Dca]: { signals: [] } }
+        }
+      ];
+
+      const result: Kline[] = backtester.calcBacktestPerformance(klines, algorithm, 0);
+      const backtests: BacktestData[] = result.map(k => k.algorithms[algorithm]!);
+
+      expect(backtests[2].profit).toBeCloseTo(0);
+      expect(backtests[3].profit).toBeCloseTo(-0.2);
+      expect(backtests[3].signals[0].signal).toBe(Signal.StopLoss);
+    });
+  });
+
   it('should close only the targeted position when using Signal.Close', () => {
     const baseKline = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1 };

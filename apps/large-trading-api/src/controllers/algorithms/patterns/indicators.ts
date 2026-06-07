@@ -145,6 +145,7 @@ export default class Indicators extends Base {
     }
   }
 
+  // assumes trend lines are added
   public addRsiDivergence(klines: Kline[], minStrength: number): void {
     // accumulate divergence strengths per end-kline index
     const bullishStrengths: Map<number, number> = new Map();
