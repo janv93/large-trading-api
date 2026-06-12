@@ -7,7 +7,7 @@ import { Algorithm, Exchange, Timeframe } from '@shared';
 export class ChartService {
   // general
   public exchange = Exchange.Binance;  // ignored for multi
-  public symbol = 'ETHUSDT';  // ignored for multi
+  public symbol = 'BTCUSDT';  // ignored for multi
   public timeframe = Timeframe._1Hour;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.0004; // 1 = 100%
