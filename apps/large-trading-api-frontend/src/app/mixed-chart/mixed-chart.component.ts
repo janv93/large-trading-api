@@ -1,9 +1,9 @@
-import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
+﻿import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange } from 'lightweight-charts';
 import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
 import { WatermarkPrimitive } from './primitives/watermark-primitive';
-import { BacktestStats, Kline, Run } from '@shared';
+import { BacktestStats, Bar, Run } from '@shared';
 import { ChartService } from '../chart.service';
 import { BaseComponent } from '../base-component';
 import { IndicatorSeriesService } from './services/indicator-series.service';
@@ -19,7 +19,7 @@ import { StatsService } from './services/stats.service';
 export class MixedChartComponent extends BaseComponent implements OnInit, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;
   @ViewChild('legend') legend: ElementRef;
-  @Input() klines: Run[];
+  @Input() bars: Run[];
 
   public currentOhlc: CandlestickData;
   public currentProfit: number[];
@@ -27,7 +27,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   public openPositionSize: number;
   public currentIndicatorValues: { label: string; value: string }[] = [];
   public stats: BacktestStats;
-  public currentKlines: Kline[];
+  public currentBars: Bar[];
 
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
@@ -56,7 +56,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   ngOnInit(): void {
-    this.setKlines();
+    this.setBars();
     this.setFinalProfits();
     this.updateStats();
     this.handleResize();
@@ -85,7 +85,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   public onCommissionChange(event: Event): void {
     this.commissionChecked = (event.target as HTMLInputElement).checked;
-    this.setKlines();
+    this.setBars();
     this.setFinalProfits();
     this.updateStats();
     this.drawSeries();
@@ -136,11 +136,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     this.chart.timeScale().fitContent();
   }
 
-  private setKlines(): void {
-    this.currentKlines = (this.chartService.isMulti || !this.commissionChecked)
-      ? this.klines[0].klines
-      : this.klines[1].klines;
-    this.watermarkPrimitive?.setConfig(this.currentKlines[0].symbol, this.chartService.exchange, this.chartService.isMulti);
+  private setBars(): void {
+    this.currentBars = (this.chartService.isMulti || !this.commissionChecked)
+      ? this.bars[0].bars
+      : this.bars[1].bars;
+    this.watermarkPrimitive?.setConfig(this.currentBars[0].symbol, this.chartService.exchange, this.chartService.isMulti);
   }
 
   private resizeUnlisten: (() => void) | undefined;
@@ -155,7 +155,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private drawSeries(): void {
-    this.indicatorSeriesService.draw(this.chart, this.currentKlines, this.getPositionSizeAlpha());
+    this.indicatorSeriesService.draw(this.chart, this.currentBars, this.getPositionSizeAlpha());
     this.drawProfitSeries();
     this.initHistogramSeries();
     this.drawCandlestickSeries();
@@ -186,15 +186,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       this.candlestickSeries.attachPrimitive(this.compactCirclePrimitive);
       this.watermarkPrimitive = new WatermarkPrimitive();
       this.candlestickSeries.attachPrimitive(this.watermarkPrimitive);
-      this.watermarkPrimitive.setConfig(this.currentKlines[0].symbol, this.chartService.exchange, this.chartService.isMulti);
+      this.watermarkPrimitive.setConfig(this.currentBars[0].symbol, this.chartService.exchange, this.chartService.isMulti);
     }
 
-    const mapped = this.currentKlines.map((kline: Kline) => ({
-      time: kline.times.open / 1000 as Time,
-      open: kline.prices.open,
-      high: kline.prices.high,
-      low: kline.prices.low,
-      close: kline.prices.close
+    const mapped = this.currentBars.map((bar: Bar) => ({
+      time: bar.times.open / 1000 as Time,
+      open: bar.prices.open,
+      high: bar.prices.high,
+      low: bar.prices.low,
+      close: bar.prices.close
     }));
     this.candlestickSeries.setData(mapped);
   }
@@ -214,13 +214,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     });
 
     this.chartService.algorithms.forEach((_, index) => {
-      const mapped = this.currentKlines.map((kline: Kline) => {
-        const currentProfit: number = (kline.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100;
+      const mapped = this.currentBars.map((bar: Bar) => {
+        const currentProfit: number = (bar.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100;
         const opacity: number = index === 0 ? 0.3 : 0.1;
         const color: string = currentProfit === 0
           ? `rgba(255,255,255,${opacity})`
           : currentProfit > 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`;
-        return { time: kline.times.open / 1000 as Time, value: currentProfit, color };
+        return { time: bar.times.open / 1000 as Time, value: currentProfit, color };
       });
       this.profitSeries[index].setData(mapped);
     });
@@ -228,7 +228,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private drawMarkersAndCharting(): void {
     this.markersChartingService.drawAll(
-      this.currentKlines,
+      this.currentBars,
       this.chartService.algorithms[0],
       this.chart,
       this.seriesMarkersPlugin!,
@@ -258,12 +258,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
 
   private setOpenPositionSizeSeriesData(): void {
     const alpha: number = this.getPositionSizeAlpha();
-    const mapped = this.currentKlines.map((kline: Kline) => {
-      const openPositionSize: number = kline.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
+    const mapped = this.currentBars.map((bar: Bar) => {
+      const openPositionSize: number = bar.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
       const color: string = openPositionSize === 0
         ? 'transparent'
         : openPositionSize > 0 ? `rgba(0, 255, 162, ${alpha})` : `rgba(255, 0, 170, ${alpha})`;
-      return { time: kline.times.open / 1000 as Time, value: openPositionSize, color };
+      return { time: bar.times.open / 1000 as Time, value: openPositionSize, color };
     });
 
     if (this.openPositionSizeSeries) {
@@ -287,12 +287,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private updateStats(): void {
-    this.stats = this.statsService.calcStats(this.currentKlines, this.chartService.algorithms[0], this.finalProfit[0]);
+    this.stats = this.statsService.calcStats(this.currentBars, this.chartService.algorithms[0], this.finalProfit[0]);
   }
 
   private setFinalProfits(): void {
     this.finalProfit = this.chartService.algorithms.map((_, index) =>
-      (this.currentKlines.at(-1)!.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100
+      (this.currentBars.at(-1)!.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100
     );
   }
 
@@ -314,8 +314,8 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         this.setOpenPositionSizeSeriesData();
       }
 
-      this.indicatorSeriesService.setMacdData(this.currentKlines, this.getPositionSizeAlpha());
-      this.indicatorSeriesService.setRsiData(logicalRange ? logicalRange.to - logicalRange.from : this.currentKlines.length);
+      this.indicatorSeriesService.setMacdData(this.currentBars, this.getPositionSizeAlpha());
+      this.indicatorSeriesService.setRsiData(logicalRange ? logicalRange.to - logicalRange.from : this.currentBars.length);
     };
 
     this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
@@ -324,12 +324,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private subscribeCrosshairMove(): void {
     this.crosshairMoveHandler = (param: MouseEventParams<Time>) => {
       const index: number = param.logical as number;
-      const kline: Kline = this.currentKlines[index];
+      const bar: Bar = this.currentBars[index];
       this.indicatorSeriesService.setRsiHover(param.hoveredSeries === this.indicatorSeriesService.getRsiSeries());
       this.updateLegend(param, index);
 
-      if (kline) {
-        this.markersChartingService.highlightOpenSignals(kline, this.currentKlines, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.chart, this.chartService.isMulti);
+      if (bar) {
+        this.markersChartingService.highlightOpenSignals(bar, this.currentBars, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.chart, this.chartService.isMulti);
       }
 
       this.markersChartingService.highlightTrendLines(param, this.trendLinesPrimitive);

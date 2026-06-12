@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { HttpService } from '../http.service';
-import { Kline, Run } from '@shared';
+import { Bar, Run } from '@shared';
 import { ChartService } from '../chart.service';
 
 @Component({
@@ -11,7 +11,7 @@ import { ChartService } from '../chart.service';
   standalone: false
 })
 export class AppComponent {
-  public klines: Run[];
+  public bars: Run[];
   public tickers: Run[][];
 
   public readonly pageSize = 50;
@@ -47,9 +47,9 @@ export class AppComponent {
   }
 
   private backtestSingle() {
-    this.httpService.getKlines().subscribe((klines: Kline[]) => {
-      if (klines?.length === 0) {
-        this.chartService.setErrorText(`No klines received for symbol ${this.chartService.symbol}`);
+    this.httpService.getBars().subscribe((bars: Bar[]) => {
+      if (bars?.length === 0) {
+        this.chartService.setErrorText(`No bars received for symbol ${this.chartService.symbol}`);
         return;
       }
 
@@ -58,14 +58,14 @@ export class AppComponent {
         { commission: this.chartService.commission }
       ];
 
-      const requests = params.map(param => this.httpService.postBacktest(klines, param.commission));
+      const requests = params.map(param => this.httpService.postBacktest(bars, param.commission));
 
-      forkJoin(requests).subscribe((klinesList: Kline[][]) => {
+      forkJoin(requests).subscribe((barsList: Bar[][]) => {
         this.chartService.setLoadingText();
 
-        this.klines = params.map((param: any, i: number) => {
+        this.bars = params.map((param: any, i: number) => {
           return {
-            klines: klinesList[i],
+            bars: barsList[i],
             commission: param.commission
           };
         });
@@ -81,15 +81,15 @@ export class AppComponent {
     this.tickers = [];
 
     this.httpService.getMultiStream().subscribe({
-      next: (klines: Kline[]) => {
-        this.tickers.push([{ klines, commission: 0 }]);
+      next: (bars: Bar[]) => {
+        this.tickers.push([{ bars, commission: 0 }]);
       },
       error: (err) => {
         this.chartService.setErrorText(err);
       },
       complete: () => {
         this.tickers.sort((a: Run[], b: Run[]) => {
-          return (a[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.profit || 0) - (b[0].klines.at(-1)?.algorithms[this.chartService.algorithms[0]]!.profit || 0);
+          return (a[0].bars.at(-1)?.algorithms[this.chartService.algorithms[0]]!.profit || 0) - (b[0].bars.at(-1)?.algorithms[this.chartService.algorithms[0]]!.profit || 0);
         });
         this.chartService.setLoadingText();
       }

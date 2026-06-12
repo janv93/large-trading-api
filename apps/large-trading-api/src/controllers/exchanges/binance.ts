@@ -1,16 +1,16 @@
-import axios, { AxiosResponse } from 'axios';
+﻿import axios, { AxiosResponse } from 'axios';
 import crypto from 'crypto';
-import { Kline, Timeframe, Tweet } from '@shared';
+import { Bar, Timeframe, Tweet } from '@shared';
 import Base from '../../base';
-import { createUrl, calcStartTime, isKlineOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep } from '@shared';
+import { createUrl, calcStartTime, isBarOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep } from '@shared';
 import database from '../../data/database';
 
 class Binance extends Base {
   private readonly usdPairs: string[] = ['USDT', 'BUSD', 'USDC'];
-  private rateLimitPerMinute = 400; // 2400 is per minute limit, but fetching 1k klines costs 5 weight, 2400/5 = 480, plus some buffer
+  private rateLimitPerMinute = 400; // 2400 is per minute limit, but fetching 1k bars costs 5 weight, 2400/5 = 480, plus some buffer
   private requestsSentThisMinute = 0;
 
-  public async getKlines(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Kline[]> {
+  public async getBars(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Bar[]> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
 
     const query = {
@@ -27,13 +27,13 @@ class Binance extends Base {
       query['startTime'] = startTime;
     }
 
-    const klineUrl = createUrl(baseUrl, query);
-    this.log('GET ' + klineUrl);
+    const barUrl = createUrl(baseUrl, query);
+    this.log('GET ' + barUrl);
 
     try {
       await this.waitIfRateLimitReached();
-      const response: AxiosResponse = await axios.get(klineUrl);
-      const result: Kline[] = this.mapKlines(symbol, timeframe, response.data);
+      const response: AxiosResponse = await axios.get(barUrl);
+      const result: Bar[] = this.mapBars(symbol, timeframe, response.data);
       return result;
     } catch (err) {
       this.handleError(err, symbol);
@@ -41,7 +41,7 @@ class Binance extends Base {
     }
   }
 
-  public async getKlinesUntilNextFullHour(symbol: string, startTime: number): Promise<any> {
+  public async getBarsUntilNextFullHour(symbol: string, startTime: number): Promise<any> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
     const interval = Timeframe._1Minute;
     const limit = 60 - (new Date(startTime).getMinutes());
@@ -53,77 +53,77 @@ class Binance extends Base {
       startTime
     };
 
-    const klineUrl = createUrl(baseUrl, query);
+    const barUrl = createUrl(baseUrl, query);
 
-    this.log('GET ' + klineUrl);
-    return axios.get(klineUrl);
+    this.log('GET ' + barUrl);
+    return axios.get(barUrl);
   }
 
   /**
    * get startTime to now timeframes
    */
-  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Kline[]> {
-    const klines: Kline[] = [];
+  public async getBarsFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Bar[]> {
+    const bars: Bar[] = [];
     let nextStart = startTime;
     const now = Date.now() - timeframeToMilliseconds(timeframe);
 
     while (nextStart < now) {
-      const newKlines = await this.getKlines(symbol, timeframe, undefined, nextStart);
-      klines.push(...newKlines);
+      const newBars = await this.getBars(symbol, timeframe, undefined, nextStart);
+      bars.push(...newBars);
 
-      if (newKlines.length) {
-        const end = newKlines[newKlines.length - 1].times.open;
+      if (newBars.length) {
+        const end = newBars[newBars.length - 1].times.open;
         nextStart = end + timeframeToMilliseconds(timeframe);
       } else {
-        nextStart = now;  // no klines found
+        nextStart = now;  // no bars found
       }
     }
 
-    if (klines.length === 0) {
+    if (bars.length === 0) {
       return [];
     }
 
-    const dateRange = timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
-    this.log(`${klines.length} ${symbol} klines received - ${dateRange}`);
+    const dateRange = timestampsToDateRange(bars[0].times.open, bars[bars.length - 1].times.open)
+    this.log(`${bars.length} ${symbol} bars received - ${dateRange}`);
 
-    klines.sort((a, b) => a.times.open - b.times.open);
-    return klines;
+    bars.sort((a, b) => a.times.open - b.times.open);
+    return bars;
   }
 
   /**
-   * initialize database with klines from predefined start date until now
-   * allows to cache already requested klines and only request recent klines
+   * initialize database with bars from predefined start date until now
+   * allows to cache already requested bars and only request recent bars
    */
-  public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
+  public async initBarsDatabase(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     const startTime: number = calcStartTime(timeframe);
-    const dbKlines: Kline[] = await database.getKlines(symbol, timeframe);
+    const dbBars: Bar[] = await database.getBars(symbol, timeframe);
 
     // not in database yet
-    if (!dbKlines || !dbKlines.length) {
-      const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
+    if (!dbBars || !dbBars.length) {
+      const newBars: Bar[] = await this.getBarsFromStartUntilNow(symbol, startTime, timeframe);
 
-      if (newKlines.length) {
-        await database.writeKlines(newKlines);
-        this.log(`${newKlines.length} ${symbol} klines initialized in database`);
+      if (newBars.length) {
+        await database.writeBars(newBars);
+        this.log(`${newBars.length} ${symbol} bars initialized in database`);
       }
 
-      return newKlines;
+      return newBars;
     }
 
     // already in database
-    const lastKline: Kline = dbKlines[dbKlines.length - 1];
-    const newStart: number = lastKline.times.open;
+    const lastBar: Bar = dbBars[dbBars.length - 1];
+    const newStart: number = lastBar.times.open;
 
-    if (isKlineOutdated(timeframe, newStart)) {
-      const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
-      newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      this.log(`${newKlines.length} new ${symbol} klines added to database`);
-      await database.writeKlines(newKlines);
-      const mergedKlines: Kline[] = dbKlines.concat(newKlines);
-      return mergedKlines;
+    if (isBarOutdated(timeframe, newStart)) {
+      const newBars: Bar[] = await this.getBarsFromStartUntilNow(symbol, newStart, timeframe);
+      newBars.shift();    // remove first bar, since it's the same as last of dbBars
+      this.log(`${newBars.length} new ${symbol} bars added to database`);
+      await database.writeBars(newBars);
+      const mergedBars: Bar[] = dbBars.concat(newBars);
+      return mergedBars;
     } else {
       this.log(`${symbol} already up to date`);
-      return dbKlines;
+      return dbBars;
     }
   }
 
@@ -233,13 +233,13 @@ class Binance extends Base {
       .find(pair => pairList.includes(pair));
   }
 
-  // add all tweets with same time to their klines
-  public addTweetsToKlines(klines: Kline[], tweets: Tweet[]): void {
-    klines.forEach((k, i) => {
-      const nextKlineTime = klines[i + 1]?.times?.open;
+  // add all tweets with same time to their bars
+  public addTweetsToBars(bars: Bar[], tweets: Tweet[]): void {
+    bars.forEach((k, i) => {
+      const nextBarTime = bars[i + 1]?.times?.open;
 
-      if (nextKlineTime) {
-        const tweetsWithSameTime = tweets.filter(t => t.time >= k.times.open && t.time < nextKlineTime);
+      if (nextBarTime) {
+        const tweetsWithSameTime = tweets.filter(t => t.time >= k.times.open && t.time < nextBarTime);
         k.tweets = tweetsWithSameTime;
       }
     });
@@ -249,8 +249,8 @@ class Binance extends Base {
     return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex');
   }
 
-  private mapKlines(symbol: string, timeframe: Timeframe, klines: any): Kline[] {
-    return klines.map(k => {
+  private mapBars(symbol: string, timeframe: Timeframe, bars: any): Bar[] {
+    return bars.map(k => {
       return {
         symbol,
         timeframe,

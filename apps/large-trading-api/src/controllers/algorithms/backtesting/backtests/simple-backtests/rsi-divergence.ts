@@ -1,4 +1,4 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, RsiDivergenceType, Signal } from '@shared';
+﻿import { Algorithm, BacktestData, BacktestSignal, Bar, RsiDivergenceType, Signal } from '@shared';
 import Base from '../../../../../base';
 import Indicators from '../../../patterns/indicators';
 import TrendLineController from '../../../patterns/trend-line';
@@ -7,22 +7,22 @@ export default class RsiDivergence extends Base {
   private indicators = new Indicators();
   private trendLineController = new TrendLineController();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
     const minLength: number = Number(params.minLength ?? 50);
     const maxLength: number = Number(params.maxLength ?? 200);
     const minStrength: number = Number(params.minStrength ?? 0.5);
     const stopLoss: number = Number(params.stopLoss ?? 0.02);
 
-    this.trendLineController.addTrendLines(klines, minLength, maxLength, false, false);
-    this.indicators.addRsiDivergence(klines, minStrength);
+    this.trendLineController.addTrendLines(bars, minLength, maxLength, false, false);
+    this.indicators.addRsiDivergence(bars, minStrength);
 
-    const klinesWithDivergence = klines.filter(k => k.indicators?.rsiDivergence !== undefined);
+    const barsWithDivergence = bars.filter(k => k.indicators?.rsiDivergence !== undefined);
 
-    klinesWithDivergence.forEach((kline: Kline) => {
-      const backtest: BacktestData = kline.algorithms[algorithm]!;
+    barsWithDivergence.forEach((bar: Bar) => {
+      const backtest: BacktestData = bar.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = kline.prices.close;
-      const { regular, hidden } = kline.indicators!.rsiDivergence!;
+      const closePrice: number = bar.prices.close;
+      const { regular, hidden } = bar.indicators!.rsiDivergence!;
 
       const regularType: RsiDivergenceType | undefined = regular?.type;
       const hiddenType: RsiDivergenceType | undefined = hidden?.type;

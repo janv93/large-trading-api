@@ -1,16 +1,16 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
-import { getKlineColor } from '@shared';
+﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+import { getBarColor } from '@shared';
 import Base from '../../../../../base';
 
 export default class Momentum extends Base {
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
-    const colors: number[] = klines.map(kline => getKlineColor(kline));
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
+    const colors: number[] = bars.map(bar => getBarColor(bar));
     const streak = Number(params.streak);
 
-    klines.forEach((kline: any, index: number) => {
-      const backtest: BacktestData = kline.algorithms[algorithm]!;
+    bars.forEach((bar: any, index: number) => {
+      const backtest: BacktestData = bar.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = kline.prices.close;
+      const closePrice: number = bar.prices.close;
       const entrySignal: Signal | undefined = this.getEntrySignal(colors, index, streak);
 
       if (entrySignal) {
@@ -36,8 +36,8 @@ export default class Momentum extends Base {
     }
 
     const range: number[] = colors.slice(index - streak + 1, index + 1);
-    const rangeGreen: boolean = range.every(kline => kline >= 0);
-    const rangeRed: boolean = range.every(kline => kline <= 0);
+    const rangeGreen: boolean = range.every(bar => bar >= 0);
+    const rangeRed: boolean = range.every(bar => bar <= 0);
     const signal = rangeGreen ? Signal.Sell : rangeRed ? Signal.Buy : undefined;
     return signal;
   }

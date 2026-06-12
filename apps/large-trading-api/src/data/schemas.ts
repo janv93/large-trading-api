@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 
-export const KlineSchema = new mongoose.Schema({
+export const BarSchema = new mongoose.Schema({
   symbol: {
     type: String,
     required: true,
@@ -118,7 +118,7 @@ export const CmcTickersSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export const AppConfigSchema = new mongoose.Schema({
-  lastOutdatedKlineRemoval: {
+  lastOutdatedBarRemoval: {
     type: Date,
     required: true
   },
@@ -127,7 +127,7 @@ export const AppConfigSchema = new mongoose.Schema({
   }
 });
 
-export const KlineFetchTimesSchema = new mongoose.Schema({
+export const BarFetchTimesSchema = new mongoose.Schema({
   symbol: {
     type: String,
     required: true,

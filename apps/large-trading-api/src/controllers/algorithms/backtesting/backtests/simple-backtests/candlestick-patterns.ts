@@ -1,8 +1,8 @@
-import CandlestickPatternsController from '../../../patterns/candlestick-patterns';
-import { Algorithm, BacktestData, BacktestSignal, Kline, KlineCandlestickPatterns, Signal } from '@shared';
+﻿import CandlestickPatternsController from '../../../patterns/candlestick-patterns';
+import { Algorithm, BacktestData, BacktestSignal, Bar, BarCandlestickPatterns, Signal } from '@shared';
 import Base from '../../../../../base';
 
-const BULLISH_PATTERNS: (keyof KlineCandlestickPatterns)[] = [
+const BULLISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
   'hammer',
   'invertedHammer',
   'bullishMarubozu',
@@ -14,7 +14,7 @@ const BULLISH_PATTERNS: (keyof KlineCandlestickPatterns)[] = [
   'threeWhiteSoldiers',
 ];
 
-const BEARISH_PATTERNS: (keyof KlineCandlestickPatterns)[] = [
+const BEARISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
   'hangingMan',
   'shootingStar',
   'bearishMarubozu',
@@ -29,20 +29,20 @@ const BEARISH_PATTERNS: (keyof KlineCandlestickPatterns)[] = [
 export default class CandlestickPatterns extends Base {
   private controller = new CandlestickPatternsController();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
     const minScore: number = Number(params.minScore);
     const takeProfit: number = 4;
     const stopLoss: number = 2;
 
-    this.controller.addCandlestickPatterns(klines);
+    this.controller.addCandlestickPatterns(bars);
 
-    klines.forEach((kline: Kline) => {
-      const patterns: KlineCandlestickPatterns | undefined = kline.candlestickPatterns;
+    bars.forEach((bar: Bar) => {
+      const patterns: BarCandlestickPatterns | undefined = bar.candlestickPatterns;
       if (!patterns) return;
 
-      const backtest: BacktestData = kline.algorithms[algorithm]!;
+      const backtest: BacktestData = bar.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = kline.prices.close;
+      const closePrice: number = bar.prices.close;
 
       const bullishScore: number = BULLISH_PATTERNS.filter(p => patterns[p]).length;
       const bearishScore: number = BEARISH_PATTERNS.filter(p => patterns[p]).length;

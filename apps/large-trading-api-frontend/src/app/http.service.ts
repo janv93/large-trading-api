@@ -1,8 +1,8 @@
-import { Injectable, NgZone } from '@angular/core';
+﻿import { Injectable, NgZone } from '@angular/core';
 import { ChartService } from './chart.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Algorithm, Kline } from '@shared';
+import { Algorithm, Bar } from '@shared';
 import { AlgorithmConfigs } from './algorithm-configs';
 
 
@@ -18,7 +18,7 @@ export class HttpService {
     private ngZone: NgZone
   ) { }
 
-  public getKlines(): Observable<Kline[]> {
+  public getBars(): Observable<Bar[]> {
     const { exchange, symbol, timeframe, times } = this.chartService;
 
     const body = {
@@ -29,12 +29,12 @@ export class HttpService {
       algorithms: this.chartService.algorithms.map((a, i) => this.getAlgorithmBody(i))
     };
 
-    const url = this.baseUrl + '/klinesWithAlgorithm';
-    this.chartService.setLoadingText(`Getting klines with signals`, url.replace(this.baseUrl, ''));
-    return this.http.post<Kline[]>(url, body);
+    const url = this.baseUrl + '/barsWithAlgorithm';
+    this.chartService.setLoadingText(`Getting bars with signals`, url.replace(this.baseUrl, ''));
+    return this.http.post<Bar[]>(url, body);
   }
 
-  public postBacktest(klines: Array<Kline>, commission: number): Observable<Kline[]> {
+  public postBacktest(bars: Array<Bar>, commission: number): Observable<Bar[]> {
     const query = {
       commission: commission
     };
@@ -42,10 +42,10 @@ export class HttpService {
     const url = this.baseUrl + '/backtest';
     const urlWithQuery = this.createUrl(url, query);
     this.chartService.setLoadingText(`Getting backtest`, urlWithQuery.replace(this.baseUrl, ''));
-    return this.http.post<Kline[]>(urlWithQuery, klines);
+    return this.http.post<Bar[]>(urlWithQuery, bars);
   }
 
-  public getMultiStream(): Observable<Kline[]> {
+  public getMultiStream(): Observable<Bar[]> {
     const { timeframe, times, multiRank, multiAutoParams, multiCommission } = this.chartService;
 
     const body = {
@@ -60,7 +60,7 @@ export class HttpService {
     const url = this.baseUrl + '/multi';
     this.chartService.setLoadingText(`Getting multiple tickers with backtests`, '/multi');
 
-    return new Observable<Kline[]>(observer => {
+    return new Observable<Bar[]>(observer => {
       const controller = new AbortController();
 
       (async () => {

@@ -1,4 +1,4 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '@shared';
+﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../../../../../base';
 import { calcAverageChangeInPercent } from '@shared';
 import { LinearFunction } from '@shared';
@@ -10,16 +10,16 @@ export default class TrendLineBreakthrough extends Base {
   private pivotPointController = new PivotPointController();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
     const percentOfProfit: number = Number(params.percentOfProfit);
-    // this.pivotPointController.addPivotPoints(klines, 20);
-    // this.trendLineController.addTrendLinesFromPivotPoints(klines, 40, 200, true, true);
-    this.trendLineController.addTrendLines(klines, 40, 200, true, true);
-    this.trendLineController.addTrendLineBreakthroughs(klines, true);
-    this.trendLineController.filterTrendLinesWithoutBreakthroughs(klines);
+    // this.pivotPointController.addPivotPoints(bars, 20);
+    // this.trendLineController.addTrendLinesFromPivotPoints(bars, 40, 200, true, true);
+    this.trendLineController.addTrendLines(bars, 40, 200, true, true);
+    this.trendLineController.addTrendLineBreakthroughs(bars, true);
+    this.trendLineController.filterTrendLinesWithoutBreakthroughs(bars);
 
-    this.forEachWithProgress(klines, (kline) => {
-      const breakthroughs: TrendLine[] | undefined = kline.chart?.trendLineBreakthroughs;
+    this.forEachWithProgress(bars, (bar) => {
+      const breakthroughs: TrendLine[] | undefined = bar.chart?.trendLineBreakthroughs;
 
       breakthroughs?.forEach((trendLine: TrendLine) => {
         const length: number = trendLine.length;
@@ -27,23 +27,23 @@ export default class TrendLineBreakthrough extends Base {
         const score: number = length / 100;  // e.g. trend line of length 120 gets 1.2 score, more than a line with length 50 (0.5). the longer the trend line, the more meaningful the breakthrough
         const lineFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
         const breakthoughPrice: number = lineFunction.getY(trendLine.breakThroughIndex!);
-        const trendLineCloses: number[] = klines.slice(trendLine.startIndex, trendLine.endIndex).map(kline => kline.prices.close);
+        const trendLineCloses: number[] = bars.slice(trendLine.startIndex, trendLine.endIndex).map(bar => bar.prices.close);
         const averagePriceChange: number = calcAverageChangeInPercent(trendLineCloses);
         const tp: number = averagePriceChange * 5;
         const sl: number = averagePriceChange * 2;
 
         if (position === TrendLinePosition.Above) {
-          this.openBuyPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
+          this.openBuyPosition(bar, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
         } else if (position === TrendLinePosition.Below) {
-          this.openSellPosition(kline, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
+          this.openSellPosition(bar, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
         }
       });
     });
 
   }
 
-  private openBuyPosition(kline: Kline, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
+  private openBuyPosition(bar: Bar, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.push({
@@ -64,8 +64,8 @@ export default class TrendLineBreakthrough extends Base {
     });
   }
 
-  private openSellPosition(kline: Kline, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
+  private openSellPosition(bar: Bar, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.push({

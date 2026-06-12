@@ -1,4 +1,4 @@
-import { Kline, Signal } from '@shared';
+﻿import { Bar, Signal } from '@shared';
 
 export class BaseComponent {
   constructor() { }
@@ -27,13 +27,13 @@ export class BaseComponent {
   }
 
   // binary search for performance
-  protected findKlineIndexByOpenTime(klines: Kline[], openTime: number): number {
+  protected findBarIndexByOpenTime(bars: Bar[], openTime: number): number {
     let left = 0;
-    let right = klines.length - 1;
+    let right = bars.length - 1;
 
     while (left <= right) {
       const mid: number = Math.floor((left + right) / 2);
-      const midTime: number = klines[mid].times.open;
+      const midTime: number = bars[mid].times.open;
 
       if (midTime === openTime) {
         return mid;

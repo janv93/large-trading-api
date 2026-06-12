@@ -1,17 +1,17 @@
-import { IChartApi, ISeriesApi, LineSeries, HistogramSeries, LineData, HistogramData, MouseEventParams, Time } from 'lightweight-charts';
-import { Kline } from '@shared';
+﻿import { IChartApi, ISeriesApi, LineSeries, HistogramSeries, LineData, HistogramData, MouseEventParams, Time } from 'lightweight-charts';
+import { Bar } from '@shared';
 
 export class IndicatorSeriesService {
   private emaSeries: Map<number, ISeriesApi<'Line'>> = new Map();
   private smaSeries: Map<number, ISeriesApi<'Line'>> = new Map();
   private bbSeries: { upper: ISeriesApi<'Line'>; middle: ISeriesApi<'Line'>; lower: ISeriesApi<'Line'> } | undefined;
   private rsiSeries: ISeriesApi<'Line'> | undefined;
-  private rsiKlines: Kline[] = [];
+  private rsiBars: Bar[] = [];
   private rsiHovered: boolean = false;
   private atrSeries: ISeriesApi<'Line'> | undefined;
   private macdHistogramSeries: ISeriesApi<'Histogram'> | undefined;
 
-  public draw(chart: IChartApi, klines: Kline[], macdAlpha: number): void {
+  public draw(chart: IChartApi, bars: Bar[], macdAlpha: number): void {
     const emaPeriods: Set<number> = new Set<number>();
     const smaPeriods: Set<number> = new Set<number>();
     let hasRsi: boolean = false;
@@ -19,14 +19,14 @@ export class IndicatorSeriesService {
     let hasMacd: boolean = false;
     let hasBb: boolean = false;
 
-    klines.forEach((kline: Kline) => {
-      if (!kline.indicators) return;
-      if (kline.indicators.ema) Object.keys(kline.indicators.ema).forEach(p => emaPeriods.add(Number(p)));
-      if (kline.indicators.sma) Object.keys(kline.indicators.sma).forEach(p => smaPeriods.add(Number(p)));
-      if (kline.indicators.rsi !== undefined) hasRsi = true;
-      if (kline.indicators.atr !== undefined) hasAtr = true;
-      if (kline.indicators.macd) hasMacd = true;
-      if (kline.indicators.bb) hasBb = true;
+    bars.forEach((bar: Bar) => {
+      if (!bar.indicators) return;
+      if (bar.indicators.ema) Object.keys(bar.indicators.ema).forEach(p => emaPeriods.add(Number(p)));
+      if (bar.indicators.sma) Object.keys(bar.indicators.sma).forEach(p => smaPeriods.add(Number(p)));
+      if (bar.indicators.rsi !== undefined) hasRsi = true;
+      if (bar.indicators.atr !== undefined) hasAtr = true;
+      if (bar.indicators.macd) hasMacd = true;
+      if (bar.indicators.bb) hasBb = true;
     });
 
     // remove series for indicators/periods no longer present
@@ -56,7 +56,7 @@ export class IndicatorSeriesService {
         });
         this.emaSeries.set(period, series);
       }
-      const data: LineData[] = klines
+      const data: LineData[] = bars
         .filter(k => k.indicators?.ema?.[period] !== undefined)
         .map(k => ({ time: k.times.open / 1000 as Time, value: k.indicators!.ema![period] }));
       this.emaSeries.get(period)!.setData(data);
@@ -71,7 +71,7 @@ export class IndicatorSeriesService {
         });
         this.smaSeries.set(period, series);
       }
-      const data: LineData[] = klines
+      const data: LineData[] = bars
         .filter(k => k.indicators?.sma?.[period] !== undefined)
         .map(k => ({ time: k.times.open / 1000 as Time, value: k.indicators!.sma![period] }));
       this.smaSeries.get(period)!.setData(data);
@@ -96,12 +96,12 @@ export class IndicatorSeriesService {
       const upperData: LineData[] = [];
       const middleData: LineData[] = [];
       const lowerData: LineData[] = [];
-      klines.forEach((kline: Kline) => {
-        if (!kline.indicators?.bb) return;
-        const time: Time = kline.times.open / 1000 as Time;
-        upperData.push({ time, value: kline.indicators.bb.upper });
-        middleData.push({ time, value: kline.indicators.bb.middle });
-        lowerData.push({ time, value: kline.indicators.bb.lower });
+      bars.forEach((bar: Bar) => {
+        if (!bar.indicators?.bb) return;
+        const time: Time = bar.times.open / 1000 as Time;
+        upperData.push({ time, value: bar.indicators.bb.upper });
+        middleData.push({ time, value: bar.indicators.bb.middle });
+        lowerData.push({ time, value: bar.indicators.bb.lower });
       });
       this.bbSeries.upper.setData(upperData);
       this.bbSeries.middle.setData(middleData);
@@ -118,8 +118,8 @@ export class IndicatorSeriesService {
       chart.priceScale('rsi').applyOptions({ visible: false, scaleMargins: { top: 0, bottom: 0 } });
     }
     if (hasRsi) {
-      this.rsiKlines = klines.filter(k => k.indicators?.rsi !== undefined);
-      this.setRsiData(klines.length);
+      this.rsiBars = bars.filter(k => k.indicators?.rsi !== undefined);
+      this.setRsiData(bars.length);
     }
 
     if (hasAtr && !this.atrSeries) {
@@ -130,7 +130,7 @@ export class IndicatorSeriesService {
       chart.priceScale('atr').applyOptions({ visible: false });
     }
     if (hasAtr && this.atrSeries) {
-      const data: LineData[] = klines
+      const data: LineData[] = bars
         .filter(k => k.indicators?.atr !== undefined)
         .map(k => ({ time: k.times.open / 1000 as Time, value: k.indicators!.atr! }));
       this.atrSeries.setData(data);
@@ -143,7 +143,7 @@ export class IndicatorSeriesService {
       chart.priceScale('macd').applyOptions({ visible: false });
     }
     if (hasMacd && this.macdHistogramSeries) {
-      this.setMacdData(klines, macdAlpha);
+      this.setMacdData(bars, macdAlpha);
     }
   }
 
@@ -162,20 +162,20 @@ export class IndicatorSeriesService {
   }
 
   public setRsiData(numVisibleBars: number): void {
-    if (!this.rsiSeries || !this.rsiKlines.length) return;
+    if (!this.rsiSeries || !this.rsiBars.length) return;
     // Downsample: keep at most 500 points so the renderer doesn't process every noisy tick
     const step: number = Math.max(1, Math.floor(numVisibleBars / 500));
     const data: LineData[] = [];
-    for (let i = 0; i < this.rsiKlines.length; i += step) {
-      const k: Kline = this.rsiKlines[i];
+    for (let i = 0; i < this.rsiBars.length; i += step) {
+      const k: Bar = this.rsiBars[i];
       data.push({ time: k.times.open / 1000 as Time, value: k.indicators!.rsi! });
     }
     this.rsiSeries.setData(data);
   }
 
-  public setMacdData(klines: Kline[], alpha: number): void {
+  public setMacdData(bars: Bar[], alpha: number): void {
     if (!this.macdHistogramSeries) return;
-    const data: HistogramData[] = klines
+    const data: HistogramData[] = bars
       .filter(k => k.indicators?.macd !== undefined)
       .map(k => ({
         time: k.times.open / 1000 as Time,
@@ -220,10 +220,10 @@ export class IndicatorSeriesService {
         values.push({ label: 'BB', value: `${upper.value.toFixed(2)} / ${middle.value.toFixed(2)} / ${lower.value.toFixed(2)}` });
       }
     }
-    if (this.rsiSeries && this.rsiKlines.length && param.time !== undefined) {
+    if (this.rsiSeries && this.rsiBars.length && param.time !== undefined) {
       const hoveredTime = param.time as number;
-      const kline = this.rsiKlines.find(k => k.times.open / 1000 === hoveredTime);
-      if (kline) values.push({ label: 'RSI', value: kline.indicators!.rsi!.toFixed(2) });
+      const bar = this.rsiBars.find(k => k.times.open / 1000 === hoveredTime);
+      if (bar) values.push({ label: 'RSI', value: bar.indicators!.rsi!.toFixed(2) });
     }
     if (this.atrSeries) {
       const d = param.seriesData.get(this.atrSeries) as LineData;

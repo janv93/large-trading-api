@@ -1,27 +1,27 @@
-import Indicators from '../../../patterns/indicators';
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
+﻿import Indicators from '../../../patterns/indicators';
+import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../../base';
 
 export default class Macd extends Base {
   private indicators = new Indicators();
 
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
     const fast = Number(params.fast);
     const slow = Number(params.slow);
     const signal = Number(params.signal);
-    this.indicators.addMacd(klines, fast, slow, signal);
-    const klinesWithHistogram = klines.filter(k => k.indicators?.macd !== undefined);
+    this.indicators.addMacd(bars, fast, slow, signal);
+    const barsWithHistogram = bars.filter(k => k.indicators?.macd !== undefined);
 
     let lastHistogram: number;
     let lastMove: string;
     let positionOpen = false;
     let positionOpenType: Signal;
 
-    klinesWithHistogram.forEach((kline, index) => {
-      const backtest: BacktestData = kline.algorithms[algorithm]!;
+    barsWithHistogram.forEach((bar, index) => {
+      const backtest: BacktestData = bar.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = kline.prices.close;
-      const h = kline.indicators!.macd!.histogram;
+      const closePrice: number = bar.prices.close;
+      const h = bar.indicators!.macd!.histogram;
 
       if (!lastHistogram) {
         lastHistogram = h;
@@ -93,15 +93,15 @@ export default class Macd extends Base {
   /**
    * test different histogram strategies
    */
-  private findOptimalEntry(klines: Kline[], histogram: any[]) {
+  private findOptimalEntry(bars: Bar[], histogram: any[]) {
     let lastHistogram: number;
     let lastMove: string;
     let sumDiffs = 0.0;
     let numberDiffs = 0.0;
 
-    klines.forEach((kline, index) => {
+    bars.forEach((bar, index) => {
       const h = histogram[index].histogram;
-      const currentPrice = Number(kline.prices.close);
+      const currentPrice = Number(bar.prices.close);
 
       if (!lastHistogram) {
         lastHistogram = h;
@@ -115,8 +115,8 @@ export default class Macd extends Base {
       const move = h - lastHistogram > 0 ? 'up' : 'down';
       const momentumSwitch = move !== lastMove;
 
-      const kline5Steps = klines[index + 20];
-      const price5Steps = kline5Steps ? Number(kline5Steps.prices.close) : null;
+      const bar5Steps = bars[index + 20];
+      const price5Steps = bar5Steps ? Number(bar5Steps.prices.close) : null;
 
       if (momentumSwitch && move === 'up') {
         if (price5Steps) {

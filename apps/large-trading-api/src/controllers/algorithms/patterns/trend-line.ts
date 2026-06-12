@@ -1,49 +1,49 @@
-import Base from '../../../base';
-import { Kline, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition } from '@shared';
+﻿import Base from '../../../base';
+import { Bar, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition } from '@shared';
 import { LinearFunction } from '@shared';
 
 export default class TrendLineController extends Base {
   private readonly bufferPercentage = 0.2;
 
   /**
-   * add trend lines to klines that connect uninterrupted highs/lows
+   * add trend lines to bars that connect uninterrupted highs/lows
    * difference to addTrendLinesFromPivotPoints: buffers are defined by slope of the trend line instead of simply horizontal (0)
    */
-  public addTrendLines(klines: Kline[], minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
-    this.forEachWithProgress(klines, (startKline, i) => {
-      const startLow: number = startKline.prices.low;
-      const startHigh: number = startKline.prices.high;
+  public addTrendLines(bars: Bar[], minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
+    this.forEachWithProgress(bars, (startBar, i) => {
+      const startLow: number = startBar.prices.low;
+      const startHigh: number = startBar.prices.high;
       let minSlopeBelow: number = Infinity;
       let maxSlopeAbove: number = -Infinity;
-      const endIndex: number = Math.min(i + maxLength, klines.length);
+      const endIndex: number = Math.min(i + maxLength, bars.length);
 
       for (let j = i + 1; j < endIndex; j++) {
-        const endKline: Kline = klines[j];
-        const endKlineLow: number = endKline.prices.low;
-        const endKlineHigh: number = endKline.prices.high;
+        const endBar: Bar = bars[j];
+        const endBarLow: number = endBar.prices.low;
+        const endBarHigh: number = endBar.prices.high;
         const dx: number = j - i;
-        const slopeBelow: number = (endKlineLow - startLow) / dx;
-        const slopeAbove: number = (endKlineHigh - startHigh) / dx;
+        const slopeBelow: number = (endBarLow - startLow) / dx;
+        const slopeAbove: number = (endBarHigh - startHigh) / dx;
         const isTrendLineLongEnough: boolean = dx >= minLength;
 
         if (isTrendLineLongEnough) {
-          const isValidBelow: boolean = slopeBelow <= minSlopeBelow && (!againstTrend || this.isTrendLineAgainstTrend(startLow, endKlineLow, TrendLinePosition.Below));
-          const isValidAbove: boolean = slopeAbove >= maxSlopeAbove && (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endKlineHigh, TrendLinePosition.Above));
+          const isValidBelow: boolean = slopeBelow <= minSlopeBelow && (!againstTrend || this.isTrendLineAgainstTrend(startLow, endBarLow, TrendLinePosition.Below));
+          const isValidAbove: boolean = slopeAbove >= maxSlopeAbove && (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endBarHigh, TrendLinePosition.Above));
 
           const candidates: [boolean, number, number, TrendLinePosition][] = [
-            [isValidBelow, startLow, endKlineLow, TrendLinePosition.Below],
-            [isValidAbove, startHigh, endKlineHigh, TrendLinePosition.Above],
+            [isValidBelow, startLow, endBarLow, TrendLinePosition.Below],
+            [isValidAbove, startHigh, endBarHigh, TrendLinePosition.Above],
           ];
 
           candidates.forEach(([isValid, startPrice, endPrice, position]) => {
             if (!isValid) return;
             const linearFunction: LinearFunction = new LinearFunction(i, startPrice, j, endPrice);
 
-            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction, rightBuffer)) {
-              startKline.chart = startKline.chart || {};
-              startKline.chart.trendLines = startKline.chart.trendLines || [];
+            if (this.areBuffersUninterrupted(bars, i, j, position, linearFunction, rightBuffer)) {
+              startBar.chart = startBar.chart || {};
+              startBar.chart.trendLines = startBar.chart.trendLines || [];
 
-              startKline.chart.trendLines.push({
+              startBar.chart.trendLines.push({
                 function: linearFunction,
                 startIndex: i,
                 endIndex: j,
@@ -62,36 +62,36 @@ export default class TrendLineController extends Base {
     });
   }
 
-  // add trend lines to klines that connect uninterrupted pivot points
-  public addTrendLinesFromPivotPoints(klines: Kline[], minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
-    this.forEachWithProgress(klines, (startKline, i) => {
-      if (!startKline.chart?.pivotPoint) return;  // if no pivot point, skip kline
+  // add trend lines to bars that connect uninterrupted pivot points
+  public addTrendLinesFromPivotPoints(bars: Bar[], minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
+    this.forEachWithProgress(bars, (startBar, i) => {
+      if (!startBar.chart?.pivotPoint) return;  // if no pivot point, skip bar
 
-      const ppStart: PivotPoint = startKline.chart.pivotPoint;
+      const ppStart: PivotPoint = startBar.chart.pivotPoint;
       const ppStartSide: PivotPointSide = ppStart.side;
       const isHigh: boolean = ppStartSide === PivotPointSide.High;
-      const startPrice: number = isHigh ? startKline.prices.high : startKline.prices.low;
+      const startPrice: number = isHigh ? startBar.prices.high : startBar.prices.low;
       const position: TrendLinePosition = isHigh ? TrendLinePosition.Above : TrendLinePosition.Below;
-      const endIndex: number = Math.min(i + maxLength, klines.length);
+      const endIndex: number = Math.min(i + maxLength, bars.length);
       let extremeSlope: number = isHigh ? -Infinity : Infinity;
 
       for (let j = i + 1; j < endIndex; j++) {
-        const endKline: Kline = klines[j];
+        const endBar: Bar = bars[j];
         const dx: number = j - i;
-        const endPrice: number = isHigh ? endKline.prices.high : endKline.prices.low;
+        const endPrice: number = isHigh ? endBar.prices.high : endBar.prices.low;
         const currentSlope: number = (endPrice - startPrice) / dx;
         const isTrendLineLongEnough: boolean = dx >= minLength;
 
         if (isTrendLineLongEnough) {
-          const hasPivotPoint: boolean = endKline.chart?.pivotPoint?.side === ppStartSide;
+          const hasPivotPoint: boolean = endBar.chart?.pivotPoint?.side === ppStartSide;
           const isUninterrupted: boolean = isHigh ? currentSlope >= extremeSlope : currentSlope <= extremeSlope;
 
           if (hasPivotPoint && isUninterrupted && (!againstTrend || this.isTrendLineAgainstTrend(startPrice, endPrice, position))) {
             const linearFunction: LinearFunction = new LinearFunction(i, startPrice, j, endPrice);
 
-            if (this.areBuffersUninterrupted(klines, i, j, position, linearFunction, rightBuffer)) {
-              startKline.chart!.trendLines = startKline.chart!.trendLines || [];
-              startKline.chart!.trendLines.push({
+            if (this.areBuffersUninterrupted(bars, i, j, position, linearFunction, rightBuffer)) {
+              startBar.chart!.trendLines = startBar.chart!.trendLines || [];
+              startBar.chart!.trendLines.push({
                 function: linearFunction,
                 startIndex: i,
                 endIndex: j,
@@ -110,72 +110,72 @@ export default class TrendLineController extends Base {
   }
 
   // extends trend lines until they break through the price, marking a pivotal point
-  public addTrendLineBreakthroughs(klines: Kline[], rightBuffer: boolean) {
-    klines.forEach((kline: Kline) => {
-      const trendLines: TrendLine[] | undefined = kline.chart?.trendLines;
+  public addTrendLineBreakthroughs(bars: Bar[], rightBuffer: boolean) {
+    bars.forEach((bar: Bar) => {
+      const trendLines: TrendLine[] | undefined = bar.chart?.trendLines;
 
       if (trendLines?.length) {
         trendLines.forEach((trendLine: TrendLine) => {
-          this.extendTrendLineUntilBreakthrough(klines, trendLine, rightBuffer);
+          this.extendTrendLineUntilBreakthrough(bars, trendLine, rightBuffer);
         });
       }
     });
   }
 
-  public filterTrendLinesWithoutBreakthroughs(klines: Kline[]) {
-    klines.forEach((kline: Kline) => {
-      if (kline.chart?.trendLines) {
-        kline.chart.trendLines = kline.chart.trendLines.filter((trendLine: TrendLine) => trendLine.breakThroughIndex !== undefined);
+  public filterTrendLinesWithoutBreakthroughs(bars: Bar[]) {
+    bars.forEach((bar: Bar) => {
+      if (bar.chart?.trendLines) {
+        bar.chart.trendLines = bar.chart.trendLines.filter((trendLine: TrendLine) => trendLine.breakThroughIndex !== undefined);
       }
     });
   }
 
-  private extendTrendLineUntilBreakthrough(klines: Kline[], trendLine: TrendLine, rightBuffer: boolean) {
+  private extendTrendLineUntilBreakthrough(bars: Bar[], trendLine: TrendLine, rightBuffer: boolean) {
     const lineFunction: LinearFunction = trendLine.function;
     const position: TrendLinePosition = trendLine.position;
     const buffer: number = rightBuffer ? Math.round(trendLine.length * this.bufferPercentage) : 0;
     const startIndex: number = trendLine.endIndex + 1 + buffer;
     const maxIndex: number = trendLine.endIndex + trendLine.length; // the max distance of the end of the trend line to the breakthrough point, after that it is considered too far away to belong to the line
-    const candidateKlines: Kline[] = klines.slice(startIndex, maxIndex);
+    const candidateBars: Bar[] = bars.slice(startIndex, maxIndex);
     let breakThroughIndex = -1;
 
     if (position === TrendLinePosition.Above) {
-      breakThroughIndex = candidateKlines.findIndex((kline: Kline, i: number) => {
+      breakThroughIndex = candidateBars.findIndex((bar: Bar, i: number) => {
         const currentIndex: number = startIndex + i;
         const currentLinePrice = lineFunction.getY(currentIndex);
-        const high = kline.prices.high;
+        const high = bar.prices.high;
         return high > currentLinePrice;
       });
     } else if (position === TrendLinePosition.Below) {
-      breakThroughIndex = candidateKlines.findIndex((kline: Kline, i: number) => {
+      breakThroughIndex = candidateBars.findIndex((bar: Bar, i: number) => {
         const currentIndex: number = startIndex + i;
         const currentLinePrice = lineFunction.getY(currentIndex);
-        const low = kline.prices.low;
+        const low = bar.prices.low;
         return low < currentLinePrice;
       });
     }
 
-    const breakThroughKline: Kline | undefined = candidateKlines[breakThroughIndex!];
+    const breakThroughBar: Bar | undefined = candidateBars[breakThroughIndex!];
 
     if (breakThroughIndex > -1) {
       // initialize properties if not yet defined
-      breakThroughKline.chart = breakThroughKline.chart || {};
-      breakThroughKline.chart!.trendLineBreakthroughs = breakThroughKline.chart?.trendLineBreakthroughs || [];
+      breakThroughBar.chart = breakThroughBar.chart || {};
+      breakThroughBar.chart!.trendLineBreakthroughs = breakThroughBar.chart?.trendLineBreakthroughs || [];
 
-      // add the trend line which is breaking through the kline to this kline. this reference may then later be used to get the trend line for backtesting purposes
-      breakThroughKline.chart.trendLineBreakthroughs.push(trendLine);
+      // add the trend line which is breaking through the bar to this bar. this reference may then later be used to get the trend line for backtesting purposes
+      breakThroughBar.chart.trendLineBreakthroughs.push(trendLine);
 
       // equally add reference to breakthough point to trend line
       trendLine.breakThroughIndex = startIndex + breakThroughIndex;
     }
   }
 
-  private areBuffersUninterrupted(klines: Kline[], startIndex: number, endIndex: number, position: TrendLinePosition, linearFunction: LinearFunction, rightBuffer: boolean): boolean {
+  private areBuffersUninterrupted(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition, linearFunction: LinearFunction, rightBuffer: boolean): boolean {
     const length: number = endIndex - startIndex;
     const buffer: number = Math.round(length * this.bufferPercentage);
-    const crosses = (k: Kline, x: number) => position === TrendLinePosition.Above ? k.prices.high > linearFunction.getY(x) : k.prices.low < linearFunction.getY(x);
-    const leftUninterrupted: boolean = klines.slice(Math.max(0, startIndex - buffer + 1), startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
-    const rightUninterrupted: boolean = !rightBuffer || klines.slice(endIndex + 1, Math.min(klines.length, endIndex + 1 + buffer)).every((k, i) => !crosses(k, endIndex + 1 + i));
+    const crosses = (k: Bar, x: number) => position === TrendLinePosition.Above ? k.prices.high > linearFunction.getY(x) : k.prices.low < linearFunction.getY(x);
+    const leftUninterrupted: boolean = bars.slice(Math.max(0, startIndex - buffer + 1), startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
+    const rightUninterrupted: boolean = !rightBuffer || bars.slice(endIndex + 1, Math.min(bars.length, endIndex + 1 + buffer)).every((k, i) => !crosses(k, endIndex + 1 + i));
     return leftUninterrupted && rightUninterrupted;
   }
 

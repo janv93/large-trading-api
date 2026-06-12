@@ -1,17 +1,17 @@
-import { BacktestSignal, Direction, Kline, MarketStructureStats, Signal } from '@shared';
+﻿import { BacktestSignal, Direction, Bar, MarketStructureStats, Signal } from '@shared';
 import PivotPointController from '../../../patterns/pivot-point';
 import Base from '../../../../../base';
 
 export default class MarketStructure extends Base {
   private pivotPointController = new PivotPointController();
 
-  public setSignals(klines: Kline[], algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm, params: any): void {
     const space: number = Number(params.space);
-    this.pivotPointController.addMarketStructure(klines, space);
+    this.pivotPointController.addMarketStructure(bars, space);
     let lastMarketStructureStats: MarketStructureStats | undefined = undefined;
 
-    klines.forEach((kline: Kline, i: number) => {
-      const currentMarketStructureStats: MarketStructureStats | undefined = kline.chart?.marketStructure;
+    bars.forEach((bar: Bar, i: number) => {
+      const currentMarketStructureStats: MarketStructureStats | undefined = bar.chart?.marketStructure;
       if (!currentMarketStructureStats) return;
 
       if (!lastMarketStructureStats) {
@@ -21,8 +21,8 @@ export default class MarketStructure extends Base {
 
       // when a big streak is broken, buy the opposite side
       if (currentMarketStructureStats!.streak === 1 && lastMarketStructureStats.streak > 4) {
-        const signals: BacktestSignal[] = kline.algorithms[algorithm]!.signals;
-        const closePrice: number = kline.prices.close;
+        const signals: BacktestSignal[] = bar.algorithms[algorithm]!.signals;
+        const closePrice: number = bar.prices.close;
 
         if (currentMarketStructureStats.direction === Direction.Up) {
           signals.push({

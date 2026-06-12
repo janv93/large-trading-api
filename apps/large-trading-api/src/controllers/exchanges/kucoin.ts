@@ -1,7 +1,7 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import crypto from 'crypto';
 import btoa from 'btoa';
-import { Kline, Timeframe } from '@shared';
+import { Bar, Timeframe } from '@shared';
 import Base from '../../base';
 import { createUrl, createQuery, calcStartTime, timeframeToMinutes, timeframeToMilliseconds, timestampsToDateRange } from '@shared';
 import database from '../../data/database';
@@ -16,7 +16,7 @@ export default class Kucoin extends Base {
     }
   }
 
-  public async getKlines(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Kline[]> {
+  public async getBars(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Bar[]> {
     const baseUrl = 'https://api-futures.kucoin.com/api/v1/kline/query';
 
     const query = {
@@ -32,16 +32,16 @@ export default class Kucoin extends Base {
       query['from'] = startTime;
     }
 
-    const klineUrl = createUrl(baseUrl, query);
+    const barUrl = createUrl(baseUrl, query);
 
-    this.log('GET ' + klineUrl);
+    this.log('GET ' + barUrl);
 
     try {
-      const response = await axios.get(klineUrl);
+      const response = await axios.get(barUrl);
       const data = response.data.data;
 
       if (data?.length) {
-        const result = this.mapKlines(symbol, timeframe, response.data.data);
+        const result = this.mapBars(symbol, timeframe, response.data.data);
         return result;
       } else {
         return [];
@@ -55,7 +55,7 @@ export default class Kucoin extends Base {
   /**
    * get startTime to now timeframes
    */
-  public async getKlinesFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: Timeframe): Promise<Kline[]> {
+  public async getBarsFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: Timeframe): Promise<Bar[]> {
     const valid = await this.isValidSymbol(symbol);
     if (!valid) {
       this.log(`Invalid symbol ${symbol}`);
@@ -64,14 +64,14 @@ export default class Kucoin extends Base {
 
     let newStartTime = startTime;
     let newEndTime = endTime;
-    const klines: Kline[] = [];
+    const bars: Bar[] = [];
 
     while (true) {
-      const res: Kline[] = await this.getKlines(symbol, timeframe, newEndTime, newStartTime);
+      const res: Bar[] = await this.getBars(symbol, timeframe, newEndTime, newStartTime);
 
       if (res?.length) {
-        klines.push(...res);
-        const end: number = klines[klines.length - 1].times.open;
+        bars.push(...res);
+        const end: number = bars[bars.length - 1].times.open;
         newStartTime = end + timeframeToMilliseconds(timeframe);
       } else {
         newStartTime = newStartTime + timeframeToMilliseconds(timeframe) * 200;
@@ -85,41 +85,41 @@ export default class Kucoin extends Base {
       }
     }
 
-    if (!klines.length) return [];
-    const dateRange: string = timestampsToDateRange(klines[0].times.open, klines[klines.length - 1].times.open)
-    this.log(`Received total of ${klines.length} klines: ${dateRange}`);
+    if (!bars.length) return [];
+    const dateRange: string = timestampsToDateRange(bars[0].times.open, bars[bars.length - 1].times.open)
+    this.log(`Received total of ${bars.length} bars: ${dateRange}`);
 
-    klines.sort((a, b) => a.times.open - b.times.open);
-    return klines;
+    bars.sort((a, b) => a.times.open - b.times.open);
+    return bars;
   }
 
   /**
-   * initialize database with klines from predefined start date until now
-   * allows to cache already requested klines and only request recent klines
+   * initialize database with bars from predefined start date until now
+   * allows to cache already requested bars and only request recent bars
    */
-  public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
+  public async initBarsDatabase(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     const startTime = calcStartTime(timeframe);
     const endTime = startTime + timeframeToMilliseconds(timeframe) * 200;
-    const dbKlines = await database.getKlines(symbol, timeframe);
+    const dbBars = await database.getBars(symbol, timeframe);
 
-    if (!dbKlines?.length) {
-      const newKlines = await this.getKlinesFromStartUntilNow(symbol, startTime, endTime, timeframe);
+    if (!dbBars?.length) {
+      const newBars = await this.getBarsFromStartUntilNow(symbol, startTime, endTime, timeframe);
 
-      if (newKlines.length) {
-        await database.writeKlines(newKlines);
-        this.log('Database initialized with ' + newKlines.length + ' klines');
+      if (newBars.length) {
+        await database.writeBars(newBars);
+        this.log('Database initialized with ' + newBars.length + ' bars');
       }
 
-      return newKlines;
+      return newBars;
     } else {
-      const lastKline = dbKlines[dbKlines.length - 1];
-      const endTime = lastKline.times.open + timeframeToMilliseconds(timeframe) * 200;
-      const newKlines = await this.getKlinesFromStartUntilNow(symbol, lastKline.times.open, endTime, timeframe);
-      newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      this.log(`Added ${newKlines.length} new klines to the database`);
-      await database.writeKlines(newKlines);
-      const mergedKlines = dbKlines.concat(newKlines);
-      return mergedKlines;
+      const lastBar = dbBars[dbBars.length - 1];
+      const endTime = lastBar.times.open + timeframeToMilliseconds(timeframe) * 200;
+      const newBars = await this.getBarsFromStartUntilNow(symbol, lastBar.times.open, endTime, timeframe);
+      newBars.shift();    // remove first bar, since it's the same as last of dbBars
+      this.log(`Added ${newBars.length} new bars to the database`);
+      await database.writeBars(newBars);
+      const mergedBars = dbBars.concat(newBars);
+      return mergedBars;
     }
   }
 
@@ -203,8 +203,8 @@ export default class Kucoin extends Base {
     return axios.post(url, query, options);
   }
 
-  private mapKlines(symbol: string, timeframe: Timeframe, klines: any[]): Kline[] {
-    return klines.map(k => {
+  private mapBars(symbol: string, timeframe: Timeframe, bars: any[]): Bar[] {
+    return bars.map(k => {
       return {
         symbol,
         timeframe,

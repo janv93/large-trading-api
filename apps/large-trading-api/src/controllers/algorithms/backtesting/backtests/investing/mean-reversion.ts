@@ -1,4 +1,4 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
+﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../../base';
 
 enum Action {
@@ -16,7 +16,7 @@ export default class MeanReversion extends Base {
    * 3. if increase from lowest drop sufficient, close position
    * 4. back to 1.
    */
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
     const threshold: number = Number(params.threshold);
     const profitBasedTrailingStopLoss: number = Number(params.profitBasedTrailingStopLoss);
     const startStreak: number = Number(params.startStreak);
@@ -26,47 +26,47 @@ export default class MeanReversion extends Base {
       profitBasedTrailingStopLoss,
       minDrop: 0.25,
       streak: startStreak,
-      peak: klines[0].prices.close,
-      low: klines[0].prices.close,
+      peak: bars[0].prices.close,
+      low: bars[0].prices.close,
       isOpen: false,
       isTrailing: false
     };
 
-    for (const kline of klines) {
-      const action: Action = this.getAction(kline, state);
+    for (const bar of bars) {
+      const action: Action = this.getAction(bar, state);
 
       switch (action) {
-        case Action.Buy: this.buy(kline, state, algorithm); break;
-        case Action.StartTrail: this.startTrail(kline, state); break;
-        case Action.Close: this.close(kline, state, algorithm, startStreak); break;
-        case Action.SetHigh: this.setHigh(kline, state); break;
+        case Action.Buy: this.buy(bar, state, algorithm); break;
+        case Action.StartTrail: this.startTrail(bar, state); break;
+        case Action.Close: this.close(bar, state, algorithm, startStreak); break;
+        case Action.SetHigh: this.setHigh(bar, state); break;
       }
     }
 
   }
 
-  private getAction(kline: Kline, state: any): Action {
-    if (this.isBuy(kline, state)) {
+  private getAction(bar: Bar, state: any): Action {
+    if (this.isBuy(bar, state)) {
       return Action.Buy;
     }
 
-    if (this.isStartTrail(kline, state)) {
+    if (this.isStartTrail(bar, state)) {
       return Action.StartTrail;
     }
 
-    if (this.isClose(kline, state)) {
+    if (this.isClose(bar, state)) {
       return Action.Close;
     }
 
-    if (this.isSetHigh(kline, state)) {
+    if (this.isSetHigh(bar, state)) {
       return Action.SetHigh;
     }
 
     return Action.Skip;
   }
 
-  private isBuy(kline: Kline, state: any): boolean {
-    const close: number = kline.prices.close;
+  private isBuy(bar: Bar, state: any): boolean {
+    const close: number = bar.prices.close;
     const diffFromPeak: number = (state.peak - close) / state.peak;
     const excess: number = diffFromPeak - state.minDrop;
     const thresholdMultiple: number = excess / state.threshold;
@@ -75,34 +75,34 @@ export default class MeanReversion extends Base {
     return minDropReached && isBuy;
   }
 
-  private isStartTrail(kline: Kline, state: any): boolean {
+  private isStartTrail(bar: Bar, state: any): boolean {
     if (state.isTrailing) return false;
 
-    const close: number = kline.prices.close;
+    const close: number = bar.prices.close;
     const diffFromLow: number = (close - state.low) / state.low;
     const diffFromLowSufficient: boolean = diffFromLow > 2 * state.threshold;
     return state.isOpen && diffFromLowSufficient;
   }
 
-  private isClose(kline: Kline, state: any): boolean {
+  private isClose(bar: Bar, state: any): boolean {
     if (!state.isOpen || !state.isTrailing) return false;
 
-    const close: number = kline.prices.close;
+    const close: number = bar.prices.close;
     const diffFromPeak: number = (state.peak - close) / state.peak;
     const diffPeakLow: number = (state.peak - state.low) / state.peak;
     const stopLossReached: boolean = diffFromPeak / diffPeakLow > state.profitBasedTrailingStopLoss; // stop loss as percentage of current profit
     return stopLossReached;
   }
 
-  private isSetHigh(kline: Kline, state: any): boolean {
-    const close: number = kline.prices.close;
+  private isSetHigh(bar: Bar, state: any): boolean {
+    const close: number = bar.prices.close;
     return (!state.isOpen || state.isTrailing) && close > state.peak;
   }
 
-  private buy(kline: Kline, state: any, algorithm: Algorithm) {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
+  private buy(bar: Bar, state: any, algorithm: Algorithm) {
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
-    const closePrice: number = kline.prices.close;
+    const closePrice: number = bar.prices.close;
 
     signals.push({
       signal: Signal.Buy,
@@ -112,22 +112,22 @@ export default class MeanReversion extends Base {
 
     state.streak++;
     state.isOpen = true;
-    state.low = kline.prices.close;
+    state.low = bar.prices.close;
   }
 
-  private startTrail(kline: Kline, state: any) {
+  private startTrail(bar: Bar, state: any) {
     state.isTrailing = true;
-    state.peak = kline.prices.close;
+    state.peak = bar.prices.close;
   }
 
-  private setHigh(kline: Kline, state: any) {
-    state.peak = kline.prices.close;
+  private setHigh(bar: Bar, state: any) {
+    state.peak = bar.prices.close;
   }
 
-  private close(kline: Kline, state: any, algorithm: Algorithm, startStreak: number) {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
+  private close(bar: Bar, state: any, algorithm: Algorithm, startStreak: number) {
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
     const signals: BacktestSignal[] = backtest.signals;
-    const closePrice: number = kline.prices.close;
+    const closePrice: number = bar.prices.close;
 
     signals.push({
       signal: Signal.CloseAll,
@@ -137,6 +137,6 @@ export default class MeanReversion extends Base {
     state.streak = startStreak;
     state.isOpen = false;
     state.isTrailing = false;
-    state.peak = kline.prices.close;
+    state.peak = bar.prices.close;
   }
 }

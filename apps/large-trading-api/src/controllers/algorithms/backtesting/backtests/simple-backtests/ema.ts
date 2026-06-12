@@ -1,5 +1,5 @@
-import Indicators from '../../../patterns/indicators';
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, Timeframe } from '@shared';
+﻿import Indicators from '../../../patterns/indicators';
+import { Algorithm, BacktestData, BacktestSignal, Bar, Signal, Timeframe } from '@shared';
 import Btse from '../../../../exchanges/btse';
 import Base from '../../../../../base';
 
@@ -11,12 +11,12 @@ export default class Ema extends Base {
   /**
    * sets position signals depending on emas going up or down
    */
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
-    this.indicators.addEma(klines, periodOpen);
-    this.indicators.addEma(klines, periodClose);
-    const klinesWithEma = klines.filter(k => k.indicators?.ema?.[periodOpen] !== undefined && k.indicators?.ema?.[periodClose] !== undefined);
+    this.indicators.addEma(bars, periodOpen);
+    this.indicators.addEma(bars, periodClose);
+    const barsWithEma = bars.filter(k => k.indicators?.ema?.[periodOpen] !== undefined && k.indicators?.ema?.[periodClose] !== undefined);
 
     let lastMoveOpen: string;
     let lastMoveClose: string;
@@ -24,12 +24,12 @@ export default class Ema extends Base {
     let lastEmaClose: number;
     let positionOpen = false;
 
-    klinesWithEma.forEach((kline, i) => {
-      const backtest: BacktestData = kline.algorithms[algorithm]!;
+    barsWithEma.forEach((bar, i) => {
+      const backtest: BacktestData = bar.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = kline.prices.close;
-      const eOpen = kline.indicators!.ema![periodOpen];
-      const eClose = kline.indicators!.ema![periodClose];
+      const closePrice: number = bar.prices.close;
+      const eOpen = bar.indicators!.ema![periodOpen];
+      const eClose = bar.indicators!.ema![periodClose];
 
       // init
 
@@ -136,17 +136,17 @@ export default class Ema extends Base {
   private async tradeInterval(symbol: string, timeframe: Timeframe, quantityUSD: number, leverage: number) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const binance = require('../../../../exchanges/binance').default;
-    const klines = await binance.getKlines(symbol, timeframe);
-    const cryptoQuantity = Number((quantityUSD / klines[klines.length - 1].prices.close)/** .toFixed(2) for binance */);
-    klines.splice(-1);  // remove running timeframe
-    console.log(klines.slice(-3))
+    const bars = await binance.getBars(symbol, timeframe);
+    const cryptoQuantity = Number((quantityUSD / bars[bars.length - 1].prices.close)/** .toFixed(2) for binance */);
+    bars.splice(-1);  // remove running timeframe
+    console.log(bars.slice(-3))
     const emaPeriod = 80;
-    this.indicators.addEma(klines, emaPeriod);
-    const klinesWithEma = klines.filter(k => k.indicators?.ema?.[emaPeriod] !== undefined);
-    console.log(klinesWithEma.slice(-3))
+    this.indicators.addEma(bars, emaPeriod);
+    const barsWithEma = bars.filter(k => k.indicators?.ema?.[emaPeriod] !== undefined);
+    console.log(barsWithEma.slice(-3))
 
-    const move = klinesWithEma[klinesWithEma.length - 1].indicators!.ema![emaPeriod] - klinesWithEma[klinesWithEma.length - 2].indicators!.ema![emaPeriod] > 0 ? 'up' : 'down';
-    const lastMove = klinesWithEma[klinesWithEma.length - 2].indicators!.ema![emaPeriod] - klinesWithEma[klinesWithEma.length - 3].indicators!.ema![emaPeriod] > 0 ? 'up' : 'down';
+    const move = barsWithEma[barsWithEma.length - 1].indicators!.ema![emaPeriod] - barsWithEma[barsWithEma.length - 2].indicators!.ema![emaPeriod] > 0 ? 'up' : 'down';
+    const lastMove = barsWithEma[barsWithEma.length - 2].indicators!.ema![emaPeriod] - barsWithEma[barsWithEma.length - 3].indicators!.ema![emaPeriod] > 0 ? 'up' : 'down';
     console.log(lastMove);
     console.log(move);
 

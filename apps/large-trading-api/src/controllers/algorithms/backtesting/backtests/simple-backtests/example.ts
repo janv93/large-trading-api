@@ -1,15 +1,15 @@
-import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
+﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../../base';
 
 export default class Example extends Base {
-  public setSignals(klines: Kline[], algorithm: Algorithm, params: any): void {
+  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
     const size: number = Number(params.size);
-    const interval = Math.floor(klines.length / 11);
+    const interval = Math.floor(bars.length / 11);
 
-    this.forEachWithProgress(klines, (kline: Kline, index: number) => {
-      const backtest: BacktestData = kline.algorithms[algorithm]!;
+    this.forEachWithProgress(bars, (bar: Bar, index: number) => {
+      const backtest: BacktestData = bar.algorithms[algorithm]!;
       const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = kline.prices.close;
+      const closePrice: number = bar.prices.close;
 
       // Buy + CloseAll
       if (index === interval * 0) signals.push({ signal: Signal.Buy, size, price: closePrice });
@@ -25,7 +25,7 @@ export default class Example extends Base {
         signals.push({
           signal: Signal.Close,
           price: closePrice,
-          openSignalReferences: [{ klineIndex: interval * 4, signalIndex: 0 }]
+          openSignalReferences: [{ barIndex: interval * 4, signalIndex: 0 }]
         });
       }
 

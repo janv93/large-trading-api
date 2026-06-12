@@ -1,18 +1,18 @@
-import { Injectable } from '@angular/core';
-import { Kline, Algorithm, BacktestSignal, BacktestStats, Signal } from '@shared';
+﻿import { Injectable } from '@angular/core';
+import { Bar, Algorithm, BacktestSignal, BacktestStats, Signal } from '@shared';
 
 @Injectable({ providedIn: 'root' })
 export class StatsService {
-  public calcStats(klines: Kline[], algorithm: Algorithm, finalProfit: number): BacktestStats {
-    const tradesCount: number = klines.reduce((acc: number, kline: Kline) => {
-      const backtestSignals: BacktestSignal[] = kline.algorithms[algorithm]!.signals;
+  public calcStats(bars: Bar[], algorithm: Algorithm, finalProfit: number): BacktestStats {
+    const tradesCount: number = bars.reduce((acc: number, bar: Bar) => {
+      const backtestSignals: BacktestSignal[] = bar.algorithms[algorithm]!.signals;
       return acc + backtestSignals.filter((s: BacktestSignal) => !this.isCloseSignal(s.signal)).length;
     }, 0);
 
     return {
       profit: Number(finalProfit.toFixed(2)),
       numberOfTrades: tradesCount,
-      maxDrawback: Number(this.calcMaxDrawback(klines, algorithm).toFixed(2))
+      maxDrawback: Number(this.calcMaxDrawback(bars, algorithm).toFixed(2))
     };
   }
 
@@ -31,12 +31,12 @@ export class StatsService {
     return `rgb(${red}, ${green}, ${blue})`;
   }
 
-  private calcMaxDrawback(klines: Kline[], algorithm: Algorithm): number {
+  private calcMaxDrawback(bars: Bar[], algorithm: Algorithm): number {
     let high: number = 0;
     let maxDrawback: number = 0;
 
-    klines.forEach((kline: Kline) => {
-      const profit: number = (kline.algorithms[algorithm]!.profit || 0) * 100;
+    bars.forEach((bar: Bar) => {
+      const profit: number = (bar.algorithms[algorithm]!.profit || 0) * 100;
       high = Math.max(high, profit);
       maxDrawback = Math.max(maxDrawback, high - profit);
     });

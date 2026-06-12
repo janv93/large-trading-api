@@ -1,4 +1,4 @@
-@if (chartService.loading) {
+﻿@if (chartService.loading) {
 <div class="h-100 d-flex flex-column align-items-center justify-content-center">
   <loader></loader>
   <div class="d-flex mt-5 mb-5">
@@ -8,14 +8,14 @@
   </div>
 </div>
 }
-@if (!chartService.isMulti && klines) {
-<mixed-chart class="mixed-chart" [klines]="klines"></mixed-chart>
+@if (!chartService.isMulti && bars) {
+<mixed-chart class="mixed-chart" [bars]="bars"></mixed-chart>
 }
 @if (chartService.isMulti && tickers) {
 <div class="mixed-chart-multi-wrapper">
   <div class="mixed-chart-multi-container">
     @for (ticker of pagedTickers; track ticker) {
-    <mixed-chart class="mixed-chart-multi" [klines]="ticker"></mixed-chart>
+    <mixed-chart class="mixed-chart-multi" [bars]="ticker"></mixed-chart>
     }
   </div>
   @if (totalPages > 1) {

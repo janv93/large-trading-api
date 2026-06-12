@@ -1,4 +1,4 @@
-import { KlineCandlestickPatterns, Kline, KlinePrices } from '@shared';
+﻿import { BarCandlestickPatterns, Bar, BarPrices } from '@shared';
 import Base from '../../../base';
 
 export default class CandlestickPatternsController extends Base {
@@ -6,27 +6,27 @@ export default class CandlestickPatternsController extends Base {
     super();
   }
 
-  public addCandlestickPatterns(klines: Kline[]): void {
-    for (let i = 0; i < klines.length; i++) {
-      const patterns: KlineCandlestickPatterns = {};
+  public addCandlestickPatterns(bars: Bar[]): void {
+    for (let i = 0; i < bars.length; i++) {
+      const patterns: BarCandlestickPatterns = {};
 
-      this.detectSingleCandle(klines[i].prices, patterns);
+      this.detectSingleCandle(bars[i].prices, patterns);
 
       if (i >= 1) {
-        this.detectTwoCandle(klines[i - 1].prices, klines[i].prices, patterns);
+        this.detectTwoCandle(bars[i - 1].prices, bars[i].prices, patterns);
       }
 
       if (i >= 2) {
-        this.detectThreeCandle(klines[i - 2].prices, klines[i - 1].prices, klines[i].prices, patterns);
+        this.detectThreeCandle(bars[i - 2].prices, bars[i - 1].prices, bars[i].prices, patterns);
       }
 
       if (Object.keys(patterns).length > 0) {
-        klines[i].candlestickPatterns = patterns;
+        bars[i].candlestickPatterns = patterns;
       }
     }
   }
 
-  private detectSingleCandle(p: KlinePrices, patterns: KlineCandlestickPatterns): void {
+  private detectSingleCandle(p: BarPrices, patterns: BarCandlestickPatterns): void {
     const body: number = Math.abs(p.close - p.open);
     const range: number = p.high - p.low;
 
@@ -78,7 +78,7 @@ export default class CandlestickPatternsController extends Base {
     }
   }
 
-  private detectTwoCandle(prev: KlinePrices, curr: KlinePrices, patterns: KlineCandlestickPatterns): void {
+  private detectTwoCandle(prev: BarPrices, curr: BarPrices, patterns: BarCandlestickPatterns): void {
     const prevBullish: boolean = prev.close >= prev.open;
     const currBullish: boolean = curr.close >= curr.open;
     const prevBody: number = Math.abs(prev.close - prev.open);
@@ -133,7 +133,7 @@ export default class CandlestickPatternsController extends Base {
     }
   }
 
-  private detectThreeCandle(first: KlinePrices, mid: KlinePrices, last: KlinePrices, patterns: KlineCandlestickPatterns): void {
+  private detectThreeCandle(first: BarPrices, mid: BarPrices, last: BarPrices, patterns: BarCandlestickPatterns): void {
     const firstBullish: boolean = first.close >= first.open;
     const midBullish: boolean = mid.close >= mid.open;
     const lastBullish: boolean = last.close >= last.open;

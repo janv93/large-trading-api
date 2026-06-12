@@ -1,55 +1,55 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 import Base from '../base';
 import { calcStartTime } from '@shared';
-import { AppConfig, Kline, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
-import { KlineSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema, KlineFetchTimesSchema } from './schemas';
+import { AppConfig, Bar, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
+import { BarSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema, BarFetchTimesSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
 
 class Database extends Base {
-  private kline: mongoose.Model<any>;
+  private bar: mongoose.Model<any>;
   private twitterUserTimeline: mongoose.Model<any>;
   private alpacaSymbols: mongoose.Model<any>;
   private binanceSymbols: mongoose.Model<any>;
   private cmcTickers: mongoose.Model<any>;
   private appConfig: mongoose.Model<any>;
-  private klineFetchTimes: mongoose.Model<any>;
+  private barFetchTimes: mongoose.Model<any>;
 
   constructor() {
     super();
     this.init();
-    this.kline = mongoose.model('Kline', KlineSchema);
+    this.bar = mongoose.model('Bar', BarSchema);
     this.twitterUserTimeline = mongoose.model('TwitterUserTimeline', TwitterUserTimelineSchema);
     this.alpacaSymbols = mongoose.model('AlpacaSymbols', AlpacaSymbolsSchema);
     this.binanceSymbols = mongoose.model('BinanceSymbols', BinanceSymbolsSchema);
     this.cmcTickers = mongoose.model('CmcTickers', CmcTickersSchema);
     this.appConfig = mongoose.model('AppConfig', AppConfigSchema);
-    this.klineFetchTimes = mongoose.model('KlineFetchTimes', KlineFetchTimesSchema);
+    this.barFetchTimes = mongoose.model('BarFetchTimes', BarFetchTimesSchema);
   }
 
-  public async writeKlines(klines: Kline[]): Promise<void> {
-    if (klines.length === 0) {
-      this.log('0 klines to write. Exiting...');
+  public async writeBars(bars: Bar[]): Promise<void> {
+    if (bars.length === 0) {
+      this.log('0 bars to write. Exiting...');
       return;
     } else {
       // check if doc with "filter" props exists. if not, adds doc with "filter" and "$setOnInsert" properties combined
-      const bulkWriteOperations = klines.map(kline => ({
+      const bulkWriteOperations = bars.map(bar => ({
         updateOne: {
           filter: {
-            symbol: kline.symbol,
-            timeframe: kline.timeframe,
-            openTime: kline.times.open,
-            closeTime: kline.times.close
+            symbol: bar.symbol,
+            timeframe: bar.timeframe,
+            openTime: bar.times.open,
+            closeTime: bar.times.close
           },
           update: {
             $setOnInsert: {
-              openPrice: kline.prices.open,
-              closePrice: kline.prices.close,
-              highPrice: kline.prices.high,
-              lowPrice: kline.prices.low,
-              volume: kline.volume,
-              numberOfTrades: kline.numberOfTrades
+              openPrice: bar.prices.open,
+              closePrice: bar.prices.close,
+              highPrice: bar.prices.high,
+              lowPrice: bar.prices.low,
+              volume: bar.volume,
+              numberOfTrades: bar.numberOfTrades
             }
           },
           upsert: true
@@ -57,48 +57,48 @@ class Database extends Base {
       }));
 
       try {
-        await this.kline.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
-        this.log(`Wrote <= ${klines.length} klines`);
+        await this.bar.bulkWrite(bulkWriteOperations, { ordered: false, writeConcern: { w: 0 } });
+        this.log(`Wrote <= ${bars.length} bars`);
       } catch (err) {
-        this.logErr('Failed to write klines: ', err);
+        this.logErr('Failed to write bars: ', err);
         throw err;
       }
     }
   }
 
-  public async getKlines(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
+  public async getBars(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     try {
-      const klines = await this.kline.find({ symbol, timeframe });
+      const bars = await this.bar.find({ symbol, timeframe });
 
-      if (klines.length) {
-        this.log(`Read ${klines.length} klines for symbol ${symbol}`);
+      if (bars.length) {
+        this.log(`Read ${bars.length} bars for symbol ${symbol}`);
       } else {
-        this.log('No klines found');
+        this.log('No bars found');
       }
 
-      const mappedKlines: Kline[] = klines.map(kline => ({
-        symbol: kline.symbol,
-        timeframe: kline.timeframe,
+      const mappedBars: Bar[] = bars.map(bar => ({
+        symbol: bar.symbol,
+        timeframe: bar.timeframe,
         times: {
-          open: kline.openTime,
-          close: kline.closeTime
+          open: bar.openTime,
+          close: bar.closeTime
         },
         prices: {
-          open: kline.openPrice,
-          close: kline.closePrice,
-          high: kline.highPrice,
-          low: kline.lowPrice
+          open: bar.openPrice,
+          close: bar.closePrice,
+          high: bar.highPrice,
+          low: bar.lowPrice
         },
-        volume: kline.volume,
-        numberOfTrades: kline.numberOfTrades,
+        volume: bar.volume,
+        numberOfTrades: bar.numberOfTrades,
         algorithms: {}
       }));
 
-      mappedKlines.sort((a, b) => a.times.open - b.times.open);
+      mappedBars.sort((a, b) => a.times.open - b.times.open);
 
-      return mappedKlines;
+      return mappedBars;
     } catch (err) {
-      this.logErr(`Failed to retrieve klines for symbol "${symbol}" and timeframe "${timeframe}"`, err);
+      this.logErr(`Failed to retrieve bars for symbol "${symbol}" and timeframe "${timeframe}"`, err);
       throw err;
     }
   }
@@ -106,33 +106,33 @@ class Database extends Base {
   public async getAllUniqueSymbols(): Promise<string[]> {
     try {
       this.log(`Get all unique Symbols`);
-      return await this.kline.distinct('symbol').exec();
+      return await this.bar.distinct('symbol').exec();
     } catch (err) {
       this.logErr(`Failed to retrieve unique symbols`, err);
       throw err;
     }
   }
 
-  public async deleteAllKlinesWithSymbol(symbol: string): Promise<void> {
+  public async deleteAllBarsWithSymbol(symbol: string): Promise<void> {
     try {
-      await this.kline.deleteMany({ symbol }).exec();
-      this.log(`Delete all klines of symbol ${symbol}`);
+      await this.bar.deleteMany({ symbol }).exec();
+      this.log(`Delete all bars of symbol ${symbol}`);
     } catch (err) {
-      this.logErr(`Failed deleting all klines of symbol ${symbol}`);
+      this.logErr(`Failed deleting all bars of symbol ${symbol}`);
       throw err;
     }
   }
 
-  // delete klines before a certain time too far in the past
-  public async deleteOutdatedKlines(): Promise<number | null> {
+  // delete bars before a certain time too far in the past
+  public async deleteOutdatedBars(): Promise<number | null> {
     const appConfig: AppConfig | null = await this.getAppConfig();
     const oneDayAgo: Date = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    if (appConfig && appConfig.lastOutdatedKlineRemoval > oneDayAgo) {
+    if (appConfig && appConfig.lastOutdatedBarRemoval > oneDayAgo) {
       return null;
     }
 
-    this.log('Deleting outdated klines');
+    this.log('Deleting outdated bars');
 
     try {
       const deleteConditions = Object.values(Timeframe).map(timeframe => ({
@@ -140,16 +140,16 @@ class Database extends Base {
         openTime: { $lt: calcStartTime(timeframe) }
       }));
 
-      const result: DeleteResult = await this.kline.deleteMany({
+      const result: DeleteResult = await this.bar.deleteMany({
         $or: deleteConditions
       });
 
       const totalDeleted = result.deletedCount;
-      this.log(`${totalDeleted} outdated klines deleted`);
-      await this.updateLastOutdatedKlineRemoval();
+      this.log(`${totalDeleted} outdated bars deleted`);
+      await this.updateLastOutdatedBarRemoval();
       return totalDeleted;
     } catch (err) {
-      this.logErr('Failed to delete klines: ', err);
+      this.logErr('Failed to delete bars: ', err);
       throw err;
     }
   }
@@ -388,21 +388,21 @@ class Database extends Base {
     }
   }
 
-  public async getKlineFetchTime(symbol: string, timeframe: string): Promise<number | undefined> {
+  public async getBarFetchTime(symbol: string, timeframe: string): Promise<number | undefined> {
     try {
-      const document = await this.klineFetchTimes.findOne({ symbol, timeframe });
+      const document = await this.barFetchTimes.findOne({ symbol, timeframe });
       return document ? new Date(document.updatedAt).getTime() : undefined;
     } catch (err) {
-      this.logErr(`Failed to get kline fetch time for ${symbol}`, err);
+      this.logErr(`Failed to get bar fetch time for ${symbol}`, err);
       return undefined;
     }
   }
 
-  public async updateKlineFetchTime(symbol: string, timeframe: string): Promise<void> {
+  public async updateBarFetchTime(symbol: string, timeframe: string): Promise<void> {
     try {
-      await this.klineFetchTimes.findOneAndUpdate({ symbol, timeframe }, { $set: { updatedAt: new Date() } }, { upsert: true });
+      await this.barFetchTimes.findOneAndUpdate({ symbol, timeframe }, { $set: { updatedAt: new Date() } }, { upsert: true });
     } catch (err) {
-      this.logErr(`Failed to update kline fetch time for ${symbol}`, err);
+      this.logErr(`Failed to update bar fetch time for ${symbol}`, err);
       throw err;
     }
   }
@@ -422,12 +422,12 @@ class Database extends Base {
     }
   }
 
-  private async updateLastOutdatedKlineRemoval(): Promise<void> {
+  private async updateLastOutdatedBarRemoval(): Promise<void> {
     try {
-      await this.appConfig.findOneAndUpdate({}, { lastOutdatedKlineRemoval: new Date() }, { upsert: true });
-      this.log(`Updated last outdated kline removal date`);
+      await this.appConfig.findOneAndUpdate({}, { lastOutdatedBarRemoval: new Date() }, { upsert: true });
+      this.log(`Updated last outdated bar removal date`);
     } catch (err) {
-      this.logErr(`Failed updating last outdated kline removal date`);
+      this.logErr(`Failed updating last outdated bar removal date`);
       throw err;
     }
   }

@@ -1,4 +1,4 @@
-import { Algorithm, AlgorithmConfigMulti, Kline, MultiBenchmark } from '@shared';
+﻿import { Algorithm, AlgorithmConfigMulti, Bar, MultiBenchmark } from '@shared';
 import Base from '../../../../base';
 import { calcScore } from '@shared';
 import Backtester from '../backtester/backtester';
@@ -20,16 +20,16 @@ if (!isMainThread) {
   algoInstance.silent = true;
   backtester.silent = true;
 
-  const tickers: Kline[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
+  const tickers: Bar[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
   // Capture RSS here — after deserialization (the dominant allocation) and before
   // processing, so GC has not had a chance to deflate the value yet.
   const peakRss = process.memoryUsage().rss;
 
-  tickers.forEach((currentTicker: Kline[]) => {
-    currentTicker.forEach((kline: Kline) => {
-      kline.algorithms[algorithm] = { signals: [] };
-      kline.indicators = undefined;
-      kline.chart = undefined;
+  tickers.forEach((currentTicker: Bar[]) => {
+    currentTicker.forEach((bar: Bar) => {
+      bar.algorithms[algorithm] = { signals: [] };
+      bar.indicators = undefined;
+      bar.chart = undefined;
     });
 
     algoInstance.setSignals(currentTicker, algorithm, combo);
@@ -46,11 +46,11 @@ if (!isMainThread) {
 export default class MultiTicker extends Base {
   private backtest = new Backtester();
 
-  public async handleAlgo(tickers: Kline[][], params: Record<string, AlgorithmConfigMulti | Algorithm>, algoInstance: any): Promise<Kline[][]> {
+  public async handleAlgo(tickers: Bar[][], params: Record<string, AlgorithmConfigMulti | Algorithm>, algoInstance: any): Promise<Bar[][]> {
     const algorithm: Algorithm = params.algorithm as Algorithm;
     const multiConfigs = Object.entries(params).filter(([key]) => key !== 'algorithm') as [string, AlgorithmConfigMulti][];
     const benchmarks: MultiBenchmark[] = [];
-    let bestTickers: Kline[][] = [];
+    let bestTickers: Bar[][] = [];
     const algoModulePath = this.resolveAlgoModulePath(algoInstance);
 
     const total = multiConfigs.reduce((acc, [, config]) => acc * (Math.round((config.max - config.min) / (config.step ?? 1)) + 1), 1);
@@ -75,7 +75,7 @@ export default class MultiTicker extends Base {
   }
 
   private async runWithWorkers(
-    tickers: Kline[][],
+    tickers: Bar[][],
     algorithm: Algorithm,
     combinations: Generator<Record<string, number>>,
     algoModulePath: string,
@@ -167,11 +167,11 @@ export default class MultiTicker extends Base {
     }
   }
 
-  private runAlgo(tickers: Kline[][], algorithm: Algorithm, params: Record<string, number>, algoInstance: any): Kline[][] {
-    const clonedTickers: Kline[][] = deepmerge([], tickers);
+  private runAlgo(tickers: Bar[][], algorithm: Algorithm, params: Record<string, number>, algoInstance: any): Bar[][] {
+    const clonedTickers: Bar[][] = deepmerge([], tickers);
 
-    return clonedTickers.map((currentTicker: Kline[]) => {
-      currentTicker.forEach((kline: Kline) => { kline.algorithms[algorithm] = { signals: [] }; });
+    return clonedTickers.map((currentTicker: Bar[]) => {
+      currentTicker.forEach((bar: Bar) => { bar.algorithms[algorithm] = { signals: [] }; });
       algoInstance.setSignals(currentTicker, algorithm, params);
       return this.backtest.calcBacktestPerformance(currentTicker, algorithm, 0);
     });

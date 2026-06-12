@@ -1,5 +1,5 @@
-import { IChartApi, ISeriesApi, SeriesMarker, Time, UTCTimestamp, MouseEventParams } from 'lightweight-charts';
-import { Kline, Algorithm, BacktestData, BacktestSignal, Signal, PivotPoint, PivotPointSide, MarketStructureType, TrendLine, TrendLinePosition } from '@shared';
+﻿import { IChartApi, ISeriesApi, SeriesMarker, Time, UTCTimestamp, MouseEventParams } from 'lightweight-charts';
+import { Bar, Algorithm, BacktestData, BacktestSignal, Signal, PivotPoint, PivotPointSide, MarketStructureType, TrendLine, TrendLinePosition } from '@shared';
 import { TrendLinesPrimitive, TrendLineSegment } from '../primitives/trend-lines-primitive';
 import { CompactCirclePrimitive, CompactCircleMarker } from '../primitives/compact-circle-primitive';
 import { ISeriesMarkersPluginApi } from 'lightweight-charts';
@@ -13,7 +13,7 @@ export class MarkersChartingService {
   private currentHighlightedOpenTimes = new Set<number>();
 
   public drawAll(
-    klines: Kline[],
+    bars: Bar[],
     algorithm: Algorithm,
     chart: IChartApi,
     seriesMarkersPlugin: ISeriesMarkersPluginApi<Time>,
@@ -21,10 +21,10 @@ export class MarkersChartingService {
     trendLinesPrimitive: TrendLinesPrimitive | undefined,
     isMulti: boolean
   ): void {
-    this.setPivotPointMarkers(klines);
-    this.setSignalMarkers(klines, algorithm);
+    this.setPivotPointMarkers(bars);
+    this.setSignalMarkers(bars, algorithm);
     this.drawMarkers(chart, seriesMarkersPlugin, compactCirclePrimitive, isMulti);
-    this.setTrendLines(klines, trendLinesPrimitive);
+    this.setTrendLines(bars, trendLinesPrimitive);
   }
 
   public drawMarkers(
@@ -53,18 +53,18 @@ export class MarkersChartingService {
   }
 
   public highlightOpenSignals(
-    kline: Kline,
-    klines: Kline[],
+    bar: Bar,
+    bars: Bar[],
     seriesMarkersPlugin: ISeriesMarkersPluginApi<Time>,
     compactCirclePrimitive: CompactCirclePrimitive,
     chart: IChartApi,
     isMulti: boolean
   ): void {
-    const backtest: BacktestData = kline.algorithms[Object.keys(kline.algorithms)[0]]!;
+    const backtest: BacktestData = bar.algorithms[Object.keys(bar.algorithms)[0]]!;
 
     const newOpenTimes: Set<number> = new Set(
       backtest.signals.flatMap(signal =>
-        signal.openSignalReferences?.map(ref => klines[ref.klineIndex].times.open) ?? []
+        signal.openSignalReferences?.map(ref => bars[ref.barIndex].times.open) ?? []
       )
     );
 
@@ -97,17 +97,17 @@ export class MarkersChartingService {
     trendLinesPrimitive.setHover(param.point.x, param.point.y);
   }
 
-  private setPivotPointMarkers(klines: Kline[]): void {
+  private setPivotPointMarkers(bars: Bar[]): void {
     const markers: SeriesMarker<Time>[] = [];
     const compactMarkers: CompactCircleMarker[] = [];
 
-    klines.forEach((kline: Kline) => {
-      if (!kline.chart?.pivotPoint) return;
-      const marker: SeriesMarker<Time> = this.getPivotPointTemplate(kline);
+    bars.forEach((bar: Bar) => {
+      if (!bar.chart?.pivotPoint) return;
+      const marker: SeriesMarker<Time> = this.getPivotPointTemplate(bar);
       markers.push(marker);
       compactMarkers.push({
-        time: kline.times.open / 1000,
-        price: marker.position === 'belowBar' ? kline.prices.low : kline.prices.high,
+        time: bar.times.open / 1000,
+        price: marker.position === 'belowBar' ? bar.prices.low : bar.prices.high,
         side: marker.position === 'belowBar' ? 'below' : 'above',
         color: marker.color as string
       });
@@ -117,17 +117,17 @@ export class MarkersChartingService {
     this.compactPivotPointMarkers = compactMarkers;
   }
 
-  private setSignalMarkers(klines: Kline[], algorithm: Algorithm): void {
+  private setSignalMarkers(bars: Bar[], algorithm: Algorithm): void {
     const markers: SeriesMarker<Time>[] = [];
     const compactMarkers: CompactCircleMarker[] = [];
 
-    klines.forEach((kline: Kline) => {
-      if (!kline.algorithms[algorithm]?.signals.length) return;
-      const marker: SeriesMarker<Time> = this.getSignalTemplate(kline, algorithm);
+    bars.forEach((bar: Bar) => {
+      if (!bar.algorithms[algorithm]?.signals.length) return;
+      const marker: SeriesMarker<Time> = this.getSignalTemplate(bar, algorithm);
       markers.push(marker);
       compactMarkers.push({
-        time: kline.times.open / 1000,
-        price: marker.position === 'belowBar' ? kline.prices.low : kline.prices.high,
+        time: bar.times.open / 1000,
+        price: marker.position === 'belowBar' ? bar.prices.low : bar.prices.high,
         side: marker.position === 'belowBar' ? 'below' : 'above',
         color: marker.color as string
       });
@@ -137,31 +137,31 @@ export class MarkersChartingService {
     this.compactSignalMarkers = compactMarkers;
   }
 
-  private setTrendLines(klines: Kline[], trendLinesPrimitive: TrendLinesPrimitive | undefined): void {
+  private setTrendLines(bars: Bar[], trendLinesPrimitive: TrendLinesPrimitive | undefined): void {
     if (!trendLinesPrimitive) return;
     const segments: TrendLineSegment[] = [];
 
-    klines.forEach((kline: Kline) => {
-      if (!kline.chart?.trendLines?.length) return;
+    bars.forEach((bar: Bar) => {
+      if (!bar.chart?.trendLines?.length) return;
 
-      kline.chart.trendLines.forEach((trendLine: TrendLine) => {
-        const startValue: number = trendLine.position === TrendLinePosition.Above ? kline.prices.high : kline.prices.low;
-        const endKline: Kline = klines[trendLine.endIndex];
+      bar.chart.trendLines.forEach((trendLine: TrendLine) => {
+        const startValue: number = trendLine.position === TrendLinePosition.Above ? bar.prices.high : bar.prices.low;
+        const endBar: Bar = bars[trendLine.endIndex];
         let endTime: number;
         let endValue: number;
 
         if (trendLine.breakThroughIndex) {
-          const breakthroughKline: Kline = klines[trendLine.breakThroughIndex];
+          const breakthroughBar: Bar = bars[trendLine.breakThroughIndex];
           const lineFunction: LinearFunction = new LinearFunction(trendLine.function.m, trendLine.function.b);
-          endTime = breakthroughKline.times.open / 1000;
+          endTime = breakthroughBar.times.open / 1000;
           endValue = lineFunction.getY(trendLine.breakThroughIndex);
         } else {
-          endTime = endKline.times.open / 1000;
-          endValue = trendLine.position === TrendLinePosition.Above ? endKline.prices.high : endKline.prices.low;
+          endTime = endBar.times.open / 1000;
+          endValue = trendLine.position === TrendLinePosition.Above ? endBar.prices.high : endBar.prices.low;
         }
 
         segments.push({
-          startTime: kline.times.open / 1000,
+          startTime: bar.times.open / 1000,
           startValue,
           endTime,
           endValue,
@@ -185,8 +185,8 @@ export class MarkersChartingService {
     return this.markersSignals.filter(isInRange).length + this.markersPivotPoints.filter(isInRange).length;
   }
 
-  private getSignalTemplate(kline: Kline, algorithm: Algorithm): SeriesMarker<Time> {
-    const backtest: BacktestData = kline.algorithms[algorithm]!;
+  private getSignalTemplate(bar: Bar, algorithm: Algorithm): SeriesMarker<Time> {
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
     const backtestSignals: BacktestSignal[] = backtest.signals;
     const signals: Signal[] = backtestSignals.map((s: BacktestSignal) => s.signal);
     const hasBuy: boolean = signals.includes(Signal.Buy);
@@ -213,7 +213,7 @@ export class MarkersChartingService {
     }, 0);
 
     return {
-      time: kline.times.open / 1000 as Time,
+      time: bar.times.open / 1000 as Time,
       position: ['BUY', 'CBUY'].includes(signal) ? 'belowBar' : 'aboveBar',
       color: ['BUY', 'CBUY'].includes(signal) ? 'lime' : ['CLOSE', 'LIQ', 'TP', 'SL', 'MIX'].includes(signal) ? 'white' : '#ffd500',
       shape: ['BUY', 'CBUY'].includes(signal) ? 'arrowUp' : 'arrowDown',
@@ -221,12 +221,12 @@ export class MarkersChartingService {
     };
   }
 
-  private getPivotPointTemplate(kline: Kline): SeriesMarker<Time> {
-    const pivotPoint: PivotPoint = kline.chart?.pivotPoint!;
+  private getPivotPointTemplate(bar: Bar): SeriesMarker<Time> {
+    const pivotPoint: PivotPoint = bar.chart?.pivotPoint!;
     const marketStructure: MarketStructureType | undefined = pivotPoint.marketStructure;
 
     return {
-      time: kline.times.open / 1000 as Time,
+      time: bar.times.open / 1000 as Time,
       position: pivotPoint.side === PivotPointSide.High ? 'aboveBar' : 'belowBar',
       color: 'white',
       shape: pivotPoint.side === PivotPointSide.High ? 'arrowDown' : 'arrowUp',

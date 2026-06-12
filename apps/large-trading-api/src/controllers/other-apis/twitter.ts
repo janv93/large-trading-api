@@ -1,11 +1,11 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
 import { createUrl } from '@shared';
 import binance from '../exchanges/binance';
 import database from '../../data/database';
 import Coinmarketcap from './coinmarketcap';
-import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Kline } from '@shared';
+import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Bar } from '@shared';
 import Base from '../../base';
 
 export default class Twitter extends Base {
@@ -135,23 +135,23 @@ export default class Twitter extends Base {
     return timelinesWithTweets;
   }
 
-  public addPriceToTweetSymbols(tweets: Tweet[], klines: Kline[]): Tweet[] {
+  public addPriceToTweetSymbols(tweets: Tweet[], bars: Bar[]): Tweet[] {
     tweets.forEach(t => {
-      const priceKline = klines.find((k, i) => {
-        const nextKline = klines[i + 1];
+      const priceBar = bars.find((k, i) => {
+        const nextBar = bars[i + 1];
 
-        if (nextKline) {
-          return k.times.open <= t.time && nextKline.times.open > t.time;
+        if (nextBar) {
+          return k.times.open <= t.time && nextBar.times.open > t.time;
         }
 
         return false;
       });
 
-      const klineSymbol = binance.pairToSymbol(klines[0].symbol);
-      const symbol = t.symbols.find(s => s.symbol === klineSymbol);
+      const barSymbol = binance.pairToSymbol(bars[0].symbol);
+      const symbol = t.symbols.find(s => s.symbol === barSymbol);
 
-      if (symbol && priceKline) {
-        symbol.price = priceKline.prices.close;
+      if (symbol && priceBar) {
+        symbol.price = priceBar.prices.close;
       }
     });
 

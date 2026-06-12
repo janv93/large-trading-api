@@ -1,7 +1,7 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { AlpacaResponse, Kline, Timeframe } from '@shared';
+﻿import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AlpacaResponse, Bar, Timeframe } from '@shared';
 import Base from '../../base';
-import { createUrl, calcStartTime, isKlineOutdated, timestampsToDateRange, sleep } from '@shared';
+import { createUrl, calcStartTime, isBarOutdated, timestampsToDateRange, sleep } from '@shared';
 import database from '../../data/database';
 
 class Alpaca extends Base {
@@ -15,7 +15,7 @@ class Alpaca extends Base {
   private requestsSentThisMinute = 0;
   private lastFetchTime: Map<string, number> = new Map();
 
-  public async getKlines(symbol: string, timeframe: Timeframe, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
+  public async getBars(symbol: string, timeframe: Timeframe, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const url = `${this.baseUrls.baseUrlv2}/stocks/${symbol}/bars`;
 
     const query = {
@@ -39,62 +39,62 @@ class Alpaca extends Base {
       await this.waitIfRateLimitReached();
       const options: AxiosRequestConfig = this.getRequestOptions();
       const res: AxiosResponse = await axios.get(finalUrl, options);
-      if (!res.data?.bars) return { nextPageToken: '', klines: [] };
-      const klines = this.mapKlines(symbol, timeframe, res.data.bars);
-      return { nextPageToken: res.data.next_page_token, klines };
+      if (!res.data?.bars) return { nextPageToken: '', bars: [] };
+      const bars = this.mapBars(symbol, timeframe, res.data.bars);
+      return { nextPageToken: res.data.next_page_token, bars };
     } catch (err) {
       this.handleError(err, symbol);
-      return { nextPageToken: '', klines: [] };
+      return { nextPageToken: '', bars: [] };
     }
   }
 
   /**
-   * initialize database with klines from predefined start date until now
-   * allows to cache already requested klines and only request recent klines
+   * initialize database with bars from predefined start date until now
+   * allows to cache already requested bars and only request recent bars
    */
-  public async initKlinesDatabase(symbol: string, timeframe: Timeframe): Promise<Kline[]> {
+  public async initBarsDatabase(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     const startTime: number = calcStartTime(timeframe);
-    let dbKlines: Kline[] = await database.getKlines(symbol, timeframe);
+    let dbBars: Bar[] = await database.getBars(symbol, timeframe);
 
     // not in database yet
-    if (!dbKlines || !dbKlines.length) {
-      const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, startTime, timeframe);
+    if (!dbBars || !dbBars.length) {
+      const newBars: Bar[] = await this.getBarsFromStartUntilNow(symbol, startTime, timeframe);
 
-      if (newKlines.length) {
-        await database.writeKlines(newKlines);
-        this.log(`${newKlines.length} ${symbol} klines initialized in database`);
+      if (newBars.length) {
+        await database.writeBars(newBars);
+        this.log(`${newBars.length} ${symbol} bars initialized in database`);
       }
 
-      return newKlines;
+      return newBars;
     }
 
     // already in database
-    const lastKline: Kline = dbKlines[dbKlines.length - 1];
-    const lastKlineTime: number = lastKline.times.open;
+    const lastBar: Bar = dbBars[dbBars.length - 1];
+    const lastBarTime: number = lastBar.times.open;
 
     const cacheKey = `${symbol}_${timeframe}`;
-    const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getKlineFetchTime(symbol, timeframe);
+    const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getBarFetchTime(symbol, timeframe);
 
-    if (isKlineOutdated(timeframe, lastKlineTime, lastFetch)) {
-      const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastKlineTime)).length > 0;
+    if (isBarOutdated(timeframe, lastBarTime, lastFetch)) {
+      const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastBarTime)).length > 0;
 
       if (hasNewStockSplits) {
-        await database.deleteAllKlinesWithSymbol(symbol);
-        dbKlines = [];
+        await database.deleteAllBarsWithSymbol(symbol);
+        dbBars = [];
       }
 
-      const newStart: number = hasNewStockSplits ? startTime : lastKlineTime;
-      const newKlines: Kline[] = await this.getKlinesFromStartUntilNow(symbol, newStart, timeframe);
-      newKlines.shift();    // remove first kline, since it's the same as last of dbKlines
-      this.log(`${newKlines.length} new ${symbol} klines added to database`);
+      const newStart: number = hasNewStockSplits ? startTime : lastBarTime;
+      const newBars: Bar[] = await this.getBarsFromStartUntilNow(symbol, newStart, timeframe);
+      newBars.shift();    // remove first bar, since it's the same as last of dbBars
+      this.log(`${newBars.length} new ${symbol} bars added to database`);
       this.lastFetchTime.set(cacheKey, Date.now());
-      await database.updateKlineFetchTime(symbol, timeframe);
-      await database.writeKlines(newKlines);
-      const mergedKlines: Kline[] = dbKlines.concat(newKlines);
-      return mergedKlines;
+      await database.updateBarFetchTime(symbol, timeframe);
+      await database.writeBars(newBars);
+      const mergedBars: Bar[] = dbBars.concat(newBars);
+      return mergedBars;
     } else {
       this.log(`${symbol} already up to date`);
-      return dbKlines;
+      return dbBars;
     }
   }
 
@@ -113,7 +113,7 @@ class Alpaca extends Base {
     return mostActiveSymbols;
   }
 
-  // 1-time cleanup of database, deletes all klines of symbols that had stock splits so that future klines use the same price multiplier as past klines
+  // 1-time cleanup of database, deletes all bars of symbols that had stock splits so that future bars use the same price multiplier as past bars
   public async deleteStockSplitSymbols(): Promise<void> {
     const hadStockSplitCleanup: boolean = await database.getHadStockSplitCleanup();
     if (hadStockSplitCleanup) return;
@@ -123,7 +123,7 @@ class Alpaca extends Base {
     const stockSplitSymbols: string[] = await this.getStockSplitSymbols(stockSymbols);
 
     if (stockSplitSymbols) {
-      await Promise.all(stockSplitSymbols.map((symbol: string) => database.deleteAllKlinesWithSymbol(symbol)));
+      await Promise.all(stockSplitSymbols.map((symbol: string) => database.deleteAllBarsWithSymbol(symbol)));
       await database.setHadStockSplitCleanup();
     }
   }
@@ -161,15 +161,15 @@ class Alpaca extends Base {
   }
 
   /**
-   * get klines from startTime until now
+   * get bars from startTime until now
    */
-  private async getKlinesFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Kline[]> {
-    const klines: Kline[] = [];
+  private async getBarsFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe): Promise<Bar[]> {
+    const bars: Bar[] = [];
     let pageToken: string | undefined;
 
     while (true) {
-      const res = await this.getKlines(symbol, timeframe, startTime, pageToken);
-      klines.push(...res.klines);
+      const res = await this.getBars(symbol, timeframe, startTime, pageToken);
+      bars.push(...res.bars);
       pageToken = res.nextPageToken;
 
       if (!pageToken) {
@@ -177,15 +177,15 @@ class Alpaca extends Base {
       }
     }
 
-    const dateRange = timestampsToDateRange(klines[0]?.times.open, klines[klines.length - 1]?.times.open)
-    this.log(`${klines.length} ${symbol} klines received - ${dateRange}`);
+    const dateRange = timestampsToDateRange(bars[0]?.times.open, bars[bars.length - 1]?.times.open)
+    this.log(`${bars.length} ${symbol} bars received - ${dateRange}`);
 
-    klines.sort((a, b) => a.times.open - b.times.open);
-    return klines;
+    bars.sort((a, b) => a.times.open - b.times.open);
+    return bars;
   }
 
-  private mapKlines(symbol: string, timeframe: Timeframe, klines: any): Kline[] {
-    return klines.map(k => {
+  private mapBars(symbol: string, timeframe: Timeframe, bars: any): Bar[] {
+    return bars.map(k => {
       return {
         symbol,
         timeframe,

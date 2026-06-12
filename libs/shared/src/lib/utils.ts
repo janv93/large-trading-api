@@ -1,11 +1,11 @@
-import { cloneDeep } from 'lodash';
-import { Algorithm, Kline, Signal, Timeframe, TickerMetrics } from './interfaces';
+﻿import { cloneDeep } from 'lodash';
+import { Algorithm, Bar, Signal, Timeframe, TickerMetrics } from './interfaces';
 
 /**
  * 1 = green, -1 = red, 0 = steady
  */
-export function getKlineColor(kline: Kline): 1 | -1 | 0 {
-  const diff = Number(kline.prices.close) - Number(kline.prices.open);
+export function getBarColor(bar: Bar): 1 | -1 | 0 {
+  const diff = Number(bar.prices.close) - Number(bar.prices.open);
   return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
 }
 
@@ -84,12 +84,12 @@ export function calcStartTime(timeframe: Timeframe): number {
   }
 }
 
-export function isKlineOutdated(timeframe: Timeframe, lastOpen: number, lastFetch?: number): boolean {
+export function isBarOutdated(timeframe: Timeframe, lastOpen: number, lastFetch?: number): boolean {
   const unit = timeframe.slice(-1);
   const now = Date.now();
   const timeframeMs = timeframeToMilliseconds(timeframe);
 
-  // e.g. if timeframe 1h and last fetch < 1h ago there are no new klines
+  // e.g. if timeframe 1h and last fetch < 1h ago there are no new bars
   if (lastFetch && (now - lastFetch) < timeframeMs) return false;
 
   const diff = now - lastOpen;
@@ -103,27 +103,27 @@ export function sleep(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
 }
 
-export function calcTickerMetrics(klines: Kline[], algorithm: Algorithm): TickerMetrics {
+export function calcTickerMetrics(bars: Bar[], algorithm: Algorithm): TickerMetrics {
   let peak = 0;
   let maxDrawdown = 0;
   let signalCount = 0;
 
-  for (const kline of klines) {
-    const profit = kline.algorithms[algorithm]?.profit ?? 0;
+  for (const bar of bars) {
+    const profit = bar.algorithms[algorithm]?.profit ?? 0;
     if (profit > peak) peak = profit;
     const drawdown = peak - profit;
     if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-    signalCount += kline.algorithms[algorithm]?.signals?.length ?? 0;
+    signalCount += bar.algorithms[algorithm]?.signals?.length ?? 0;
   }
 
-  const rawProfit = klines.at(-1)?.algorithms[algorithm]?.profit ?? 0;
+  const rawProfit = bars.at(-1)?.algorithms[algorithm]?.profit ?? 0;
   const sign = rawProfit >= 0 ? 1 : -1;
   const sqrtProfit = rawProfit === 0 ? 0 : sign * Math.sqrt(Math.abs(rawProfit));
   const maxDrawdownRatio = peak <= 0 ? 1 : Math.min(maxDrawdown / peak, 1);
   return { sqrtProfit, maxDrawdownRatio, signalCount };
 }
 
-export function calcScore(tickers: Kline[][], algorithm: Algorithm): number {
+export function calcScore(tickers: Bar[][], algorithm: Algorithm): number {
   const metrics: TickerMetrics[] = tickers.map(t => calcTickerMetrics(t, algorithm));
   if (metrics.length === 0) return 0;
 

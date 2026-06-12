@@ -1,4 +1,4 @@
-import { BollingerBands, Kline, KlineIndicators, MacdValues, RsiDivergenceData, RsiDivergenceType, TrendLine, TrendLinePosition } from '@shared';
+﻿import { BollingerBands, Bar, BarIndicators, MacdValues, RsiDivergenceData, RsiDivergenceType, TrendLine, TrendLinePosition } from '@shared';
 import { LinearFunction } from '@shared';
 import Base from '../../../base';
 
@@ -7,13 +7,13 @@ export default class Indicators extends Base {
     super();
   }
 
-  public addRsi(klines: Kline[], period: number): void {
+  public addRsi(bars: Bar[], period: number): void {
     // seed initial average gain/loss from first `period` price changes
     let avgGain: number = 0;
     let avgLoss: number = 0;
 
     for (let i = 1; i <= period; i++) {
-      const change: number = klines[i].prices.close - klines[i - 1].prices.close;
+      const change: number = bars[i].prices.close - bars[i - 1].prices.close;
       if (change > 0) avgGain += change;
       else avgLoss += Math.abs(change);
     }
@@ -21,60 +21,60 @@ export default class Indicators extends Base {
     avgGain /= period;
     avgLoss /= period;
 
-    const setRsi = (kline: Kline) => {
+    const setRsi = (bar: Bar) => {
       const relativeStrength: number = avgLoss === 0 ? Infinity : avgGain / avgLoss;
-      const existingIndicators: KlineIndicators | undefined = kline.indicators;
-      kline.indicators = { ...existingIndicators, rsi: 100 - 100 / (1 + relativeStrength) };
+      const existingIndicators: BarIndicators | undefined = bar.indicators;
+      bar.indicators = { ...existingIndicators, rsi: 100 - 100 / (1 + relativeStrength) };
     };
 
-    setRsi(klines[period]);
+    setRsi(bars[period]);
 
-    for (let i = period + 1; i < klines.length; i++) {
-      const change: number = klines[i].prices.close - klines[i - 1].prices.close;
+    for (let i = period + 1; i < bars.length; i++) {
+      const change: number = bars[i].prices.close - bars[i - 1].prices.close;
       const gain: number = change > 0 ? change : 0;
       const loss: number = change < 0 ? Math.abs(change) : 0;
       avgGain = (avgGain * (period - 1) + gain) / period;
       avgLoss = (avgLoss * (period - 1) + loss) / period;
-      setRsi(klines[i]);
+      setRsi(bars[i]);
     }
   }
 
-  public addSma(klines: Kline[], period: number): void {
-    for (let i = period - 1; i < klines.length; i++) {
-      const sum: number = klines.slice(i - period + 1, i + 1).reduce((acc, k) => acc + k.prices.close, 0);
+  public addSma(bars: Bar[], period: number): void {
+    for (let i = period - 1; i < bars.length; i++) {
+      const sum: number = bars.slice(i - period + 1, i + 1).reduce((acc, k) => acc + k.prices.close, 0);
       const smaValue: number = sum / period;
-      const existingIndicators: KlineIndicators | undefined = klines[i].indicators;
+      const existingIndicators: BarIndicators | undefined = bars[i].indicators;
       const existingSmas: Record<number, number> | undefined = existingIndicators?.sma;
-      klines[i].indicators = { ...existingIndicators, sma: { ...existingSmas, [period]: smaValue } };
+      bars[i].indicators = { ...existingIndicators, sma: { ...existingSmas, [period]: smaValue } };
     }
   }
 
-  public addEma(klines: Kline[], period: number): void {
+  public addEma(bars: Bar[], period: number): void {
     const smoothingFactor: number = 2 / (period + 1);
-    let currentEma: number = klines.slice(0, period).reduce((sum, k) => sum + k.prices.close, 0) / period;
+    let currentEma: number = bars.slice(0, period).reduce((sum, k) => sum + k.prices.close, 0) / period;
 
     // seed the first EMA value (at index period-1) using the initial SMA
-    const seedKline: Kline = klines[period - 1];
-    const seedExistingIndicators: KlineIndicators | undefined = seedKline.indicators;
+    const seedBar: Bar = bars[period - 1];
+    const seedExistingIndicators: BarIndicators | undefined = seedBar.indicators;
     const seedExistingEmas: Record<number, number> | undefined = seedExistingIndicators?.ema;
-    seedKline.indicators = { ...seedExistingIndicators, ema: { ...seedExistingEmas, [period]: currentEma } };
+    seedBar.indicators = { ...seedExistingIndicators, ema: { ...seedExistingEmas, [period]: currentEma } };
 
-    for (let i = period; i < klines.length; i++) {
-      currentEma = (klines[i].prices.close - currentEma) * smoothingFactor + currentEma;
-      const kline: Kline = klines[i];
-      const existingIndicators: KlineIndicators | undefined = kline.indicators;
+    for (let i = period; i < bars.length; i++) {
+      currentEma = (bars[i].prices.close - currentEma) * smoothingFactor + currentEma;
+      const bar: Bar = bars[i];
+      const existingIndicators: BarIndicators | undefined = bar.indicators;
       const existingEmas: Record<number, number> | undefined = existingIndicators?.ema;
-      kline.indicators = { ...existingIndicators, ema: { ...existingEmas, [period]: currentEma } };
+      bar.indicators = { ...existingIndicators, ema: { ...existingEmas, [period]: currentEma } };
     }
   }
 
-  public addMacd(klines: Kline[], fast: number, slow: number, signal: number): void {
-    const closes: number[] = klines.map(k => k.prices.close);
+  public addMacd(bars: Bar[], fast: number, slow: number, signal: number): void {
+    const closes: number[] = bars.map(k => k.prices.close);
 
     const fastEmas: number[] = this.calcEmaFromValues(closes, fast);
     const slowEmas: number[] = this.calcEmaFromValues(closes, slow);
 
-    // MACD line is available from index (slow - 1) in the klines array
+    // MACD line is available from index (slow - 1) in the bars array
     // fastEmas and slowEmas both cover the same range starting at their respective period-1
     // fastEmas[i] corresponds to closes[fast - 1 + i], slowEmas[i] to closes[slow - 1 + i]
     // align: macdLine[i] = fastEmas[i + (slow - fast)] - slowEmas[i]
@@ -83,17 +83,17 @@ export default class Indicators extends Base {
     const signalLine: number[] = this.calcEmaFromValues(macdLine, signal);
 
     // signalLine[i] corresponds to macdLine[i + signal - 1]
-    // kline index for signalLine[i] = (slow - 1) + (signal - 1) + i
-    const firstSignalKlineIndex: number = slow - 1 + signal - 1;
+    // bar index for signalLine[i] = (slow - 1) + (signal - 1) + i
+    const firstSignalBarIndex: number = slow - 1 + signal - 1;
 
     signalLine.forEach((signalValue: number, i: number) => {
       const macdValue: number = macdLine[i + signal - 1];
       const histogram: number = macdValue - signalValue;
-      const klineIndex: number = firstSignalKlineIndex + i;
+      const barIndex: number = firstSignalBarIndex + i;
       const macdValues: MacdValues = { macdLine: macdValue, signal: signalValue, histogram };
-      const kline: Kline = klines[klineIndex];
-      const existingIndicators: KlineIndicators | undefined = kline.indicators;
-      kline.indicators = { ...existingIndicators, macd: macdValues };
+      const bar: Bar = bars[barIndex];
+      const existingIndicators: BarIndicators | undefined = bar.indicators;
+      bar.indicators = { ...existingIndicators, macd: macdValues };
     });
   }
 
@@ -111,54 +111,54 @@ export default class Indicators extends Base {
     return result;
   }
 
-  public addAtr(klines: Kline[], period: number): void {
+  public addAtr(bars: Bar[], period: number): void {
     const trueRanges: number[] = [];
 
-    for (let i = 1; i < klines.length; i++) {
-      const high: number = klines[i].prices.high;
-      const low: number = klines[i].prices.low;
-      const prevClose: number = klines[i - 1].prices.close;
+    for (let i = 1; i < bars.length; i++) {
+      const high: number = bars[i].prices.high;
+      const low: number = bars[i].prices.low;
+      const prevClose: number = bars[i - 1].prices.close;
       trueRanges.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
     }
 
     let currentAtr: number = trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
-    const firstKline: Kline = klines[period];
-    firstKline.indicators = { ...firstKline.indicators, atr: currentAtr };
+    const firstBar: Bar = bars[period];
+    firstBar.indicators = { ...firstBar.indicators, atr: currentAtr };
 
     for (let i = period; i < trueRanges.length; i++) {
       currentAtr = (currentAtr * (period - 1) + trueRanges[i]) / period;
-      const kline: Kline = klines[i + 1];
-      const existingIndicators: KlineIndicators | undefined = kline.indicators;
-      kline.indicators = { ...existingIndicators, atr: currentAtr };
+      const bar: Bar = bars[i + 1];
+      const existingIndicators: BarIndicators | undefined = bar.indicators;
+      bar.indicators = { ...existingIndicators, atr: currentAtr };
     }
   }
 
-  public addBb(klines: Kline[], period: number): void {
-    for (let i = period - 1; i < klines.length; i++) {
-      const windowKlines: Kline[] = klines.slice(i - period + 1, i + 1);
-      const middleBand: number = windowKlines.reduce((sum, k) => sum + k.prices.close, 0) / period;
-      const variance: number = windowKlines.reduce((sum, k) => sum + Math.pow(k.prices.close - middleBand, 2), 0) / period;
+  public addBb(bars: Bar[], period: number): void {
+    for (let i = period - 1; i < bars.length; i++) {
+      const windowBars: Bar[] = bars.slice(i - period + 1, i + 1);
+      const middleBand: number = windowBars.reduce((sum, k) => sum + k.prices.close, 0) / period;
+      const variance: number = windowBars.reduce((sum, k) => sum + Math.pow(k.prices.close - middleBand, 2), 0) / period;
       const stdDev: number = Math.sqrt(variance);
-      const kline: Kline = klines[i];
-      const existingIndicators: KlineIndicators | undefined = kline.indicators;
-      kline.indicators = { ...existingIndicators, bb: { upper: middleBand + 2 * stdDev, middle: middleBand, lower: middleBand - 2 * stdDev } as BollingerBands };
+      const bar: Bar = bars[i];
+      const existingIndicators: BarIndicators | undefined = bar.indicators;
+      bar.indicators = { ...existingIndicators, bb: { upper: middleBand + 2 * stdDev, middle: middleBand, lower: middleBand - 2 * stdDev } as BollingerBands };
     }
   }
 
   // assumes trend lines are added
-  public addRsiDivergence(klines: Kline[], minStrength: number): void {
-    // accumulate divergence strengths per end-kline index
+  public addRsiDivergence(bars: Bar[], minStrength: number): void {
+    // accumulate divergence strengths per end-bar index
     const bullishStrengths: Map<number, number> = new Map();
     const bearishStrengths: Map<number, number> = new Map();
     const hiddenBullishStrengths: Map<number, number> = new Map();
     const hiddenBearishStrengths: Map<number, number> = new Map();
 
-    for (let i = 0; i < klines.length; i++) {
-      const trendLines: TrendLine[] | undefined = klines[i].chart?.trendLines;
+    for (let i = 0; i < bars.length; i++) {
+      const trendLines: TrendLine[] | undefined = bars[i].chart?.trendLines;
       if (!trendLines) continue;
 
-      klines[i].chart!.trendLines = trendLines.filter(trendLine =>
-        this.accumulateDivergenceStrength(klines, trendLine, minStrength, bullishStrengths, bearishStrengths, hiddenBullishStrengths, hiddenBearishStrengths)
+      bars[i].chart!.trendLines = trendLines.filter(trendLine =>
+        this.accumulateDivergenceStrength(bars, trendLine, minStrength, bullishStrengths, bearishStrengths, hiddenBullishStrengths, hiddenBearishStrengths)
       );
     }
 
@@ -177,13 +177,13 @@ export default class Indicators extends Base {
         hiddenBullishStrengths.get(endIndex) ?? 0,
         hiddenBearishStrengths.get(endIndex) ?? 0,
       );
-      const kline: Kline = klines[endIndex];
-      kline.indicators = { ...kline.indicators, rsiDivergence };
+      const bar: Bar = bars[endIndex];
+      bar.indicators = { ...bar.indicators, rsiDivergence };
     }
   }
 
   private accumulateDivergenceStrength(
-    klines: Kline[],
+    bars: Bar[],
     trendLine: TrendLine,
     minStrength: number,
     bullishStrengths: Map<number, number>,
@@ -196,13 +196,13 @@ export default class Indicators extends Base {
     const length: number = trendLine.length;
     const period: number = Math.floor(length / 2);
 
-    const localRsi: number[] = this.calcLocalRsi(klines, startIndex, endIndex, period);
+    const localRsi: number[] = this.calcLocalRsi(bars, startIndex, endIndex, period);
     const startRsi: number = localRsi[0];
     const endRsi: number = localRsi[localRsi.length - 1];
     const startPrice: number = trendLine.function.getY(startIndex);
     const endPrice: number = trendLine.function.getY(endIndex);
 
-    const priceStdDev: number = this.calcCloseChangeStdDev(klines, startIndex, endIndex);
+    const priceStdDev: number = this.calcCloseChangeStdDev(bars, startIndex, endIndex);
     const rsiStdDev: number = this.calcRsiChangeStdDev(localRsi);
 
     if (priceStdDev === 0 || rsiStdDev === 0) return false;
@@ -286,7 +286,7 @@ export default class Indicators extends Base {
   }
 
   // compute RSI values for indices [startIndex..endIndex], seeded from the `period` candles before startIndex
-  private calcLocalRsi(klines: Kline[], startIndex: number, endIndex: number, period: number): number[] {
+  private calcLocalRsi(bars: Bar[], startIndex: number, endIndex: number, period: number): number[] {
     const seedStart: number = Math.max(0, startIndex - period);
     const seedCount: number = startIndex - seedStart;
 
@@ -294,7 +294,7 @@ export default class Indicators extends Base {
     let avgLoss: number = 0;
 
     for (let i = seedStart + 1; i <= startIndex; i++) {
-      const change: number = klines[i].prices.close - klines[i - 1].prices.close;
+      const change: number = bars[i].prices.close - bars[i - 1].prices.close;
       if (change > 0) avgGain += change;
       else avgLoss += Math.abs(change);
     }
@@ -313,7 +313,7 @@ export default class Indicators extends Base {
     rsiValues[0] = getRsi();
 
     for (let i = startIndex + 1; i <= endIndex; i++) {
-      const change: number = klines[i].prices.close - klines[i - 1].prices.close;
+      const change: number = bars[i].prices.close - bars[i - 1].prices.close;
       const gain: number = change > 0 ? change : 0;
       const loss: number = change < 0 ? Math.abs(change) : 0;
       avgGain = (avgGain * (period - 1) + gain) / period;
@@ -324,10 +324,10 @@ export default class Indicators extends Base {
     return rsiValues;
   }
 
-  private calcCloseChangeStdDev(klines: Kline[], startIndex: number, endIndex: number): number {
+  private calcCloseChangeStdDev(bars: Bar[], startIndex: number, endIndex: number): number {
     const changes: number[] = [];
     for (let i = startIndex + 1; i <= endIndex; i++) {
-      changes.push(klines[i].prices.close - klines[i - 1].prices.close);
+      changes.push(bars[i].prices.close - bars[i - 1].prices.close);
     }
     return this.calcStdDev(changes);
   }

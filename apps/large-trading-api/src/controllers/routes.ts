@@ -1,6 +1,6 @@
-import Base from '../base';
+﻿import Base from '../base';
 import { formatDuration } from '@shared';
-import { Algorithm, Exchange, Kline, Timeframe } from '@shared';
+import { Algorithm, Exchange, Bar, Timeframe } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
@@ -51,24 +51,24 @@ export default class Routes extends Base {
   }
 
   /**
-   * get list of klines / candlesticks and add buy and sell signals
+   * get list of bars / candlesticks and add buy and sell signals
    * 
    * algorithm is passed through body parameter 'algorithm'
    * depending on algorithm, additional query params may be necessary
    */
-  public async getKlinesWithAlgorithm(req: Request, res: Response): Promise<void> {
+  public async getBarsWithAlgorithm(req: Request, res: Response): Promise<void> {
     const body = req.body;
     const { timeframe, times, exchange, symbol, algorithms } = body;
 
     try {
-      const allKlines: Kline[] = await this.initKlines(exchange, symbol, timeframe);
-      const klinesInRange: Kline[] = allKlines.slice(-1000 * Number(times));    // get last times * 1000 timeframes
+      const allBars: Bar[] = await this.initBars(exchange, symbol, timeframe);
+      const barsInRange: Bar[] = allBars.slice(-1000 * Number(times));    // get last times * 1000 timeframes
 
       for (const algorithm of algorithms) {
-        await this.handleAlgo(klinesInRange, algorithm);
+        await this.handleAlgo(barsInRange, algorithm);
       }
 
-      res.send(klinesInRange);
+      res.send(barsInRange);
     } catch (err: any) {
       this.handleError(err);
       res.status(500).json({ error: err.message || err });
@@ -91,24 +91,24 @@ export default class Routes extends Base {
     try {
       const [stocks, indexes, cryptos] = await Promise.all([
         this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
-          this.initKlinesMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
+          this.initBarsMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
         ),
-        this.initKlinesMulti(Exchange.Alpaca, indexSymbols, timeframe, times),
+        this.initBarsMulti(Exchange.Alpaca, indexSymbols, timeframe, times),
         this.getMultiCryptos(Number(rank)).then((cryptosSymbols: string[]) =>
-          this.initKlinesMulti(Exchange.Binance, cryptosSymbols, timeframe, times)
+          this.initBarsMulti(Exchange.Binance, cryptosSymbols, timeframe, times)
         )
       ]);
 
-      let tickersWithSignals: Kline[][] = [...stocks, ...indexes, ...cryptos];
+      let tickersWithSignals: Bar[][] = [...stocks, ...indexes, ...cryptos];
 
       for (let i = 0; i < algorithms.length; i++) {
         if (autoParams[i]) {
           const algoInstance = this.backtests[algorithms[i].algorithm];
           tickersWithSignals = await this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i], algoInstance);
         } else {
-          tickersWithSignals = await Promise.all(tickersWithSignals.map(async (klines: Kline[]) => {
-            await this.handleAlgo(klines, algorithms[i]);
-            return this.backtest.calcBacktestPerformance(klines, algorithms[i].algorithm, Number(commission));
+          tickersWithSignals = await Promise.all(tickersWithSignals.map(async (bars: Bar[]) => {
+            await this.handleAlgo(bars, algorithms[i]);
+            return this.backtest.calcBacktestPerformance(bars, algorithms[i].algorithm, Number(commission));
           }));
         }
       }
@@ -134,13 +134,13 @@ export default class Routes extends Base {
 
   public postBacktestData(req: Request, res: Response): void {
     const query: QueryString.ParsedQs = req.query;
-    let klines: Kline[] = req.body;
+    let bars: Bar[] = req.body;
 
-    for (const algorithm in (req.body as Kline[])[0].algorithms) {
-      klines = this.backtest.calcBacktestPerformance(klines, algorithm as Algorithm, Number(query.commission));
+    for (const algorithm in (req.body as Bar[])[0].algorithms) {
+      bars = this.backtest.calcBacktestPerformance(bars, algorithm as Algorithm, Number(query.commission));
     }
 
-    res.send(klines);
+    res.send(bars);
   }
 
   public tradeStrategy(req: Request, res: Response): void {
@@ -151,37 +151,37 @@ export default class Routes extends Base {
     res.send('Running');
   }
 
-  private async handleAlgo(klines: Kline[], params): Promise<void> {
+  private async handleAlgo(bars: Bar[], params): Promise<void> {
     const algorithm: Algorithm = params.algorithm;
 
-    klines.forEach((kline: Kline) => {
-      kline.algorithms[algorithm] = {
+    bars.forEach((bar: Bar) => {
+      bar.algorithms[algorithm] = {
         signals: []
       };
     });
 
     const algo = this.backtests[algorithm];
     if (!algo?.setSignals) throw `invalid algorithm ${algorithm}`;
-    await algo.setSignals(klines, algorithm, params);
+    await algo.setSignals(bars, algorithm, params);
   }
 
-  private async initKlines(exchange: string, symbol: string, timeframe: Timeframe): Promise<Kline[]> {
+  private async initBars(exchange: string, symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     switch (exchange) {
-      case Exchange.Binance: return binance.initKlinesDatabase(symbol, timeframe);
-      case Exchange.Kucoin: return this.kucoin.initKlinesDatabase(symbol, timeframe);
-      case Exchange.Alpaca: return alpaca.initKlinesDatabase(symbol, timeframe);
+      case Exchange.Binance: return binance.initBarsDatabase(symbol, timeframe);
+      case Exchange.Kucoin: return this.kucoin.initBarsDatabase(symbol, timeframe);
+      case Exchange.Alpaca: return alpaca.initBarsDatabase(symbol, timeframe);
       default: throw new Error(`Invalid exchange ${exchange}`);
     }
   }
 
-  private async initKlinesMulti(exchange: string, symbols: string[], timeframe: Timeframe, times: number): Promise<Kline[][]> {
-    const klines: Kline[][] = await Promise.all(symbols.map(symbol => this.initKlines(exchange, symbol, timeframe)));
+  private async initBarsMulti(exchange: string, symbols: string[], timeframe: Timeframe, times: number): Promise<Bar[][]> {
+    const bars: Bar[][] = await Promise.all(symbols.map(symbol => this.initBars(exchange, symbol, timeframe)));
 
-    const klinesInRange: Kline[][] = klines.map((klines: Kline[]) => {
-      return klines.slice(-1000 * Number(times)); // get last times * 1000 timeframes
+    const barsInRange: Bar[][] = bars.map((bars: Bar[]) => {
+      return bars.slice(-1000 * Number(times)); // get last times * 1000 timeframes
     });
 
-    return klinesInRange.filter(k => k.length);  // filter out not found symbols
+    return barsInRange.filter(k => k.length);  // filter out not found symbols
   }
 
   private async getMultiStocks(rank: number): Promise<string[]> {

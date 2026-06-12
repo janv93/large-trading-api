@@ -1,4 +1,4 @@
-import { LinearFunction } from './linear-function';
+﻿import { LinearFunction } from './linear-function';
 
 export enum Exchange {
   Binance = 'BINANCE',
@@ -111,46 +111,46 @@ export enum RsiDivergenceType {
 }
 
 export interface AppConfig {
-  lastOutdatedKlineRemoval: Date;
+  lastOutdatedBarRemoval: Date;
   hadStockSplitCleanup?: boolean;
 }
 
-export interface KlineWithIndex {
-  kline: Kline;
+export interface BarWithIndex {
+  bar: Bar;
   index: number;
 }
 
-export interface Kline {
+export interface Bar {
   symbol: string;
   timeframe: Timeframe;
-  times: KlineTimes;
-  prices: KlinePrices;
+  times: BarTimes;
+  prices: BarPrices;
   volume: number;
   algorithms: Partial<Record<Algorithm, BacktestData>>;
   numberOfTrades?: number;
   tweets?: Tweet[];
-  chart?: KlineChart;
-  indicators?: KlineIndicators;
-  candlestickPatterns?: KlineCandlestickPatterns;
+  chart?: BarChart;
+  indicators?: BarIndicators;
+  candlestickPatterns?: BarCandlestickPatterns;
 }
 
-export interface KlineTimes {
+export interface BarTimes {
   open: number;
   close?: number;
 }
 
-export interface KlinePrices {
+export interface BarPrices {
   open: number;
   close: number;
   high: number;
   low: number;
 }
 
-export interface KlineChart {
+export interface BarChart {
   pivotPoint?: PivotPoint;
   marketStructure?: MarketStructureStats;
-  trendLines?: TrendLine[]; // trend lines that start from this kline
-  trendLineBreakthroughs?: TrendLine[];  // trend lines that break through this kline
+  trendLines?: TrendLine[]; // trend lines that start from this bar
+  trendLineBreakthroughs?: TrendLine[];  // trend lines that break through this bar
 }
 
 export interface PivotPoint {
@@ -174,7 +174,7 @@ export interface RsiDivergenceTypeWithStrength {
   strength: number;
 }
 
-export interface KlineIndicators {
+export interface BarIndicators {
   ema?: Record<number, number>;   // keyed by period, e.g. ema[20] = value
   sma?: Record<number, number>;   // keyed by period, e.g. sma[50] = value
   macd?: MacdValues;
@@ -184,7 +184,7 @@ export interface KlineIndicators {
   rsiDivergence?: RsiDivergenceData;
 }
 
-export interface KlineCandlestickPatterns {
+export interface BarCandlestickPatterns {
   // single-candle
   doji?: boolean;
   hammer?: boolean;
@@ -236,8 +236,8 @@ export interface TrendLine {
 // information for backtest and calculated backtest data
 export interface BacktestData {
   signals: BacktestSignal[];  // allow multiple independent signals for multiple independent positions
-  profit?: number; // calculated profit at current kline
-  openPositionSize?: number;  // calculated position size open at current kline
+  profit?: number; // calculated profit at current bar
+  openPositionSize?: number;  // calculated position size open at current bar
 }
 
 export interface BacktestSignal {
@@ -249,7 +249,7 @@ export interface BacktestSignal {
 }
 
 export interface SignalReference {
-  klineIndex: number;
+  barIndex: number;
   signalIndex: number;
 }
 
@@ -279,7 +279,7 @@ export type MultiBenchmarkParams = Record<string, number>;
 
 export interface AlpacaResponse {
   nextPageToken: string;
-  klines: Kline[];
+  bars: Bar[];
 }
 
 export interface Tweet {
@@ -327,7 +327,7 @@ export interface Position {
   entrySize: number; // size at entry, does not change
   price: number;
   entryPrice: number;
-  highestPrice?: number; // optional because we can't evaluate intra kline if the high was reached after the entryPrice
+  highestPrice?: number; // optional because we can't evaluate intra bar if the high was reached after the entryPrice
   lowestPrice?: number; // as above
   liquidationPrice: number;
   takeProfitPrice?: number;
@@ -336,7 +336,7 @@ export interface Position {
 }
 
 export interface Run {
-  klines: Kline[];
+  bars: Bar[];
   commission: number;
 }
 
