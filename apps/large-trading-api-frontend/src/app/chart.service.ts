@@ -6,8 +6,6 @@ import { Algorithm, Exchange, Timeframe } from '@shared';
   providedIn: 'root'
 })
 export class ChartService {
-  public baseUrl = 'http://127.0.0.1:3000';
-
   // general
   public exchange = Exchange.Binance;  // ignored for multi
   public symbol = 'BTCUSDT';  // ignored for multi
