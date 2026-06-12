@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AlpacaResponse, Kline, Timeframe } from '@shared';
 import Base from '../../base';
-import { createUrl, calcStartTime, isKlineOutdated, timestampsToDateRange, sleep } from '../../utils';
+import { createUrl, calcStartTime, isKlineOutdated, timestampsToDateRange, sleep } from '@shared';
 import database from '../../data/database';
 
 class Alpaca extends Base {

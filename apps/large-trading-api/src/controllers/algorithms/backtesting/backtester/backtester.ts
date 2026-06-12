@@ -1,6 +1,6 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Position, Signal, SignalReference, TakeProfitStopLoss, TrailingStopLoss } from '@shared';
 import Base from '../../../../base';
-import { isCloseSignal, isForceCloseSignal, calcPriceChange } from '../../../../utils';
+import { isCloseSignal, isForceCloseSignal, calcPriceChange } from '@shared';
 
 export default class Backtester extends Base {
   /**

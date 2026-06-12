@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import btoa from 'btoa';
 import { Kline, Timeframe } from '@shared';
 import Base from '../../base';
-import { createUrl, createQuery, calcStartTime, timeframeToMinutes, timeframeToMilliseconds, timestampsToDateRange } from '../../utils';
+import { createUrl, createQuery, calcStartTime, timeframeToMinutes, timeframeToMilliseconds, timestampsToDateRange } from '@shared';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {

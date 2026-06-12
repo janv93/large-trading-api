@@ -1,5 +1,5 @@
 import Base from '../base';
-import { formatDuration } from '../utils';
+import { formatDuration } from '@shared';
 import { Algorithm, Exchange, Kline, Timeframe } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';

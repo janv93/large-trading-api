@@ -1,6 +1,6 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../../../../../base';
-import { calcAverageChangeInPercent } from '../../../../../utils';
+import { calcAverageChangeInPercent } from '@shared';
 import { LinearFunction } from '@shared';
 import TrendLineController from '../../../patterns/trend-line';
 import PivotPointController from '../../../patterns/pivot-point';

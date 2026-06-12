@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import Base from '../../base';
-import { createUrl } from '../../utils';
+import { createUrl } from '@shared';
 import cryptos from './coinmarketcap-all-cryptos';
 import database from '../../data/database';
 

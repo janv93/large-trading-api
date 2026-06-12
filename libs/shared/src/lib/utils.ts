@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { Algorithm, Kline, Signal, Timeframe, TickerMetrics } from '@shared';
+import { Algorithm, Kline, Signal, Timeframe, TickerMetrics } from './interfaces';
 
 /**
  * 1 = green, -1 = red, 0 = steady

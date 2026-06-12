@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import crypto from 'crypto';
 import { Kline, Timeframe, Tweet } from '@shared';
 import Base from '../../base';
-import { createUrl, calcStartTime, isKlineOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep } from '../../utils';
+import { createUrl, calcStartTime, isKlineOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep } from '@shared';
 import database from '../../data/database';
 
 class Binance extends Base {

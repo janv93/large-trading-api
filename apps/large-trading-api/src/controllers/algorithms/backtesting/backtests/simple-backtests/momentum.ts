@@ -1,5 +1,5 @@
 import { Algorithm, BacktestData, BacktestSignal, Kline, Signal } from '@shared';
-import { getKlineColor } from '../../../../../utils';
+import { getKlineColor } from '@shared';
 import Base from '../../../../../base';
 
 export default class Momentum extends Base {

@@ -1,6 +1,6 @@
 import { Algorithm, AlgorithmConfigMulti, Kline, MultiBenchmark } from '@shared';
 import Base from '../../../../base';
-import { calcScore } from '../../../../utils';
+import { calcScore } from '@shared';
 import Backtester from '../backtester/backtester';
 import deepmerge from 'deepmerge';
 import { Worker, isMainThread, workerData, parentPort } from 'worker_threads';

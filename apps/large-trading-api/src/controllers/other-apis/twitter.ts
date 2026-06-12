@@ -1,7 +1,7 @@
 import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
-import { createUrl } from '../../utils';
+import { createUrl } from '@shared';
 import binance from '../exchanges/binance';
 import database from '../../data/database';
 import Coinmarketcap from './coinmarketcap';
