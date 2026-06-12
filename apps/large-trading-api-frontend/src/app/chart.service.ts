@@ -6,7 +6,6 @@ import { Algorithm, Exchange, Timeframe } from '@shared';
   providedIn: 'root'
 })
 export class ChartService {
-  public klinesSubject = new Subject();
   public baseUrl = 'http://127.0.0.1:3000';
 
   // general
