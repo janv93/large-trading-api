@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import btoa from 'btoa';
 import { Bar, Exchange, Timeframe } from '@shared';
 import Base from '../../base';
-import { createUrl, createQuery, calcStartTime, timeframeToMinutes, timeframeToMilliseconds, timestampsToDateRange } from '@shared';
+import { createUrl, createQuery, calcStartTime, timeframeToMinutes, timeframeToMilliseconds, timestampsToDateRange, cutOngoingBar } from '@shared';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {
@@ -92,7 +92,7 @@ export default class Kucoin extends Base {
     this.log(`Received total of ${bars.length} bars: ${dateRange}`);
 
     bars.sort((a, b) => a.times.open - b.times.open);
-    return bars;
+    return cutOngoingBar(bars);
   }
 
   /**

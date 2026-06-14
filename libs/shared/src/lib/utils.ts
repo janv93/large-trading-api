@@ -103,6 +103,17 @@ export function sleep(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
 }
 
+export function cutOngoingBar(bars: Bar[]): Bar[] {
+  if (!bars.length) return bars;
+  const last: Bar = bars[bars.length - 1];
+
+  if (last.times.open + timeframeToMilliseconds(last.timeframe) > Date.now()) {
+    return bars.slice(0, -1);
+  }
+
+  return bars;
+}
+
 export function calcTickerMetrics(bars: Bar[], algorithm: Algorithm): TickerMetrics {
   let peak = 0;
   let maxDrawdown = 0;

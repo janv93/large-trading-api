@@ -2,7 +2,7 @@
 import crypto from 'crypto';
 import { Bar, Exchange, Timeframe, Tweet } from '@shared';
 import Base from '../../base';
-import { createUrl, calcStartTime, isBarOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep } from '@shared';
+import { createUrl, calcStartTime, isBarOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep, cutOngoingBar } from '@shared';
 import database from '../../data/database';
 
 class Binance extends Base {
@@ -88,7 +88,7 @@ class Binance extends Base {
     this.log(`${bars.length} ${symbol} bars received - ${dateRange}`);
 
     bars.sort((a, b) => a.times.open - b.times.open);
-    return bars;
+    return cutOngoingBar(bars);
   }
 
   /**
