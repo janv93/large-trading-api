@@ -1,12 +1,14 @@
 ﻿import axios from 'axios';
 import crypto from 'crypto';
 import btoa from 'btoa';
-import { Bar, Timeframe } from '@shared';
+import { Bar, Exchange, Timeframe } from '@shared';
 import Base from '../../base';
 import { createUrl, createQuery, calcStartTime, timeframeToMinutes, timeframeToMilliseconds, timestampsToDateRange } from '@shared';
 import database from '../../data/database';
 
 export default class Kucoin extends Base {
+  readonly exchange = Exchange.Kucoin;
+
   public async isValidSymbol(symbol: string): Promise<boolean> {
     try {
       const response = await axios.get(`https://api-futures.kucoin.com/api/v1/contracts/${symbol}`);
@@ -100,7 +102,7 @@ export default class Kucoin extends Base {
   public async initBarsDatabase(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     const startTime = calcStartTime(timeframe);
     const endTime = startTime + timeframeToMilliseconds(timeframe) * 200;
-    const dbBars = await database.getBars(symbol, timeframe);
+    const dbBars = await database.getBars(symbol, timeframe, this.exchange);
 
     if (!dbBars?.length) {
       const newBars = await this.getBarsFromStartUntilNow(symbol, startTime, endTime, timeframe);
@@ -207,6 +209,7 @@ export default class Kucoin extends Base {
     return bars.map(k => {
       return {
         symbol,
+        exchange: this.exchange,
         timeframe,
         times: {
           open: k[0]

@@ -1,7 +1,7 @@
 ﻿import mongoose from 'mongoose';
 import Base from '../base';
 import { calcStartTime } from '@shared';
-import { AppConfig, Bar, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
+import { AppConfig, Bar, Exchange, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
 import { BarSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema, BarFetchTimesSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
@@ -38,6 +38,7 @@ class Database extends Base {
         updateOne: {
           filter: {
             symbol: bar.symbol,
+            exchange: bar.exchange,
             timeframe: bar.timeframe,
             openTime: bar.times.open,
             closeTime: bar.times.close
@@ -66,9 +67,9 @@ class Database extends Base {
     }
   }
 
-  public async getBars(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
+  public async getBars(symbol: string, timeframe: Timeframe, exchange: Exchange): Promise<Bar[]> {
     try {
-      const bars = await this.bar.find({ symbol, timeframe });
+      const bars = await this.bar.find({ symbol, timeframe, exchange });
 
       if (bars.length) {
         this.log(`Read ${bars.length} bars for symbol ${symbol}`);
@@ -78,6 +79,7 @@ class Database extends Base {
 
       const mappedBars: Bar[] = bars.map(bar => ({
         symbol: bar.symbol,
+        exchange: bar.exchange,
         timeframe: bar.timeframe,
         times: {
           open: bar.openTime,
@@ -113,9 +115,9 @@ class Database extends Base {
     }
   }
 
-  public async deleteAllBarsWithSymbol(symbol: string): Promise<void> {
+  public async deleteAllBarsWithSymbol(symbol: string, exchange: Exchange): Promise<void> {
     try {
-      await this.bar.deleteMany({ symbol }).exec();
+      await this.bar.deleteMany({ symbol, exchange }).exec();
       this.log(`Delete all bars of symbol ${symbol}`);
     } catch (err) {
       this.logErr(`Failed deleting all bars of symbol ${symbol}`);
@@ -388,9 +390,9 @@ class Database extends Base {
     }
   }
 
-  public async getBarFetchTime(symbol: string, timeframe: string): Promise<number | undefined> {
+  public async getBarFetchTime(symbol: string, timeframe: string, exchange: Exchange): Promise<number | undefined> {
     try {
-      const document = await this.barFetchTimes.findOne({ symbol, timeframe });
+      const document = await this.barFetchTimes.findOne({ symbol, timeframe, exchange });
       return document ? new Date(document.updatedAt).getTime() : undefined;
     } catch (err) {
       this.logErr(`Failed to get bar fetch time for ${symbol}`, err);
@@ -398,9 +400,9 @@ class Database extends Base {
     }
   }
 
-  public async updateBarFetchTime(symbol: string, timeframe: string): Promise<void> {
+  public async updateBarFetchTime(symbol: string, timeframe: string, exchange: Exchange): Promise<void> {
     try {
-      await this.barFetchTimes.findOneAndUpdate({ symbol, timeframe }, { $set: { updatedAt: new Date() } }, { upsert: true });
+      await this.barFetchTimes.findOneAndUpdate({ symbol, timeframe, exchange }, { $set: { updatedAt: new Date() } }, { upsert: true });
     } catch (err) {
       this.logErr(`Failed to update bar fetch time for ${symbol}`, err);
       throw err;

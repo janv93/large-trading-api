@@ -1,10 +1,11 @@
 ﻿import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { AlpacaResponse, Bar, Timeframe } from '@shared';
+import { AlpacaResponse, Bar, Exchange, Timeframe } from '@shared';
 import Base from '../../base';
 import { createUrl, calcStartTime, isBarOutdated, timestampsToDateRange, sleep } from '@shared';
 import database from '../../data/database';
 
 class Alpaca extends Base {
+  readonly exchange = Exchange.Alpaca;
   private baseUrls = {
     baseUrlDatav1: 'https://data.alpaca.markets/v1beta1',
     baseUrlDatav2: 'https://api.alpaca.markets/v2',
@@ -54,7 +55,7 @@ class Alpaca extends Base {
    */
   public async initBarsDatabase(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     const startTime: number = calcStartTime(timeframe);
-    let dbBars: Bar[] = await database.getBars(symbol, timeframe);
+    let dbBars: Bar[] = await database.getBars(symbol, timeframe, this.exchange);
 
     // not in database yet
     if (!dbBars || !dbBars.length) {
@@ -73,13 +74,13 @@ class Alpaca extends Base {
     const lastBarTime: number = lastBar.times.open;
 
     const cacheKey = `${symbol}_${timeframe}`;
-    const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getBarFetchTime(symbol, timeframe);
+    const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getBarFetchTime(symbol, timeframe, this.exchange);
 
     if (isBarOutdated(timeframe, lastBarTime, lastFetch)) {
       const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastBarTime)).length > 0;
 
       if (hasNewStockSplits) {
-        await database.deleteAllBarsWithSymbol(symbol);
+        await database.deleteAllBarsWithSymbol(symbol, this.exchange);
         dbBars = [];
       }
 
@@ -88,7 +89,7 @@ class Alpaca extends Base {
       newBars.shift();    // remove first bar, since it's the same as last of dbBars
       this.log(`${newBars.length} new ${symbol} bars added to database`);
       this.lastFetchTime.set(cacheKey, Date.now());
-      await database.updateBarFetchTime(symbol, timeframe);
+      await database.updateBarFetchTime(symbol, timeframe, this.exchange);
       await database.writeBars(newBars);
       const mergedBars: Bar[] = dbBars.concat(newBars);
       return mergedBars;
@@ -123,7 +124,7 @@ class Alpaca extends Base {
     const stockSplitSymbols: string[] = await this.getStockSplitSymbols(stockSymbols);
 
     if (stockSplitSymbols) {
-      await Promise.all(stockSplitSymbols.map((symbol: string) => database.deleteAllBarsWithSymbol(symbol)));
+      await Promise.all(stockSplitSymbols.map((symbol: string) => database.deleteAllBarsWithSymbol(symbol, this.exchange)));
       await database.setHadStockSplitCleanup();
     }
   }
@@ -188,6 +189,7 @@ class Alpaca extends Base {
     return bars.map(k => {
       return {
         symbol,
+        exchange: this.exchange,
         timeframe,
         times: {
           open: (new Date(k.t)).getTime()

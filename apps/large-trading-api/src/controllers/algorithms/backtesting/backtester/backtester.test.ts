@@ -1,6 +1,6 @@
 ﻿import { describe, expect, it, beforeEach, fit } from '@jest/globals';
 import Backtester from './backtester';
-import { Bar, Algorithm, Signal, Timeframe, BacktestData } from '@shared';
+import { Bar, Algorithm, Exchange, Signal, Timeframe, BacktestData } from '@shared';
 
 
 describe('Backtester', () => {
@@ -12,7 +12,7 @@ describe('Backtester', () => {
   });
 
   it('should calculate profit correctly without commission', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1, close: 0 };
 
     const bars: Bar[] = [
@@ -116,7 +116,7 @@ describe('Backtester', () => {
   });
 
   it('should calculate profit correctly with commission', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1 };
 
     const bars: Bar[] = [
@@ -220,7 +220,7 @@ describe('Backtester', () => {
   });
 
   it('should calculate profit correctly in case of liquidation', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
     const bars: Bar[] = [
@@ -262,7 +262,7 @@ describe('Backtester', () => {
   });
 
   it('should calculate profit correctly in case of shrinking short position', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 0 };
 
     const bars: Bar[] = [
@@ -292,7 +292,7 @@ describe('Backtester', () => {
   });
 
   describe('should calculate profit correctly in case of tp/sl', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
     it('long sl', () => {
@@ -434,7 +434,7 @@ describe('Backtester', () => {
   });
 
   describe('should calculate profit correctly with trailing stop loss', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
     it('long', () => {
@@ -509,7 +509,7 @@ describe('Backtester', () => {
   });
 
   describe('should calculate profit correctly with trailing stop loss and percentOfProfit', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
     it('long triggered by percentOfProfit', () => {
@@ -620,7 +620,7 @@ describe('Backtester', () => {
   });
 
   describe('should scale tp/sl by volatility when asVolatilityFactor is true', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0 };
 
     // bars 0–1 establish ATR=20 on price=100 → volatility=0.2 at end of bar 1.
@@ -693,7 +693,7 @@ describe('Backtester', () => {
   });
 
   it('should close only the targeted position when using Signal.Close', () => {
-    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, times: { open: 0, close: 0 }, volume: 0 };
+    const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
     const basePrices = { open: 0, high: 0, low: 1 };
 
     const bars: Bar[] = [

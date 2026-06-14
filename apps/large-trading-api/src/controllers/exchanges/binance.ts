@@ -1,11 +1,12 @@
 ﻿import axios, { AxiosResponse } from 'axios';
 import crypto from 'crypto';
-import { Bar, Timeframe, Tweet } from '@shared';
+import { Bar, Exchange, Timeframe, Tweet } from '@shared';
 import Base from '../../base';
 import { createUrl, calcStartTime, isBarOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep } from '@shared';
 import database from '../../data/database';
 
 class Binance extends Base {
+  readonly exchange = Exchange.Binance;
   private readonly usdPairs: string[] = ['USDT', 'BUSD', 'USDC'];
   private rateLimitPerMinute = 400; // 2400 is per minute limit, but fetching 1k bars costs 5 weight, 2400/5 = 480, plus some buffer
   private requestsSentThisMinute = 0;
@@ -96,7 +97,7 @@ class Binance extends Base {
    */
   public async initBarsDatabase(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
     const startTime: number = calcStartTime(timeframe);
-    const dbBars: Bar[] = await database.getBars(symbol, timeframe);
+    const dbBars: Bar[] = await database.getBars(symbol, timeframe, this.exchange);
 
     // not in database yet
     if (!dbBars || !dbBars.length) {
@@ -253,6 +254,7 @@ class Binance extends Base {
     return bars.map(k => {
       return {
         symbol,
+        exchange: this.exchange,
         timeframe,
         times: {
           open: k[0],

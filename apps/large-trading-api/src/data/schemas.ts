@@ -6,6 +6,11 @@ export const BarSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  exchange: {
+    type: String,
+    required: true,
+    index: true
+  },
   timeframe: {
     type: String,
     required: true,
@@ -129,6 +134,11 @@ export const AppConfigSchema = new mongoose.Schema({
 
 export const BarFetchTimesSchema = new mongoose.Schema({
   symbol: {
+    type: String,
+    required: true,
+    index: true
+  },
+  exchange: {
     type: String,
     required: true,
     index: true

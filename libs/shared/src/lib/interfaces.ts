@@ -123,6 +123,7 @@ export interface BarWithIndex {
 export interface Bar {
   symbol: string;
   timeframe: Timeframe;
+  exchange: Exchange;
   times: BarTimes;
   prices: BarPrices;
   volume: number;

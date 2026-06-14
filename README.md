@@ -54,6 +54,7 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 ## Notes
 
 - This repo has merged into a monorepo with the frontend
+- On June 14 2026 breaking changes occurred regarding storing bars (now stores with exchange, "bar" instead of "kline"). Drop your database and re-init it if you had it before this date.
 
 ## Questions
 
