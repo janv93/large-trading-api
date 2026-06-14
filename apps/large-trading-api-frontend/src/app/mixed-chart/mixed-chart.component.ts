@@ -306,7 +306,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         mode: CrosshairMode.Normal
       },
       localization: {
-        timeFormatter: (time: UTCTimestamp) => this.formatTimeByTimeframe(time)
+        timeFormatter: (time: UTCTimestamp) => this.formatTimeByTimeframe(time),
+        priceFormatter: (price: number) => {
+          if (price >= 1000 && price % 1000 === 0) return (price / 1000) + 'k';
+          if (price % 1 === 0) return price.toFixed(0);
+          return price.toFixed(2);
+        }
       },
       timeScale: {
         tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) => {
