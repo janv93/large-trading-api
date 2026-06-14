@@ -1,5 +1,5 @@
 ﻿import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange } from 'lightweight-charts';
+import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange, TickMarkType } from 'lightweight-charts';
 import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
 import { WatermarkPrimitive } from './primitives/watermark-primitive';
@@ -44,6 +44,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private visibleRangeChangeHandler: (() => void) | undefined;
   private lastVisibleRangeSize: number | undefined;
 
+  private readonly months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   private indicatorSeriesService: IndicatorSeriesService = new IndicatorSeriesService();
   private markersChartingService: MarkersChartingService = new MarkersChartingService();
 
@@ -125,7 +126,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
       height,
       leftPriceScale: { visible: !this.chartService.isMulti },
       rightPriceScale: { visible: !this.chartService.isMulti },
-      timeScale: { minBarSpacing: 0.001 }
+      timeScale: { minBarSpacing: 0.001, timeVisible: true }
     });
 
     this.applyDarkTheme(this.chart);
@@ -271,6 +272,27 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     }
   }
 
+  public formatBarTime(time: Time): string {
+    return this.formatTimeByTimeframe(time as UTCTimestamp);
+  }
+
+  private formatTimeByTimeframe(time: UTCTimestamp): string {
+    const unit = this.chartService.timeframe.slice(-1);
+    const date = new Date(time * 1000);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = this.months[date.getMonth()];
+    const year = date.getFullYear();
+    if (unit === 'm') {
+      const h = date.getHours().toString().padStart(2, '0');
+      const m = date.getMinutes().toString().padStart(2, '0');
+      return `${day} ${month} ${year} ${h}:${m}`;
+    } else if (unit === 'h') {
+      const h = date.getHours().toString().padStart(2, '0');
+      return `${day} ${month} ${year} ${h}:00`;
+    }
+    return `${day} ${month} ${year}`;
+  }
+
   private applyDarkTheme(chart: IChartApi): void {
     chart.applyOptions({
       layout: { background: { color: '#1a1a1a' }, textColor: '#FFFFFF' },
@@ -282,6 +304,22 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
         vertLine: { color: '#FFFFFF' },
         horzLine: { color: '#FFFFFF' },
         mode: CrosshairMode.Normal
+      },
+      localization: {
+        timeFormatter: (time: UTCTimestamp) => this.formatTimeByTimeframe(time)
+      },
+      timeScale: {
+        tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) => {
+          const ts = time as UTCTimestamp;
+          const date = new Date(ts * 1000);
+          const unit = this.chartService.timeframe.slice(-1);
+          if (tickMarkType === TickMarkType.Year) return date.getFullYear().toString();
+          if (tickMarkType === TickMarkType.Month) return `${this.months[date.getMonth()]} ${date.getFullYear()}`;
+          if (tickMarkType === TickMarkType.DayOfMonth) return `${date.getDate()} ${this.months[date.getMonth()]}`;
+          const h = date.getHours().toString().padStart(2, '0');
+          const m = date.getMinutes().toString().padStart(2, '0');
+          return unit === 'm' ? `${h}:${m}` : `${h}:00`;
+        }
       }
     });
   }

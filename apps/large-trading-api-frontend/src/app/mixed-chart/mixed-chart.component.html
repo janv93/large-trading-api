@@ -24,7 +24,7 @@
     @if (openPositionSize) {
     <span>$</span>
     }
-    <p>i{{currentIndex}} t{{currentOhlc.time}}</p>
+    <p>i{{currentIndex}} {{formatBarTime(currentOhlc.time)}}</p>
     @for (indicator of currentIndicatorValues; track indicator.label) {
     <p><span class="indicator-label">{{indicator.label}}</span> {{indicator.value}}</p>
     }
