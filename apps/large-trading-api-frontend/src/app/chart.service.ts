@@ -6,12 +6,14 @@ import { Algorithm, Exchange, Timeframe } from '@shared';
 })
 export class ChartService {
   // general
-  public exchange = Exchange.Binance;  // ignored for multi
-  public symbol = 'BTCUSDT';  // ignored for multi
   public timeframe = Timeframe._1Hour;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.0004; // 1 = 100%
-  public algorithms = [Algorithm.TrendLineBreakthrough];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
+  public algorithms = [Algorithm.Example];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
+
+  // single
+  public exchange = Exchange.Binance;
+  public symbol = 'BTCUSDT';
 
   // multi
   public isMulti = false; // multiple charts mode
