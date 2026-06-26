@@ -73,6 +73,6 @@ export class HttpService {
     const algorithm = this.chartService.algorithms[index];
     const algorithmConfig = AlgorithmConfigs[algorithm];
     const isAutoParams = this.chartService.multiAutoParams[index];
-    return { algorithm, ...(isAutoParams ? algorithmConfig?.multi : algorithmConfig?.single) };
+    return { algorithm, ...(isAutoParams ? algorithmConfig?.autoParams : algorithmConfig?.default) };
   }
 }

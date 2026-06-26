@@ -81,8 +81,8 @@ export enum LogLevel {
 }
 
 export interface AlgorithmConfig {
-  single: Record<string, any>;
-  multi?: Record<string, AlgorithmConfigMulti>;
+  default: Record<string, any>;
+  autoParams?: Record<string, AlgorithmConfigMulti>;
 }
 
 export interface AlgorithmConfigMulti {

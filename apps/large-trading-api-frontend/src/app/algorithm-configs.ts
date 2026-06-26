@@ -2,22 +2,22 @@ import { Algorithm, AlgorithmConfig } from '../../../../libs/shared/src/lib/inte
 
 export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   [Algorithm.Momentum]: {
-    single: {
+    default: {
       streak: 5
     }
   },
   [Algorithm.Macd]: {
-    single: {
+    default: {
       fast: 12,
       slow: 26,
       signal: 9
     }
   },
   [Algorithm.Rsi]: {
-    single: {
+    default: {
       length: 7
     },
-    multi: {
+    autoParams: {
       length: {
         min: 5,
         max: 15,
@@ -26,11 +26,11 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
     }
   },
   [Algorithm.Ema]: {
-    single: {
+    default: {
       periodOpen: 80,
       periodClose: 80
     },
-    multi: {
+    autoParams: {
       periodOpen: {
         min: 50,
         max: 200,
@@ -44,20 +44,20 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
     }
   },
   [Algorithm.Bb]: {
-    single: {
+    default: {
       period: 21
     }
   },
   [Algorithm.Dca]: {
-    single: {}
+    default: {}
   },
   [Algorithm.MeanReversion]: {
-    single: {
+    default: {
       threshold: 0.15,
       profitBasedTrailingStopLoss: 0.3,
       startStreak: 0
     },
-    multi: {
+    autoParams: {
       threshold: {
         min: 0.1,
         max: 0.2,
@@ -75,10 +75,10 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
     }
   },
   [Algorithm.TrendLineBreakthrough]: {
-    single: {
+    default: {
       percentOfProfit: 0.5
     },
-    multi: {
+    autoParams: {
       percentOfProfit: {
         min: 0.1,
         max: 0.7,
@@ -87,26 +87,26 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
     }
   },
   [Algorithm.MarketStructure]: {
-    single: {
+    default: {
       space: 5
     }
   },
   [Algorithm.RsiDivergence]: {
-    single: {
+    default: {
     },
-    multi: {
+    autoParams: {
     }
   },
   [Algorithm.Example]: {
-    single: {
+    default: {
       size: 10
     }
   },
   [Algorithm.CandlestickPatterns]: {
-    single: {
+    default: {
       minScore: 3
     },
-    multi: {
+    autoParams: {
       minScore: {
         min: 2,
         max: 3,
