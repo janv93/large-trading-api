@@ -16,8 +16,7 @@ export class ChartService {
   // multi
   public isMulti = false; // multiple charts mode
   public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are single or multi
-  public multiRank = 15;  // top <multiRank> tickers of each category. e.g. top 10 of stocks, cryptos etc
-  public multiCommission = 0.0000;  // 1 = 100%
+  public multiRank = 30;  // top <multiRank> tickers of each category. e.g. top 10 of stocks, cryptos etc
 
   // loading screen
   public loading = true;

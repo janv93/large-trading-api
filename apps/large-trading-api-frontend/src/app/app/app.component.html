@@ -8,14 +8,18 @@
   </div>
 </div>
 }
-@if (!chartService.isMulti && bars) {
-<mixed-chart class="mixed-chart" [bars]="bars"></mixed-chart>
+@if (!chartService.isMulti && tickers.length) {
+<mixed-chart class="mixed-chart" [runs]="tickers[0]"></mixed-chart>
 }
 @if (chartService.isMulti && tickers) {
 <div class="mixed-chart-multi-wrapper">
+  <div class="status-bar">
+    <label class="me-2">commission</label>
+    <input class="align-middle" type="checkbox" (change)="multiCommissionChecked = $any($event.target).checked">
+  </div>
   <div class="mixed-chart-multi-container">
     @for (ticker of pagedTickers; track ticker) {
-    <mixed-chart class="mixed-chart-multi" [bars]="ticker"></mixed-chart>
+    <mixed-chart class="mixed-chart-multi" [runs]="ticker" [hasCommission]="multiCommissionChecked"></mixed-chart>
     }
   </div>
   @if (totalPages > 1) {

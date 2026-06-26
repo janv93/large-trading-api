@@ -1,4 +1,4 @@
-﻿import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
+﻿import { Component, ElementRef, Inject, Input, OnChanges, OnDestroy, OnInit, Renderer2, SimpleChanges, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange, TickMarkType } from 'lightweight-charts';
 import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
@@ -16,10 +16,11 @@ import { StatsService } from './services/stats.service';
   styleUrls: ['./mixed-chart.component.scss'],
   standalone: false
 })
-export class MixedChartComponent extends BaseComponent implements OnInit, OnDestroy {
+export class MixedChartComponent extends BaseComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;
   @ViewChild('legend') legend: ElementRef;
-  @Input() bars: Run[];
+  @Input() runs: Run[];
+  @Input() hasCommission: boolean = false;
 
   public currentOhlc: CandlestickData;
   public currentProfit: number[];
@@ -37,7 +38,6 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   private compactCirclePrimitive: CompactCirclePrimitive | undefined;
   private watermarkPrimitive: WatermarkPrimitive | undefined;
   private seriesMarkersPlugin: ISeriesMarkersPluginApi<Time> | undefined;
-  private commissionChecked: boolean = false;
   private positionSizeChecked: boolean = false;
   private finalProfit: number[] = [];
   private crosshairMoveHandler: ((param: MouseEventParams<Time>) => void) | undefined;
@@ -54,6 +54,16 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
     @Inject(Renderer2) private renderer: Renderer2
   ) {
     super();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['hasCommission'] && this.chart) {
+      this.setBars();
+      this.setFinalProfits();
+      this.updateStats();
+      this.drawSeries();
+      this.drawMarkersAndCharting();
+    }
   }
 
   ngOnInit(): void {
@@ -85,7 +95,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   public onCommissionChange(event: Event): void {
-    this.commissionChecked = (event.target as HTMLInputElement).checked;
+    this.hasCommission = (event.target as HTMLInputElement).checked;
     this.setBars();
     this.setFinalProfits();
     this.updateStats();
@@ -138,9 +148,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnDest
   }
 
   private setBars(): void {
-    this.currentBars = (this.chartService.isMulti || !this.commissionChecked)
-      ? this.bars[0].bars
-      : this.bars[1].bars;
+    this.currentBars = this.hasCommission
+      ? this.runs[1].bars
+      : this.runs[0].bars;
     this.watermarkPrimitive?.setConfig(this.currentBars[0].symbol, this.chartService.exchange, this.chartService.isMulti);
   }
 

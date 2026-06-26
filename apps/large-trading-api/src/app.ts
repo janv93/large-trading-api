@@ -34,10 +34,7 @@ class App extends Base {
   }
 
   private route(): void {
-    this.app.post('/barsWithAlgorithm', this.handle((req, res) => this.routes.getBarsWithAlgorithm(req, res)));
-    this.app.post('/multi', this.handle((req, res) => this.routes.runMultiTicker(req, res)));
-    this.app.get('/trade', this.handle((req, res) => this.routes.tradeStrategy(req, res)));
-    this.app.post('/backtest', this.handle((req, res) => this.routes.postBacktestData(req, res)));
+    this.app.post('/backtest', this.handle((req, res) => this.routes.backtest(req, res)));
   }
 
   private handle(fn: (req: Request, res: Response) => void | Promise<void>) {
@@ -67,7 +64,7 @@ class App extends Base {
   public async start(): Promise<void> {
     this.log('Initializing App');
 
-    const [serverStarted, totalDeleted, stockSplitCleanup]: [Server, (number | null), void] = await Promise.all([
+    const [serverStarted, totalDeleted]: [Server, (number | null), void] = await Promise.all([
       this.startServer(),
       database.deleteOutdatedBars(),
       alpaca.deleteStockSplitSymbols()

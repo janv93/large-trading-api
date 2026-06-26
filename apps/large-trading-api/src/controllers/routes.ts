@@ -1,20 +1,19 @@
 ﻿import Base from '../base';
 import { formatDuration } from '@shared';
-import { Algorithm, Exchange, Bar, Timeframe } from '@shared';
+import { Algorithm, Exchange, Bar, Run, Timeframe } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Backtester from './algorithms/backtesting/backtester/backtester';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
-import QueryString from 'qs';
 import * as fs from 'fs';
 import * as path from 'path';
 
 
 export default class Routes extends Base {
   private kucoin = new Kucoin();
-  private backtest = new Backtester();
+  private backtester = new Backtester();
   private cmc = new Coinmarketcap();
   private backtests: Record<string, any> = {};
 
@@ -50,36 +49,11 @@ export default class Routes extends Base {
     }
   }
 
-  /**
-   * get list of bars / candlesticks and add buy and sell signals
-   * 
-   * algorithm is passed through body parameter 'algorithm'
-   * depending on algorithm, additional query params may be necessary
-   */
-  public async getBarsWithAlgorithm(req: Request, res: Response): Promise<void> {
-    const body = req.body;
-    const { timeframe, times, exchange, symbol, algorithms } = body;
-
-    try {
-      const allBars: Bar[] = await this.initBars(exchange, symbol, timeframe);
-      const barsInRange: Bar[] = allBars.slice(-1000 * Number(times));    // get last times * 1000 timeframes
-
-      for (const algorithm of algorithms) {
-        await this.handleAlgo(barsInRange, algorithm);
-      }
-
-      res.send(barsInRange);
-    } catch (err: any) {
-      this.handleError(err);
-      res.status(500).json({ error: err.message || err });
-    }
-  }
-
-  public async runMultiTicker(req: Request, res: Response): Promise<void> {
+  public async backtest(req: Request, res: Response): Promise<void> {
     const startTime = Date.now();
     const body = req.body;
-    const { timeframe, times, commission, rank, autoParams, algorithms } = body;
-    const indexSymbols = ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank);
+    const { timeframe, times, commission = 0, rank, autoParams, algorithms, symbols } = body;
+    // symbols: optional [{exchange: string, symbol: string}] — when provided, use these instead of rank-based list
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     res.setHeader('Transfer-Encoding', 'chunked');
@@ -89,33 +63,42 @@ export default class Routes extends Base {
     const heartbeat = setInterval(() => res.write('\n'), 20_000);
 
     try {
-      const [stocks, indexes, cryptos] = await Promise.all([
-        this.getMultiStocks(Number(rank)).then((stocksSymbols: string[]) =>
-          this.initBarsMulti(Exchange.Alpaca, stocksSymbols, timeframe, times)
-        ),
-        this.initBarsMulti(Exchange.Alpaca, indexSymbols, timeframe, times),
-        this.getMultiCryptos(Number(rank)).then((cryptosSymbols: string[]) =>
-          this.initBarsMulti(Exchange.Binance, cryptosSymbols, timeframe, times)
-        )
-      ]);
+      const symbolGroups = await this.getSymbolGroups(symbols, rank);
 
-      let tickersWithSignals: Bar[][] = [...stocks, ...indexes, ...cryptos];
+      let tickerBars: Bar[][] = (await Promise.all(
+        symbolGroups.map(([exchange, syms]) => this.initBarsMulti(exchange, syms, timeframe, times))
+      )).flat();
 
+      // Apply signals — autoParams is supported in both modes
       for (let i = 0; i < algorithms.length; i++) {
-        if (autoParams[i]) {
+        if (autoParams?.[i]) {
           const algoInstance = this.backtests[algorithms[i].algorithm];
-          tickersWithSignals = await this.backtests.multiTicker.handleAlgo(tickersWithSignals, algorithms[i], algoInstance);
+          tickerBars = await this.backtests.multiTicker.handleAlgo(tickerBars, algorithms[i], algoInstance);
         } else {
-          tickersWithSignals = await Promise.all(tickersWithSignals.map(async (bars: Bar[]) => {
-            await this.handleAlgo(bars, algorithms[i]);
-            return this.backtest.calcBacktestPerformance(bars, algorithms[i].algorithm, Number(commission));
-          }));
+          await Promise.all(tickerBars.map((bars: Bar[]) => this.handleAlgo(bars, algorithms[i])));
         }
       }
 
-      for (let i = 0; i < tickersWithSignals.length; i++) {
-        const line = JSON.stringify(tickersWithSignals[i]) + '\n';
-        (tickersWithSignals[i] as any) = null; // free memory as we go
+      // Stream: always 2 runs — commission=0 and actual commission
+      for (let i = 0; i < tickerBars.length; i++) {
+        const bars = tickerBars[i];
+
+        const barsZeroCommission: Bar[] = JSON.parse(JSON.stringify(bars));
+        for (const algorithm of algorithms) {
+          this.backtester.calcBacktestPerformance(barsZeroCommission, algorithm.algorithm, 0);
+        }
+
+        for (const algorithm of algorithms) {
+          this.backtester.calcBacktestPerformance(bars, algorithm.algorithm, Number(commission));
+        }
+
+        const runs: Run[] = [
+          { bars: barsZeroCommission, commission: 0 },
+          { bars, commission: Number(commission) }
+        ];
+
+        (tickerBars[i] as any) = null; // free memory as we go
+        const line = JSON.stringify(runs) + '\n';
         const drained = res.write(line);
         if (!drained) await new Promise<void>((resolve, reject) => {
           const onDrain = () => { res.removeListener('error', onError); resolve(); };
@@ -125,30 +108,11 @@ export default class Routes extends Base {
         });
       }
 
-      this.log(`Multi finished in ${formatDuration(Date.now() - startTime)}`);
+      this.log(`Run finished in ${formatDuration(Date.now() - startTime)}`);
     } finally {
       clearInterval(heartbeat);
       res.end();
     }
-  }
-
-  public postBacktestData(req: Request, res: Response): void {
-    const query: QueryString.ParsedQs = req.query;
-    let bars: Bar[] = req.body;
-
-    for (const algorithm in (req.body as Bar[])[0].algorithms) {
-      bars = this.backtest.calcBacktestPerformance(bars, algorithm as Algorithm, Number(query.commission));
-    }
-
-    res.send(bars);
-  }
-
-  public tradeStrategy(req: Request, res: Response): void {
-    switch (req.query.strategy) {
-      case Algorithm.Ema: this.backtests.ema.trade(req.query.symbol as string, req.query.open ? true : false);
-    }
-
-    res.send('Running');
   }
 
   private async handleAlgo(bars: Bar[], params): Promise<void> {
@@ -182,6 +146,27 @@ export default class Routes extends Base {
     });
 
     return barsInRange.filter(k => k.length);  // filter out not found symbols
+  }
+
+  private async getSymbolGroups(symbols: { exchange: string; symbol: string }[] | undefined, rank: number): Promise<[string, string[]][]> {
+    if (symbols?.length) {
+      const byExchange = new Map<string, string[]>();
+      for (const { exchange, symbol } of symbols) {
+        if (!byExchange.has(exchange)) byExchange.set(exchange, []);
+        byExchange.get(exchange)!.push(symbol);
+      }
+      return [...byExchange.entries()];
+    }
+
+    const [stockSymbols, cryptoSymbols] = await Promise.all([
+      this.getMultiStocks(rank),
+      this.getMultiCryptos(rank)
+    ]);
+    return [
+      [Exchange.Alpaca, stockSymbols],
+      [Exchange.Alpaca, ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank)],
+      [Exchange.Binance, cryptoSymbols]
+    ];
   }
 
   private async getMultiStocks(rank: number): Promise<string[]> {
