@@ -151,7 +151,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
     this.currentBars = this.hasCommission
       ? this.runs[1].bars
       : this.runs[0].bars;
-    this.watermarkPrimitive?.setConfig(this.currentBars[0].symbol, this.chartService.exchange, this.chartService.isMulti);
+    this.watermarkPrimitive?.setConfig(this.currentBars[0].symbol, this.currentBars[0].exchange, this.chartService.isMulti);
   }
 
   private resizeUnlisten: (() => void) | undefined;
@@ -197,7 +197,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.candlestickSeries.attachPrimitive(this.compactCirclePrimitive);
       this.watermarkPrimitive = new WatermarkPrimitive();
       this.candlestickSeries.attachPrimitive(this.watermarkPrimitive);
-      this.watermarkPrimitive.setConfig(this.currentBars[0].symbol, this.chartService.exchange, this.chartService.isMulti);
+      this.watermarkPrimitive.setConfig(this.currentBars[0].symbol, this.currentBars[0].exchange, this.chartService.isMulti);
     }
 
     const mapped = this.currentBars.map((bar: Bar) => ({

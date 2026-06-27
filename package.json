@@ -6,8 +6,8 @@
     "apps/*"
   ],
   "scripts": {
-    "be": "npx nx serve large-trading-api",
-    "fe": "npx nx serve large-trading-api-frontend",
+    "b": "npx nx serve large-trading-api",
+    "f": "npx nx serve large-trading-api-frontend",
     "test:be": "npx nx test large-trading-api"
   },
   "devDependencies": {

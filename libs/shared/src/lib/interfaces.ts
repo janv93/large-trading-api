@@ -80,6 +80,11 @@ export enum LogLevel {
   NoDb = 'NODB'
 }
 
+export interface ExchangeSymbol {
+  exchange: Exchange;
+  symbol: string;
+}
+
 export interface AlgorithmConfig {
   default: Record<string, any>;
   autoParams?: Record<string, AlgorithmConfigMulti>;

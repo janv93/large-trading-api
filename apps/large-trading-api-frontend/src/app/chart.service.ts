@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Algorithm, Exchange, Timeframe } from '@shared';
+import { Algorithm, Exchange, ExchangeSymbol, Timeframe } from '@shared';
 
 @Injectable({
   providedIn: 'root'
@@ -9,16 +9,14 @@ export class ChartService {
   public timeframe = Timeframe._1Hour;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.0004; // 1 = 100%
-  public algorithms = [Algorithm.Example];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
+  public algorithms = [Algorithm.TrendLineBreakthrough];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
 
-  // single
-  public exchange = Exchange.Binance;
-  public symbol = 'BTCUSDT';
+  public autoSymbols = false;  // true = auto-determine by rank, false = use symbols list
+  public symbols: ExchangeSymbol[] = [{ exchange: Exchange.Binance, symbol: 'BTCUSDT' }];
+  public rank = 15;
+  public autoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are auto or fixed
 
-  // multi
-  public isMulti = false; // multiple charts mode
-  public multiAutoParams = [false, false];  // primary algorithm and optional second algorithm, determines if algo parameters are single or multi
-  public multiRank = 30;  // top <multiRank> tickers of each category. e.g. top 10 of stocks, cryptos etc
+  get isMulti(): boolean { return this.autoSymbols || this.symbols.length !== 1; }
 
   // loading screen
   public loading = true;

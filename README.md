@@ -29,11 +29,11 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
    ```
 3. Start the backend:
    ```bash
-   npm run be
+   npm run b
    ```
 4. Start the frontend:
    ```bash
-   npm run fe
+   npm run f
    ```
 5. Open [http://localhost:4200](http://localhost:4200)
 

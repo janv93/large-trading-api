@@ -1,6 +1,5 @@
 ﻿import Base from '../base';
-import { formatDuration } from '@shared';
-import { Algorithm, Exchange, Bar, Run, Timeframe } from '@shared';
+import { Algorithm, Exchange, ExchangeSymbol, Bar, Run, Timeframe, formatDuration } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
@@ -52,8 +51,7 @@ export default class Routes extends Base {
   public async backtest(req: Request, res: Response): Promise<void> {
     const startTime = Date.now();
     const body = req.body;
-    const { timeframe, times, commission = 0, rank, autoParams, algorithms, symbols } = body;
-    // symbols: optional [{exchange: string, symbol: string}] — when provided, use these instead of rank-based list
+    const { timeframe, times, commission, rank, autoParams, algorithms, symbols } = body;
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     res.setHeader('Transfer-Encoding', 'chunked');
@@ -148,7 +146,7 @@ export default class Routes extends Base {
     return barsInRange.filter(k => k.length);  // filter out not found symbols
   }
 
-  private async getSymbolGroups(symbols: { exchange: string; symbol: string }[] | undefined, rank: number): Promise<[string, string[]][]> {
+  private async getSymbolGroups(symbols?: ExchangeSymbol[], rank?: number): Promise<[string, string[]][]> {
     if (symbols?.length) {
       const byExchange = new Map<string, string[]>();
       for (const { exchange, symbol } of symbols) {
@@ -156,17 +154,17 @@ export default class Routes extends Base {
         byExchange.get(exchange)!.push(symbol);
       }
       return [...byExchange.entries()];
+    } else {
+      const [stockSymbols, cryptoSymbols] = await Promise.all([
+        this.getMultiStocks(rank!),
+        this.getMultiCryptos(rank!)
+      ]);
+      return [
+        [Exchange.Alpaca, stockSymbols],
+        [Exchange.Alpaca, ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank!)],
+        [Exchange.Binance, cryptoSymbols]
+      ];
     }
-
-    const [stockSymbols, cryptoSymbols] = await Promise.all([
-      this.getMultiStocks(rank),
-      this.getMultiCryptos(rank)
-    ]);
-    return [
-      [Exchange.Alpaca, stockSymbols],
-      [Exchange.Alpaca, ['SPY', 'QQQ', 'IWM', 'DAX'].slice(0, rank)],
-      [Exchange.Binance, cryptoSymbols]
-    ];
   }
 
   private async getMultiStocks(rank: number): Promise<string[]> {
