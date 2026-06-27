@@ -9,7 +9,7 @@ export class ChartService {
   public timeframe = Timeframe._1Hour;
   public times = 10;  // 1 = 1000 timeframes
   public commission = 0.0004; // 1 = 100%
-  public algorithms = [Algorithm.TrendLineBreakthrough];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
+  public algorithms = [Algorithm.Example];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
 
   public autoSymbols = false;  // true = auto-determine by rank, false = use symbols list
   public symbols: ExchangeSymbol[] = [{ exchange: Exchange.Binance, symbol: 'BTCUSDT' }];
