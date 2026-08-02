@@ -55,6 +55,7 @@
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
     "eslint": "latest",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "latest",
     "tsc-alias": "^1.8.17",
     "typescript-eslint": "latest"

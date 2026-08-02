@@ -226,7 +226,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
 
     this.chartService.algorithms.forEach((_, index) => {
       const mapped = this.currentBars.map((bar: Bar) => {
-        const currentProfit: number = (bar.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100;
+        const currentProfit: number = (bar.algorithms[this.chartService.algorithms[index].algorithm]!.profit || 0) * 100;
         const opacity: number = index === 0 ? 0.3 : 0.1;
         const color: string = currentProfit === 0
           ? `rgba(255,255,255,${opacity})`
@@ -240,7 +240,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   private drawMarkersAndCharting(): void {
     this.markersChartingService.drawAll(
       this.currentBars,
-      this.chartService.algorithms[0],
+      this.chartService.algorithms[0].algorithm,
       this.chart,
       this.seriesMarkersPlugin!,
       this.compactCirclePrimitive!,
@@ -270,7 +270,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   private setOpenPositionSizeSeriesData(): void {
     const alpha: number = this.getPositionSizeAlpha();
     const mapped = this.currentBars.map((bar: Bar) => {
-      const openPositionSize: number = bar.algorithms[this.chartService.algorithms[0]]!.openPositionSize!;
+      const openPositionSize: number = bar.algorithms[this.chartService.algorithms[0].algorithm]!.openPositionSize!;
       const color: string = openPositionSize === 0
         ? 'transparent'
         : openPositionSize > 0 ? `rgba(0, 255, 162, ${alpha})` : `rgba(255, 0, 170, ${alpha})`;
@@ -340,12 +340,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   }
 
   private updateStats(): void {
-    this.stats = this.statsService.calcStats(this.currentBars, this.chartService.algorithms[0], this.finalProfit[0]);
+    this.stats = this.statsService.calcStats(this.currentBars, this.chartService.algorithms[0].algorithm, this.finalProfit[0]);
   }
 
   private setFinalProfits(): void {
     this.finalProfit = this.chartService.algorithms.map((_, index) =>
-      (this.currentBars.at(-1)!.algorithms[this.chartService.algorithms[index]]!.profit || 0) * 100
+      (this.currentBars.at(-1)!.algorithms[this.chartService.algorithms[index].algorithm]!.profit || 0) * 100
     );
   }
 

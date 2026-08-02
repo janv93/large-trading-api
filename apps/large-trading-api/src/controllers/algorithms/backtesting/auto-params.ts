@@ -1,7 +1,6 @@
-﻿import { Algorithm, AlgorithmConfigMulti, Bar, MultiBenchmark } from '@shared';
-import Base from '../../../../base';
-import { calcScore } from '@shared';
-import Backtester from '../backtester/backtester';
+﻿import { Algorithm, AlgorithmConfigMulti, BacktesterState, Bar, MultiBenchmark, calcScore, countBars } from '@shared';
+import Base from '../../../base';
+import Backtester from './backtester/backtester';
 import deepmerge from 'deepmerge';
 import { Worker, isMainThread, workerData, parentPort } from 'worker_threads';
 import * as os from 'os';
@@ -31,35 +30,66 @@ if (!isMainThread) {
       bar.indicators = undefined;
       bar.chart = undefined;
     });
-
-    algoInstance.setSignals(currentTicker, algorithm, combo);
-    backtester.calcBacktestPerformance(currentTicker, algorithm, 0);
   });
 
-  const score: number = calcScore(tickers, algorithm);
-  const result: MultiBenchmark = { score, params: combo };
+  async function run() {
+    let steps = 0;
+    const reportProgress = () => { // batched so a long run does not flood the main thread
+      if (++steps % 1000 === 0) parentPort!.postMessage({ steps: 1000 });
+    };
 
-  parentPort!.postMessage({ result, peakRss });
+    for (const currentTicker of tickers) {
+      const signalState: any = {};
+      const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
+      for (let i = 0; i < currentTicker.length; i++) {
+        signalWindow.push(currentTicker[i]);
+        await algoInstance.stepSetSignals(signalWindow, signalState, algorithm, combo);
+        reportProgress();
+      }
+
+      const backtesterState: any = {};
+      const backtesterWindow: Bar[] = [];
+      for (let i = 0; i < currentTicker.length; i++) {
+        backtesterWindow.push(currentTicker[i]);
+        backtester.stepCalcBacktestPerformance(backtesterWindow, backtesterState, algorithm, 0);
+        reportProgress();
+      }
+    }
+
+    const score: number = calcScore(tickers, algorithm);
+    const result: MultiBenchmark = { score, params: combo };
+
+    parentPort!.postMessage({ steps: steps % 1000, result, peakRss });
+  }
+
+  run();
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-export default class MultiTicker extends Base {
-  private backtest = new Backtester();
+type ParamRange = { key: string, values: number[] };
 
-  public async handleAlgo(tickers: Bar[][], params: Record<string, AlgorithmConfigMulti | Algorithm>, algoInstance: any): Promise<Bar[][]> {
-    const algorithm: Algorithm = params.algorithm as Algorithm;
-    const multiConfigs = Object.entries(params).filter(([key]) => key !== 'algorithm') as [string, AlgorithmConfigMulti][];
+export default class AutoParams extends Base {
+  private backtest = new Backtester();
+  private readonly maxParallelWorkers = Math.max(1, os.cpus().length - 2); // reserve 2 cores for MongoDB/OS
+
+  /** every combo walks all bars twice, once for the signals and once for the backtest, plus a final pass with the best params */
+  public countSteps(tickers: Bar[][], config: Record<string, AlgorithmConfigMulti>): number {
+    const combos: number = this.buildRanges(config).reduce((count, range) => count * range.values.length, 1);
+    return (combos + 1) * countBars(tickers) * 2;
+  }
+
+  public async handleAlgo(tickers: Bar[][], algorithm: Algorithm, config: Record<string, AlgorithmConfigMulti>, algoInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
+    const ranges: ParamRange[] = this.buildRanges(config);
     const benchmarks: MultiBenchmark[] = [];
     let bestTickers: Bar[][] = [];
     const algoModulePath = this.resolveAlgoModulePath(algoInstance);
 
-    const total = multiConfigs.reduce((acc, [, config]) => acc * (Math.round((config.max - config.min) / (config.step ?? 1)) + 1), 1);
-    const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, this.generateCombinations(multiConfigs), algoModulePath!, total);
+    const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, ranges, algoModulePath!, onProgress);
     benchmarks.push(...workerBenchmarks);
 
     const best = workerBenchmarks.reduce((b, c) => c.score > b.score ? c : b, workerBenchmarks[0]);
     if (best?.params) {
-      bestTickers = this.runAlgo(tickers, algorithm, best.params, algoInstance);
+      bestTickers = await this.runAlgo(tickers, algorithm, best.params, algoInstance, onProgress);
     }
 
     benchmarks.sort((a, b) => a.score - b.score);
@@ -77,10 +107,11 @@ export default class MultiTicker extends Base {
   private async runWithWorkers(
     tickers: Bar[][],
     algorithm: Algorithm,
-    combinations: Generator<Record<string, number>>,
+    ranges: ParamRange[],
     algoModulePath: string,
-    total: number
+    onProgress: (steps: number) => void
   ): Promise<MultiBenchmark[]> {
+    const combinations = this.generateCombinations(ranges);
     const encoded = Buffer.from(JSON.stringify(tickers), 'utf-8');
     const sharedBuffer = new SharedArrayBuffer(encoded.byteLength);
     new Uint8Array(sharedBuffer).set(encoded);
@@ -88,7 +119,10 @@ export default class MultiTicker extends Base {
     const spawnWorker = (combo: Record<string, number>): Promise<{ result: MultiBenchmark, peakRss: number }> =>
       new Promise((resolve, reject) => {
         const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combo, algorithm, algoModulePath } });
-        worker.on('message', resolve);
+        worker.on('message', (message: any) => {
+          if (message.steps) onProgress(message.steps);
+          if (message.result) resolve(message);
+        });
         worker.on('error', reject);
         worker.on('exit', code => { if (code !== 0) reject(new Error(`Worker exited with code ${code}`)); });
       });
@@ -99,12 +133,10 @@ export default class MultiTicker extends Base {
     const probe = await spawnWorker(firstCombo.value);
     const memPerWorker = probe.peakRss;
     const allResults: MultiBenchmark[] = [probe.result];
-    let processed = 1;
-    this.logProgress(processed / total * 100);
 
     while (true) {
       // Derive concurrency from current free memory — reserve 2 cores for MongoDB/OS.
-      const maxWorkers = Math.max(1, Math.min(Math.max(1, os.cpus().length - 2), Math.floor(os.freemem() * 0.85 / memPerWorker)));
+      const maxWorkers = Math.max(1, Math.min(this.maxParallelWorkers, Math.floor(os.freemem() * 0.85 / memPerWorker)));
       const batch: Record<string, number>[] = [];
       let exhausted = false;
 
@@ -120,8 +152,6 @@ export default class MultiTicker extends Base {
       const results = await Promise.all(batch.map(combo => spawnWorker(combo)));
 
       allResults.push(...results.map(r => r.result));
-      processed += results.length;
-      this.logProgress(processed / total * 100);
       if (exhausted) break;
     }
 
@@ -137,8 +167,8 @@ export default class MultiTicker extends Base {
     );
   }
 
-  private *generateCombinations(configs: [string, AlgorithmConfigMulti][]): Generator<Record<string, number>> {
-    const ranges = configs.map(([key, config]) => {
+  private buildRanges(configs: Record<string, AlgorithmConfigMulti>): ParamRange[] {
+    return Object.entries(configs).map(([key, config]) => {
       const step = config.step ?? 1;
       const values: number[] = [];
       for (let v = config.min; v <= config.max + step * 0.5; v += step) {
@@ -146,7 +176,9 @@ export default class MultiTicker extends Base {
       }
       return { key, values };
     });
+  }
 
+  private *generateCombinations(ranges: ParamRange[]): Generator<Record<string, number>> {
     if (ranges.length === 0) { yield {}; return; }
 
     const indices = new Array(ranges.length).fill(0);
@@ -167,13 +199,32 @@ export default class MultiTicker extends Base {
     }
   }
 
-  private runAlgo(tickers: Bar[][], algorithm: Algorithm, params: Record<string, number>, algoInstance: any): Bar[][] {
+  private async runAlgo(tickers: Bar[][], algorithm: Algorithm, params: Record<string, number>, algoInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
     const clonedTickers: Bar[][] = deepmerge([], tickers);
+    const result: Bar[][] = [];
 
-    return clonedTickers.map((currentTicker: Bar[]) => {
+    for (const currentTicker of clonedTickers) {
       currentTicker.forEach((bar: Bar) => { bar.algorithms[algorithm] = { signals: [] }; });
-      algoInstance.setSignals(currentTicker, algorithm, params);
-      return this.backtest.calcBacktestPerformance(currentTicker, algorithm, 0);
-    });
+
+      const signalState: any = {};
+      const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
+      for (let i = 0; i < currentTicker.length; i++) {
+        signalWindow.push(currentTicker[i]);
+        await algoInstance.stepSetSignals(signalWindow, signalState, algorithm, params);
+        onProgress(1);
+      }
+
+      const backtesterState: BacktesterState = {};
+      const backtesterWindow: Bar[] = [];
+      for (let i = 0; i < currentTicker.length; i++) {
+        backtesterWindow.push(currentTicker[i]);
+        this.backtest.stepCalcBacktestPerformance(backtesterWindow, backtesterState, algorithm, 0);
+        onProgress(1);
+      }
+
+      result.push(currentTicker);
+    }
+
+    return result;
   }
 }

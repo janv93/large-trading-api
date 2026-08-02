@@ -5,100 +5,63 @@ import Base from '../../../../../base';
 export default class Ema extends Base {
   private indicators = new Indicators();
 
-  /**
-   * sets position signals depending on emas going up or down
-   */
-  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
-    this.indicators.addEma(bars, periodOpen);
-    this.indicators.addEma(bars, periodClose);
-    const barsWithEma = bars.filter(k => k.indicators?.ema?.[periodOpen] !== undefined && k.indicators?.ema?.[periodClose] !== undefined);
+    state.emaOpen ??= {};
+    state.emaClose ??= {};
+    this.indicators.stepEma(bars, state.emaOpen, periodOpen);
+    this.indicators.stepEma(bars, state.emaClose, periodClose);
 
-    let lastMoveOpen: string;
-    let lastMoveClose: string;
-    let lastEmaOpen: number;
-    let lastEmaClose: number;
-    let positionOpen = false;
+    const bar: Bar = bars[bars.length - 1];
+    const eOpen: number | undefined = bar.indicators?.ema?.[periodOpen];
+    const eClose: number | undefined = bar.indicators?.ema?.[periodClose];
+    if (eOpen === undefined || eClose === undefined) return;
 
-    barsWithEma.forEach((bar, i) => {
-      const backtest: BacktestData = bar.algorithms[algorithm]!;
-      const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = bar.prices.close;
-      const eOpen = bar.indicators!.ema![periodOpen];
-      const eClose = bar.indicators!.ema![periodClose];
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const closePrice: number = bar.prices.close;
 
-      // init
+    if (state.lastEmaOpen === undefined) {
+      state.lastEmaOpen = eOpen;
+      state.lastEmaClose = eClose;
+      return;
+    }
 
-      if (i === 0) {
-        lastEmaOpen = eOpen;
-        lastEmaClose = eClose;
-        return;
+    const moveOpen = eOpen - state.lastEmaOpen > 0 ? 'up' : 'down';
+    const moveClose = eClose - state.lastEmaClose! > 0 ? 'up' : 'down';
+
+    if (state.lastMoveOpen === undefined) {
+      state.lastMoveOpen = moveOpen;
+      state.lastMoveClose = moveClose;
+      state.lastEmaOpen = eOpen;
+      state.lastEmaClose = eClose;
+      return;
+    }
+
+    const momentumSwitchOpen = moveOpen !== state.lastMoveOpen;
+    const momentumSwitchClose = moveClose !== state.lastMoveClose;
+
+    if (state.positionOpen && momentumSwitchClose && state.lastMoveOpen !== moveClose) {
+      signals.push({ signal: Signal.CloseAll, price: closePrice });
+      state.positionOpen = false;
+    }
+
+    if (!state.positionOpen && momentumSwitchOpen) {
+      if (moveOpen === 'up') {
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
+        state.positionOpen = true;
+      } else if (moveOpen === 'down') {
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
+        state.positionOpen = true;
       }
+    }
 
-      const moveOpen = eOpen - lastEmaOpen > 0 ? 'up' : 'down';
-      const moveClose = eClose - lastEmaClose > 0 ? 'up' : 'down';
-
-      if (i === 1) {
-        lastMoveOpen = moveOpen;
-        lastEmaOpen = eOpen;
-        lastMoveClose = moveClose;
-        lastEmaClose = eClose;
-        return;
-      }
-
-      const momentumSwitchOpen = moveOpen !== lastMoveOpen;
-      const momentumSwitchClose = moveClose !== lastMoveClose;
-
-      // init end
-
-      // set signals
-
-      if (positionOpen && momentumSwitchClose && lastMoveOpen !== moveClose) {
-        signals.push({
-          signal: Signal.CloseAll,
-          price: closePrice
-        });
-
-        positionOpen = false;
-      }
-
-      if (!positionOpen && momentumSwitchOpen) {
-        if (moveOpen === 'up') {
-          signals.push({
-            signal: Signal.CloseAll,
-            price: closePrice
-          });
-
-          signals.push({
-            signal: Signal.Buy,
-            size: 1,
-            price: closePrice
-          });
-
-          positionOpen = true;
-        } else if (moveOpen === 'down') {
-          signals.push({
-            signal: Signal.CloseAll,
-            price: closePrice
-          });
-
-          signals.push({
-            signal: Signal.Sell,
-            size: 1,
-            price: closePrice
-          });
-
-          positionOpen = true;
-        }
-      }
-
-      // set signals end
-
-      lastMoveOpen = moveOpen;
-      lastEmaOpen = eOpen;
-      lastMoveClose = moveClose;
-      lastEmaClose = eClose;
-    });
+    state.lastMoveOpen = moveOpen;
+    state.lastEmaOpen = eOpen;
+    state.lastMoveClose = moveClose;
+    state.lastEmaClose = eClose;
   }
 }

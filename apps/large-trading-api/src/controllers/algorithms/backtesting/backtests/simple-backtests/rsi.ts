@@ -5,87 +5,44 @@ import Base from '../../../../../base';
 export default class Rsi extends Base {
   private indicators = new Indicators();
 
-  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const length = Number(params.length);
-    this.indicators.addRsi(bars, length);
-    const barsWithRsi = bars.filter(k => k.indicators?.rsi !== undefined);
-    this.setSignalsOverBoughtOverSold(barsWithRsi, algorithm);
+    state.rsi ??= {};
+    this.indicators.stepRsi(bars, state.rsi, length);
 
-  }
+    const bar: Bar = bars[bars.length - 1];
+    const rsiValue: number | undefined = bar.indicators?.rsi;
+    if (rsiValue === undefined) return;
 
-  private setSignalsOverBoughtOverSold(bars: Bar[], algorithm: Algorithm): void {
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const closePrice: number = bar.prices.close;
 
-    let lastSignal: Signal;
-
-    bars.forEach((bar) => {
-      const backtest: BacktestData = bar.algorithms[algorithm]!;
-      const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = bar.prices.close;
-      const rsiValue = bar.indicators!.rsi!;
-
-      if (lastSignal === Signal.Buy) {
-        if (rsiValue > rsiThresholdHigh) {
-          signals.push({
-            signal: Signal.CloseAll,
-            price: closePrice
-          });
-
-          signals.push({
-            signal: Signal.Sell,
-            size: 1,
-            price: closePrice
-          });
-
-          lastSignal = Signal.Sell;
-        }
-      } else if (lastSignal === Signal.Sell) {
-        if (rsiValue < rsiThresholdLow) {
-          signals.push({
-            signal: Signal.CloseAll,
-            price: closePrice
-          });
-
-          signals.push({
-            signal: Signal.Buy,
-            size: 1,
-            price: closePrice
-          });
-
-          lastSignal = Signal.Buy;
-        }
-      } else {
-        if (rsiValue > rsiThresholdHigh) {
-          signals.push({
-            signal: Signal.CloseAll,
-            price: closePrice
-          });
-
-          signals.push({
-            signal: Signal.Sell,
-            size: 1,
-            price: closePrice
-          });
-
-          lastSignal = Signal.Sell;
-        } else if (rsiValue < rsiThresholdLow) {
-          signals.push({
-            signal: Signal.CloseAll,
-            price: closePrice
-          });
-
-          signals.push({
-            signal: Signal.Buy,
-            size: 1,
-            price: closePrice
-          });
-
-          lastSignal = Signal.Buy;
-        }
+    if (state.lastSignal === Signal.Buy) {
+      if (rsiValue > rsiThresholdHigh) {
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
+        state.lastSignal = Signal.Sell;
       }
-    });
-
+    } else if (state.lastSignal === Signal.Sell) {
+      if (rsiValue < rsiThresholdLow) {
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
+        state.lastSignal = Signal.Buy;
+      }
+    } else {
+      if (rsiValue > rsiThresholdHigh) {
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
+        state.lastSignal = Signal.Sell;
+      } else if (rsiValue < rsiThresholdLow) {
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
+        state.lastSignal = Signal.Buy;
+      }
+    }
   }
 
 }

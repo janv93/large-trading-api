@@ -154,6 +154,10 @@ export function formatDuration(ms: number): string {
   return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 }
 
+export function countBars(tickers: Bar[][]): number {
+  return tickers.reduce((sum, bars) => sum + bars.length, 0);
+}
+
 export function clone<T>(original: T): T {
   return cloneDeep(original);
 }

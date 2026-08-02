@@ -1,4 +1,4 @@
-﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Position, Signal, SignalReference, TakeProfitStopLoss, TrailingStopLoss } from '@shared';
+﻿import { Algorithm, BacktestData, BacktestSignal, BacktesterState, Bar, Position, Signal, SignalReference, TakeProfitStopLoss, TrailingStopLoss } from '@shared';
 import Base from '../../../../base';
 import { isCloseSignal, isForceCloseSignal, calcPriceChange } from '@shared';
 
@@ -8,35 +8,34 @@ export default class Backtester extends Base {
    * @param commission commission of exchange, e.g. 0.0004 = 0.04%
    * @returns the bars with profits
    */
-  public calcBacktestPerformance(bars: Bar[], algorithm: Algorithm, commission: number): Bar[] {
-    let positions: Array<Position | undefined> = [];
-    let profit = 0;
-    let volatility: number = 0;
+  public stepCalcBacktestPerformance(bars: Bar[], state: BacktesterState, algorithm: Algorithm, commission: number): void {
+    state.positions ??= [];
+    state.profit ??= 0;
+    state.volatility ??= 0;
 
-    this.forEachWithProgress(bars, (bar: Bar, index: number) => {
-      positions = (positions as Position[]).map((position: Position) => {
-        const closeSignal: Signal | undefined = this.getCloseSignal(position, bar, algorithm);
-        profit += this.calcProfitChange(position, bar, algorithm, closeSignal);
+    const i: number = bars.length - 1;
+    const bar: Bar = bars[i];
 
-        if (closeSignal) {
-          this.addOrUpdateCloseSignal(position, bar, algorithm, closeSignal);
-          profit -= this.calcCloseFee(position, bar, algorithm, closeSignal, commission);
-          return undefined;
-        } else {
-          return this.updateExistingPosition(position, bar, bars, algorithm);
-        }
-      });
+    state.positions = (state.positions as Position[]).map((position: Position) => {
+      const closeSignal: Signal | undefined = this.getCloseSignal(position, bar, algorithm);
+      state.profit! += this.calcProfitChange(position, bar, algorithm, closeSignal);
 
-      positions = positions.filter((position: Position | undefined) => position !== undefined); // filter out all closed positions
-      this.addNewPositions(positions as Position[], bar, algorithm, index, volatility);  // create new positions from signals
-      profit -= this.calcOpenFee(bar, algorithm, commission);
-      const backtest: BacktestData = bar.algorithms[algorithm]!;
-      backtest.profit = profit;
-      backtest.openPositionSize = this.calcPositionSize(positions as Position[]);
-      volatility = this.calcVolatility(bars, index);  // update after bar is complete, used for next bar's positions
+      if (closeSignal) {
+        this.addOrUpdateCloseSignal(position, bar, algorithm, closeSignal);
+        state.profit! -= this.calcCloseFee(position, bar, algorithm, closeSignal, commission);
+        return undefined;
+      } else {
+        return this.updateExistingPosition(position, bar, bars, algorithm);
+      }
     });
 
-    return bars;
+    state.positions = state.positions.filter((position: Position | undefined) => position !== undefined);
+    this.addNewPositions(state.positions as Position[], bar, algorithm, i, state.volatility);
+    state.profit -= this.calcOpenFee(bar, algorithm, commission);
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    backtest.profit = state.profit;
+    backtest.openPositionSize = this.calcPositionSize(state.positions as Position[]);
+    state.volatility = this.calcVolatility(bars, i);
   }
 
   private getCloseSignal(position: Position, bar: Bar, algorithm: Algorithm): Signal | undefined {

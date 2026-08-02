@@ -1,4 +1,4 @@
-﻿import { BollingerBands, Bar, BarIndicators, MacdValues, RsiDivergenceData, RsiDivergenceType, TrendLine, TrendLinePosition } from '@shared';
+﻿import { AtrState, BollingerBands, Bar, EmaState, MacdStepState, RsiDivergenceData, RsiDivergenceType, RsiState, TrendLine, TrendLinePosition, TrendLineStepState, TrendLinesFromPivotPointsStepState } from '@shared';
 import { LinearFunction } from '@shared';
 import Base from '../../../base';
 
@@ -7,178 +7,160 @@ export default class Indicators extends Base {
     super();
   }
 
-  public addRsi(bars: Bar[], period: number): void {
-    // seed initial average gain/loss from first `period` price changes
-    let avgGain: number = 0;
-    let avgLoss: number = 0;
+  public stepRsi(bars: Bar[], state: RsiState, period: number): void {
+    const i: number = bars.length - 1;
+    if (i < period) return;
 
-    for (let i = 1; i <= period; i++) {
-      const change: number = bars[i].prices.close - bars[i - 1].prices.close;
-      if (change > 0) avgGain += change;
-      else avgLoss += Math.abs(change);
-    }
+    if (state.avgGain === undefined || state.avgLoss === undefined) {
+      state.avgGain = 0;
+      state.avgLoss = 0;
 
-    avgGain /= period;
-    avgLoss /= period;
+      for (let j = 1; j <= period; j++) {
+        const change: number = bars[j].prices.close - bars[j - 1].prices.close;
+        if (change > 0) state.avgGain += change;
+        else state.avgLoss += Math.abs(change);
+      }
 
-    const setRsi = (bar: Bar) => {
-      const relativeStrength: number = avgLoss === 0 ? Infinity : avgGain / avgLoss;
-      const existingIndicators: BarIndicators | undefined = bar.indicators;
-      bar.indicators = { ...existingIndicators, rsi: 100 - 100 / (1 + relativeStrength) };
-    };
-
-    setRsi(bars[period]);
-
-    for (let i = period + 1; i < bars.length; i++) {
+      state.avgGain /= period;
+      state.avgLoss /= period;
+    } else {
       const change: number = bars[i].prices.close - bars[i - 1].prices.close;
       const gain: number = change > 0 ? change : 0;
       const loss: number = change < 0 ? Math.abs(change) : 0;
-      avgGain = (avgGain * (period - 1) + gain) / period;
-      avgLoss = (avgLoss * (period - 1) + loss) / period;
-      setRsi(bars[i]);
-    }
-  }
-
-  public addSma(bars: Bar[], period: number): void {
-    for (let i = period - 1; i < bars.length; i++) {
-      const sum: number = bars.slice(i - period + 1, i + 1).reduce((acc, k) => acc + k.prices.close, 0);
-      const smaValue: number = sum / period;
-      const existingIndicators: BarIndicators | undefined = bars[i].indicators;
-      const existingSmas: Record<number, number> | undefined = existingIndicators?.sma;
-      bars[i].indicators = { ...existingIndicators, sma: { ...existingSmas, [period]: smaValue } };
-    }
-  }
-
-  public addEma(bars: Bar[], period: number): void {
-    const smoothingFactor: number = 2 / (period + 1);
-    let currentEma: number = bars.slice(0, period).reduce((sum, k) => sum + k.prices.close, 0) / period;
-
-    // seed the first EMA value (at index period-1) using the initial SMA
-    const seedBar: Bar = bars[period - 1];
-    const seedExistingIndicators: BarIndicators | undefined = seedBar.indicators;
-    const seedExistingEmas: Record<number, number> | undefined = seedExistingIndicators?.ema;
-    seedBar.indicators = { ...seedExistingIndicators, ema: { ...seedExistingEmas, [period]: currentEma } };
-
-    for (let i = period; i < bars.length; i++) {
-      currentEma = (bars[i].prices.close - currentEma) * smoothingFactor + currentEma;
-      const bar: Bar = bars[i];
-      const existingIndicators: BarIndicators | undefined = bar.indicators;
-      const existingEmas: Record<number, number> | undefined = existingIndicators?.ema;
-      bar.indicators = { ...existingIndicators, ema: { ...existingEmas, [period]: currentEma } };
-    }
-  }
-
-  public addMacd(bars: Bar[], fast: number, slow: number, signal: number): void {
-    const closes: number[] = bars.map(k => k.prices.close);
-
-    const fastEmas: number[] = this.calcEmaFromValues(closes, fast);
-    const slowEmas: number[] = this.calcEmaFromValues(closes, slow);
-
-    // MACD line is available from index (slow - 1) in the bars array
-    // fastEmas and slowEmas both cover the same range starting at their respective period-1
-    // fastEmas[i] corresponds to closes[fast - 1 + i], slowEmas[i] to closes[slow - 1 + i]
-    // align: macdLine[i] = fastEmas[i + (slow - fast)] - slowEmas[i]
-    const macdLine: number[] = slowEmas.map((slowEma, i) => fastEmas[i + (slow - fast)] - slowEma);
-
-    const signalLine: number[] = this.calcEmaFromValues(macdLine, signal);
-
-    // signalLine[i] corresponds to macdLine[i + signal - 1]
-    // bar index for signalLine[i] = (slow - 1) + (signal - 1) + i
-    const firstSignalBarIndex: number = slow - 1 + signal - 1;
-
-    signalLine.forEach((signalValue: number, i: number) => {
-      const macdValue: number = macdLine[i + signal - 1];
-      const histogram: number = macdValue - signalValue;
-      const barIndex: number = firstSignalBarIndex + i;
-      const macdValues: MacdValues = { macdLine: macdValue, signal: signalValue, histogram };
-      const bar: Bar = bars[barIndex];
-      const existingIndicators: BarIndicators | undefined = bar.indicators;
-      bar.indicators = { ...existingIndicators, macd: macdValues };
-    });
-  }
-
-  /** calculates EMA for a raw number array, returns values starting after the first full period */
-  private calcEmaFromValues(values: number[], period: number): number[] {
-    const smoothingFactor: number = 2 / (period + 1);
-    let currentEma: number = values.slice(0, period).reduce((a, b) => a + b, 0) / period;
-    const result: number[] = [currentEma];
-
-    for (let i = period; i < values.length; i++) {
-      currentEma = (values[i] - currentEma) * smoothingFactor + currentEma;
-      result.push(currentEma);
+      state.avgGain = (state.avgGain * (period - 1) + gain) / period;
+      state.avgLoss = (state.avgLoss * (period - 1) + loss) / period;
     }
 
-    return result;
+    const relativeStrength: number = state.avgLoss === 0 ? Infinity : state.avgGain / state.avgLoss;
+    const bar: Bar = bars[i];
+    bar.indicators = { ...bar.indicators, rsi: 100 - 100 / (1 + relativeStrength) };
   }
 
-  public addAtr(bars: Bar[], period: number): void {
-    const trueRanges: number[] = [];
+  public stepSma(bars: Bar[], period: number): void {
+    const i: number = bars.length - 1;
+    if (i < period - 1) return;
 
-    for (let i = 1; i < bars.length; i++) {
-      const high: number = bars[i].prices.high;
-      const low: number = bars[i].prices.low;
-      const prevClose: number = bars[i - 1].prices.close;
-      trueRanges.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
-    }
-
-    let currentAtr: number = trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
-    const firstBar: Bar = bars[period];
-    firstBar.indicators = { ...firstBar.indicators, atr: currentAtr };
-
-    for (let i = period; i < trueRanges.length; i++) {
-      currentAtr = (currentAtr * (period - 1) + trueRanges[i]) / period;
-      const bar: Bar = bars[i + 1];
-      const existingIndicators: BarIndicators | undefined = bar.indicators;
-      bar.indicators = { ...existingIndicators, atr: currentAtr };
-    }
+    const smaValue: number = bars.slice(-period).reduce((sum, k) => sum + k.prices.close, 0) / period;
+    const bar: Bar = bars[i];
+    bar.indicators = { ...bar.indicators, sma: { ...bar.indicators?.sma, [period]: smaValue } };
   }
 
-  public addBb(bars: Bar[], period: number): void {
-    for (let i = period - 1; i < bars.length; i++) {
-      const windowBars: Bar[] = bars.slice(i - period + 1, i + 1);
-      const middleBand: number = windowBars.reduce((sum, k) => sum + k.prices.close, 0) / period;
-      const variance: number = windowBars.reduce((sum, k) => sum + Math.pow(k.prices.close - middleBand, 2), 0) / period;
-      const stdDev: number = Math.sqrt(variance);
-      const bar: Bar = bars[i];
-      const existingIndicators: BarIndicators | undefined = bar.indicators;
-      bar.indicators = { ...existingIndicators, bb: { upper: middleBand + 2 * stdDev, middle: middleBand, lower: middleBand - 2 * stdDev } as BollingerBands };
+  public stepEma(bars: Bar[], state: EmaState, period: number): void {
+    const i: number = bars.length - 1;
+    if (i < period - 1) return;
+
+    if (state.currentEma === undefined) {
+      state.currentEma = bars.slice(0, period).reduce((sum, k) => sum + k.prices.close, 0) / period;
+    } else {
+      const smoothingFactor: number = 2 / (period + 1);
+      state.currentEma = (bars[i].prices.close - state.currentEma) * smoothingFactor + state.currentEma;
     }
+
+    const bar: Bar = bars[i];
+    bar.indicators = { ...bar.indicators, ema: { ...bar.indicators?.ema, [period]: state.currentEma } };
   }
 
-  // assumes trend lines are added
-  public addRsiDivergence(bars: Bar[], minStrength: number): void {
-    // accumulate divergence strengths per end-bar index
+  public stepMacd(bars: Bar[], state: MacdStepState, fast: number, slow: number, signal: number): void {
+    state.fastEma ??= {};
+    state.slowEma ??= {};
+    state.signalEma ??= {};
+    state.closesBuffer ??= [];
+    state.macdLineBuffer ??= [];
+
+    state.closesBuffer.push(bars[bars.length - 1].prices.close);
+    const fastEmaValue: number | undefined = this.stepEmaFromValues(state.closesBuffer, state.fastEma, fast);
+    const slowEmaValue: number | undefined = this.stepEmaFromValues(state.closesBuffer, state.slowEma, slow);
+
+    if (fastEmaValue === undefined || slowEmaValue === undefined) return;
+
+    const macdLineValue: number = fastEmaValue - slowEmaValue;
+    state.macdLineBuffer.push(macdLineValue);
+
+    const signalValue: number | undefined = this.stepEmaFromValues(state.macdLineBuffer, state.signalEma, signal);
+    if (signalValue === undefined) return;
+
+    const bar: Bar = bars[bars.length - 1];
+    bar.indicators = { ...bar.indicators, macd: { macdLine: macdLineValue, signal: signalValue, histogram: macdLineValue - signalValue } };
+  }
+
+  private stepEmaFromValues(values: number[], state: EmaState, period: number): number | undefined {
+    const i: number = values.length - 1;
+    if (i < period - 1) return undefined;
+
+    if (state.currentEma === undefined) {
+      state.currentEma = values.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    } else {
+      const smoothingFactor: number = 2 / (period + 1);
+      state.currentEma = (values[i] - state.currentEma) * smoothingFactor + state.currentEma;
+    }
+
+    return state.currentEma;
+  }
+
+
+  public stepAtr(bars: Bar[], state: AtrState, period: number): void {
+    const i: number = bars.length - 1;
+    if (i < period) return;
+
+    const trueRange = (idx: number): number => {
+      const high: number = bars[idx].prices.high;
+      const low: number = bars[idx].prices.low;
+      const prevClose: number = bars[idx - 1].prices.close;
+      return Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
+    };
+
+    if (state.currentAtr === undefined) {
+      state.currentAtr = 0;
+      for (let j = 1; j <= period; j++) state.currentAtr += trueRange(j);
+      state.currentAtr /= period;
+    } else {
+      state.currentAtr = (state.currentAtr * (period - 1) + trueRange(i)) / period;
+    }
+
+    bars[i].indicators = { ...bars[i].indicators, atr: state.currentAtr };
+  }
+
+  public stepBb(bars: Bar[], period: number): void {
+    const i: number = bars.length - 1;
+    if (i < period - 1) return;
+
+    const window: Bar[] = bars.slice(-period);
+    const middleBand: number = window.reduce((sum, k) => sum + k.prices.close, 0) / period;
+    const variance: number = window.reduce((sum, k) => sum + Math.pow(k.prices.close - middleBand, 2), 0) / period;
+    const stdDev: number = Math.sqrt(variance);
+    const bar: Bar = bars[i];
+    bar.indicators = { ...bar.indicators, bb: { upper: middleBand + 2 * stdDev, middle: middleBand, lower: middleBand - 2 * stdDev } as BollingerBands };
+  }
+
+  public stepRsiDivergence(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, minStrength: number): void {
+    state.confirmedTrendLines ??= [];
+    const i: number = bars.length - 1;
+
     const bullishStrengths: Map<number, number> = new Map();
     const bearishStrengths: Map<number, number> = new Map();
     const hiddenBullishStrengths: Map<number, number> = new Map();
     const hiddenBearishStrengths: Map<number, number> = new Map();
 
-    for (let i = 0; i < bars.length; i++) {
-      const trendLines: TrendLine[] | undefined = bars[i].chart?.trendLines;
-      if (!trendLines) continue;
+    for (const trendLine of state.confirmedTrendLines) {
+      if (trendLine.endIndex !== i) continue;
 
-      bars[i].chart!.trendLines = trendLines.filter(trendLine =>
-        this.accumulateDivergenceStrength(bars, trendLine, minStrength, bullishStrengths, bearishStrengths, hiddenBullishStrengths, hiddenBearishStrengths)
-      );
+      const isDivergence: boolean = this.accumulateDivergenceStrength(bars, trendLine, minStrength, bullishStrengths, bearishStrengths, hiddenBullishStrengths, hiddenBearishStrengths);
+
+      if (!isDivergence) {
+        const chart = bars[trendLine.startIndex]?.chart; // only divergence lines stay on the chart
+        if (chart?.trendLines) chart.trendLines = chart.trendLines.filter(t => t !== trendLine);
+      }
     }
 
-    // collect all end indices that have any divergence
-    const allEndIndices: Set<number> = new Set([
-      ...bullishStrengths.keys(),
-      ...bearishStrengths.keys(),
-      ...hiddenBullishStrengths.keys(),
-      ...hiddenBearishStrengths.keys(),
-    ]);
+    const rsiDivergence: RsiDivergenceData = this.buildRsiDivergenceData(
+      bullishStrengths.get(i) ?? 0,
+      bearishStrengths.get(i) ?? 0,
+      hiddenBullishStrengths.get(i) ?? 0,
+      hiddenBearishStrengths.get(i) ?? 0,
+    );
 
-    for (const endIndex of allEndIndices) {
-      const rsiDivergence: RsiDivergenceData = this.buildRsiDivergenceData(
-        bullishStrengths.get(endIndex) ?? 0,
-        bearishStrengths.get(endIndex) ?? 0,
-        hiddenBullishStrengths.get(endIndex) ?? 0,
-        hiddenBearishStrengths.get(endIndex) ?? 0,
-      );
-      const bar: Bar = bars[endIndex];
-      bar.indicators = { ...bar.indicators, rsiDivergence };
+    if (rsiDivergence.regular || rsiDivergence.hidden) {
+      bars[i].indicators = { ...bars[i].indicators, rsiDivergence };
     }
   }
 

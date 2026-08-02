@@ -3,42 +3,40 @@ import { getBarColor } from '@shared';
 import Base from '../../../../../base';
 
 export default class Momentum extends Base {
-  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
-    const colors: number[] = bars.map(bar => getBarColor(bar));
+  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const streak = Number(params.streak);
+    const i: number = bars.length - 1;
+    const bar: Bar = bars[i];
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const closePrice: number = bar.prices.close;
 
-    bars.forEach((bar: any, index: number) => {
-      const backtest: BacktestData = bar.algorithms[algorithm]!;
-      const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = bar.prices.close;
-      const entrySignal: Signal | undefined = this.getEntrySignal(colors, index, streak);
+    const entrySignal: Signal | undefined = this.getEntrySignal(bars, i, streak);
 
-      if (entrySignal) {
-        signals.push({
-          signal: entrySignal,
-          size: 1,
-          price: closePrice,
-          positionCloseTrigger: {
-            tpSl: {
-              takeProfit: 0.006,
-              stopLoss: 0.003
-            }
-          }
-        });
-      }
-    });
-
+    if (entrySignal) {
+      signals.push({
+        signal: entrySignal,
+        size: 1,
+        price: closePrice,
+        positionCloseTrigger: { tpSl: { takeProfit: 0.006, stopLoss: 0.003 } }
+      });
+    }
   }
 
-  private getEntrySignal(colors: number[], index: number, streak: number): Signal | undefined {
+  private getEntrySignal(bars: Bar[], index: number, streak: number): Signal | undefined {
     if (streak > index) {
       return undefined;
     }
 
-    const range: number[] = colors.slice(index - streak + 1, index + 1);
-    const rangeGreen: boolean = range.every(bar => bar >= 0);
-    const rangeRed: boolean = range.every(bar => bar <= 0);
-    const signal = rangeGreen ? Signal.Sell : rangeRed ? Signal.Buy : undefined;
-    return signal;
+    let rangeGreen = true;
+    let rangeRed = true;
+
+    for (let i = index - streak + 1; i <= index; i++) {
+      const color: number = getBarColor(bars[i]);
+      if (color < 0) rangeGreen = false;
+      if (color > 0) rangeRed = false;
+    }
+
+    return rangeGreen ? Signal.Sell : rangeRed ? Signal.Buy : undefined;
   }
 }

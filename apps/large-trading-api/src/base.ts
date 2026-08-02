@@ -2,6 +2,8 @@ import Logger from './controllers/logger';
 
 export default class Base {
   private logger = new Logger();
+  private stepsDone = 0;
+  private stepsTotal = 0;
   public silent = false;
 
   protected log(...args: any[]): void {
@@ -17,11 +19,22 @@ export default class Base {
     this.logger.logProgress(percent, this.constructor.name);
   }
 
-  protected forEachWithProgress(arr: any[], callback: (item: any, index: number) => void): void {
-    arr.forEach((item, index) => {
-      this.logProgress((index + 1) / arr.length * 100);
-      callback(item, index);
-    });
+  /** every phase counts one step per bar it walks, so no phase needs a weight of its own */
+  protected startProgress(totalSteps: number): void {
+    this.stepsTotal = totalSteps;
+    this.stepsDone = 0;
+    this.logProgress(0);
+  }
+
+  protected addProgress(steps: number): void {
+    if (!this.stepsTotal) return;
+    this.stepsDone += steps;
+    this.logProgress(Math.min(99, this.stepsDone / this.stepsTotal * 100)); // only endProgress may reach 100, which clears the bar
+  }
+
+  protected endProgress(): void {
+    this.stepsTotal = 0;
+    this.logProgress(100);
   }
 
   protected handleError(err: any, symbol?: string): void {

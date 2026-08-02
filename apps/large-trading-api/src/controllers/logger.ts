@@ -94,6 +94,7 @@ export default class Logger {
     if (this.progressActive) {
       process.stdout.write('\x1b[2K\r\x1b[?25h');
       this.progressActive = false;
+      this.lastLoggedPercent = -1; // force a redraw below the log instead of waiting for the next whole percent
     }
   }
 

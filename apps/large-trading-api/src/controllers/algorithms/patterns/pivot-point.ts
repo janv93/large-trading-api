@@ -1,69 +1,53 @@
-﻿import { Direction, Bar, BarWithIndex, MarketStructureType, PivotPoint, PivotPointSide } from '@shared';
+﻿import { Direction, Bar, BarWithIndex, MarketStructureState, MarketStructureType, PivotPoint, PivotPointSide } from '@shared';
 import Base from '../../../base';
 
 export default class PivotPointController extends Base {
-  // add pivot points defined by horizontally uninterrupted highs/lows on the left and right side
-  public addPivotPoints(bars: Bar[], space: number): void {
-    bars.forEach((bar: Bar, i: number) => {
-      const pivotPoint: PivotPoint | null = this.getPivotPoint(bars, i, space);
+  public stepPivotPoints(bars: Bar[], space: number): void {
+    const j: number = bars.length - 1 - space;
+    if (j < 0) return;
 
-      if (pivotPoint) {
-        bar.chart = bar.chart || {};
-        bar.chart.pivotPoint = pivotPoint;
-      }
-    });
-  }
+    const pivotPoint: PivotPoint | null = this.getPivotPoint(bars, j, space);
 
-  public addMarketStructure(bars: Bar[], space: number): void {
-    const barsWithPivotPoints: BarWithIndex[] = [];
-
-    bars.forEach((bar: Bar, i: number) => {
-      const lastPivotPointSide: PivotPointSide | null = barsWithPivotPoints.at(-1)?.bar.chart!.pivotPoint!.side || null;
-      const isPivotPoint: boolean = this.isMarketStructurePivotPoint(bars, i, space, lastPivotPointSide);
-
-      if (isPivotPoint) {
-        barsWithPivotPoints.push({ bar, index: i });
-        this.addMarketStructureFromPivotPoints(barsWithPivotPoints);
-      }
-
-      this.addStreak(bar, i, barsWithPivotPoints, bars, space);
-    });
-  }
-
-  private isMarketStructurePivotPoint(bars: Bar[], index: number, space: number, lastPivotPointSide: PivotPointSide | null): boolean {
-    const currentBar: Bar = bars[index];
-    const oppositeSide: PivotPointSide = lastPivotPointSide === PivotPointSide.High ? PivotPointSide.Low : PivotPointSide.High;
-    const pivotPoint: PivotPoint | null = this.getPivotPoint(bars, index, space, oppositeSide);
-
-    if (pivotPoint && this.nextPivotPointIsOppositeOrMinor(bars, index, pivotPoint.side, space)) {
-      currentBar.chart = currentBar.chart || {};
-      currentBar.chart.pivotPoint = pivotPoint;
-      return true;
-    } else {
-      return false;
+    if (pivotPoint) {
+      const bar: Bar = bars[j];
+      bar.chart = bar.chart || {};
+      bar.chart.pivotPoint = pivotPoint;
     }
   }
 
-  private nextPivotPointIsOppositeOrMinor(bars: Bar[], currentIndex: number, currentSide: PivotPointSide, space: number): boolean {
-    const currentPrice: number = currentSide === PivotPointSide.High
-      ? bars[currentIndex].prices.high
-      : bars[currentIndex].prices.low;
+  public stepMarketStructure(bars: Bar[], state: MarketStructureState, space: number): void {
+    state.barsWithPivotPoints ??= [];
 
-    for (let i = currentIndex + 1; i < bars.length; i++) {
-      const nextPivotPoint: PivotPoint | null = this.getPivotPoint(bars, i, space);
+    const j: number = bars.length - 1 - space;
 
-      if (nextPivotPoint) {
-        if (nextPivotPoint.side !== currentSide) return true;
+    if (j >= 0) {
+      const pivot: PivotPoint | null = this.getPivotPoint(bars, j, space);
 
-        const nextPrice: number = nextPivotPoint.side === PivotPointSide.High
-          ? bars[i].prices.high
-          : bars[i].prices.low;
+      if (pivot) {
+        const isFirstPivot: boolean = !state.candidate && !state.barsWithPivotPoints!.length;
 
-        return currentSide === PivotPointSide.High ? nextPrice < currentPrice : nextPrice > currentPrice;
+        if (isFirstPivot) {
+          state.candidate = { bar: bars[j], index: j, pivotPoint: pivot };
+        } else if (pivot.side === state.candidate?.pivotPoint.side) {
+          const isMoreExtreme: boolean = pivot.side === PivotPointSide.High
+            ? bars[j].prices.high > state.candidate.bar.prices.high
+            : bars[j].prices.low < state.candidate.bar.prices.low;
+          if (isMoreExtreme) {
+            state.candidate = { bar: bars[j], index: j, pivotPoint: pivot };
+          }
+        } else {
+          const confirmedBar: Bar = state.candidate!.bar;
+          confirmedBar.chart = confirmedBar.chart || {};
+          confirmedBar.chart.pivotPoint = state.candidate!.pivotPoint;
+          state.barsWithPivotPoints!.push({ bar: confirmedBar, index: state.candidate!.index });
+          this.addMarketStructureFromPivotPoints(state.barsWithPivotPoints!);
+          state.candidate = { bar: bars[j], index: j, pivotPoint: pivot };
+        }
       }
     }
 
-    return true;
+    const i: number = bars.length - 1;
+    this.addStreak(bars[i], i, state.barsWithPivotPoints!, bars, space);
   }
 
   private addMarketStructureFromPivotPoints(barsWithPivotPoints: BarWithIndex[]): void {
@@ -102,7 +86,7 @@ export default class PivotPointController extends Base {
       return bar.index < currentIndex - space;
     });
 
-    if (barsWithMarketStructure.length < 2) return;
+    if (!barsWithMarketStructure.length) return;
 
     let streak: number = 0;
     let direction: Direction | undefined;
@@ -139,9 +123,11 @@ export default class PivotPointController extends Base {
   private isDirectionReversalSinceLastMarketStructure(barsWithMarketStructure: BarWithIndex[], bars: Bar[], currentIndex: number, direction: Direction): boolean {
     const relevantSide: PivotPointSide = direction === Direction.Up ? PivotPointSide.Low : PivotPointSide.High;
 
-    const lastRelevantBar: BarWithIndex = [...barsWithMarketStructure].reverse().find(
+    const lastRelevantBar: BarWithIndex | undefined = [...barsWithMarketStructure].reverse().find(
       k => k.bar.chart!.pivotPoint!.side === relevantSide
-    )!;
+    );
+
+    if (!lastRelevantBar) return false;
 
     const pricesSince: Bar[] = bars.slice(barsWithMarketStructure.at(-1)!.index + 1, currentIndex + 1);
 
@@ -154,7 +140,7 @@ export default class PivotPointController extends Base {
     }
   }
 
-  private getPivotPoint(bars: Bar[], i: number, space: number, side?: PivotPointSide): PivotPoint | null {
+  private getPivotPoint(bars: Bar[], i: number, space: number): PivotPoint | null {
     if (!bars[i - space] || !bars[i + space]) return null;
 
     const bar: Bar = bars[i];
@@ -167,8 +153,6 @@ export default class PivotPointController extends Base {
     const isHigh: boolean = isLeftHigh && isRightHigh;
     const isLow: boolean = isLeftLow && isRightLow;
     const pivotPointSide: PivotPointSide | null = isHigh ? PivotPointSide.High : isLow ? PivotPointSide.Low : null;
-
-    if (side && pivotPointSide !== side) return null;
 
     if (pivotPointSide) {
       return { space, side: pivotPointSide };

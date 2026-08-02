@@ -16,35 +16,6 @@ export default class MeanReversion extends Base {
    * 3. if increase from lowest drop sufficient, close position
    * 4. back to 1.
    */
-  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
-    const threshold: number = Number(params.threshold);
-    const profitBasedTrailingStopLoss: number = Number(params.profitBasedTrailingStopLoss);
-    const startStreak: number = Number(params.startStreak);
-
-    const state = {
-      threshold,
-      profitBasedTrailingStopLoss,
-      minDrop: 0.25,
-      streak: startStreak,
-      peak: bars[0].prices.close,
-      low: bars[0].prices.close,
-      isOpen: false,
-      isTrailing: false
-    };
-
-    for (const bar of bars) {
-      const action: Action = this.getAction(bar, state);
-
-      switch (action) {
-        case Action.Buy: this.buy(bar, state, algorithm); break;
-        case Action.StartTrail: this.startTrail(bar, state); break;
-        case Action.Close: this.close(bar, state, algorithm, startStreak); break;
-        case Action.SetHigh: this.setHigh(bar, state); break;
-      }
-    }
-
-  }
-
   private getAction(bar: Bar, state: any): Action {
     if (this.isBuy(bar, state)) {
       return Action.Buy;
@@ -138,5 +109,28 @@ export default class MeanReversion extends Base {
     state.isOpen = false;
     state.isTrailing = false;
     state.peak = bar.prices.close;
+  }
+
+  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+    const startStreak: number = Number(params.startStreak);
+    const bar: Bar = bars[bars.length - 1];
+
+    state.threshold ??= Number(params.threshold);
+    state.profitBasedTrailingStopLoss ??= Number(params.profitBasedTrailingStopLoss);
+    state.minDrop ??= 0.25;
+    state.streak ??= startStreak;
+    state.peak ??= bar.prices.close;
+    state.low ??= bar.prices.close;
+    state.isOpen ??= false;
+    state.isTrailing ??= false;
+
+    const action: Action = this.getAction(bar, state);
+
+    switch (action) {
+      case Action.Buy: this.buy(bar, state, algorithm); break;
+      case Action.StartTrail: this.startTrail(bar, state); break;
+      case Action.Close: this.close(bar, state, algorithm, startStreak); break;
+      case Action.SetHigh: this.setHigh(bar, state); break;
+    }
   }
 }

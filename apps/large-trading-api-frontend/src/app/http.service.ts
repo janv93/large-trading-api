@@ -17,13 +17,13 @@ export class HttpService {
   ) { }
 
   public backtest(): Observable<Run[]> {
-    const { autoSymbols, symbols, rank, timeframe, times, commission, autoParams } = this.chartService;
+    const { autoSymbols, symbols, rank, timeframe, times, commission } = this.chartService;
 
     const body = {
       timeframe,
       times,
       commission,
-      autoParams,
+      autoSymbols,
       ...(autoSymbols ? { rank } : { symbols }),
       algorithms: this.chartService.algorithms.map((a, i) => this.getAlgorithmBody(i))
     };
@@ -70,9 +70,8 @@ export class HttpService {
   }
 
   private getAlgorithmBody(index: number): any {
-    const algorithm = this.chartService.algorithms[index];
+    const { algorithm, autoParams } = this.chartService.algorithms[index];
     const algorithmConfig = AlgorithmConfigs[algorithm];
-    const isAutoParams = this.chartService.autoParams[index];
-    return { algorithm, ...(isAutoParams ? algorithmConfig?.autoParams : algorithmConfig?.default) };
+    return { algorithm, autoParams, config: autoParams ? algorithmConfig?.autoParams : algorithmConfig?.default };
   }
 }

@@ -6,23 +6,22 @@ export default class CandlestickPatternsController extends Base {
     super();
   }
 
-  public addCandlestickPatterns(bars: Bar[]): void {
-    for (let i = 0; i < bars.length; i++) {
-      const patterns: BarCandlestickPatterns = {};
+  public stepCandlestickPatterns(bars: Bar[]): void {
+    const i: number = bars.length - 1;
+    const patterns: BarCandlestickPatterns = {};
 
-      this.detectSingleCandle(bars[i].prices, patterns);
+    this.detectSingleCandle(bars[i].prices, patterns);
 
-      if (i >= 1) {
-        this.detectTwoCandle(bars[i - 1].prices, bars[i].prices, patterns);
-      }
+    if (i >= 1) {
+      this.detectTwoCandle(bars[i - 1].prices, bars[i].prices, patterns);
+    }
 
-      if (i >= 2) {
-        this.detectThreeCandle(bars[i - 2].prices, bars[i - 1].prices, bars[i].prices, patterns);
-      }
+    if (i >= 2) {
+      this.detectThreeCandle(bars[i - 2].prices, bars[i - 1].prices, bars[i].prices, patterns);
+    }
 
-      if (Object.keys(patterns).length > 0) {
-        bars[i].candlestickPatterns = patterns;
-      }
+    if (Object.keys(patterns).length > 0) {
+      bars[i].candlestickPatterns = patterns;
     }
   }
 

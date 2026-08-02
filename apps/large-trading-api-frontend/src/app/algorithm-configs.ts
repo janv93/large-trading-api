@@ -4,6 +4,9 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   [Algorithm.Momentum]: {
     default: {
       streak: 5
+    },
+    autoParams: {
+      streak: { min: 3, max: 10, step: 1 }
     }
   },
   [Algorithm.Macd]: {
@@ -11,6 +14,11 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       fast: 12,
       slow: 26,
       signal: 9
+    },
+    autoParams: {
+      fast: { min: 8, max: 16, step: 2 },
+      slow: { min: 20, max: 30, step: 2 },
+      signal: { min: 7, max: 11, step: 1 }
     }
   },
   [Algorithm.Rsi]: {
@@ -46,10 +54,14 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   [Algorithm.Bb]: {
     default: {
       period: 21
+    },
+    autoParams: {
+      period: { min: 10, max: 30, step: 5 }
     }
   },
   [Algorithm.Dca]: {
-    default: {}
+    default: {},
+    autoParams: {}
   },
   [Algorithm.MeanReversion]: {
     default: {
@@ -89,6 +101,9 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   [Algorithm.MarketStructure]: {
     default: {
       space: 5
+    },
+    autoParams: {
+      space: { min: 3, max: 10, step: 1 }
     }
   },
   [Algorithm.RsiDivergence]: {
@@ -100,6 +115,9 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
   [Algorithm.Example]: {
     default: {
       size: 10
+    },
+    autoParams: {
+      size: { min: 5, max: 20, step: 5 }
     }
   },
   [Algorithm.CandlestickPatterns]: {

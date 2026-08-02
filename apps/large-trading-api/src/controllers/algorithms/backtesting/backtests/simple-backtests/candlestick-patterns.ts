@@ -29,44 +29,28 @@ const BEARISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
 export default class CandlestickPatterns extends Base {
   private controller = new CandlestickPatternsController();
 
-  public setSignals(bars: Bar[], algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const minScore: number = Number(params.minScore);
     const takeProfit: number = 4;
     const stopLoss: number = 2;
+    this.controller.stepCandlestickPatterns(bars);
 
-    this.controller.addCandlestickPatterns(bars);
+    const bar: Bar = bars[bars.length - 1];
+    const patterns: BarCandlestickPatterns | undefined = bar.candlestickPatterns;
+    if (!patterns) return;
 
-    bars.forEach((bar: Bar) => {
-      const patterns: BarCandlestickPatterns | undefined = bar.candlestickPatterns;
-      if (!patterns) return;
+    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const closePrice: number = bar.prices.close;
 
-      const backtest: BacktestData = bar.algorithms[algorithm]!;
-      const signals: BacktestSignal[] = backtest.signals;
-      const closePrice: number = bar.prices.close;
+    const bullishScore: number = BULLISH_PATTERNS.filter(p => patterns[p]).length;
+    const bearishScore: number = BEARISH_PATTERNS.filter(p => patterns[p]).length;
+    const netScore: number = bullishScore - bearishScore;
 
-      const bullishScore: number = BULLISH_PATTERNS.filter(p => patterns[p]).length;
-      const bearishScore: number = BEARISH_PATTERNS.filter(p => patterns[p]).length;
-      const netScore: number = bullishScore - bearishScore;
-
-      if (netScore >= minScore) {
-        signals.push({
-          signal: Signal.Buy,
-          size: 1,
-          price: closePrice,
-          positionCloseTrigger: {
-            tpSl: { takeProfit, stopLoss, asVolatilityFactor: true },
-          },
-        });
-      } else if (netScore <= -minScore) {
-        signals.push({
-          signal: Signal.Sell,
-          size: 1,
-          price: closePrice,
-          positionCloseTrigger: {
-            tpSl: { takeProfit, stopLoss, asVolatilityFactor: true },
-          },
-        });
-      }
-    });
+    if (netScore >= minScore) {
+      signals.push({ signal: Signal.Buy, size: 1, price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } });
+    } else if (netScore <= -minScore) {
+      signals.push({ signal: Signal.Sell, size: 1, price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } });
+    }
   }
 }

@@ -1,6 +1,6 @@
-﻿import { describe, expect, it, beforeEach, fit } from '@jest/globals';
+﻿import { describe, expect, it, beforeEach } from '@jest/globals';
 import Backtester from './backtester';
-import { Bar, Algorithm, Exchange, Signal, Timeframe, BacktestData } from '@shared';
+import { Bar, Algorithm, Exchange, Signal, Timeframe, BacktestData, BacktesterState } from '@shared';
 
 
 describe('Backtester', () => {
@@ -10,6 +10,15 @@ describe('Backtester', () => {
   beforeEach(() => {
     backtester = new Backtester();
   });
+
+  const runStep = (bars: Bar[], alg: Algorithm, commission: number): void => {
+    const state: BacktesterState = {};
+    const window: Bar[] = [];
+    for (let i = 0; i < bars.length; i++) {
+      window.push(bars[i]);
+      backtester.stepCalcBacktestPerformance(window, state, alg, commission);
+    }
+  };
 
   it('should calculate profit correctly without commission', () => {
     const baseBar = { symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance, times: { open: 0, close: 0 }, volume: 0 };
@@ -93,8 +102,8 @@ describe('Backtester', () => {
       }
     ];
 
-    const barsWithProfit: Bar[] = backtester.calcBacktestPerformance(bars, algorithm, 0);
-    const backtests: BacktestData[] = barsWithProfit.map(k => k.algorithms[algorithm]!);
+    runStep(bars, algorithm, 0);
+    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].profit).toBe(0);
     expect(backtests[1].profit).toBe(1);
@@ -197,8 +206,8 @@ describe('Backtester', () => {
       }
     ];
 
-    const barsWithProfit: Bar[] = backtester.calcBacktestPerformance(bars, algorithm, 0.001);
-    const backtests: BacktestData[] = barsWithProfit.map(k => k.algorithms[algorithm]!);
+    runStep(bars, algorithm, 0.001);
+    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].profit).toBeCloseTo(-0.001);
     expect(backtests[1].profit).toBeCloseTo(0.997);
@@ -251,8 +260,8 @@ describe('Backtester', () => {
       }
     ];
 
-    const barsWithProfit: Bar[] = backtester.calcBacktestPerformance(bars, algorithm, 0);
-    const backtests: BacktestData[] = barsWithProfit.map(k => k.algorithms[algorithm]!);
+    runStep(bars, algorithm, 0);
+    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].profit).toBe(0);
     expect(backtests[1].profit).toBe(-0.5);
@@ -283,8 +292,8 @@ describe('Backtester', () => {
       }
     ];
 
-    const barsWithProfit: Bar[] = backtester.calcBacktestPerformance(bars, algorithm, 0);
-    const backtests: BacktestData[] = barsWithProfit.map(k => k.algorithms[algorithm]!);
+    runStep(bars, algorithm, 0);
+    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].profit).toBe(0);
     expect(backtests[1].profit).toBe(-0.2);
@@ -319,8 +328,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitBuySl: Bar[] = backtester.calcBacktestPerformance(barsBuySl, algorithm, 0);
-      const backtestsBuySl: BacktestData[] = barsWithProfitBuySl.map(k => k.algorithms[algorithm]!);
+      runStep(barsBuySl, algorithm, 0);
+      const backtestsBuySl: BacktestData[] = barsBuySl.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsBuySl[0].profit).toBeCloseTo(0);
       expect(backtestsBuySl[1].profit).toBeCloseTo(0.1);
@@ -353,8 +362,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitBuyTp: Bar[] = backtester.calcBacktestPerformance(barsBuyTp, algorithm, 0);
-      const backtestsBuyTp: BacktestData[] = barsWithProfitBuyTp.map(k => k.algorithms[algorithm]!);
+      runStep(barsBuyTp, algorithm, 0);
+      const backtestsBuyTp: BacktestData[] = barsBuyTp.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsBuyTp[0].profit).toBeCloseTo(0);
       expect(backtestsBuyTp[1].profit).toBeCloseTo(0.1);
@@ -388,8 +397,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitSellSl: Bar[] = backtester.calcBacktestPerformance(barsSellSl, algorithm, 0);
-      const backtestsSellSl: BacktestData[] = barsWithProfitSellSl.map(k => k.algorithms[algorithm]!);
+      runStep(barsSellSl, algorithm, 0);
+      const backtestsSellSl: BacktestData[] = barsSellSl.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsSellSl[0].profit).toBeCloseTo(0);
       expect(backtestsSellSl[1].profit).toBeCloseTo(-0.1);
@@ -422,8 +431,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitSellTp: Bar[] = backtester.calcBacktestPerformance(barsSellTp, algorithm, 0);
-      const backtestsSellTp: BacktestData[] = barsWithProfitSellTp.map(k => k.algorithms[algorithm]!);
+      runStep(barsSellTp, algorithm, 0);
+      const backtestsSellTp: BacktestData[] = barsSellTp.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsSellTp[0].profit).toBeCloseTo(0);
       expect(backtestsSellTp[1].profit).toBeCloseTo(0.1);
@@ -461,8 +470,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitLongTsl: Bar[] = backtester.calcBacktestPerformance(barsLongTsl, algorithm, 0);
-      const backtestsLongTsl: BacktestData[] = barsWithProfitLongTsl.map(k => k.algorithms[algorithm]!);
+      runStep(barsLongTsl, algorithm, 0);
+      const backtestsLongTsl: BacktestData[] = barsLongTsl.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsLongTsl[0].profit).toBeCloseTo(0);
       expect(backtestsLongTsl[1].profit).toBeCloseTo(0.2);
@@ -497,8 +506,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitShortTsl: Bar[] = backtester.calcBacktestPerformance(barsShortTsl, algorithm, 0);
-      const backtestsShortTsl: BacktestData[] = barsWithProfitShortTsl.map(k => k.algorithms[algorithm]!);
+      runStep(barsShortTsl, algorithm, 0);
+      const backtestsShortTsl: BacktestData[] = barsShortTsl.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsShortTsl[0].profit).toBeCloseTo(0);
       expect(backtestsShortTsl[1].profit).toBeCloseTo(0.1);
@@ -537,8 +546,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitLongTslPercentOfProfit: Bar[] = backtester.calcBacktestPerformance(barsLongTslWithPercentOfProfit, algorithm, 0);
-      const backtestsLongTslPercentOfProfit: BacktestData[] = barsWithProfitLongTslPercentOfProfit.map(k => k.algorithms[algorithm]!);
+      runStep(barsLongTslWithPercentOfProfit, algorithm, 0);
+      const backtestsLongTslPercentOfProfit: BacktestData[] = barsLongTslWithPercentOfProfit.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsLongTslPercentOfProfit[0].profit).toBeCloseTo(0);
       expect(backtestsLongTslPercentOfProfit[1].profit).toBeCloseTo(0.5);
@@ -577,8 +586,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const barsWithProfitShortTslPercentOfProfit: Bar[] = backtester.calcBacktestPerformance(barsShortTslWithPercentOfProfit, algorithm, 0);
-      const backtestsShortTslPercentOfProfit: BacktestData[] = barsWithProfitShortTslPercentOfProfit.map(k => k.algorithms[algorithm]!);
+      runStep(barsShortTslWithPercentOfProfit, algorithm, 0);
+      const backtestsShortTslPercentOfProfit: BacktestData[] = barsShortTslWithPercentOfProfit.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsShortTslPercentOfProfit[0].profit).toBeCloseTo(0);
       expect(backtestsShortTslPercentOfProfit[1].profit).toBeCloseTo(0.15);
@@ -609,8 +618,8 @@ describe('Backtester', () => {
         },
       ];
 
-      const barsWithProfitLongStopLossTriggersFirst: Bar[] = backtester.calcBacktestPerformance(barsLongTslStopLossTriggersFirst, algorithm, 0);
-      const backtestsLongStopLossTriggersFirst: BacktestData[] = barsWithProfitLongStopLossTriggersFirst.map(k => k.algorithms[algorithm]!);
+      runStep(barsLongTslStopLossTriggersFirst, algorithm, 0);
+      const backtestsLongStopLossTriggersFirst: BacktestData[] = barsLongTslStopLossTriggersFirst.map(k => k.algorithms[algorithm]!);
 
       expect(backtestsLongStopLossTriggersFirst[0].profit).toBeCloseTo(0);
       expect(backtestsLongStopLossTriggersFirst[1].profit).toBeCloseTo(0.01);
@@ -651,8 +660,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const result: Bar[] = backtester.calcBacktestPerformance(bars, algorithm, 0);
-      const backtests: BacktestData[] = result.map(k => k.algorithms[algorithm]!);
+      runStep(bars, algorithm, 0);
+      const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
 
       expect(backtests[2].profit).toBeCloseTo(0);
       expect(backtests[3].profit).toBeCloseTo(0.2);
@@ -683,8 +692,8 @@ describe('Backtester', () => {
         }
       ];
 
-      const result: Bar[] = backtester.calcBacktestPerformance(bars, algorithm, 0);
-      const backtests: BacktestData[] = result.map(k => k.algorithms[algorithm]!);
+      runStep(bars, algorithm, 0);
+      const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
 
       expect(backtests[2].profit).toBeCloseTo(0);
       expect(backtests[3].profit).toBeCloseTo(-0.2);
@@ -719,8 +728,8 @@ describe('Backtester', () => {
       }
     ];
 
-    const barsWithProfit: Bar[] = backtester.calcBacktestPerformance(bars, algorithm, 0);
-    const backtests: BacktestData[] = barsWithProfit.map(k => k.algorithms[algorithm]!);
+    runStep(bars, algorithm, 0);
+    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
 
     expect(backtests[0].profit).toBe(0);    // A just opened
     expect(backtests[1].profit).toBe(1);    // A unrealised: 100→200 (+100%)

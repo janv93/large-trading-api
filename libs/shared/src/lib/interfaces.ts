@@ -190,6 +190,62 @@ export interface BarIndicators {
   rsiDivergence?: RsiDivergenceData;
 }
 
+export interface RsiState {
+  avgGain?: number;
+  avgLoss?: number;
+}
+
+export interface EmaState {
+  currentEma?: number;
+}
+
+export interface AtrState {
+  currentAtr?: number;
+}
+
+export interface MacdStepState {
+  fastEma?: EmaState;
+  slowEma?: EmaState;
+  signalEma?: EmaState;
+  closesBuffer?: number[];
+  macdLineBuffer?: number[];
+}
+
+export interface MarketStructureCandidate {
+  bar: Bar;
+  index: number;
+  pivotPoint: PivotPoint;
+}
+
+export interface MarketStructureState {
+  barsWithPivotPoints?: BarWithIndex[];
+  candidate?: MarketStructureCandidate;
+}
+
+export interface TrendLineStartEntry {
+  startIndex: number;
+  minSlopeBelow: number;
+  maxSlopeAbove: number;
+}
+
+export interface TrendLineStepState {
+  candidateTrendLines?: TrendLineStartEntry[];
+  confirmedTrendLines?: TrendLine[];
+  pendingTrendLines?: TrendLine[];
+}
+
+export interface TrendLinesFromPivotPointsStartEntry {
+  startIndex: number;
+  side: PivotPointSide;
+  extremeSlope: number;
+}
+
+export interface TrendLinesFromPivotPointsStepState {
+  candidateTrendLines?: TrendLinesFromPivotPointsStartEntry[];
+  confirmedTrendLines?: TrendLine[];
+  pendingTrendLines?: TrendLine[];
+}
+
 export interface BarCandlestickPatterns {
   // single-candle
   doji?: boolean;
@@ -339,6 +395,12 @@ export interface Position {
   takeProfitPrice?: number;
   stopLossPrice?: number;
   openSignalReference: SignalReference;
+}
+
+export interface BacktesterState {
+  positions?: Array<Position | undefined>;
+  profit?: number;
+  volatility?: number;
 }
 
 export interface Run {
