@@ -2,5 +2,13 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "neverConnectToCloud": true,
   "analytics": true,
-  "useDaemonProcess": false
+  "useDaemonProcess": false,
+  "plugins": [
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
+      }
+    }
+  ]
 }

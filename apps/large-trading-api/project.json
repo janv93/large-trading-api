@@ -19,12 +19,6 @@
         "command": "npm run start",
         "cwd": "apps/large-trading-api"
       }
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "options": {
-        "jestConfig": "apps/large-trading-api/jest.config.js"
-      }
     }
   }
 }

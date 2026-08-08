@@ -1,10 +1,17 @@
 module.exports = {
-  preset: "ts-jest",
   testEnvironment: "node",
-  globals: {
-    "ts-jest": {
-      isolatedModules: true
-    }
+  transform: {
+    "^.+\\.tsx?$": ["@swc/jest", {
+      jsc: {
+        parser: {
+          syntax: "typescript"
+        },
+        target: "es2022"
+      },
+      module: {
+        type: "commonjs"
+      }
+    }]
   },
   moduleNameMapper: {
     "^@shared$": "<rootDir>/../../libs/shared/src/index.ts",
