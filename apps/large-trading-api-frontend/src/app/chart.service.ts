@@ -14,25 +14,4 @@ export class ChartService {
   public rank = 15;
 
   get isMulti(): boolean { return this.autoSymbols || this.symbols.length !== 1; }
-
-  // loading screen
-  public loading = true;
-  public loadingText: string;
-  public loadingTextInfo: string;
-  public isError = false;
-
-  constructor() { }
-
-  public setLoadingText(loadingText?: string, loadingTextInfo?: string) {
-    if (!loadingText && !loadingTextInfo) this.loading = false;
-    this.isError = false;
-    this.loadingText = loadingText!;
-    this.loadingTextInfo = loadingTextInfo!;
-  }
-
-  public setErrorText(error: any) {
-    this.isError = true;
-    this.loadingText = `Received error`;
-    this.loadingTextInfo = error.error?.error || (typeof error.error === 'string' ? error.error : null) || error.message || error;
-  }
 }

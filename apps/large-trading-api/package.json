@@ -47,7 +47,7 @@
     "oauth": "latest",
     "plotly": "latest",
     "ts-jest": "latest",
-    "typescript": "latest"
+    "typescript": "6.0.3"
   },
   "devDependencies": {
     "@eslint/js": "latest",

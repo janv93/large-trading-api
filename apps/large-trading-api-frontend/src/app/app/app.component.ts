@@ -1,7 +1,8 @@
-﻿import { Component } from '@angular/core';
+﻿import { Component, computed, signal } from '@angular/core';
 import { Run } from '@shared';
 import { HttpService } from '../http.service';
 import { ChartService } from '../chart.service';
+import { LoadingService } from '../loader/loading.service';
 
 @Component({
   selector: 'app-root',
@@ -10,54 +11,48 @@ import { ChartService } from '../chart.service';
   standalone: false
 })
 export class AppComponent {
-  public tickers: Run[][];
-  public multiCommissionChecked = false;
+  public readonly tickers = signal<Run[][]>([]);
+  public readonly multiCommissionChecked = signal(false);
 
   public readonly pageSize = 50;
-  public currentPage = 0;
-
-  get totalPages(): number {
-    return this.tickers ? Math.ceil(this.tickers.length / this.pageSize) : 0;
-  }
-
-  get pagedTickers(): Run[][] {
-    if (!this.tickers) return [];
-    const start = this.currentPage * this.pageSize;
-    return this.tickers.slice(start, start + this.pageSize);
-  }
+  public readonly currentPage = signal(0);
+  public readonly totalPages = computed(() => Math.ceil(this.tickers().length / this.pageSize));
+  public readonly pagedTickers = computed(() => {
+    const start = this.currentPage() * this.pageSize;
+    return this.tickers().slice(start, start + this.pageSize);
+  });
 
   public prevPage(): void {
-    if (this.currentPage > 0) this.currentPage--;
+    this.currentPage.update(page => Math.max(0, page - 1));
   }
 
   public nextPage(): void {
-    if (this.currentPage < this.totalPages - 1) this.currentPage++;
+    this.currentPage.update(page => Math.min(this.totalPages() - 1, page + 1));
   }
 
   constructor(
     public chartService: ChartService,
+    public loadingService: LoadingService,
     private httpService: HttpService
   ) {
-    this.tickers = [];
-
     this.httpService.backtest().subscribe({
       next: (runs: Run[]) => {
-        this.tickers.push(runs);
+        this.tickers.update(tickers => [...tickers, runs]);
       },
       error: (err) => {
-        this.chartService.setErrorText(err);
+        this.loadingService.setErrorText(err);
       },
       complete: () => {
-        if (!this.tickers.length) {
-          this.chartService.setErrorText('No data received');
+        if (!this.tickers().length) {
+          this.loadingService.setErrorText('No data received');
           return;
         }
         if (this.chartService.isMulti) {
-          this.tickers.sort((a: Run[], b: Run[]) => {
+          this.tickers.update(tickers => [...tickers].sort((a: Run[], b: Run[]) => {
             return (a[0].bars.at(-1)?.algorithms[this.chartService.algorithms[0].algorithm]!.profit || 0) - (b[0].bars.at(-1)?.algorithms[this.chartService.algorithms[0].algorithm]!.profit || 0);
-          });
+          }));
         }
-        this.chartService.setLoadingText();
+        this.loadingService.setLoadingText();
       }
     });
   }

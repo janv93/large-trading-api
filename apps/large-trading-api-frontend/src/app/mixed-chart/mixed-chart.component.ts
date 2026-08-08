@@ -1,4 +1,4 @@
-﻿import { Component, ElementRef, Inject, Input, OnChanges, OnDestroy, OnInit, Renderer2, SimpleChanges, ViewChild } from '@angular/core';
+﻿import { Component, ElementRef, Inject, Input, OnChanges, OnDestroy, OnInit, Renderer2, signal, SimpleChanges, ViewChild } from '@angular/core';
 import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange, TickMarkType } from 'lightweight-charts';
 import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
@@ -22,11 +22,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   @Input() runs: Run[];
   @Input() hasCommission: boolean = false;
 
-  public currentOhlc: CandlestickData;
-  public currentProfit: number[];
-  public currentIndex: number;
-  public openPositionSize: number;
-  public currentIndicatorValues: { label: string; value: string }[] = [];
+  public readonly currentOhlc = signal<CandlestickData | undefined>(undefined);
+  public readonly currentProfit = signal<number[]>([]);
+  public readonly currentIndex = signal<number | undefined>(undefined);
+  public readonly openPositionSize = signal<number | undefined>(undefined);
+  public readonly currentIndicatorValues = signal<{ label: string; value: string }[]>([]);
   public stats: BacktestStats;
   public currentBars: Bar[];
 
@@ -123,7 +123,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   public onShowIndicatorsChange(event: Event): void {
     const checked: boolean = (event.target as HTMLInputElement).checked;
     this.indicatorSeriesService.setVisible(checked);
-    if (!checked) this.currentIndicatorValues = [];
+    if (!checked) this.currentIndicatorValues.set([]);
   }
 
   private createChart(): void {
@@ -402,21 +402,21 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       }
     }
 
-    this.currentOhlc = ohlc;
-    this.currentIndex = index;
+    this.currentOhlc.set(ohlc);
+    this.currentIndex.set(index);
 
-    this.currentProfit = this.profitSeries.map(series => {
+    this.currentProfit.set(this.profitSeries.map(series => {
       const data: LineData = param.seriesData.get(series) as LineData;
       return data ? Number(data.value.toFixed(2)) : 0;
-    });
+    }));
 
     if (this.openPositionSizeSeries) {
       const openPositionSize: HistogramData = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;
       if (openPositionSize) {
-        this.openPositionSize = Number(openPositionSize.value.toFixed(2));
+        this.openPositionSize.set(Number(openPositionSize.value.toFixed(2)));
       }
     }
 
-    this.currentIndicatorValues = this.indicatorSeriesService.getLegendValues(param);
+    this.currentIndicatorValues.set(this.indicatorSeriesService.getLegendValues(param));
   }
 }

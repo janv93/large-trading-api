@@ -8,6 +8,7 @@
       "executor": "@nx/js:tsc",
       "options": {
         "outputPath": "dist/apps/large-trading-api",
+        "rootDir": ".",
         "tsConfig": "apps/large-trading-api/tsconfig.json",
         "main": "apps/large-trading-api/src/app.ts"
       }

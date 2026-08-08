@@ -2,6 +2,8 @@ node_modules
 dist
 .nx/cache
 .nx/workspace-data
-.angular/cache
+**/.angular/cache
 apps/large-trading-api/.env
 *.stackdump
+
+.nx/migrate-runs

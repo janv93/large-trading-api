@@ -1,8 +1,9 @@
-﻿import { Injectable, NgZone } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { ChartService } from './chart.service';
 import { Observable } from 'rxjs';
 import { Run } from '@shared';
 import { AlgorithmConfigs } from './algorithm-configs';
+import { LoadingService } from './loader/loading.service';
 
 
 @Injectable({
@@ -13,7 +14,7 @@ export class HttpService {
 
   constructor(
     private chartService: ChartService,
-    private ngZone: NgZone
+    private loadingService: LoadingService
   ) { }
 
   public backtest(): Observable<Run[]> {
@@ -29,7 +30,7 @@ export class HttpService {
     };
 
     const url = this.baseUrl + '/backtest';
-    this.chartService.setLoadingText('Fetching backtest', '/backtest');
+    this.loadingService.setLoadingText('Fetching backtest', '/backtest');
 
     return new Observable<Run[]>(observer => {
       const controller = new AbortController();
@@ -54,14 +55,14 @@ export class HttpService {
             buffer = lines.pop()!;
 
             for (const line of lines) {
-              if (line.trim()) this.ngZone.run(() => observer.next(JSON.parse(line)));
+              if (line.trim()) observer.next(JSON.parse(line));
             }
           }
 
-          if (buffer.trim()) this.ngZone.run(() => observer.next(JSON.parse(buffer)));
-          this.ngZone.run(() => observer.complete());
+          if (buffer.trim()) observer.next(JSON.parse(buffer));
+          observer.complete();
         } catch (err: any) {
-          if (err?.name !== 'AbortError') this.ngZone.run(() => observer.error(err));
+          if (err?.name !== 'AbortError') observer.error(err);
         }
       })();
 

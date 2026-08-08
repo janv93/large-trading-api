@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, signal } from '@angular/core';
 
 @Component({
   selector: 'loader',
@@ -7,19 +7,20 @@ import { ChangeDetectorRef, Component, Inject, OnDestroy } from '@angular/core';
   standalone: false
 })
 export class LoaderComponent implements OnDestroy {
-  public show = true;
+  public readonly show = signal(true);
 
   private intervalId: ReturnType<typeof setInterval>;
+  private restartId?: ReturnType<typeof setTimeout>;
 
-  constructor(@Inject(ChangeDetectorRef) private cd: ChangeDetectorRef) {
+  constructor() {
     this.intervalId = setInterval(() => {
-      this.show = false;
-      this.cd.detectChanges();
-      this.show = true;
+      this.show.set(false);
+      this.restartId = setTimeout(() => this.show.set(true));
     }, 4000);
   }
 
   ngOnDestroy(): void {
     clearInterval(this.intervalId);
+    if (this.restartId) clearTimeout(this.restartId);
   }
 }
