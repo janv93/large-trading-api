@@ -9,7 +9,7 @@
     "apps/*"
   ],
   "scripts": {
-    "b": "npx nx serve large-trading-api",
+    "b": "cross-env NX_PROCESS_KILL_GRACE_PERIOD=0 npx nx serve large-trading-api",
     "f": "npx nx serve large-trading-api-frontend",
     "test": "npx nx test large-trading-api"
   },
@@ -20,6 +20,7 @@
     "@nx/angular": "23.1.1",
     "@nx/jest": "23.1.1",
     "@nx/node": "23.1.1",
+    "cross-env": "^10.1.0",
     "nx": "23.1.1"
   }
 }
