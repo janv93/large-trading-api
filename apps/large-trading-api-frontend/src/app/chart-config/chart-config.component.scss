@@ -1,0 +1,144 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.config-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 42px;
+  margin: 0;
+  padding: 0.3rem 0.75rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: #111;
+  border: 0;
+  border-bottom: 1px solid #3b3b3b;
+  color: #bbb;
+  font-size: 0.78rem;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+select,
+input[type="number"],
+input[type="text"] {
+  height: 26px;
+  padding: 0 0.35rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 3px;
+  background: #202020;
+  color: #eee;
+  font: inherit;
+}
+
+:is(select, input).run-origin:disabled {
+  border-color: #26a89b;
+  outline: 1px solid #26a89b;
+}
+
+input[type="number"] {
+  width: 68px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input.times-input {
+  width: 3rem;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.checkbox-label {
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.symbols-trigger,
+.add-symbol {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #26a89b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.symbols-trigger:hover,
+.add-symbol:hover {
+  text-decoration: underline;
+}
+
+.symbols-popover {
+  padding: 0.75rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #171717;
+  color: #ddd;
+  box-shadow: 0 8px 30px #000a;
+}
+
+.symbols-popover::backdrop {
+  background: transparent;
+}
+
+.popover-title {
+  margin-bottom: 0.5rem;
+  color: #aaa;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.symbol-row {
+  display: grid;
+  grid-template-columns: 110px 180px 26px;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.icon-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background: transparent;
+  color: #ddd;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-button:disabled {
+  color: #555;
+  cursor: default;
+}
+
+.run-button {
+  height: 27px;
+  padding: 0 0.85rem;
+  border: 1px solid #26a89b;
+  border-radius: 3px;
+  background: #176b63;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.run-button:disabled {
+  border-color: #444;
+  background: #292929;
+  color: #666;
+  cursor: default;
+}

@@ -17,7 +17,7 @@ Backtest any custom trading strategy on cryptos, stocks, ETFs. The code provides
 ## Getting Started
 
 ### Requirements
-- Node.js (e.g. 22.16.0 + npm 11.2.0)
+- Node.js (e.g. 24.19.0)
 - MongoDB (local or cloud)
 - API keys for at least one exchange: Binance, KuCoin, or Alpaca (Binance + Alpaca recommended for full ticker coverage)
 
@@ -42,7 +42,6 @@ Backtest any custom trading strategy on cryptos, stocks, ETFs. The code provides
 1. Add or use existing backtests in `apps/large-trading-api/src/strategies` — see `example.ts` for reference
 2. Add strategy to the Strategy enum in `libs/shared/src/lib/interfaces.ts` and make sure the value is the exact same name as your backtest class. Your backtest class will then be instantiated automatically.
 3. Add strategy to `apps/large-trading-api-frontend/src/app/strategy-configs.ts` which contains the variable parameters sent over the API
-4. Set generic parameters in `apps/large-trading-api-frontend/src/app/chart.service.ts`
 
 ## Todos
 

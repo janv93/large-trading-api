@@ -7,12 +7,14 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppComponent } from './app.component';
 import { MixedChartComponent } from '../mixed-chart/mixed-chart.component';
 import { LoaderComponent } from '../loader/loader.component';
+import { ChartConfigComponent } from '../chart-config/chart-config.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MixedChartComponent,
-    LoaderComponent
+    LoaderComponent,
+    ChartConfigComponent
   ],
   imports: [
     BrowserModule,

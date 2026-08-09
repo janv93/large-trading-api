@@ -1,6 +1,12 @@
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
   height: 100%;
+}
+
+.app-content {
+  flex: 1;
+  min-height: 0;
 }
 
 code {
@@ -11,14 +17,23 @@ code {
   color: #f15450;
 }
 
-.mixed-chart {
+.chart-results-wrapper {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
+}
+
+.mixed-chart {
+  flex: 1;
+  min-height: 0;
 }
 
 .mixed-chart-multi-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .mixed-chart-multi-container {
@@ -35,6 +50,7 @@ code {
 .status-bar {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   padding: 0.4rem 1rem;
   background: #111;
   border-bottom: 1px solid #333;
@@ -42,7 +58,21 @@ code {
   font-size: 0.85rem;
 
   label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.75rem;
     cursor: pointer;
+  }
+
+  label:first-child {
+    margin-left: 0;
+  }
+
+  input {
+    width: 15px;
+    height: 15px;
+    margin: 0;
   }
 }
 

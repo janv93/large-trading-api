@@ -18,9 +18,9 @@ class WatermarkPaneRenderer implements IPrimitivePaneRenderer {
   ) { }
 
   draw(target: any): void {
-    target.useBitmapCoordinateSpace(({ context: ctx, bitmapSize }: any) => {
+    target.useBitmapCoordinateSpace(({ context: ctx, bitmapSize, verticalPixelRatio }: any) => {
       const cx = bitmapSize.width / 2;
-      const cy = bitmapSize.height / 6;
+      const top = 20 * verticalPixelRatio;
       const fontSize = this._isMulti ? 110 : 200;
 
       ctx.save();
@@ -34,19 +34,15 @@ class WatermarkPaneRenderer implements IPrimitivePaneRenderer {
         const imgSize = fontSize * 0.8;
         const gap = fontSize * 0.2;
         const metrics = ctx.measureText(this._symbol);
-        const textVisualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
         const textWidth = metrics.width;
         const totalWidth = imgSize + gap + textWidth;
-        // alphabetic baseline position so the text's visual center aligns with cy
-        const textY = cy + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
         const imgX = cx - totalWidth / 2;
-        const imgY = cy - textVisualHeight / 2;
-        ctx.drawImage(this._image, imgX, imgY, imgSize, imgSize);
-        ctx.fillText(this._symbol, imgX + imgSize + gap, textY);
+        ctx.drawImage(this._image, imgX, top, imgSize, imgSize);
+        ctx.fillText(this._symbol, imgX + imgSize + gap, top + metrics.actualBoundingBoxAscent);
       } else {
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this._symbol, cx, cy);
+        const metrics = ctx.measureText(this._symbol);
+        ctx.fillText(this._symbol, cx, top + metrics.actualBoundingBoxAscent);
       }
 
       ctx.restore();

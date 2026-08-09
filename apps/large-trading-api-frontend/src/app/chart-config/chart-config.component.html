@@ -1,0 +1,92 @@
+<fieldset class="config-bar" [disabled]="disabled()" (keydown.enter)="runOnEnter($event)">
+  <label>
+    <span>timeframe</span>
+    <select [(ngModel)]="config.timeframe">
+      @for (timeframe of timeframes; track timeframe) {
+      <option [ngValue]="timeframe">{{ timeframe }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    <span>times</span>
+    <input class="times-input" type="number" min="1" step="1" [ngModel]="config.times"
+      (ngModelChange)="setTimes($event)">
+  </label>
+
+  <label>
+    <span>commission</span>
+    <input type="number" min="0" step="0.0001" [(ngModel)]="config.commission">
+  </label>
+
+  <label>
+    <span>main</span>
+    <select [(ngModel)]="config.mainStrategy.strategy">
+      @for (strategy of strategies; track strategy) {
+      <option [ngValue]="strategy">{{ strategy }}</option>
+      }
+    </select>
+  </label>
+
+  <label class="checkbox-label">
+    <input type="checkbox" [(ngModel)]="config.mainStrategy.autoParams">
+    <span>auto params</span>
+  </label>
+
+  <label>
+    <span>compare</span>
+    <select [ngModel]="comparisonStrategy" (ngModelChange)="setComparisonStrategy($event)">
+      <option [ngValue]="null">none</option>
+      @for (strategy of strategies; track strategy) {
+      <option [ngValue]="strategy">{{ strategy }}</option>
+      }
+    </select>
+  </label>
+
+  @if (config.comparisonStrategy) {
+  <label class="checkbox-label">
+    <input type="checkbox" [(ngModel)]="config.comparisonStrategy.autoParams">
+    <span>auto params</span>
+  </label>
+  }
+
+  @if (!config.autoSymbols) {
+  <button class="symbols-trigger" type="button" popovertarget="symbols-popover">
+    symbols
+  </button>
+  }
+
+  <div #symbolsPopover class="symbols-popover" id="symbols-popover" popover tabindex="-1"
+    (keydown.enter)="closeSymbolsOnEnter($event)">
+    <div class="popover-title">symbols</div>
+    @for (item of config.symbols; track $index; let index = $index) {
+    <div class="symbol-row">
+      <select [(ngModel)]="item.exchange" aria-label="Exchange">
+        @for (exchange of exchanges; track exchange) {
+        <option [ngValue]="exchange">{{ exchange | titlecase }}</option>
+        }
+      </select>
+      <input type="text" [(ngModel)]="item.symbol" (blur)="normalizeSymbol(item)" aria-label="Symbol"
+        placeholder="Symbol">
+      <button class="icon-button" type="button" title="Delete symbol" aria-label="Delete symbol"
+        [disabled]="config.symbols.length === 1" (click)="deleteSymbolOnClick(index)"
+        (keydown.enter)="deleteSymbolOnEnter(index, $event)">&times;</button>
+    </div>
+    }
+    <button class="add-symbol" type="button" (click)="addSymbol()">+ Add symbol</button>
+  </div>
+
+  <label class="checkbox-label">
+    <input type="checkbox" [(ngModel)]="config.autoSymbols">
+    <span>auto symbols</span>
+  </label>
+
+  @if (config.autoSymbols) {
+  <label>
+    <span>rank</span>
+    <input type="number" min="1" step="1" [(ngModel)]="config.rank">
+  </label>
+  }
+
+  <button #runButton class="run-button" type="button" [disabled]="!canRun" (click)="run()">Run</button>
+</fieldset>

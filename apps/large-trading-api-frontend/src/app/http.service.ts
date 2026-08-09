@@ -1,5 +1,5 @@
 ﻿import { Injectable } from '@angular/core';
-import { ChartService } from './chart.service';
+import { ChartConfig } from './chart-config/chart-config';
 import { Observable } from 'rxjs';
 import { Run } from '@shared';
 import { StrategyConfigs } from './strategy-configs';
@@ -13,12 +13,11 @@ export class HttpService {
   private baseUrl = 'http://127.0.0.1:3000';
 
   constructor(
-    private chartService: ChartService,
     private loadingService: LoadingService
   ) { }
 
-  public backtest(): Observable<Run[]> {
-    const { autoSymbols, symbols, rank, timeframe, times, commission } = this.chartService;
+  public backtest(config: ChartConfig): Observable<Run[]> {
+    const { autoSymbols, symbols, rank, timeframe, times, commission } = config;
 
     const body = {
       timeframe,
@@ -26,7 +25,7 @@ export class HttpService {
       commission,
       autoSymbols,
       ...(autoSymbols ? { rank } : { symbols }),
-      strategies: this.chartService.strategies.map(({ strategy, autoParams }) => {
+      strategies: [config.mainStrategy, ...(config.comparisonStrategy ? [config.comparisonStrategy] : [])].map(({ strategy, autoParams }) => {
         const strategyConfig = StrategyConfigs[strategy];
         return { strategy, autoParams, config: autoParams ? strategyConfig?.autoParams : strategyConfig?.default };
       })
