@@ -1,6 +1,6 @@
 import { Component, ElementRef, input, OnChanges, OnInit, output, SimpleChanges, ViewChild } from '@angular/core';
-import { Exchange, ExchangeSymbol, Strategy, Timeframe } from '@shared';
-import { ChartConfig, copyChartConfig, normalizeChartConfig } from './chart-config';
+import { ChartConfig, Exchange, ExchangeSymbol, Strategy, Timeframe } from '@shared';
+import { copyChartConfig, normalizeChartConfig } from './chart-config';
 
 @Component({
   selector: 'chart-config',

@@ -3,8 +3,8 @@ import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEve
 import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
 import { WatermarkPrimitive } from './primitives/watermark-primitive';
-import { BacktestStats, Bar, Run } from '@shared';
-import { ChartConfig, getStrategies, isMultiConfig } from '../chart-config/chart-config';
+import { BacktestStats, Bar, ChartConfig, Run } from '@shared';
+import { getStrategies, isMultiConfig } from '../chart-config/chart-config';
 import { BaseComponent } from '../base-component';
 import { IndicatorSeriesService } from './services/indicator-series.service';
 import { MarkersChartingService } from './services/markers-charting.service';

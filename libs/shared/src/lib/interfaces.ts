@@ -85,6 +85,22 @@ export interface ExchangeSymbol {
   symbol: string;
 }
 
+export interface StrategySelection {
+  strategy: Strategy;
+  autoParams: boolean;
+}
+
+export interface ChartConfig {
+  timeframe: Timeframe;
+  times: number;
+  commission: number;
+  mainStrategy: StrategySelection;
+  comparisonStrategy: StrategySelection | null;
+  symbols: ExchangeSymbol[];
+  autoSymbols: boolean;
+  rank: number;
+}
+
 export interface StrategyConfig {
   default: Record<string, any>;
   autoParams?: Record<string, StrategyConfigMulti>;

@@ -1,8 +1,8 @@
 ﻿import { Component, computed, signal } from '@angular/core';
-import { Run } from '@shared';
+import { ChartConfig, Run } from '@shared';
 import { finalize } from 'rxjs';
 import { HttpService } from '../http.service';
-import { ChartConfig, copyChartConfig, isMultiConfig, loadChartConfig, saveChartConfig } from '../chart-config/chart-config';
+import { copyChartConfig, isMultiConfig, loadChartConfig, saveChartConfig } from '../chart-config/chart-config';
 import { LoadingService } from '../loader/loading.service';
 
 @Component({

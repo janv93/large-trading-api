@@ -1,7 +1,6 @@
 ﻿import { Injectable } from '@angular/core';
-import { ChartConfig } from './chart-config/chart-config';
 import { Observable } from 'rxjs';
-import { Run } from '@shared';
+import { ChartConfig, Run } from '@shared';
 import { StrategyConfigs } from './strategy-configs';
 import { LoadingService } from './loader/loading.service';
 

@@ -1,20 +1,4 @@
-import { Exchange, ExchangeSymbol, Strategy, Timeframe } from '@shared';
-
-export interface StrategySelection {
-  strategy: Strategy;
-  autoParams: boolean;
-}
-
-export interface ChartConfig {
-  timeframe: Timeframe;
-  times: number;
-  commission: number;
-  mainStrategy: StrategySelection;
-  comparisonStrategy: StrategySelection | null;
-  symbols: ExchangeSymbol[];
-  autoSymbols: boolean;
-  rank: number;
-}
+import { ChartConfig, Exchange, Strategy, StrategySelection, Timeframe } from '@shared';
 
 const STORAGE_KEY = 'large-trading.chartConfig.v1';
 
