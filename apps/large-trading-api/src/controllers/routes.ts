@@ -24,7 +24,7 @@ export default class Routes extends Base {
   }
 
   private loadBacktests(): void {
-    const backtestsDir = path.join(__dirname, 'backtesting/backtests');
+    const backtestsDir = path.join(__dirname, 'backtesting/strategies');
     this.scanDir(backtestsDir);
   }
 
