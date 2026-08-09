@@ -5,9 +5,9 @@ import express, { NextFunction, Request, Response } from 'express';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
 import Base from './base';
-import Routes from './controllers/routes';
+import Routes from './routes';
 import database from './data/database';
-import alpaca from './controllers/exchanges/alpaca';
+import alpaca from './exchanges/alpaca';
 
 class App extends Base {
   public app: express.Application;

@@ -1,0 +1,56 @@
+﻿import CandlestickPatternsController from '../../patterns/candlestick-patterns';
+import { Strategy, BacktestData, BacktestSignal, Bar, BarCandlestickPatterns, Signal } from '@shared';
+import Base from '../../base';
+
+const BULLISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
+  'hammer',
+  'invertedHammer',
+  'bullishMarubozu',
+  'bullishEngulfing',
+  'bullishHarami',
+  'piercingLine',
+  'tweezersBottom',
+  'morningStar',
+  'threeWhiteSoldiers',
+];
+
+const BEARISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
+  'hangingMan',
+  'shootingStar',
+  'bearishMarubozu',
+  'bearishEngulfing',
+  'bearishHarami',
+  'darkCloudCover',
+  'tweezersTop',
+  'eveningStar',
+  'threeBlackCrows',
+];
+
+export default class CandlestickPatterns extends Base {
+  private controller = new CandlestickPatternsController();
+
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
+    const minScore: number = Number(params.minScore);
+    const takeProfit: number = 4;
+    const stopLoss: number = 2;
+    this.controller.stepCandlestickPatterns(bars);
+
+    const bar: Bar = bars[bars.length - 1];
+    const patterns: BarCandlestickPatterns | undefined = bar.candlestickPatterns;
+    if (!patterns) return;
+
+    const backtest: BacktestData = bar.backtests[strategy]!;
+    const signals: BacktestSignal[] = backtest.signals;
+    const closePrice: number = bar.prices.close;
+
+    const bullishScore: number = BULLISH_PATTERNS.filter(p => patterns[p]).length;
+    const bearishScore: number = BEARISH_PATTERNS.filter(p => patterns[p]).length;
+    const netScore: number = bullishScore - bearishScore;
+
+    if (netScore >= minScore) {
+      signals.push({ signal: Signal.Buy, size: 1, price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } });
+    } else if (netScore <= -minScore) {
+      signals.push({ signal: Signal.Sell, size: 1, price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } });
+    }
+  }
+}

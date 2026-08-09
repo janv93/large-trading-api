@@ -8,7 +8,7 @@ export class ChartService {
   public timeframe = Timeframe._1Hour;
   public times = 1;  // 1 = 1000 timeframes
   public commission = 0.0004; // 1 = 100%
-  public mainStrategy = { strategy: Strategy.Bb, autoParams: false };
+  public mainStrategy = { strategy: Strategy.Example, autoParams: false };
   public comparisonStrategy = null;  // optional, compare profit curve
   public symbols: ExchangeSymbol[] = [{ exchange: Exchange.Binance, symbol: 'BTCUSDT' }];
   public autoSymbols = false;  // true = auto-determine by rank, false = use symbols list below

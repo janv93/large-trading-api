@@ -45,13 +45,12 @@
     "lodash": "latest",
     "mongoose": "latest",
     "oauth": "latest",
-    "plotly": "latest",
     "typescript": "7.0.2"
   },
   "devDependencies": {
+    "@eslint/js": "latest",
     "@swc/core": "latest",
     "@swc/jest": "latest",
-    "@eslint/js": "latest",
     "@types/node": "latest",
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",

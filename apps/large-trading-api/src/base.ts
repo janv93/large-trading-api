@@ -1,4 +1,4 @@
-import Logger from './controllers/logger';
+import Logger from './logger';
 
 export default class Base {
   private logger = new Logger();
