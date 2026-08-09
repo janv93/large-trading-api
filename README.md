@@ -1,6 +1,6 @@
 # Large Trading API
 
-Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provides an infrastructure for backtesting. You may add your own custom algorithms.
+Backtest any custom trading strategy on cryptos, stocks, ETFs. The code provides an infrastructure for backtesting. You may add your own custom strategies.
 
 <div float="left">
   <img src="https://github.com/janv93/large-trading-api/blob/main/libs/shared/github-content/single.png" width="49%" />
@@ -40,14 +40,14 @@ Backtest any custom trading algorithm on cryptos, stocks, ETFs. The code provide
 ## Add and use backtests
 
 1. Add or use existing backtests in `apps/large-trading-api/src/controllers/backtesting/backtests` — see `simple-backtests/example.ts` for reference
-2. Add algo to the Algorithm enum in `libs/shared/src/lib/interfaces.ts` and make sure the value is the exact same name as your backtest class. Your backtest class will then be instantiated automatically.
-3. Add algo to `apps/large-trading-api-frontend/src/app/algorithm-configs.ts` which contains the variable parameters sent over the API
+2. Add strategy to the Strategy enum in `libs/shared/src/lib/interfaces.ts` and make sure the value is the exact same name as your backtest class. Your backtest class will then be instantiated automatically.
+3. Add strategy to `apps/large-trading-api-frontend/src/app/strategy-configs.ts` which contains the variable parameters sent over the API
 4. Set generic parameters in `apps/large-trading-api-frontend/src/app/chart.service.ts`
 
 ## Todos
 
-- [ ] Find smart algo for closing positions (currently static tp/sl etc.)
-- [ ] Enhance trend line algo with >2 line touches and retests
+- [ ] Find smart strategy for closing positions (currently static tp/sl etc.)
+- [ ] Enhance trend line strategy with >2 line touches and retests
 - [ ] Consider more data like pausing positions during FOMC
 - [ ] Screener (?)
 

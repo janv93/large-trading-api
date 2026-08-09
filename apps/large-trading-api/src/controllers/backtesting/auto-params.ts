@@ -1,4 +1,4 @@
-﻿import { Algorithm, AlgorithmConfigMulti, BacktesterState, Bar, MultiBenchmark, calcScore, countBars } from '@shared';
+﻿import { Strategy, StrategyConfigMulti, BacktesterState, Bar, MultiBenchmark, calcScore, countBars } from '@shared';
 import Base from '../../base';
 import Backtester from './backtester/backtester';
 import deepmerge from 'deepmerge';
@@ -8,15 +8,15 @@ import * as os from 'os';
 
 // ── Worker thread entry point ────────────────────────────────────────────────
 if (!isMainThread) {
-  const { sharedBuffer, bufferLength, combo, algorithm, algoModulePath } = workerData;
+  const { sharedBuffer, bufferLength, combo, strategy, strategyModulePath } = workerData;
 
   const bytes = new Uint8Array(sharedBuffer, 0, bufferLength);
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const AlgoClass = require(algoModulePath).default;
-  const algoInstance = new AlgoClass();
+  const StrategyClass = require(strategyModulePath).default;
+  const strategyInstance = new StrategyClass();
   const backtester = new Backtester();
-  algoInstance.silent = true;
+  strategyInstance.silent = true;
   backtester.silent = true;
 
   const tickers: Bar[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
@@ -26,7 +26,7 @@ if (!isMainThread) {
 
   tickers.forEach((currentTicker: Bar[]) => {
     currentTicker.forEach((bar: Bar) => {
-      bar.algorithms[algorithm] = { signals: [] };
+      bar.backtests[strategy] = { signals: [] };
       bar.indicators = undefined;
       bar.chart = undefined;
     });
@@ -43,7 +43,7 @@ if (!isMainThread) {
       const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
       for (let i = 0; i < currentTicker.length; i++) {
         signalWindow.push(currentTicker[i]);
-        await algoInstance.stepSetSignals(signalWindow, signalState, algorithm, combo);
+        await strategyInstance.stepSetSignals(signalWindow, signalState, strategy, combo);
         reportProgress();
       }
 
@@ -51,12 +51,12 @@ if (!isMainThread) {
       const backtesterWindow: Bar[] = [];
       for (let i = 0; i < currentTicker.length; i++) {
         backtesterWindow.push(currentTicker[i]);
-        backtester.stepCalcBacktestPerformance(backtesterWindow, backtesterState, algorithm, 0);
+        backtester.stepCalcBacktestPerformance(backtesterWindow, backtesterState, strategy, 0);
         reportProgress();
       }
     }
 
-    const score: number = calcScore(tickers, algorithm);
+    const score: number = calcScore(tickers, strategy);
     const result: MultiBenchmark = { score, params: combo };
 
     parentPort!.postMessage({ steps: steps % 1000, result, peakRss });
@@ -73,23 +73,23 @@ export default class AutoParams extends Base {
   private readonly maxParallelWorkers = Math.max(1, os.cpus().length - 2); // reserve 2 cores for MongoDB/OS
 
   /** every combo walks all bars twice, once for the signals and once for the backtest, plus a final pass with the best params */
-  public countSteps(tickers: Bar[][], config: Record<string, AlgorithmConfigMulti>): number {
+  public countSteps(tickers: Bar[][], config: Record<string, StrategyConfigMulti>): number {
     const combos: number = this.buildRanges(config).reduce((count, range) => count * range.values.length, 1);
     return (combos + 1) * countBars(tickers) * 2;
   }
 
-  public async handleAlgo(tickers: Bar[][], algorithm: Algorithm, config: Record<string, AlgorithmConfigMulti>, algoInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
+  public async handleStrategy(tickers: Bar[][], strategy: Strategy, config: Record<string, StrategyConfigMulti>, strategyInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
     const ranges: ParamRange[] = this.buildRanges(config);
     const benchmarks: MultiBenchmark[] = [];
     let bestTickers: Bar[][] = [];
-    const algoModulePath = this.resolveAlgoModulePath(algoInstance);
+    const strategyModulePath = this.resolveStrategyModulePath(strategyInstance);
 
-    const workerBenchmarks = await this.runWithWorkers(tickers, algorithm, ranges, algoModulePath!, onProgress);
+    const workerBenchmarks = await this.runWithWorkers(tickers, strategy, ranges, strategyModulePath!, onProgress);
     benchmarks.push(...workerBenchmarks);
 
     const best = workerBenchmarks.reduce((b, c) => c.score > b.score ? c : b, workerBenchmarks[0]);
     if (best?.params) {
-      bestTickers = await this.runAlgo(tickers, algorithm, best.params, algoInstance, onProgress);
+      bestTickers = await this.runStrategy(tickers, strategy, best.params, strategyInstance, onProgress);
     }
 
     benchmarks.sort((a, b) => a.score - b.score);
@@ -106,9 +106,9 @@ export default class AutoParams extends Base {
 
   private async runWithWorkers(
     tickers: Bar[][],
-    algorithm: Algorithm,
+    strategy: Strategy,
     ranges: ParamRange[],
-    algoModulePath: string,
+    strategyModulePath: string,
     onProgress: (steps: number) => void
   ): Promise<MultiBenchmark[]> {
     const combinations = this.generateCombinations(ranges);
@@ -118,7 +118,7 @@ export default class AutoParams extends Base {
 
     const spawnWorker = (combo: Record<string, number>): Promise<{ result: MultiBenchmark, peakRss: number }> =>
       new Promise((resolve, reject) => {
-        const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combo, algorithm, algoModulePath } });
+        const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combo, strategy, strategyModulePath } });
         worker.on('message', (message: any) => {
           if (message.steps) onProgress(message.steps);
           if (message.result) resolve(message);
@@ -158,8 +158,8 @@ export default class AutoParams extends Base {
     return allResults;
   }
 
-  private resolveAlgoModulePath(algoInstance: any): string | undefined {
-    const ctor = algoInstance?.constructor;
+  private resolveStrategyModulePath(strategyInstance: any): string | undefined {
+    const ctor = strategyInstance?.constructor;
     if (!ctor) return undefined;
 
     return Object.keys(require.cache).find(
@@ -167,7 +167,7 @@ export default class AutoParams extends Base {
     );
   }
 
-  private buildRanges(configs: Record<string, AlgorithmConfigMulti>): ParamRange[] {
+  private buildRanges(configs: Record<string, StrategyConfigMulti>): ParamRange[] {
     return Object.entries(configs).map(([key, config]) => {
       const step = config.step ?? 1;
       const values: number[] = [];
@@ -199,18 +199,18 @@ export default class AutoParams extends Base {
     }
   }
 
-  private async runAlgo(tickers: Bar[][], algorithm: Algorithm, params: Record<string, number>, algoInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
+  private async runStrategy(tickers: Bar[][], strategy: Strategy, params: Record<string, number>, strategyInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
     const clonedTickers: Bar[][] = deepmerge([], tickers);
     const result: Bar[][] = [];
 
     for (const currentTicker of clonedTickers) {
-      currentTicker.forEach((bar: Bar) => { bar.algorithms[algorithm] = { signals: [] }; });
+      currentTicker.forEach((bar: Bar) => { bar.backtests[strategy] = { signals: [] }; });
 
       const signalState: any = {};
       const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
       for (let i = 0; i < currentTicker.length; i++) {
         signalWindow.push(currentTicker[i]);
-        await algoInstance.stepSetSignals(signalWindow, signalState, algorithm, params);
+        await strategyInstance.stepSetSignals(signalWindow, signalState, strategy, params);
         onProgress(1);
       }
 
@@ -218,7 +218,7 @@ export default class AutoParams extends Base {
       const backtesterWindow: Bar[] = [];
       for (let i = 0; i < currentTicker.length; i++) {
         backtesterWindow.push(currentTicker[i]);
-        this.backtest.stepCalcBacktestPerformance(backtesterWindow, backtesterState, algorithm, 0);
+        this.backtest.stepCalcBacktestPerformance(backtesterWindow, backtesterState, strategy, 0);
         onProgress(1);
       }
 

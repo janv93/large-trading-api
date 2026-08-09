@@ -2,7 +2,7 @@
 import { ChartService } from './chart.service';
 import { Observable } from 'rxjs';
 import { Run } from '@shared';
-import { AlgorithmConfigs } from './algorithm-configs';
+import { StrategyConfigs } from './strategy-configs';
 import { LoadingService } from './loader/loading.service';
 
 
@@ -26,9 +26,9 @@ export class HttpService {
       commission,
       autoSymbols,
       ...(autoSymbols ? { rank } : { symbols }),
-      algorithms: this.chartService.algorithms.map(({ algorithm, autoParams }) => {
-        const algorithmConfig = AlgorithmConfigs[algorithm];
-        return { algorithm, autoParams, config: autoParams ? algorithmConfig?.autoParams : algorithmConfig?.default };
+      strategies: this.chartService.strategies.map(({ strategy, autoParams }) => {
+        const strategyConfig = StrategyConfigs[strategy];
+        return { strategy, autoParams, config: autoParams ? strategyConfig?.autoParams : strategyConfig?.default };
       })
     };
 

@@ -1,17 +1,17 @@
 ﻿import { describe, expect, it, beforeEach } from '@jest/globals';
 import Backtester from './backtester';
-import { Bar, Algorithm, Exchange, Signal, Timeframe, BacktestData, BacktesterState } from '@shared';
+import { Bar, Strategy, Exchange, Signal, Timeframe, BacktestData, BacktesterState } from '@shared';
 
 
 describe('Backtester', () => {
   let backtester: Backtester;
-  const algorithm = Algorithm.Dca;
+  const strategy = Strategy.Dca;
 
   beforeEach(() => {
     backtester = new Backtester();
   });
 
-  const runStep = (bars: Bar[], alg: Algorithm, commission: number): void => {
+  const runStep = (bars: Bar[], alg: Strategy, commission: number): void => {
     const state: BacktesterState = {};
     const window: Bar[] = [];
     for (let i = 0; i < bars.length; i++) {
@@ -28,82 +28,82 @@ describe('Backtester', () => {
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       { // 4
         ...baseBar,
         prices: { ...basePrices, close: 450 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 900 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 900 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 900 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 10 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 10 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 10 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 10 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 100 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 100 }] } }
       },
       { // 9
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 2 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 2 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 2 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 2 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 400, size: 2 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 400, size: 2 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       }
     ];
 
-    runStep(bars, algorithm, 0);
-    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
+    runStep(bars, strategy, 0);
+    const backtests: BacktestData[] = bars.map(k => k.backtests[strategy]!);
 
     expect(backtests[0].profit).toBe(0);
     expect(backtests[1].profit).toBe(1);
@@ -132,82 +132,82 @@ describe('Backtester', () => {
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 300 }, { signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       { // 4
         ...baseBar,
         prices: { ...basePrices, close: 450 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 450 }, { signal: Signal.Sell, price: 450, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 900 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 900 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 900 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 10 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 10 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 10 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 200, size: 10 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 100 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 100 }] } }
       },
       { // 9
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 2 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 2 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 2 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 2 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 400, size: 2 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 400, size: 2 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 200 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       }
     ];
 
-    runStep(bars, algorithm, 0.001);
-    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
+    runStep(bars, strategy, 0.001);
+    const backtests: BacktestData[] = bars.map(k => k.backtests[strategy]!);
 
     expect(backtests[0].profit).toBeCloseTo(-0.001);
     expect(backtests[1].profit).toBeCloseTo(0.997);
@@ -236,32 +236,32 @@ describe('Backtester', () => {
       {
         ...baseBar,
         prices: { ...basePrices, close: 100, high: 120, low: 80 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 150, high: 150, low: 80 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 150, high: 200, low: 120 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 300, high: 400, low: 250 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 300, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 300, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 50, high: 100, low: 0 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       }
     ];
 
-    runStep(bars, algorithm, 0);
-    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
+    runStep(bars, strategy, 0);
+    const backtests: BacktestData[] = bars.map(k => k.backtests[strategy]!);
 
     expect(backtests[0].profit).toBe(0);
     expect(backtests[1].profit).toBe(-0.5);
@@ -278,22 +278,22 @@ describe('Backtester', () => {
       {
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1 }] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 120 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       },
       {
         ...baseBar,
         prices: { ...basePrices, close: 140 },
-        algorithms: { [Algorithm.Dca]: { signals: [] } }
+        backtests: { [Strategy.Dca]: { signals: [] } }
       }
     ];
 
-    runStep(bars, algorithm, 0);
-    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
+    runStep(bars, strategy, 0);
+    const backtests: BacktestData[] = bars.map(k => k.backtests[strategy]!);
 
     expect(backtests[0].profit).toBe(0);
     expect(backtests[1].profit).toBe(-0.2);
@@ -309,27 +309,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 0, low: 0 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 110, high: 100, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 89 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 80, high: 100, low: 80 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsBuySl, algorithm, 0);
-      const backtestsBuySl: BacktestData[] = barsBuySl.map(k => k.algorithms[algorithm]!);
+      runStep(barsBuySl, strategy, 0);
+      const backtestsBuySl: BacktestData[] = barsBuySl.map(k => k.backtests[strategy]!);
 
       expect(backtestsBuySl[0].profit).toBeCloseTo(0);
       expect(backtestsBuySl[1].profit).toBeCloseTo(0.1);
@@ -343,27 +343,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 0, low: 0 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 110, high: 100, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 130, high: 130, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 150, high: 150, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsBuyTp, algorithm, 0);
-      const backtestsBuyTp: BacktestData[] = barsBuyTp.map(k => k.algorithms[algorithm]!);
+      runStep(barsBuyTp, strategy, 0);
+      const backtestsBuyTp: BacktestData[] = barsBuyTp.map(k => k.backtests[strategy]!);
 
       expect(backtestsBuyTp[0].profit).toBeCloseTo(0);
       expect(backtestsBuyTp[1].profit).toBeCloseTo(0.1);
@@ -378,27 +378,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 0, low: 0 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 110, high: 110, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 130, high: 130, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 140, high: 140, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsSellSl, algorithm, 0);
-      const backtestsSellSl: BacktestData[] = barsSellSl.map(k => k.algorithms[algorithm]!);
+      runStep(barsSellSl, strategy, 0);
+      const backtestsSellSl: BacktestData[] = barsSellSl.map(k => k.backtests[strategy]!);
 
       expect(backtestsSellSl[0].profit).toBeCloseTo(0);
       expect(backtestsSellSl[1].profit).toBeCloseTo(-0.1);
@@ -412,27 +412,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 0, low: 0 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 90, high: 100, low: 90 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 70, high: 100, low: 70 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 60, high: 100, low: 60 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsSellTp, algorithm, 0);
-      const backtestsSellTp: BacktestData[] = barsSellTp.map(k => k.algorithms[algorithm]!);
+      runStep(barsSellTp, strategy, 0);
+      const backtestsSellTp: BacktestData[] = barsSellTp.map(k => k.backtests[strategy]!);
 
       expect(backtestsSellTp[0].profit).toBeCloseTo(0);
       expect(backtestsSellTp[1].profit).toBeCloseTo(0.1);
@@ -451,27 +451,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 120, high: 120, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 150, high: 150, low: 120 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 130, high: 140, low: 130 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsLongTsl, algorithm, 0);
-      const backtestsLongTsl: BacktestData[] = barsLongTsl.map(k => k.algorithms[algorithm]!);
+      runStep(barsLongTsl, strategy, 0);
+      const backtestsLongTsl: BacktestData[] = barsLongTsl.map(k => k.backtests[strategy]!);
 
       expect(backtestsLongTsl[0].profit).toBeCloseTo(0);
       expect(backtestsLongTsl[1].profit).toBeCloseTo(0.2);
@@ -487,27 +487,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 90, high: 90, low: 90 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 80, high: 80, low: 80 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 115, high: 115, low: 80 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsShortTsl, algorithm, 0);
-      const backtestsShortTsl: BacktestData[] = barsShortTsl.map(k => k.algorithms[algorithm]!);
+      runStep(barsShortTsl, strategy, 0);
+      const backtestsShortTsl: BacktestData[] = barsShortTsl.map(k => k.backtests[strategy]!);
 
       expect(backtestsShortTsl[0].profit).toBeCloseTo(0);
       expect(backtestsShortTsl[1].profit).toBeCloseTo(0.1);
@@ -527,27 +527,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 150, high: 150, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 200, high: 200, low: 150 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 160, high: 200, low: 140 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsLongTslWithPercentOfProfit, algorithm, 0);
-      const backtestsLongTslPercentOfProfit: BacktestData[] = barsLongTslWithPercentOfProfit.map(k => k.algorithms[algorithm]!);
+      runStep(barsLongTslWithPercentOfProfit, strategy, 0);
+      const backtestsLongTslPercentOfProfit: BacktestData[] = barsLongTslWithPercentOfProfit.map(k => k.backtests[strategy]!);
 
       expect(backtestsLongTslPercentOfProfit[0].profit).toBeCloseTo(0);
       expect(backtestsLongTslPercentOfProfit[1].profit).toBeCloseTo(0.5);
@@ -562,32 +562,32 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Sell, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.1, percentOfProfit: 0.5 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 85, high: 100, low: 85 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 50, high: 85, low: 50 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 70, high: 75, low: 50 },  // 75 is exactly half the profit, so stop loss is not triggered yet
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 76, high: 80, low: 70 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(barsShortTslWithPercentOfProfit, algorithm, 0);
-      const backtestsShortTslPercentOfProfit: BacktestData[] = barsShortTslWithPercentOfProfit.map(k => k.algorithms[algorithm]!);
+      runStep(barsShortTslWithPercentOfProfit, strategy, 0);
+      const backtestsShortTslPercentOfProfit: BacktestData[] = barsShortTslWithPercentOfProfit.map(k => k.backtests[strategy]!);
 
       expect(backtestsShortTslPercentOfProfit[0].profit).toBeCloseTo(0);
       expect(backtestsShortTslPercentOfProfit[1].profit).toBeCloseTo(0.15);
@@ -604,22 +604,22 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.01, percentOfProfit: 0.5 } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tSl: { stopLoss: 0.01, percentOfProfit: 0.5 } } }] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 101, high: 101, low: 100 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 99 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
       ];
 
-      runStep(barsLongTslStopLossTriggersFirst, algorithm, 0);
-      const backtestsLongStopLossTriggersFirst: BacktestData[] = barsLongTslStopLossTriggersFirst.map(k => k.algorithms[algorithm]!);
+      runStep(barsLongTslStopLossTriggersFirst, strategy, 0);
+      const backtestsLongStopLossTriggersFirst: BacktestData[] = barsLongTslStopLossTriggersFirst.map(k => k.backtests[strategy]!);
 
       expect(backtestsLongStopLossTriggersFirst[0].profit).toBeCloseTo(0);
       expect(backtestsLongStopLossTriggersFirst[1].profit).toBeCloseTo(0.01);
@@ -641,27 +641,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 90 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         { // true range=20, volatility=20/100=0.2 at end of this bar
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 110, low: 90 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         { // Buy: effective tp=1*0.2→tpPrice=120, sl=1*0.2→slPrice=80; no trigger this bar
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 105, low: 95 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 1, stopLoss: 1, asVolatilityFactor: true } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 1, stopLoss: 1, asVolatilityFactor: true } } }] } }
         },
         { // high=125 > tpPrice(120) → take profit triggers
           ...baseBar,
           prices: { ...basePrices, close: 125, high: 125, low: 95 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(bars, algorithm, 0);
-      const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
+      runStep(bars, strategy, 0);
+      const backtests: BacktestData[] = bars.map(k => k.backtests[strategy]!);
 
       expect(backtests[2].profit).toBeCloseTo(0);
       expect(backtests[3].profit).toBeCloseTo(0.2);
@@ -673,27 +673,27 @@ describe('Backtester', () => {
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 100, low: 90 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 110, low: 90 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         },
         {
           ...baseBar,
           prices: { ...basePrices, close: 100, high: 105, low: 95 },
-          algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 1, stopLoss: 1, asVolatilityFactor: true } } }] } }
+          backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1, positionCloseTrigger: { tpSl: { takeProfit: 1, stopLoss: 1, asVolatilityFactor: true } } }] } }
         },
         { // low=75 < slPrice(80) → stop loss triggers
           ...baseBar,
           prices: { ...basePrices, close: 75, high: 90, low: 75 },
-          algorithms: { [Algorithm.Dca]: { signals: [] } }
+          backtests: { [Strategy.Dca]: { signals: [] } }
         }
       ];
 
-      runStep(bars, algorithm, 0);
-      const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
+      runStep(bars, strategy, 0);
+      const backtests: BacktestData[] = bars.map(k => k.backtests[strategy]!);
 
       expect(backtests[2].profit).toBeCloseTo(0);
       expect(backtests[3].profit).toBeCloseTo(-0.2);
@@ -709,27 +709,27 @@ describe('Backtester', () => {
       { // 0: open position A
         ...baseBar,
         prices: { ...basePrices, close: 100 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 100, size: 1 }] } }
       },
       { // 1: open position B
         ...baseBar,
         prices: { ...basePrices, close: 200 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 1 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Buy, price: 200, size: 1 }] } }
       },
       { // 2: close only position A (targeting barIndex:0, signalIndex:0) — position B stays open
         ...baseBar,
         prices: { ...basePrices, close: 300 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.Close, price: 300, openSignalReferences: [{ barIndex: 0, signalIndex: 0 }] }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.Close, price: 300, openSignalReferences: [{ barIndex: 0, signalIndex: 0 }] }] } }
       },
       { // 3: close remaining position B
         ...baseBar,
         prices: { ...basePrices, close: 400 },
-        algorithms: { [Algorithm.Dca]: { signals: [{ signal: Signal.CloseAll, price: 400 }] } }
+        backtests: { [Strategy.Dca]: { signals: [{ signal: Signal.CloseAll, price: 400 }] } }
       }
     ];
 
-    runStep(bars, algorithm, 0);
-    const backtests: BacktestData[] = bars.map(k => k.algorithms[algorithm]!);
+    runStep(bars, strategy, 0);
+    const backtests: BacktestData[] = bars.map(k => k.backtests[strategy]!);
 
     expect(backtests[0].profit).toBe(0);    // A just opened
     expect(backtests[1].profit).toBe(1);    // A unrealised: 100→200 (+100%)

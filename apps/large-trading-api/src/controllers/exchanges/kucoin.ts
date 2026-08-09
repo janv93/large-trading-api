@@ -221,7 +221,7 @@ export default class Kucoin extends Base {
           close: Number(k[4])
         },
         volume: Number(k[5]),
-        algorithms: {}
+        backtests: {}
       };
     });
   }

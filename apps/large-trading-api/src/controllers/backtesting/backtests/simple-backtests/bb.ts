@@ -1,9 +1,9 @@
 ﻿import { stepBb } from '../../../patterns/indicators/bb';
-import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../base';
 
 export default class Bb extends Base {
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const period = Number(params.period);
     stepBb(bars, period);
 
@@ -14,7 +14,7 @@ export default class Bb extends Base {
     const threshold = 0.003;
     const takeProfit = threshold * 4;
     const stopLoss = threshold * 1;
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 

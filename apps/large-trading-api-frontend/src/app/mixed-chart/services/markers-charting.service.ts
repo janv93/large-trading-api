@@ -1,5 +1,5 @@
 ﻿import { IChartApi, ISeriesApi, SeriesMarker, Time, UTCTimestamp, MouseEventParams } from 'lightweight-charts';
-import { Bar, Algorithm, BacktestData, BacktestSignal, Signal, PivotPoint, PivotPointSide, MarketStructureType, TrendLine, TrendLinePosition } from '@shared';
+import { Bar, Strategy, BacktestData, BacktestSignal, Signal, PivotPoint, PivotPointSide, MarketStructureType, TrendLine, TrendLinePosition } from '@shared';
 import { TrendLinesPrimitive, TrendLineSegment } from '../primitives/trend-lines-primitive';
 import { CompactCirclePrimitive, CompactCircleMarker } from '../primitives/compact-circle-primitive';
 import { ISeriesMarkersPluginApi } from 'lightweight-charts';
@@ -14,7 +14,7 @@ export class MarkersChartingService {
 
   public drawAll(
     bars: Bar[],
-    algorithm: Algorithm,
+    strategy: Strategy,
     chart: IChartApi,
     seriesMarkersPlugin: ISeriesMarkersPluginApi<Time>,
     compactCirclePrimitive: CompactCirclePrimitive,
@@ -22,7 +22,7 @@ export class MarkersChartingService {
     isMulti: boolean
   ): void {
     this.setPivotPointMarkers(bars);
-    this.setSignalMarkers(bars, algorithm);
+    this.setSignalMarkers(bars, strategy);
     this.drawMarkers(chart, seriesMarkersPlugin, compactCirclePrimitive, isMulti);
     this.setTrendLines(bars, trendLinesPrimitive);
   }
@@ -60,7 +60,7 @@ export class MarkersChartingService {
     chart: IChartApi,
     isMulti: boolean
   ): void {
-    const backtest: BacktestData = bar.algorithms[Object.keys(bar.algorithms)[0]]!;
+    const backtest: BacktestData = bar.backtests[Object.keys(bar.backtests)[0]]!;
 
     const newOpenTimes: Set<number> = new Set(
       backtest.signals.flatMap(signal =>
@@ -117,13 +117,13 @@ export class MarkersChartingService {
     this.compactPivotPointMarkers = compactMarkers;
   }
 
-  private setSignalMarkers(bars: Bar[], algorithm: Algorithm): void {
+  private setSignalMarkers(bars: Bar[], strategy: Strategy): void {
     const markers: SeriesMarker<Time>[] = [];
     const compactMarkers: CompactCircleMarker[] = [];
 
     bars.forEach((bar: Bar) => {
-      if (!bar.algorithms[algorithm]?.signals.length) return;
-      const marker: SeriesMarker<Time> = this.getSignalTemplate(bar, algorithm);
+      if (!bar.backtests[strategy]?.signals.length) return;
+      const marker: SeriesMarker<Time> = this.getSignalTemplate(bar, strategy);
       markers.push(marker);
       compactMarkers.push({
         time: bar.times.open / 1000,
@@ -185,8 +185,8 @@ export class MarkersChartingService {
     return this.markersSignals.filter(isInRange).length + this.markersPivotPoints.filter(isInRange).length;
   }
 
-  private getSignalTemplate(bar: Bar, algorithm: Algorithm): SeriesMarker<Time> {
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+  private getSignalTemplate(bar: Bar, strategy: Strategy): SeriesMarker<Time> {
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const backtestSignals: BacktestSignal[] = backtest.signals;
     const signals: Signal[] = backtestSignals.map((s: BacktestSignal) => s.signal);
     const hasBuy: boolean = signals.includes(Signal.Buy);

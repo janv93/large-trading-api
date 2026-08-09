@@ -214,7 +214,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
     this.profitSeries.forEach(series => this.chart.removeSeries(series));
     this.profitSeries = [];
 
-    this.chartService.algorithms.forEach((_, index) => {
+    this.chartService.strategies.forEach((_, index) => {
       const series: ISeriesApi<'Line'> = this.chart.addSeries(LineSeries, {
         priceScaleId: index === 0 ? 'left' : 'left2',
         priceLineVisible: false,
@@ -224,9 +224,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.profitSeries.push(series);
     });
 
-    this.chartService.algorithms.forEach((selection, index) => {
+    this.chartService.strategies.forEach((selection, index) => {
       const mapped = this.currentBars.map((bar: Bar) => {
-        const currentProfit: number = (bar.algorithms[selection.algorithm]!.profit || 0) * 100;
+        const currentProfit: number = (bar.backtests[selection.strategy]!.profit || 0) * 100;
         const opacity: number = index === 0 ? 0.3 : 0.1;
         const color: string = currentProfit === 0
           ? `rgba(255,255,255,${opacity})`
@@ -240,7 +240,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   private drawMarkersAndCharting(): void {
     this.markersChartingService.drawAll(
       this.currentBars,
-      this.chartService.mainAlgorithm.algorithm,
+      this.chartService.mainStrategy.strategy,
       this.chart,
       this.seriesMarkersPlugin!,
       this.compactCirclePrimitive!,
@@ -270,7 +270,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   private setOpenPositionSizeSeriesData(): void {
     const alpha: number = this.getPositionSizeAlpha();
     const mapped = this.currentBars.map((bar: Bar) => {
-      const openPositionSize: number = bar.algorithms[this.chartService.mainAlgorithm.algorithm]!.openPositionSize!;
+      const openPositionSize: number = bar.backtests[this.chartService.mainStrategy.strategy]!.openPositionSize!;
       const color: string = openPositionSize === 0
         ? 'transparent'
         : openPositionSize > 0 ? `rgba(0, 255, 162, ${alpha})` : `rgba(255, 0, 170, ${alpha})`;
@@ -340,13 +340,13 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   }
 
   private updateStats(): void {
-    this.stats = this.statsService.calcStats(this.currentBars, this.chartService.mainAlgorithm.algorithm, this.finalProfit[0]);
+    this.stats = this.statsService.calcStats(this.currentBars, this.chartService.mainStrategy.strategy, this.finalProfit[0]);
   }
 
   private setFinalProfits(): void {
     const finalBar = this.currentBars.at(-1)!;
-    this.finalProfit = this.chartService.algorithms.map(selection =>
-      (finalBar.algorithms[selection.algorithm]!.profit || 0) * 100
+    this.finalProfit = this.chartService.strategies.map(selection =>
+      (finalBar.backtests[selection.strategy]!.profit || 0) * 100
     );
   }
 

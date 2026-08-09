@@ -1,9 +1,9 @@
 ﻿import { stepEma } from '../../../patterns/indicators/ema';
-import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../base';
 
 export default class Ema extends Base {
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
     state.emaOpen ??= {};
@@ -16,7 +16,7 @@ export default class Ema extends Base {
     const eClose: number | undefined = bar.indicators?.ema?.[periodClose];
     if (eOpen === undefined || eClose === undefined) return;
 
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 

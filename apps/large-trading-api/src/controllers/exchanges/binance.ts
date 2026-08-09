@@ -268,7 +268,7 @@ class Binance extends Base {
         },
         volume: Number(k[5]),
         numberOfTrades: k[8],
-        algorithms: {}
+        backtests: {}
       };
     });
   }

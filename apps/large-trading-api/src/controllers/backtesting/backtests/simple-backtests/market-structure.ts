@@ -1,11 +1,11 @@
-﻿import { BacktestSignal, Direction, Bar, MarketStructureStats, Signal, Algorithm } from '@shared';
+﻿import { BacktestSignal, Direction, Bar, MarketStructureStats, Signal, Strategy } from '@shared';
 import PivotPointController from '../../../patterns/pivot-point';
 import Base from '../../../../base';
 
 export default class MarketStructure extends Base {
   private pivotPointController = new PivotPointController();
 
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const space: number = Number(params.space);
     state.marketStructure ??= {};
     this.pivotPointController.stepMarketStructure(bars, state.marketStructure, space);
@@ -20,7 +20,7 @@ export default class MarketStructure extends Base {
     }
 
     if (currentMarketStructureStats.streak === 1 && state.lastMarketStructureStats.streak > 4) {
-      const signals: BacktestSignal[] = bar.algorithms[algorithm]!.signals;
+      const signals: BacktestSignal[] = bar.backtests[strategy]!.signals;
       const closePrice: number = bar.prices.close;
 
       if (currentMarketStructureStats.direction === Direction.Up) {

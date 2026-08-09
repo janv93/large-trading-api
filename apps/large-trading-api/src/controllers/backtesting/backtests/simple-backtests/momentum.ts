@@ -1,13 +1,13 @@
-﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+﻿import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import { getBarColor } from '@shared';
 import Base from '../../../../base';
 
 export default class Momentum extends Base {
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const streak = Number(params.streak);
     const i: number = bars.length - 1;
     const bar: Bar = bars[i];
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 

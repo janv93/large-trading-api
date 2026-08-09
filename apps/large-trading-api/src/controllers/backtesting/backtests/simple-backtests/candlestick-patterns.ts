@@ -1,5 +1,5 @@
 ﻿import CandlestickPatternsController from '../../../patterns/candlestick-patterns';
-import { Algorithm, BacktestData, BacktestSignal, Bar, BarCandlestickPatterns, Signal } from '@shared';
+import { Strategy, BacktestData, BacktestSignal, Bar, BarCandlestickPatterns, Signal } from '@shared';
 import Base from '../../../../base';
 
 const BULLISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
@@ -29,7 +29,7 @@ const BEARISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
 export default class CandlestickPatterns extends Base {
   private controller = new CandlestickPatternsController();
 
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const minScore: number = Number(params.minScore);
     const takeProfit: number = 4;
     const stopLoss: number = 2;
@@ -39,7 +39,7 @@ export default class CandlestickPatterns extends Base {
     const patterns: BarCandlestickPatterns | undefined = bar.candlestickPatterns;
     if (!patterns) return;
 
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 

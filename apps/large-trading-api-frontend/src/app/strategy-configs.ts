@@ -1,7 +1,7 @@
-import { Algorithm, AlgorithmConfig } from '../../../../libs/shared/src/lib/interfaces';
+import { Strategy, StrategyConfig } from '../../../../libs/shared/src/lib/interfaces';
 
-export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
-  [Algorithm.Momentum]: {
+export const StrategyConfigs: Partial<Record<Strategy, StrategyConfig>> = {
+  [Strategy.Momentum]: {
     default: {
       streak: 5
     },
@@ -9,7 +9,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       streak: { min: 3, max: 10, step: 1 }
     }
   },
-  [Algorithm.Macd]: {
+  [Strategy.Macd]: {
     default: {
       fast: 12,
       slow: 26,
@@ -21,7 +21,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       signal: { min: 7, max: 11, step: 1 }
     }
   },
-  [Algorithm.Rsi]: {
+  [Strategy.Rsi]: {
     default: {
       length: 7
     },
@@ -33,7 +33,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       }
     }
   },
-  [Algorithm.Ema]: {
+  [Strategy.Ema]: {
     default: {
       periodOpen: 80,
       periodClose: 80
@@ -51,7 +51,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       }
     }
   },
-  [Algorithm.Bb]: {
+  [Strategy.Bb]: {
     default: {
       period: 21
     },
@@ -59,11 +59,11 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       period: { min: 10, max: 30, step: 5 }
     }
   },
-  [Algorithm.Dca]: {
+  [Strategy.Dca]: {
     default: {},
     autoParams: {}
   },
-  [Algorithm.MeanReversion]: {
+  [Strategy.MeanReversion]: {
     default: {
       threshold: 0.15,
       profitBasedTrailingStopLoss: 0.3,
@@ -86,7 +86,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       }
     }
   },
-  [Algorithm.TrendLineBreakthrough]: {
+  [Strategy.TrendLineBreakthrough]: {
     default: {
       percentOfProfit: 0.5
     },
@@ -98,7 +98,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       }
     }
   },
-  [Algorithm.MarketStructure]: {
+  [Strategy.MarketStructure]: {
     default: {
       space: 5
     },
@@ -106,13 +106,13 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       space: { min: 3, max: 10, step: 1 }
     }
   },
-  [Algorithm.RsiDivergence]: {
+  [Strategy.RsiDivergence]: {
     default: {
     },
     autoParams: {
     }
   },
-  [Algorithm.Example]: {
+  [Strategy.Example]: {
     default: {
       size: 10
     },
@@ -120,7 +120,7 @@ export const AlgorithmConfigs: Partial<Record<Algorithm, AlgorithmConfig>> = {
       size: { min: 5, max: 20, step: 5 }
     }
   },
-  [Algorithm.CandlestickPatterns]: {
+  [Strategy.CandlestickPatterns]: {
     default: {
       minScore: 3
     },

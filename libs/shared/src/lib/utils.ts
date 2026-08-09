@@ -1,5 +1,5 @@
 ﻿import { cloneDeep } from 'lodash';
-import { Algorithm, Bar, Signal, Timeframe, TickerMetrics } from './interfaces';
+import { Strategy, Bar, Signal, Timeframe, TickerMetrics } from './interfaces';
 
 /**
  * 1 = green, -1 = red, 0 = steady
@@ -114,28 +114,28 @@ export function cutOngoingBar(bars: Bar[]): Bar[] {
   return bars;
 }
 
-export function calcTickerMetrics(bars: Bar[], algorithm: Algorithm): TickerMetrics {
+export function calcTickerMetrics(bars: Bar[], strategy: Strategy): TickerMetrics {
   let peak = 0;
   let maxDrawdown = 0;
   let signalCount = 0;
 
   for (const bar of bars) {
-    const profit = bar.algorithms[algorithm]?.profit ?? 0;
+    const profit = bar.backtests[strategy]?.profit ?? 0;
     if (profit > peak) peak = profit;
     const drawdown = peak - profit;
     if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-    signalCount += bar.algorithms[algorithm]?.signals?.length ?? 0;
+    signalCount += bar.backtests[strategy]?.signals?.length ?? 0;
   }
 
-  const rawProfit = bars.at(-1)?.algorithms[algorithm]?.profit ?? 0;
+  const rawProfit = bars.at(-1)?.backtests[strategy]?.profit ?? 0;
   const sign = rawProfit >= 0 ? 1 : -1;
   const sqrtProfit = rawProfit === 0 ? 0 : sign * Math.sqrt(Math.abs(rawProfit));
   const maxDrawdownRatio = peak <= 0 ? 1 : Math.min(maxDrawdown / peak, 1);
   return { sqrtProfit, maxDrawdownRatio, signalCount };
 }
 
-export function calcScore(tickers: Bar[][], algorithm: Algorithm): number {
-  const metrics: TickerMetrics[] = tickers.map(t => calcTickerMetrics(t, algorithm));
+export function calcScore(tickers: Bar[][], strategy: Strategy): number {
+  const metrics: TickerMetrics[] = tickers.map(t => calcTickerMetrics(t, strategy));
   if (metrics.length === 0) return 0;
 
   const totalWeight = metrics.reduce((sum, m) => sum + Math.sqrt(m.signalCount), 0);

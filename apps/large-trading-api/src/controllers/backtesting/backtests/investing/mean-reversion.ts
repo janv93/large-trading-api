@@ -1,4 +1,4 @@
-﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+﻿import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../base';
 
 enum Action {
@@ -70,8 +70,8 @@ export default class MeanReversion extends Base {
     return (!state.isOpen || state.isTrailing) && close > state.peak;
   }
 
-  private buy(bar: Bar, state: any, algorithm: Algorithm) {
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+  private buy(bar: Bar, state: any, strategy: Strategy) {
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
@@ -95,8 +95,8 @@ export default class MeanReversion extends Base {
     state.peak = bar.prices.close;
   }
 
-  private close(bar: Bar, state: any, algorithm: Algorithm, startStreak: number) {
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+  private close(bar: Bar, state: any, strategy: Strategy, startStreak: number) {
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
@@ -111,7 +111,7 @@ export default class MeanReversion extends Base {
     state.peak = bar.prices.close;
   }
 
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const startStreak: number = Number(params.startStreak);
     const bar: Bar = bars[bars.length - 1];
 
@@ -127,9 +127,9 @@ export default class MeanReversion extends Base {
     const action: Action = this.getAction(bar, state);
 
     switch (action) {
-      case Action.Buy: this.buy(bar, state, algorithm); break;
+      case Action.Buy: this.buy(bar, state, strategy); break;
       case Action.StartTrail: this.startTrail(bar, state); break;
-      case Action.Close: this.close(bar, state, algorithm, startStreak); break;
+      case Action.Close: this.close(bar, state, strategy, startStreak); break;
       case Action.SetHigh: this.setHigh(bar, state); break;
     }
   }

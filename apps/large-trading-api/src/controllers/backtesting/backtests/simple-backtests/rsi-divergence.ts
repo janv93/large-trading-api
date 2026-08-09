@@ -1,4 +1,4 @@
-﻿import { Algorithm, BacktestData, BacktestSignal, Bar, RsiDivergenceType, Signal } from '@shared';
+﻿import { Strategy, BacktestData, BacktestSignal, Bar, RsiDivergenceType, Signal } from '@shared';
 import Base from '../../../../base';
 import { stepRsiDivergence } from '../../../patterns/indicators/rsi-divergence';
 import TrendLineController from '../../../patterns/trend-line';
@@ -6,7 +6,7 @@ import TrendLineController from '../../../patterns/trend-line';
 export default class RsiDivergence extends Base {
   private trendLineController = new TrendLineController();
 
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const minLength: number = Number(params.minLength ?? 50);
     const maxLength: number = Number(params.maxLength ?? 200);
     const minStrength: number = Number(params.minStrength ?? 0.5);
@@ -20,7 +20,7 @@ export default class RsiDivergence extends Base {
     const rsiDiv = bar.indicators?.rsiDivergence;
     if (!rsiDiv) return;
 
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
     const { regular, hidden } = rsiDiv;

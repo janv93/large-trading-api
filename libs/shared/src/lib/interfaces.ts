@@ -26,7 +26,7 @@ export enum Timeframe {
   _6Months = '6M'
 }
 
-export enum Algorithm {
+export enum Strategy {
   Momentum = 'momentum',
   Macd = 'macd',
   Rsi = 'rsi',
@@ -85,12 +85,12 @@ export interface ExchangeSymbol {
   symbol: string;
 }
 
-export interface AlgorithmConfig {
+export interface StrategyConfig {
   default: Record<string, any>;
-  autoParams?: Record<string, AlgorithmConfigMulti>;
+  autoParams?: Record<string, StrategyConfigMulti>;
 }
 
-export interface AlgorithmConfigMulti {
+export interface StrategyConfigMulti {
   min: number;
   max: number;
   step?: number;
@@ -132,7 +132,7 @@ export interface Bar {
   times: BarTimes;
   prices: BarPrices;
   volume: number;
-  algorithms: Partial<Record<Algorithm, BacktestData>>;
+  backtests: Partial<Record<Strategy, BacktestData>>;
   numberOfTrades?: number;
   tweets?: Tweet[];
   chart?: BarChart;
@@ -336,7 +336,7 @@ export interface MultiBenchmark {
   params?: MultiBenchmarkParams;
 }
 
-// custom params for each algorithm
+// custom params for each strategy
 export type MultiBenchmarkParams = Record<string, number>;
 
 export interface AlpacaResponse {

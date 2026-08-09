@@ -1,4 +1,4 @@
-﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
+﻿import { Strategy, BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../../../../base';
 import { calcAverageChangeInPercent } from '@shared';
 import TrendLineController from '../../../patterns/trend-line';
@@ -7,7 +7,7 @@ export default class TrendLineBreakthrough extends Base {
   private trendLineController = new TrendLineController();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
-  public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
     const percentOfProfit: number = Number(params.percentOfProfit);
     state.trendLines ??= {};
 
@@ -29,15 +29,15 @@ export default class TrendLineBreakthrough extends Base {
       const sl: number = averagePriceChange * 2;
 
       if (position === TrendLinePosition.Above) {
-        this.openBuyPosition(bar, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
+        this.openBuyPosition(bar, strategy, score, breakthoughPrice, tp, sl, percentOfProfit);
       } else if (position === TrendLinePosition.Below) {
-        this.openSellPosition(bar, algorithm, score, breakthoughPrice, tp, sl, percentOfProfit);
+        this.openSellPosition(bar, strategy, score, breakthoughPrice, tp, sl, percentOfProfit);
       }
     });
   }
 
-  private openBuyPosition(bar: Bar, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+  private openBuyPosition(bar: Bar, strategy: Strategy, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.push({
@@ -58,8 +58,8 @@ export default class TrendLineBreakthrough extends Base {
     });
   }
 
-  private openSellPosition(bar: Bar, algorithm: Algorithm, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = bar.algorithms[algorithm]!;
+  private openSellPosition(bar: Bar, strategy: Strategy, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+    const backtest: BacktestData = bar.backtests[strategy]!;
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.push({

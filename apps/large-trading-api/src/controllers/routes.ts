@@ -1,5 +1,5 @@
 ﻿import Base from '../base';
-import { Algorithm, BacktesterState, Exchange, ExchangeSymbol, Bar, Run, Timeframe, countBars, formatDuration } from '@shared';
+import { Strategy, BacktesterState, Exchange, ExchangeSymbol, Bar, Run, Timeframe, countBars, formatDuration } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
@@ -52,7 +52,7 @@ export default class Routes extends Base {
 
   public async backtest(req: Request, res: Response): Promise<void> {
     const startTime = Date.now();
-    const { timeframe, times, commission, rank, algorithms, symbols, autoSymbols } = req.body;
+    const { timeframe, times, commission, rank, strategies, symbols, autoSymbols } = req.body;
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     res.setHeader('Transfer-Encoding', 'chunked');
@@ -66,14 +66,14 @@ export default class Routes extends Base {
         [...exchangeSymbolsGroups].map(([exchange, syms]) => this.initBarsMulti(exchange, syms, timeframe, times))
       )).flat();
 
-      this.startProgress(this.countSteps(tickers, algorithms));
-      tickers = await this.handleAlgos(tickers, algorithms);
+      this.startProgress(this.countSteps(tickers, strategies));
+      tickers = await this.handleStrategies(tickers, strategies);
 
       for (let i = 0; i < tickers.length; i++) {
         const bars: Bar[] = tickers[i];
         (tickers[i] as any) = null; // free memory as frontend allocates it
 
-        const runs: Run[] = this.backtestTicker(bars, algorithms, Number(commission));
+        const runs: Run[] = this.backtestTicker(bars, strategies, Number(commission));
         await this.streamRuns(runs, res);
       }
 
@@ -86,30 +86,30 @@ export default class Routes extends Base {
   }
 
   /** every phase counts one step per bar it walks, so their shares of the progress bar fall out of the work they actually do */
-  private countSteps(tickers: Bar[][], algorithms: any[]): number {
+  private countSteps(tickers: Bar[][], strategies: any[]): number {
     const bars: number = countBars(tickers);
-    const signalSteps: number = algorithms.reduce((sum: number, algo: any) => sum +
-      (algo.autoParams ? this.autoParams.countSteps(tickers, algo.config) : bars), 0);
+    const signalSteps: number = strategies.reduce((sum: number, strategy: any) => sum +
+      (strategy.autoParams ? this.autoParams.countSteps(tickers, strategy.config) : bars), 0);
     return signalSteps + bars;
   }
 
-  private async handleAlgos(tickers: Bar[][], algorithms: any[]): Promise<Bar[][]> {
-    for (const algo of algorithms) {
-      if (algo.autoParams) {
-        const algoInstance = this.backtests[algo.algorithm];
-        tickers = await this.autoParams.handleAlgo(tickers, algo.algorithm, algo.config, algoInstance, (steps: number) => this.addProgress(steps));
+  private async handleStrategies(tickers: Bar[][], strategies: any[]): Promise<Bar[][]> {
+    for (const strategy of strategies) {
+      if (strategy.autoParams) {
+        const strategyInstance = this.backtests[strategy.strategy];
+        tickers = await this.autoParams.handleStrategy(tickers, strategy.strategy, strategy.config, strategyInstance, (steps: number) => this.addProgress(steps));
       } else {
-        await Promise.all(tickers.map((bars: Bar[]) => this.handleAlgo(bars, algo.algorithm, algo.config)));
+        await Promise.all(tickers.map((bars: Bar[]) => this.handleStrategy(bars, strategy.strategy, strategy.config)));
       }
     }
 
     return tickers;
   }
 
-  private backtestTicker(bars: Bar[], algorithms: any[], commission: number): Run[] {
+  private backtestTicker(bars: Bar[], strategies: any[], commission: number): Run[] {
     const barsZeroCommission: Bar[] = JSON.parse(JSON.stringify(bars));
-    const statesZero: BacktesterState[] = algorithms.map(() => ({}));
-    const statesActual: BacktesterState[] = algorithms.map(() => ({}));
+    const statesZero: BacktesterState[] = strategies.map(() => ({}));
+    const statesActual: BacktesterState[] = strategies.map(() => ({}));
     const windowZero: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
     const windowActual: Bar[] = [];
 
@@ -117,9 +117,9 @@ export default class Routes extends Base {
       windowZero.push(barsZeroCommission[j]);
       windowActual.push(bars[j]);
 
-      for (let k = 0; k < algorithms.length; k++) {
-        this.backtester.stepCalcBacktestPerformance(windowZero, statesZero[k], algorithms[k].algorithm, 0);
-        this.backtester.stepCalcBacktestPerformance(windowActual, statesActual[k], algorithms[k].algorithm, commission);
+      for (let k = 0; k < strategies.length; k++) {
+        this.backtester.stepCalcBacktestPerformance(windowZero, statesZero[k], strategies[k].strategy, 0);
+        this.backtester.stepCalcBacktestPerformance(windowActual, statesActual[k], strategies[k].strategy, commission);
       }
 
       this.addProgress(1);
@@ -144,22 +144,22 @@ export default class Routes extends Base {
     });
   }
 
-  private async handleAlgo(bars: Bar[], algorithm: Algorithm, config: any): Promise<void> {
+  private async handleStrategy(bars: Bar[], strategy: Strategy, config: any): Promise<void> {
     bars.forEach((bar: Bar) => {
-      bar.algorithms[algorithm] = {
+      bar.backtests[strategy] = {
         signals: []
       };
     });
 
-    const algo = this.backtests[algorithm];
-    if (!algo?.stepSetSignals) throw `invalid algorithm ${algorithm}`;
+    const strategyInstance = this.backtests[strategy];
+    if (!strategyInstance?.stepSetSignals) throw `invalid strategy ${strategy}`;
 
     const state: any = {};
     const window: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
 
     for (let i = 0; i < bars.length; i++) {
       window.push(bars[i]);
-      await algo.stepSetSignals(window, state, algorithm, config);
+      await strategyInstance.stepSetSignals(window, state, strategy, config);
       this.addProgress(1);
     }
   }

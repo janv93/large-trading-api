@@ -1,18 +1,18 @@
 ﻿import { Injectable } from '@angular/core';
-import { Bar, Algorithm, BacktestSignal, BacktestStats, Signal } from '@shared';
+import { Bar, Strategy, BacktestSignal, BacktestStats, Signal } from '@shared';
 
 @Injectable({ providedIn: 'root' })
 export class StatsService {
-  public calcStats(bars: Bar[], algorithm: Algorithm, finalProfit: number): BacktestStats {
+  public calcStats(bars: Bar[], strategy: Strategy, finalProfit: number): BacktestStats {
     const tradesCount: number = bars.reduce((acc: number, bar: Bar) => {
-      const backtestSignals: BacktestSignal[] = bar.algorithms[algorithm]!.signals;
+      const backtestSignals: BacktestSignal[] = bar.backtests[strategy]!.signals;
       return acc + backtestSignals.filter((s: BacktestSignal) => !this.isCloseSignal(s.signal)).length;
     }, 0);
 
     return {
       profit: Number(finalProfit.toFixed(2)),
       numberOfTrades: tradesCount,
-      maxDrawback: Number(this.calcMaxDrawback(bars, algorithm).toFixed(2))
+      maxDrawback: Number(this.calcMaxDrawback(bars, strategy).toFixed(2))
     };
   }
 
@@ -31,12 +31,12 @@ export class StatsService {
     return `rgb(${red}, ${green}, ${blue})`;
   }
 
-  private calcMaxDrawback(bars: Bar[], algorithm: Algorithm): number {
+  private calcMaxDrawback(bars: Bar[], strategy: Strategy): number {
     let high: number = 0;
     let maxDrawback: number = 0;
 
     bars.forEach((bar: Bar) => {
-      const profit: number = (bar.algorithms[algorithm]!.profit || 0) * 100;
+      const profit: number = (bar.backtests[strategy]!.profit || 0) * 100;
       high = Math.max(high, profit);
       maxDrawback = Math.max(maxDrawback, high - profit);
     });

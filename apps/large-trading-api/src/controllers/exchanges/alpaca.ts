@@ -202,7 +202,7 @@ class Alpaca extends Base {
         },
         volume: k.v,
         numberOfTrades: k.n,
-        algorithms: {}
+        backtests: {}
       };
     });
   }
