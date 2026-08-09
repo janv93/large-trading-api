@@ -1,14 +1,12 @@
-﻿import Indicators from '../../../patterns/indicators';
+﻿import { stepRsi } from '../../../patterns/indicators/rsi';
 import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../../base';
 
 export default class Rsi extends Base {
-  private indicators = new Indicators();
-
   public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const length = Number(params.length);
     state.rsi ??= {};
-    this.indicators.stepRsi(bars, state.rsi, length);
+    stepRsi(bars, state.rsi, length);
 
     const bar: Bar = bars[bars.length - 1];
     const rsiValue: number | undefined = bar.indicators?.rsi;

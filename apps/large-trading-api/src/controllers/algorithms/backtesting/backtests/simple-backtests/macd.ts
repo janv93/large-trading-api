@@ -1,16 +1,14 @@
-﻿import Indicators from '../../../patterns/indicators';
+﻿import { stepMacd } from '../../../patterns/indicators/macd';
 import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../../base';
 
 export default class Macd extends Base {
-  private indicators = new Indicators();
-
   public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const fast = Number(params.fast);
     const slow = Number(params.slow);
     const signal = Number(params.signal);
     state.macd ??= {};
-    this.indicators.stepMacd(bars, state.macd, fast, slow, signal);
+    stepMacd(bars, state.macd, fast, slow, signal);
 
     const bar: Bar = bars[bars.length - 1];
     const macd = bar.indicators?.macd;

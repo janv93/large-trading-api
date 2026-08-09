@@ -1,17 +1,15 @@
-﻿import Indicators from '../../../patterns/indicators';
+﻿import { stepEma } from '../../../patterns/indicators/ema';
 import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../../base';
 
 export default class Ema extends Base {
-  private indicators = new Indicators();
-
   public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
     state.emaOpen ??= {};
     state.emaClose ??= {};
-    this.indicators.stepEma(bars, state.emaOpen, periodOpen);
-    this.indicators.stepEma(bars, state.emaClose, periodClose);
+    stepEma(bars, state.emaOpen, periodOpen);
+    stepEma(bars, state.emaClose, periodClose);
 
     const bar: Bar = bars[bars.length - 1];
     const eOpen: number | undefined = bar.indicators?.ema?.[periodOpen];

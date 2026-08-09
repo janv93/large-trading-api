@@ -1,10 +1,9 @@
 ﻿import { Algorithm, BacktestData, BacktestSignal, Bar, RsiDivergenceType, Signal } from '@shared';
 import Base from '../../../../../base';
-import Indicators from '../../../patterns/indicators';
+import { stepRsiDivergence } from '../../../patterns/indicators/rsi-divergence';
 import TrendLineController from '../../../patterns/trend-line';
 
 export default class RsiDivergence extends Base {
-  private indicators = new Indicators();
   private trendLineController = new TrendLineController();
 
   public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
@@ -15,7 +14,7 @@ export default class RsiDivergence extends Base {
     state.trendLines ??= {};
 
     this.trendLineController.stepTrendLines(bars, state.trendLines, minLength, maxLength, false, false);
-    this.indicators.stepRsiDivergence(bars, state.trendLines, minStrength);
+    stepRsiDivergence(bars, state.trendLines, minStrength);
 
     const bar: Bar = bars[bars.length - 1];
     const rsiDiv = bar.indicators?.rsiDivergence;

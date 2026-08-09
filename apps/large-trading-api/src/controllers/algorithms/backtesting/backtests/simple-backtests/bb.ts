@@ -1,13 +1,11 @@
-﻿import Indicators from '../../../patterns/indicators';
+﻿import { stepBb } from '../../../patterns/indicators/bb';
 import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../../../../../base';
 
 export default class Bb extends Base {
-  private indicators = new Indicators();
-
   public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {
     const period = Number(params.period);
-    this.indicators.stepBb(bars, period);
+    stepBb(bars, period);
 
     const bar: Bar = bars[bars.length - 1];
     if (!bar.indicators?.bb) return;
