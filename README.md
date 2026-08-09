@@ -39,7 +39,7 @@ Backtest any custom trading strategy on cryptos, stocks, ETFs. The code provides
 
 ## Add and use backtests
 
-1. Add or use existing backtests in `apps/large-trading-api/src/strategies` — see `simple-strategies/example.ts` for reference
+1. Add or use existing backtests in `apps/large-trading-api/src/strategies` — see `example.ts` for reference
 2. Add strategy to the Strategy enum in `libs/shared/src/lib/interfaces.ts` and make sure the value is the exact same name as your backtest class. Your backtest class will then be instantiated automatically.
 3. Add strategy to `apps/large-trading-api-frontend/src/app/strategy-configs.ts` which contains the variable parameters sent over the API
 4. Set generic parameters in `apps/large-trading-api-frontend/src/app/chart.service.ts`

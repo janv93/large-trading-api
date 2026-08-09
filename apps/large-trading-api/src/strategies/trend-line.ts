@@ -1,7 +1,7 @@
 ﻿import { Strategy, BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
-import Base from '../../base';
+import Base from '../base';
 import { calcAverageChangeInPercent } from '@shared';
-import TrendLineController from '../../patterns/trend-line';
+import TrendLineController from '../patterns/trend-line';
 
 export default class TrendLineBreakthrough extends Base {
   private trendLineController = new TrendLineController();

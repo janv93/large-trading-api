@@ -1,6 +1,6 @@
-﻿import { stepBb } from '../../patterns/indicators/bb';
+﻿import { stepBb } from '../patterns/indicators/bb';
 import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
-import Base from '../../base';
+import Base from '../base';
 
 export default class Bb extends Base {
   public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {

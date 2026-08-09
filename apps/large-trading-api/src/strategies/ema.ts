@@ -1,6 +1,6 @@
-﻿import { stepEma } from '../../patterns/indicators/ema';
+﻿import { stepEma } from '../patterns/indicators/ema';
 import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
-import Base from '../../base';
+import Base from '../base';
 
 export default class Ema extends Base {
   public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {

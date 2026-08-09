@@ -1,7 +1,7 @@
 ﻿import { Strategy, BacktestData, BacktestSignal, Bar, RsiDivergenceType, Signal } from '@shared';
-import Base from '../../base';
-import { stepRsiDivergence } from '../../patterns/indicators/rsi-divergence';
-import TrendLineController from '../../patterns/trend-line';
+import Base from '../base';
+import { stepRsiDivergence } from '../patterns/indicators/rsi-divergence';
+import TrendLineController from '../patterns/trend-line';
 
 export default class RsiDivergence extends Base {
   private trendLineController = new TrendLineController();

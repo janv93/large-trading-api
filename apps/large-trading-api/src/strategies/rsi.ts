@@ -1,6 +1,6 @@
-﻿import { stepRsi } from '../../patterns/indicators/rsi';
+﻿import { stepRsi } from '../patterns/indicators/rsi';
 import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
-import Base from '../../base';
+import Base from '../base';
 
 export default class Rsi extends Base {
   public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
