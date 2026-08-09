@@ -1,5 +1,5 @@
 ﻿import { Bar, Signal } from '@shared';
-import Base from '../../../../../base';
+import Base from '../../../../base';
 
 export default class Dca extends Base {
   public stepSetSignals(bars: Bar[], state: any, algorithm: any, params: any): void {

@@ -1,6 +1,6 @@
 ﻿import CandlestickPatternsController from '../../../patterns/candlestick-patterns';
 import { Algorithm, BacktestData, BacktestSignal, Bar, BarCandlestickPatterns, Signal } from '@shared';
-import Base from '../../../../../base';
+import Base from '../../../../base';
 
 const BULLISH_PATTERNS: (keyof BarCandlestickPatterns)[] = [
   'hammer',

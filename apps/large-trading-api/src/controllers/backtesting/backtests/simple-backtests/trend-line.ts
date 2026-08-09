@@ -1,5 +1,5 @@
 ﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
-import Base from '../../../../../base';
+import Base from '../../../../base';
 import { calcAverageChangeInPercent } from '@shared';
 import TrendLineController from '../../../patterns/trend-line';
 

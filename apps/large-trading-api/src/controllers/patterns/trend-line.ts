@@ -1,4 +1,4 @@
-﻿import Base from '../../../base';
+﻿import Base from '../../base';
 import { Bar, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition, TrendLinesFromPivotPointsStepState, TrendLineStepState } from '@shared';
 import { LinearFunction } from '@shared';
 

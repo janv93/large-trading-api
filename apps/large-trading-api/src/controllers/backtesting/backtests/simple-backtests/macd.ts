@@ -1,6 +1,6 @@
 ﻿import { stepMacd } from '../../../patterns/indicators/macd';
 import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
-import Base from '../../../../../base';
+import Base from '../../../../base';
 
 export default class Macd extends Base {
   public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {

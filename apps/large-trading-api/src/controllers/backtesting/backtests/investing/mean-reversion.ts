@@ -1,5 +1,5 @@
 ﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
-import Base from '../../../../../base';
+import Base from '../../../../base';
 
 enum Action {
   Buy,

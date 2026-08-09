@@ -1,5 +1,5 @@
 ﻿import { Algorithm, AlgorithmConfigMulti, BacktesterState, Bar, MultiBenchmark, calcScore, countBars } from '@shared';
-import Base from '../../../base';
+import Base from '../../base';
 import Backtester from './backtester/backtester';
 import deepmerge from 'deepmerge';
 import { Worker, isMainThread, workerData, parentPort } from 'worker_threads';

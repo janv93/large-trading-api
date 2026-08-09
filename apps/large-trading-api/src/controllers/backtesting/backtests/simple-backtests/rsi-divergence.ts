@@ -1,5 +1,5 @@
 ﻿import { Algorithm, BacktestData, BacktestSignal, Bar, RsiDivergenceType, Signal } from '@shared';
-import Base from '../../../../../base';
+import Base from '../../../../base';
 import { stepRsiDivergence } from '../../../patterns/indicators/rsi-divergence';
 import TrendLineController from '../../../patterns/trend-line';
 

@@ -1,5 +1,5 @@
 ﻿import { BarCandlestickPatterns, Bar, BarPrices } from '@shared';
-import Base from '../../../base';
+import Base from '../../base';
 
 export default class CandlestickPatternsController extends Base {
   constructor() {

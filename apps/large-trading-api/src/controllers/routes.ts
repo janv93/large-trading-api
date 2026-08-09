@@ -3,8 +3,8 @@ import { Algorithm, BacktesterState, Exchange, ExchangeSymbol, Bar, Run, Timefra
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
-import Backtester from './algorithms/backtesting/backtester/backtester';
-import AutoParams from './algorithms/backtesting/auto-params';
+import Backtester from './backtesting/backtester/backtester';
+import AutoParams from './backtesting/auto-params';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
@@ -24,7 +24,7 @@ export default class Routes extends Base {
   }
 
   private loadBacktests(): void {
-    const backtestsDir = path.join(__dirname, 'algorithms/backtesting/backtests');
+    const backtestsDir = path.join(__dirname, 'backtesting/backtests');
     this.scanDir(backtestsDir);
   }
 

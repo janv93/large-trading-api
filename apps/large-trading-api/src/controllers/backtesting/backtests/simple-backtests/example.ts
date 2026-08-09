@@ -1,5 +1,5 @@
 ﻿import { Algorithm, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
-import Base from '../../../../../base';
+import Base from '../../../../base';
 
 export default class Example extends Base {
   public stepSetSignals(bars: Bar[], state: any, algorithm: Algorithm, params: any): void {

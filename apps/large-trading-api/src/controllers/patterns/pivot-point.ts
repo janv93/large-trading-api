@@ -1,5 +1,5 @@
 ﻿import { Direction, Bar, BarWithIndex, MarketStructureState, MarketStructureType, PivotPoint, PivotPointSide } from '@shared';
-import Base from '../../../base';
+import Base from '../../base';
 
 export default class PivotPointController extends Base {
   public stepPivotPoints(bars: Bar[], space: number): void {
