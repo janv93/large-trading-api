@@ -8,10 +8,12 @@ export class ChartService {
   public timeframe = Timeframe._1Hour;
   public times = 1;  // 1 = 1000 timeframes
   public commission = 0.0004; // 1 = 100%
-  public algorithms = [{ algorithm: Algorithm.Example, autoParams: false }];  // [0] is primary, [1] is optional second algorithm of which only the profit curve will be shown
-  public autoSymbols = false;  // true = auto-determine by rank, false = use symbols list below
+  public mainAlgorithm = { algorithm: Algorithm.Example, autoParams: false };
+  public comparisonAlgorithm = null;  // optional, compare profit curve
   public symbols: ExchangeSymbol[] = [{ exchange: Exchange.Binance, symbol: 'BTCUSDT' }];
+  public autoSymbols = false;  // true = auto-determine by rank, false = use symbols list below
   public rank = 15;
 
+  get algorithms() { return [this.mainAlgorithm, ...(this.comparisonAlgorithm ? [this.comparisonAlgorithm] : [])]; }
   get isMulti(): boolean { return this.autoSymbols || this.symbols.length !== 1; }
 }

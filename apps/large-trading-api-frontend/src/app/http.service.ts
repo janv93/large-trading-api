@@ -26,7 +26,10 @@ export class HttpService {
       commission,
       autoSymbols,
       ...(autoSymbols ? { rank } : { symbols }),
-      algorithms: this.chartService.algorithms.map((a, i) => this.getAlgorithmBody(i))
+      algorithms: this.chartService.algorithms.map(({ algorithm, autoParams }) => {
+        const algorithmConfig = AlgorithmConfigs[algorithm];
+        return { algorithm, autoParams, config: autoParams ? algorithmConfig?.autoParams : algorithmConfig?.default };
+      })
     };
 
     const url = this.baseUrl + '/backtest';
@@ -70,9 +73,4 @@ export class HttpService {
     });
   }
 
-  private getAlgorithmBody(index: number): any {
-    const { algorithm, autoParams } = this.chartService.algorithms[index];
-    const algorithmConfig = AlgorithmConfigs[algorithm];
-    return { algorithm, autoParams, config: autoParams ? algorithmConfig?.autoParams : algorithmConfig?.default };
-  }
 }

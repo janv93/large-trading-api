@@ -49,7 +49,7 @@ export class AppComponent {
         }
         if (this.chartService.isMulti) {
           this.tickers.update(tickers => [...tickers].sort((a: Run[], b: Run[]) => {
-            return (a[0].bars.at(-1)?.algorithms[this.chartService.algorithms[0].algorithm]!.profit || 0) - (b[0].bars.at(-1)?.algorithms[this.chartService.algorithms[0].algorithm]!.profit || 0);
+            return (a[0].bars.at(-1)?.algorithms[this.chartService.mainAlgorithm.algorithm]!.profit || 0) - (b[0].bars.at(-1)?.algorithms[this.chartService.mainAlgorithm.algorithm]!.profit || 0);
           }));
         }
         this.loadingService.setLoadingText();
