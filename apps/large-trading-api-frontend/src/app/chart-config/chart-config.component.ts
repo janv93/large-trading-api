@@ -1,5 +1,5 @@
 import { Component, ElementRef, input, OnChanges, OnInit, output, SimpleChanges, ViewChild } from '@angular/core';
-import { ChartConfig, Exchange, ExchangeSymbol, Strategy, Timeframe } from '@shared';
+import { AlpacaFeed, ChartConfig, Exchange, ExchangeSymbol, Strategy, Timeframe } from '@shared';
 import { copyChartConfig, normalizeChartConfig } from './chart-config';
 
 @Component({
@@ -55,6 +55,16 @@ export class ChartConfigComponent implements OnChanges, OnInit {
 
   public addSymbol(): void {
     this.config.symbols.push({ exchange: Exchange.Binance, symbol: '' });
+  }
+
+  public setExchange(item: ExchangeSymbol, exchange: Exchange): void {
+    item.exchange = exchange;
+    if (exchange !== Exchange.Alpaca) delete item.feed;
+  }
+
+  public setIexFeed(item: ExchangeSymbol, enabled: boolean): void {
+    if (enabled) item.feed = AlpacaFeed.Iex;
+    else delete item.feed;
   }
 
   public deleteSymbol(index: number): void {

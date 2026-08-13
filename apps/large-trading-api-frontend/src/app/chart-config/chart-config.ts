@@ -1,4 +1,4 @@
-import { ChartConfig, Exchange, Strategy, StrategySelection, Timeframe } from '@shared';
+import { AlpacaFeed, ChartConfig, Exchange, Strategy, StrategySelection, Timeframe } from '@shared';
 
 const STORAGE_KEY = 'large-trading.chartConfig.v1';
 
@@ -24,7 +24,11 @@ export function normalizeChartConfig(value: Partial<ChartConfig> | null | undefi
   const symbols = Array.isArray(value?.symbols)
     ? value.symbols
       .filter(item => exchanges.includes(item?.exchange) && typeof item?.symbol === 'string' && item.symbol.trim())
-      .map(item => ({ exchange: item.exchange, symbol: item.symbol.trim().toUpperCase() }))
+      .map(item => ({
+        exchange: item.exchange,
+        symbol: item.symbol.trim().toUpperCase(),
+        ...(item.exchange === Exchange.Alpaca && item.feed === AlpacaFeed.Iex ? { feed: AlpacaFeed.Iex } : {})
+      }))
     : DEFAULT_CONFIG.symbols;
   const mainStrategy = value?.mainStrategy;
   const comparisonStrategy = value?.comparisonStrategy;

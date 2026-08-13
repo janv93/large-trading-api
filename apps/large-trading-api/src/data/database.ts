@@ -1,7 +1,7 @@
 ﻿import mongoose from 'mongoose';
 import Base from '../base';
 import { calcStartTime } from '@shared';
-import { AppConfig, Bar, Exchange, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
+import { AlpacaFeed, AppConfig, Bar, Exchange, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
 import { BarSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema, BarFetchTimesSchema } from './schemas';
 import { DeleteResult } from 'mongodb';
 
@@ -39,12 +39,14 @@ class Database extends Base {
           filter: {
             symbol: bar.symbol,
             exchange: bar.exchange,
+            ...(bar.feed ? { feed: bar.feed } : { feed: { $exists: false } }),
             timeframe: bar.timeframe,
             openTime: bar.times.open,
             closeTime: bar.times.close
           },
           update: {
             $setOnInsert: {
+              ...(bar.feed ? { feed: bar.feed } : {}),
               openPrice: bar.prices.open,
               closePrice: bar.prices.close,
               highPrice: bar.prices.high,
@@ -67,9 +69,9 @@ class Database extends Base {
     }
   }
 
-  public async getBars(symbol: string, timeframe: Timeframe, exchange: Exchange): Promise<Bar[]> {
+  public async getBars(symbol: string, timeframe: Timeframe, exchange: Exchange, feed?: AlpacaFeed): Promise<Bar[]> {
     try {
-      const bars = await this.bar.find({ symbol, timeframe, exchange });
+      const bars = await this.bar.find({ symbol, timeframe, exchange, ...(feed ? { feed } : { feed: { $exists: false } }) });
 
       if (bars.length) {
         this.log(`Read ${bars.length} bars for symbol ${symbol}`);
@@ -80,6 +82,7 @@ class Database extends Base {
       const mappedBars: Bar[] = bars.map(bar => ({
         symbol: bar.symbol,
         exchange: bar.exchange,
+        ...(bar.feed ? { feed: bar.feed } : {}),
         timeframe: bar.timeframe,
         times: {
           open: bar.openTime,
@@ -390,9 +393,9 @@ class Database extends Base {
     }
   }
 
-  public async getBarFetchTime(symbol: string, timeframe: string, exchange: Exchange): Promise<number | undefined> {
+  public async getBarFetchTime(symbol: string, timeframe: string, exchange: Exchange, feed?: AlpacaFeed): Promise<number | undefined> {
     try {
-      const document = await this.barFetchTimes.findOne({ symbol, timeframe, exchange });
+      const document = await this.barFetchTimes.findOne({ symbol, timeframe, exchange, ...(feed ? { feed } : { feed: { $exists: false } }) });
       return document ? new Date(document.updatedAt).getTime() : undefined;
     } catch (err) {
       this.logErr(`Failed to get bar fetch time for ${symbol}`, err);
@@ -400,9 +403,11 @@ class Database extends Base {
     }
   }
 
-  public async updateBarFetchTime(symbol: string, timeframe: string, exchange: Exchange): Promise<void> {
+  public async updateBarFetchTime(symbol: string, timeframe: string, exchange: Exchange, feed?: AlpacaFeed): Promise<void> {
     try {
-      await this.barFetchTimes.findOneAndUpdate({ symbol, timeframe, exchange }, { $set: { updatedAt: new Date() } }, { upsert: true });
+      const filter = { symbol, timeframe, exchange, ...(feed ? { feed } : { feed: { $exists: false } }) };
+      const update = { $set: { updatedAt: new Date(), ...(feed ? { feed } : {}) } };
+      await this.barFetchTimes.findOneAndUpdate(filter, update, { upsert: true });
     } catch (err) {
       this.logErr(`Failed to update bar fetch time for ${symbol}`, err);
       throw err;

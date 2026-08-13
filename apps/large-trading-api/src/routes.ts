@@ -60,11 +60,8 @@ export default class Routes extends Base {
     const heartbeat = setInterval(() => res.write('\n'), 20_000); // Keep the connection alive during long processing to prevent idle timeouts (~60s in Chrome/OS)
 
     try {
-      const exchangeSymbolsGroups: Map<Exchange, string[]> = await this.getExchangeSymbolsGroups(autoSymbols, symbols, rank);
-
-      let tickers: Bar[][] = (await Promise.all(
-        [...exchangeSymbolsGroups].map(([exchange, syms]) => this.initBarsMulti(exchange, syms, timeframe, times))
-      )).flat();
+      const exchangeSymbols: ExchangeSymbol[] = await this.getExchangeSymbols(autoSymbols, symbols, rank);
+      let tickers: Bar[][] = await this.initBarsMulti(exchangeSymbols, timeframe, times);
 
       this.startProgress(this.countSteps(tickers, strategies));
       tickers = await this.handleStrategies(tickers, strategies);
@@ -164,17 +161,18 @@ export default class Routes extends Base {
     }
   }
 
-  private async initBars(exchange: Exchange, symbol: string, timeframe: Timeframe): Promise<Bar[]> {
+  private async initBars(exchangeSymbol: ExchangeSymbol, timeframe: Timeframe): Promise<Bar[]> {
+    const { exchange, symbol, feed } = exchangeSymbol;
     switch (exchange) {
       case Exchange.Binance: return binance.initBarsDatabase(symbol, timeframe);
       case Exchange.Kucoin: return this.kucoin.initBarsDatabase(symbol, timeframe);
-      case Exchange.Alpaca: return alpaca.initBarsDatabase(symbol, timeframe);
+      case Exchange.Alpaca: return alpaca.initBarsDatabase(symbol, timeframe, feed);
       default: throw new Error(`Invalid exchange ${exchange}`);
     }
   }
 
-  private async initBarsMulti(exchange: Exchange, symbols: string[], timeframe: Timeframe, times: number): Promise<Bar[][]> {
-    const bars: Bar[][] = await Promise.all(symbols.map(symbol => this.initBars(exchange, symbol, timeframe)));
+  private async initBarsMulti(exchangeSymbols: ExchangeSymbol[], timeframe: Timeframe, times: number): Promise<Bar[][]> {
+    const bars: Bar[][] = await Promise.all(exchangeSymbols.map(exchangeSymbol => this.initBars(exchangeSymbol, timeframe)));
 
     const barsInRange: Bar[][] = bars.map((bars: Bar[]) => {
       return bars.slice(-1000 * Number(times)); // get last times * 1000 timeframes
@@ -183,27 +181,21 @@ export default class Routes extends Base {
     return barsInRange.filter(k => k.length);  // filter out not found symbols
   }
 
-  private async getExchangeSymbolsGroups(autoSymbols: boolean, symbols?: ExchangeSymbol[], rank?: number): Promise<Map<Exchange, string[]>> {
+  private async getExchangeSymbols(autoSymbols: boolean, symbols?: ExchangeSymbol[], rank?: number): Promise<ExchangeSymbol[]> {
     if (autoSymbols) {
       const indices = ['SPY', 'QQQ', 'IWM', 'DAX'];
       const [stockSymbols, cryptoSymbols] = await Promise.all([
         this.getMultiStocks(rank!),
         this.getMultiCryptos(rank!)
       ]);
-      return new Map([
-        [Exchange.Alpaca, [...stockSymbols, ...indices.slice(0, rank!)]],
-        [Exchange.Binance, cryptoSymbols]
-      ]);
-    } else {
-      const map = new Map<Exchange, string[]>();
-
-      for (const { exchange, symbol } of symbols!) {
-        if (!map.has(exchange)) map.set(exchange, []);
-        map.get(exchange)!.push(symbol);
-      }
-
-      return map;
+      return [
+        ...stockSymbols.map(symbol => ({ exchange: Exchange.Alpaca, symbol })),
+        ...indices.slice(0, rank!).map(symbol => ({ exchange: Exchange.Alpaca, symbol })),
+        ...cryptoSymbols.map(symbol => ({ exchange: Exchange.Binance, symbol }))
+      ];
     }
+
+    return symbols!;
   }
 
   private async getMultiStocks(rank: number): Promise<string[]> {

@@ -102,9 +102,14 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .symbol-row {
   display: grid;
-  grid-template-columns: 110px 180px 26px;
+  grid-template-columns: 110px 180px 52px 26px;
   gap: 0.4rem;
   margin-bottom: 0.4rem;
+}
+
+.symbol-feed {
+  height: 26px;
+  gap: 0.2rem;
 }
 
 .icon-button {

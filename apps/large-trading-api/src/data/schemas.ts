@@ -11,6 +11,11 @@ export const BarSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  feed: {
+    type: String,
+    required: false,
+    index: true
+  },
   timeframe: {
     type: String,
     required: true,
@@ -141,6 +146,11 @@ export const BarFetchTimesSchema = new mongoose.Schema({
   exchange: {
     type: String,
     required: true,
+    index: true
+  },
+  feed: {
+    type: String,
+    required: false,
     index: true
   },
   timeframe: {

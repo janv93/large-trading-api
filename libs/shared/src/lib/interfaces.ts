@@ -7,6 +7,10 @@ export enum Exchange {
   BTSE = 'BTSE'
 }
 
+export enum AlpacaFeed {
+  Iex = 'iex'
+}
+
 export enum Timeframe {
   _1Minute = '1m',
   _5Minutes = '5m',
@@ -83,6 +87,7 @@ export enum LogLevel {
 export interface ExchangeSymbol {
   exchange: Exchange;
   symbol: string;
+  feed?: AlpacaFeed;
 }
 
 export interface StrategySelection {
@@ -145,6 +150,7 @@ export interface Bar {
   symbol: string;
   timeframe: Timeframe;
   exchange: Exchange;
+  feed?: AlpacaFeed;
   times: BarTimes;
   prices: BarPrices;
   volume: number;

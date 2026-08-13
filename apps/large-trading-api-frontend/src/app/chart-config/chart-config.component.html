@@ -61,13 +61,21 @@
     <div class="popover-title">symbols</div>
     @for (item of config.symbols; track $index; let index = $index) {
     <div class="symbol-row">
-      <select [(ngModel)]="item.exchange" aria-label="Exchange">
+      <select [ngModel]="item.exchange" (ngModelChange)="setExchange(item, $event)" aria-label="Exchange">
         @for (exchange of exchanges; track exchange) {
         <option [ngValue]="exchange">{{ exchange | titlecase }}</option>
         }
       </select>
       <input type="text" [(ngModel)]="item.symbol" (blur)="normalizeSymbol(item)" aria-label="Symbol"
         placeholder="Symbol">
+      @if (item.exchange === 'ALPACA') {
+      <label class="symbol-feed">
+        <input type="checkbox" [ngModel]="item.feed === 'iex'" (ngModelChange)="setIexFeed(item, $event)">
+        <span>IEX</span>
+      </label>
+      } @else {
+      <span></span>
+      }
       <button class="icon-button" type="button" title="Delete symbol" aria-label="Delete symbol"
         [disabled]="config.symbols.length === 1" (click)="deleteSymbolOnClick(index)"
         (keydown.enter)="deleteSymbolOnEnter(index, $event)">&times;</button>
