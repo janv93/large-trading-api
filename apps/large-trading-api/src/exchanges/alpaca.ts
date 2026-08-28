@@ -1,7 +1,7 @@
 ﻿import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AlpacaFeed, AlpacaResponse, Bar, Exchange, Timeframe } from '@shared';
 import Base from '../base';
-import { createUrl, calcStartTime, isBarOutdated, timestampsToDateRange, sleep } from '@shared';
+import { createUrl, calcStartTime, cutOngoingBar, isBarOutdated, timestampsToDateRange, sleep } from '@shared';
 import database from '../data/database';
 
 class Alpaca extends Base {
@@ -15,6 +15,21 @@ class Alpaca extends Base {
   private rateLimitPerMinute = 190;
   private requestsSentThisMinute = 0;
   private lastFetchTime: Map<string, number> = new Map();
+
+  public async getLatestPrice(symbol: string, feed?: AlpacaFeed): Promise<number> {
+    await this.waitIfRateLimitReached();
+    const response: AxiosResponse = await axios.get(`${this.baseUrls.baseUrlv2}/stocks/${symbol}/trades/latest`, {
+      ...this.getRequestOptions(),
+      params: feed ? { feed } : undefined
+    });
+
+    const price = Number(response.data.trade?.p);
+    if (!Number.isFinite(price)) {
+      throw new Error(`Invalid Alpaca price response for ${symbol}`);
+    }
+
+    return price;
+  }
 
   public async getBars(symbol: string, timeframe: Timeframe, feed?: AlpacaFeed, startTime?: number, pageToken?: string): Promise<AlpacaResponse> {
     const url = `${this.baseUrls.baseUrlv2}/stocks/${symbol}/bars`;
@@ -42,7 +57,7 @@ class Alpaca extends Base {
       const options: AxiosRequestConfig = this.getRequestOptions();
       const res: AxiosResponse = await axios.get(finalUrl, options);
       if (!res.data?.bars) return { nextPageToken: '', bars: [] };
-      const bars = this.mapBars(symbol, timeframe, res.data.bars, feed);
+      const bars = cutOngoingBar(this.mapBars(symbol, timeframe, res.data.bars, feed));
       return { nextPageToken: res.data.next_page_token, bars };
     } catch (err) {
       this.handleError(err, symbol);
@@ -54,7 +69,7 @@ class Alpaca extends Base {
    * initialize database with bars from predefined start date until now
    * allows to cache already requested bars and only request recent bars
    */
-  public async initBarsDatabase(symbol: string, timeframe: Timeframe, feed?: AlpacaFeed): Promise<Bar[]> {
+  public async initBarsDatabase(symbol: string, timeframe: Timeframe, feed?: AlpacaFeed, fetchLatest?: boolean): Promise<Bar[]> {
     const startTime: number = calcStartTime(timeframe);
     let dbBars: Bar[] = await database.getBars(symbol, timeframe, this.exchange, feed);
 
@@ -77,7 +92,7 @@ class Alpaca extends Base {
     const cacheKey = `${symbol}_${timeframe}_${feed ?? 'sip'}`;
     const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getBarFetchTime(symbol, timeframe, this.exchange, feed);
 
-    if (isBarOutdated(timeframe, lastBarTime, lastFetch)) {
+    if (fetchLatest || isBarOutdated(timeframe, lastBarTime, lastFetch)) {
       const hasNewStockSplits: boolean = (await this.getStockSplitSymbols([symbol], lastBarTime)).length > 0;
 
       if (hasNewStockSplits) {
@@ -130,6 +145,30 @@ class Alpaca extends Base {
     }
   }
 
+  /**
+   * get bars from startTime until now
+   */
+  public async getBarsFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe, feed?: AlpacaFeed): Promise<Bar[]> {
+    const bars: Bar[] = [];
+    let pageToken: string | undefined;
+
+    while (true) {
+      const res = await this.getBars(symbol, timeframe, feed, startTime, pageToken);
+      bars.push(...res.bars);
+      pageToken = res.nextPageToken;
+
+      if (!pageToken) {
+        break;
+      }
+    }
+
+    const dateRange = timestampsToDateRange(bars[0]?.times.open, bars[bars.length - 1]?.times.open)
+    this.log(`${bars.length} ${symbol} bars received - ${dateRange}`);
+
+    bars.sort((a, b) => a.times.open - b.times.open);
+    return bars;
+  }
+
   // return all of the {symbols} that had a stock split
   private async getStockSplitSymbols(symbols: string[], startTime?: number): Promise<string[]> {
     this.log(`Get stock splits for ${symbols}`);
@@ -168,30 +207,6 @@ class Alpaca extends Base {
     return new Date(endTime).toISOString();
   }
 
-  /**
-   * get bars from startTime until now
-   */
-  private async getBarsFromStartUntilNow(symbol: string, startTime: number, timeframe: Timeframe, feed?: AlpacaFeed): Promise<Bar[]> {
-    const bars: Bar[] = [];
-    let pageToken: string | undefined;
-
-    while (true) {
-      const res = await this.getBars(symbol, timeframe, feed, startTime, pageToken);
-      bars.push(...res.bars);
-      pageToken = res.nextPageToken;
-
-      if (!pageToken) {
-        break;
-      }
-    }
-
-    const dateRange = timestampsToDateRange(bars[0]?.times.open, bars[bars.length - 1]?.times.open)
-    this.log(`${bars.length} ${symbol} bars received - ${dateRange}`);
-
-    bars.sort((a, b) => a.times.open - b.times.open);
-    return bars;
-  }
-
   private mapBars(symbol: string, timeframe: Timeframe, bars: any, feed?: AlpacaFeed): Bar[] {
     return bars.map(k => {
       return {
@@ -210,7 +225,7 @@ class Alpaca extends Base {
         },
         volume: k.v,
         numberOfTrades: k.n,
-        backtests: {}
+        backtest: { signals: [] }
       };
     });
   }

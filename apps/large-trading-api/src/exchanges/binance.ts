@@ -1,6 +1,6 @@
 ﻿import axios, { AxiosResponse } from 'axios';
 import crypto from 'crypto';
-import { Bar, Exchange, Timeframe, Tweet } from '@shared';
+import { Bar, Exchange, Timeframe } from '@shared';
 import Base from '../base';
 import { createUrl, calcStartTime, isBarOutdated, timeframeToMilliseconds, timestampsToDateRange, sleep, cutOngoingBar } from '@shared';
 import database from '../data/database';
@@ -10,6 +10,20 @@ class Binance extends Base {
   private readonly usdPairs: string[] = ['USDT', 'BUSD', 'USDC'];
   private rateLimitPerMinute = 400; // 2400 is per minute limit, but fetching 1k bars costs 5 weight, 2400/5 = 480, plus some buffer
   private requestsSentThisMinute = 0;
+
+  public async getLatestPrice(symbol: string): Promise<number> {
+    await this.waitIfRateLimitReached();
+    const response: AxiosResponse = await axios.get('https://fapi.binance.com/fapi/v2/ticker/price', {
+      params: { symbol }
+    });
+
+    const price = Number(response.data.price);
+    if (!Number.isFinite(price)) {
+      throw new Error(`Invalid Binance price response for ${symbol}`);
+    }
+
+    return price;
+  }
 
   public async getBars(symbol: string, timeframe: Timeframe, endTime?: number, startTime?: number): Promise<Bar[]> {
     const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
@@ -34,30 +48,12 @@ class Binance extends Base {
     try {
       await this.waitIfRateLimitReached();
       const response: AxiosResponse = await axios.get(barUrl);
-      const result: Bar[] = this.mapBars(symbol, timeframe, response.data);
+      const result: Bar[] = cutOngoingBar(this.mapBars(symbol, timeframe, response.data));
       return result;
     } catch (err) {
       this.handleError(err, symbol);
       return [];
     }
-  }
-
-  public async getBarsUntilNextFullHour(symbol: string, startTime: number): Promise<any> {
-    const baseUrl = 'https://fapi.binance.com/fapi/v1/klines';
-    const interval = Timeframe._1Minute;
-    const limit = 60 - (new Date(startTime).getMinutes());
-
-    const query = {
-      limit: limit.toString(),
-      interval,
-      symbol,
-      startTime
-    };
-
-    const barUrl = createUrl(baseUrl, query);
-
-    this.log('GET ' + barUrl);
-    return axios.get(barUrl);
   }
 
   /**
@@ -95,7 +91,7 @@ class Binance extends Base {
    * initialize database with bars from predefined start date until now
    * allows to cache already requested bars and only request recent bars
    */
-  public async initBarsDatabase(symbol: string, timeframe: Timeframe): Promise<Bar[]> {
+  public async initBarsDatabase(symbol: string, timeframe: Timeframe, fetchLatest?: boolean): Promise<Bar[]> {
     const startTime: number = calcStartTime(timeframe);
     const dbBars: Bar[] = await database.getBars(symbol, timeframe, this.exchange);
 
@@ -115,7 +111,7 @@ class Binance extends Base {
     const lastBar: Bar = dbBars[dbBars.length - 1];
     const newStart: number = lastBar.times.open;
 
-    if (isBarOutdated(timeframe, newStart)) {
+    if (fetchLatest || isBarOutdated(timeframe, newStart)) {
       const newBars: Bar[] = await this.getBarsFromStartUntilNow(symbol, newStart, timeframe);
       newBars.shift();    // remove first bar, since it's the same as last of dbBars
       this.log(`${newBars.length} new ${symbol} bars added to database`);
@@ -234,18 +230,6 @@ class Binance extends Base {
       .find(pair => pairList.includes(pair));
   }
 
-  // add all tweets with same time to their bars
-  public addTweetsToBars(bars: Bar[], tweets: Tweet[]): void {
-    bars.forEach((k, i) => {
-      const nextBarTime = bars[i + 1]?.times?.open;
-
-      if (nextBarTime) {
-        const tweetsWithSameTime = tweets.filter(t => t.time >= k.times.open && t.time < nextBarTime);
-        k.tweets = tweetsWithSameTime;
-      }
-    });
-  }
-
   private createHmac(query): string {
     return crypto.createHmac('sha256', process.env.binance_api_key_secret as any).update(query).digest('hex');
   }
@@ -268,7 +252,7 @@ class Binance extends Base {
         },
         volume: Number(k[5]),
         numberOfTrades: k[8],
-        backtests: {}
+        backtest: { signals: [] }
       };
     });
   }

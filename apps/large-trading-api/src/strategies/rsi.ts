@@ -1,9 +1,9 @@
 ﻿import { stepRsi } from '../patterns/indicators/rsi';
-import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
 import Base from '../base';
 
 export default class Rsi extends Base {
-  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const length = Number(params.length);
     state.rsi ??= {};
     stepRsi(bars, state.rsi, length);
@@ -14,30 +14,30 @@ export default class Rsi extends Base {
 
     const rsiThresholdHigh = 60;
     const rsiThresholdLow = 40;
-    const backtest: BacktestData = bar.backtests[strategy]!;
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
     if (state.lastSignal === Signal.Buy) {
       if (rsiValue > rsiThresholdHigh) {
-        signals.push({ signal: Signal.CloseAll, price: closePrice });
-        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+        signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: 1, price: closePrice }));
         state.lastSignal = Signal.Sell;
       }
     } else if (state.lastSignal === Signal.Sell) {
       if (rsiValue < rsiThresholdLow) {
-        signals.push({ signal: Signal.CloseAll, price: closePrice });
-        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+        signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: 1, price: closePrice }));
         state.lastSignal = Signal.Buy;
       }
     } else {
       if (rsiValue > rsiThresholdHigh) {
-        signals.push({ signal: Signal.CloseAll, price: closePrice });
-        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+        signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: 1, price: closePrice }));
         state.lastSignal = Signal.Sell;
       } else if (rsiValue < rsiThresholdLow) {
-        signals.push({ signal: Signal.CloseAll, price: closePrice });
-        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+        signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: 1, price: closePrice }));
         state.lastSignal = Signal.Buy;
       }
     }

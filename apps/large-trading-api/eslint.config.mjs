@@ -14,10 +14,11 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/ban-types': 'off',
       'no-case-declarations': 'off',
       'no-constant-condition': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
       'unused-imports/no-unused-imports': 'error',
       'prefer-const': 'warn',
       'no-empty': 'warn'

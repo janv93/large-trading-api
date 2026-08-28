@@ -31,7 +31,6 @@ export enum Timeframe {
 }
 
 export enum Strategy {
-  Momentum = 'momentum',
   Macd = 'macd',
   Rsi = 'rsi',
   Ema = 'ema',
@@ -90,17 +89,23 @@ export interface ExchangeSymbol {
   feed?: AlpacaFeed;
 }
 
-export interface StrategySelection {
+export interface StrategyEntry {
   strategy: Strategy;
-  autoParams: boolean;
+  config: any;
+}
+
+export interface LiveTicker {
+  exchangeSymbol: ExchangeSymbol;
+  bars: Bar[];
+  states: Record<string, any>;
 }
 
 export interface ChartConfig {
   timeframe: Timeframe;
   times: number;
   commission: number;
-  mainStrategy: StrategySelection;
-  comparisonStrategy: StrategySelection | null;
+  strategy: Strategy;
+  autoParams: boolean;
   symbols: ExchangeSymbol[];
   autoSymbols: boolean;
   rank: number;
@@ -129,13 +134,6 @@ export enum Direction {
   Down = 'DOWN'
 }
 
-export enum RsiDivergenceType {
-  Bullish = 'BULLISH',             // price LL, RSI higher low → potential reversal up
-  Bearish = 'BEARISH',             // price HH, RSI lower high → potential reversal down
-  HiddenBullish = 'HIDDEN_BULLISH', // price HL, RSI lower low → trend continuation up
-  HiddenBearish = 'HIDDEN_BEARISH'  // price LH, RSI higher high → trend continuation down
-}
-
 export interface AppConfig {
   lastOutdatedBarRemoval: Date;
   hadStockSplitCleanup?: boolean;
@@ -154,7 +152,7 @@ export interface Bar {
   times: BarTimes;
   prices: BarPrices;
   volume: number;
-  backtests: Partial<Record<Strategy, BacktestData>>;
+  backtest: BacktestData;
   numberOfTrades?: number;
   tweets?: Tweet[];
   chart?: BarChart;
@@ -193,13 +191,9 @@ export interface MarketStructureStats {
 }
 
 export interface RsiDivergenceData {
-  regular?: RsiDivergenceTypeWithStrength;
-  hidden?: RsiDivergenceTypeWithStrength;
-}
-
-export interface RsiDivergenceTypeWithStrength {
-  type: RsiDivergenceType;
-  strength: number;
+  regular?: number;
+  hidden?: number;
+  originTrendLines: TrendLine[];
 }
 
 export interface BarIndicators {
@@ -268,6 +262,30 @@ export interface TrendLinesFromPivotPointsStepState {
   pendingTrendLines?: TrendLine[];
 }
 
+export enum BullishCandlestickPattern {
+  Hammer = 'hammer',
+  InvertedHammer = 'invertedHammer',
+  BullishMarubozu = 'bullishMarubozu',
+  BullishEngulfing = 'bullishEngulfing',
+  BullishHarami = 'bullishHarami',
+  PiercingLine = 'piercingLine',
+  TweezersBottom = 'tweezersBottom',
+  MorningStar = 'morningStar',
+  ThreeWhiteSoldiers = 'threeWhiteSoldiers'
+}
+
+export enum BearishCandlestickPattern {
+  HangingMan = 'hangingMan',
+  ShootingStar = 'shootingStar',
+  BearishMarubozu = 'bearishMarubozu',
+  BearishEngulfing = 'bearishEngulfing',
+  BearishHarami = 'bearishHarami',
+  DarkCloudCover = 'darkCloudCover',
+  TweezersTop = 'tweezersTop',
+  EveningStar = 'eveningStar',
+  ThreeBlackCrows = 'threeBlackCrows'
+}
+
 export interface BarCandlestickPatterns {
   // single-candle
   doji?: boolean;
@@ -300,6 +318,12 @@ export interface BollingerBands {
   lower: number;
 }
 
+export enum BollingerBand {
+  Lower = 'LOWER',
+  Middle = 'MIDDLE',
+  Upper = 'UPPER'
+}
+
 export interface MacdValues {
   macdLine: number;
   signal: number;
@@ -325,6 +349,7 @@ export interface BacktestData {
 }
 
 export interface BacktestSignal {
+  uniqueIdentifier?: string;  // only needed for live mode, in case multiple ticks within the same bar trigger the same signal, this is used to deduplicate them
   signal: Signal;
   price: number;
   size?: number;  // not required if close
@@ -440,4 +465,10 @@ export interface TickerMetrics {
   sqrtProfit: number;
   maxDrawdownRatio: number;
   signalCount: number;
+}
+
+export interface LiveTicker {
+  exchangeSymbol: ExchangeSymbol;
+  bars: Bar[];
+  states: Record<string, any>;
 }

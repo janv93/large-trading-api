@@ -4,7 +4,7 @@ import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
 import { WatermarkPrimitive } from './primitives/watermark-primitive';
 import { BacktestStats, Bar, ChartConfig, Run } from '@shared';
-import { getStrategies, isMultiConfig } from '../chart-config/chart-config';
+import { isMultiConfig } from '../chart-config/chart-config';
 import { BaseComponent } from '../base-component';
 import { IndicatorSeriesService } from './services/indicator-series.service';
 import { MarkersChartingService } from './services/markers-charting.service';
@@ -37,7 +37,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
 
   private chart: IChartApi;
   private candlestickSeries: ISeriesApi<'Candlestick'>;
-  private profitSeries: ISeriesApi<'Line'>[] = [];
+  private profitSeries: ISeriesApi<'Line'> | undefined;
   private openPositionSizeSeries: ISeriesApi<'Histogram'> | undefined;
   private trendLinesPrimitive: TrendLinesPrimitive | undefined;
   private compactCirclePrimitive: CompactCirclePrimitive | undefined;
@@ -204,36 +204,29 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   }
 
   private drawProfitSeries(): void {
-    this.profitSeries.forEach(series => this.chart.removeSeries(series));
-    this.profitSeries = [];
+    if (this.profitSeries) this.chart.removeSeries(this.profitSeries);
 
-    getStrategies(this.config).forEach((_, index) => {
-      const series: ISeriesApi<'Line'> = this.chart.addSeries(LineSeries, {
-        priceScaleId: index === 0 ? 'left' : 'left2',
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false
-      });
-      this.profitSeries.push(series);
+    this.profitSeries = this.chart.addSeries(LineSeries, {
+      priceScaleId: 'left',
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false
     });
 
-    getStrategies(this.config).forEach((selection, index) => {
-      const mapped = this.currentBars.map((bar: Bar) => {
-        const currentProfit: number = (bar.backtests[selection.strategy]!.profit || 0) * 100;
-        const opacity: number = index === 0 ? 0.3 : 0.1;
-        const color: string = currentProfit === 0
-          ? `rgba(255,255,255,${opacity})`
-          : currentProfit > 0 ? `rgba(0,255,0,${opacity})` : `rgba(255,77,77,${opacity})`;
-        return { time: bar.times.open / 1000 as Time, value: currentProfit, color };
-      });
-      this.profitSeries[index].setData(mapped);
+    const mapped = this.currentBars.map((bar: Bar) => {
+      const currentProfit: number = (bar.backtest.profit || 0) * 100;
+      const color: string = currentProfit === 0
+        ? 'rgba(255,255,255,0.3)'
+        : currentProfit > 0 ? 'rgba(0,255,0,0.3)' : 'rgba(255,77,77,0.3)';
+      return { time: bar.times.open / 1000 as Time, value: currentProfit, color };
     });
+    this.profitSeries!.setData(mapped);
   }
 
   private drawMarkersAndCharting(): void {
     this.markersChartingService.drawAll(
       this.currentBars,
-      this.config.mainStrategy.strategy,
+      this.config.strategy,
       this.chart,
       this.seriesMarkersPlugin!,
       this.compactCirclePrimitive!,
@@ -263,7 +256,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   private setOpenPositionSizeSeriesData(): void {
     const alpha: number = this.getPositionSizeAlpha();
     const mapped = this.currentBars.map((bar: Bar) => {
-      const openPositionSize: number = bar.backtests[this.config.mainStrategy.strategy]!.openPositionSize!;
+      const openPositionSize: number = bar.backtest.openPositionSize!;
       const color: string = openPositionSize === 0
         ? 'transparent'
         : openPositionSize > 0 ? `rgba(0, 255, 162, ${alpha})` : `rgba(255, 0, 170, ${alpha})`;
@@ -333,14 +326,12 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   }
 
   private updateStats(): void {
-    this.stats = this.statsService.calcStats(this.currentBars, this.config.mainStrategy.strategy, this.finalProfit[0]);
+    this.stats = this.statsService.calcStats(this.currentBars, this.config.strategy, this.finalProfit[0]);
   }
 
   private setFinalProfits(): void {
     const finalBar = this.currentBars.at(-1)!;
-    this.finalProfit = getStrategies(this.config).map(selection =>
-      (finalBar.backtests[selection.strategy]!.profit || 0) * 100
-    );
+    this.finalProfit = [(finalBar.backtest.profit || 0) * 100];
   }
 
   private subscribeVisibleRangeChange(): void {
@@ -403,10 +394,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
     this.currentOhlc.set(ohlc);
     this.currentIndex.set(index);
 
-    this.currentProfit.set(this.profitSeries.map(series => {
-      const data: LineData = param.seriesData.get(series) as LineData;
+    this.currentProfit.set([(() => {
+      const data: LineData = param.seriesData.get(this.profitSeries!) as LineData;
       return data ? Number(data.value.toFixed(2)) : 0;
-    }));
+    })()]);
 
     if (this.openPositionSizeSeries) {
       const openPositionSize: HistogramData = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;

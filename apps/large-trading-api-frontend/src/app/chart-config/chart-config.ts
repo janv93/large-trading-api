@@ -1,4 +1,4 @@
-import { AlpacaFeed, ChartConfig, Exchange, Strategy, StrategySelection, Timeframe } from '@shared';
+import { AlpacaFeed, ChartConfig, Exchange, Strategy, Timeframe } from '@shared';
 
 const STORAGE_KEY = 'large-trading.chartConfig.v1';
 
@@ -6,8 +6,8 @@ const DEFAULT_CONFIG: ChartConfig = {
   timeframe: Timeframe._1Hour,
   times: 1,
   commission: 0.0004,
-  mainStrategy: { strategy: Strategy.Example, autoParams: false },
-  comparisonStrategy: null,
+  strategy: Strategy.Example,
+  autoParams: false,
   symbols: [{ exchange: Exchange.Binance, symbol: 'BTCUSDT' }],
   autoSymbols: false,
   rank: 15
@@ -30,20 +30,14 @@ export function normalizeChartConfig(value: Partial<ChartConfig> | null | undefi
         ...(item.exchange === Exchange.Alpaca && item.feed === AlpacaFeed.Iex ? { feed: AlpacaFeed.Iex } : {})
       }))
     : DEFAULT_CONFIG.symbols;
-  const mainStrategy = value?.mainStrategy;
-  const comparisonStrategy = value?.comparisonStrategy;
+  const strategyValue = value?.strategy;
 
   return {
     timeframe: timeframes.includes(value?.timeframe as Timeframe) ? value!.timeframe! : DEFAULT_CONFIG.timeframe,
     times: positiveInteger(value?.times, DEFAULT_CONFIG.times),
     commission: nonNegativeNumber(value?.commission, DEFAULT_CONFIG.commission),
-    mainStrategy: {
-      strategy: strategies.includes(mainStrategy?.strategy as Strategy) ? mainStrategy!.strategy : DEFAULT_CONFIG.mainStrategy.strategy,
-      autoParams: Boolean(mainStrategy?.autoParams)
-    },
-    comparisonStrategy: comparisonStrategy && strategies.includes(comparisonStrategy.strategy as Strategy)
-      ? { strategy: comparisonStrategy.strategy, autoParams: Boolean(comparisonStrategy.autoParams) }
-      : null,
+    strategy: strategies.includes(strategyValue as Strategy) ? strategyValue as Strategy : DEFAULT_CONFIG.strategy,
+    autoParams: Boolean(value?.autoParams),
     symbols: symbols.length ? symbols : copyChartConfig(DEFAULT_CONFIG).symbols,
     autoSymbols: Boolean(value?.autoSymbols),
     rank: positiveInteger(value?.rank, DEFAULT_CONFIG.rank)
@@ -65,10 +59,6 @@ export function saveChartConfig(config: ChartConfig): void {
   } catch {
     // The current configuration remains usable when browser storage is unavailable.
   }
-}
-
-export function getStrategies(config: ChartConfig): StrategySelection[] {
-  return [config.mainStrategy, ...(config.comparisonStrategy ? [config.comparisonStrategy] : [])];
 }
 
 export function isMultiConfig(config: ChartConfig): boolean {

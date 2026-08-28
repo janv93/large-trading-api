@@ -68,7 +68,7 @@ export class AppComponent {
         }
         if (isMultiConfig(activeConfig)) {
           this.tickers.update(tickers => [...tickers].sort((a: Run[], b: Run[]) => {
-            return (a[0].bars.at(-1)?.backtests[activeConfig.mainStrategy.strategy]!.profit || 0) - (b[0].bars.at(-1)?.backtests[activeConfig.mainStrategy.strategy]!.profit || 0);
+            return (a[0].bars.at(-1)?.backtest!.profit || 0) - (b[0].bars.at(-1)?.backtest!.profit || 0);
           }));
         }
         saveChartConfig(activeConfig);

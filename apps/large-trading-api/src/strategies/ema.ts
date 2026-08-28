@@ -1,9 +1,9 @@
 ﻿import { stepEma } from '../patterns/indicators/ema';
-import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
 import Base from '../base';
 
 export default class Ema extends Base {
-  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
     state.emaOpen ??= {};
@@ -16,7 +16,7 @@ export default class Ema extends Base {
     const eClose: number | undefined = bar.indicators?.ema?.[periodClose];
     if (eOpen === undefined || eClose === undefined) return;
 
-    const backtest: BacktestData = bar.backtests[strategy]!;
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
@@ -41,18 +41,18 @@ export default class Ema extends Base {
     const momentumSwitchClose = moveClose !== state.lastMoveClose;
 
     if (state.positionOpen && momentumSwitchClose && state.lastMoveOpen !== moveClose) {
-      signals.push({ signal: Signal.CloseAll, price: closePrice });
+      signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
       state.positionOpen = false;
     }
 
     if (!state.positionOpen && momentumSwitchOpen) {
       if (moveOpen === 'up') {
-        signals.push({ signal: Signal.CloseAll, price: closePrice });
-        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+        signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: 1, price: closePrice }));
         state.positionOpen = true;
       } else if (moveOpen === 'down') {
-        signals.push({ signal: Signal.CloseAll, price: closePrice });
-        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+        signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: 1, price: closePrice }));
         state.positionOpen = true;
       }
     }

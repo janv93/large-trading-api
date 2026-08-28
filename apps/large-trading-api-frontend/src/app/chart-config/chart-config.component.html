@@ -21,7 +21,7 @@
 
   <label>
     <span>main</span>
-    <select [(ngModel)]="config.mainStrategy.strategy">
+    <select [(ngModel)]="config.strategy">
       @for (strategy of strategies; track strategy) {
       <option [ngValue]="strategy">{{ strategy }}</option>
       }
@@ -29,26 +29,9 @@
   </label>
 
   <label class="checkbox-label">
-    <input type="checkbox" [(ngModel)]="config.mainStrategy.autoParams">
+    <input type="checkbox" [(ngModel)]="config.autoParams">
     <span>auto params</span>
   </label>
-
-  <label>
-    <span>compare</span>
-    <select [ngModel]="comparisonStrategy" (ngModelChange)="setComparisonStrategy($event)">
-      <option [ngValue]="null">none</option>
-      @for (strategy of strategies; track strategy) {
-      <option [ngValue]="strategy">{{ strategy }}</option>
-      }
-    </select>
-  </label>
-
-  @if (config.comparisonStrategy) {
-  <label class="checkbox-label">
-    <input type="checkbox" [(ngModel)]="config.comparisonStrategy.autoParams">
-    <span>auto params</span>
-  </label>
-  }
 
   @if (!config.autoSymbols) {
   <button class="symbols-trigger" type="button" popovertarget="symbols-popover">

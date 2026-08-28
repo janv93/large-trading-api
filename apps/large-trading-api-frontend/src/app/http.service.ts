@@ -24,10 +24,10 @@ export class HttpService {
       commission,
       autoSymbols,
       ...(autoSymbols ? { rank } : { symbols }),
-      strategies: [config.mainStrategy, ...(config.comparisonStrategy ? [config.comparisonStrategy] : [])].map(({ strategy, autoParams }) => {
-        const strategyConfig = StrategyConfigs[strategy];
-        return { strategy, autoParams, config: autoParams ? strategyConfig?.autoParams : strategyConfig?.default };
-      })
+      strategy: (() => {
+        const strategyConfig = StrategyConfigs[config.strategy];
+        return { strategy: config.strategy, autoParams: config.autoParams, config: config.autoParams ? strategyConfig?.autoParams : strategyConfig?.default };
+      })()
     };
 
     const url = this.baseUrl + '/backtest';

@@ -60,7 +60,7 @@ export class MarkersChartingService {
     chart: IChartApi,
     isMulti: boolean
   ): void {
-    const backtest: BacktestData = bar.backtests[Object.keys(bar.backtests)[0]]!;
+    const backtest: BacktestData = bar.backtest!;
 
     const newOpenTimes: Set<number> = new Set(
       backtest.signals.flatMap(signal =>
@@ -122,7 +122,7 @@ export class MarkersChartingService {
     const compactMarkers: CompactCircleMarker[] = [];
 
     bars.forEach((bar: Bar) => {
-      if (!bar.backtests[strategy]?.signals.length) return;
+      if (!bar.backtest.signals.length) return;
       const marker: SeriesMarker<Time> = this.getSignalTemplate(bar, strategy);
       markers.push(marker);
       compactMarkers.push({
@@ -186,7 +186,7 @@ export class MarkersChartingService {
   }
 
   private getSignalTemplate(bar: Bar, strategy: Strategy): SeriesMarker<Time> {
-    const backtest: BacktestData = bar.backtests[strategy]!;
+    const backtest: BacktestData = bar.backtest!;
     const backtestSignals: BacktestSignal[] = backtest.signals;
     const signals: Signal[] = backtestSignals.map((s: BacktestSignal) => s.signal);
     const hasBuy: boolean = signals.includes(Signal.Buy);

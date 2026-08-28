@@ -38,19 +38,8 @@ export class ChartConfigComponent implements OnChanges, OnInit {
     });
   }
 
-  public get comparisonStrategy(): Strategy | null {
-    return this.config.comparisonStrategy?.strategy ?? null;
-  }
-
   public get canRun(): boolean {
     return this.config.autoSymbols || (this.config.symbols.length > 0 && this.config.symbols.every(item => item.symbol.trim().length > 0));
-  }
-
-  public setComparisonStrategy(strategy: Strategy | null): void {
-    const current = this.config.comparisonStrategy;
-    this.config.comparisonStrategy = strategy
-      ? { strategy, autoParams: current?.autoParams ?? false }
-      : null;
   }
 
   public addSymbol(): void {

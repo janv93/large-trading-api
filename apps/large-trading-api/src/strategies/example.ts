@@ -1,13 +1,13 @@
-﻿import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+﻿import { BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../base';
 
 export default class Example extends Base {
-  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const size: number = Number(params.size);
     const interval = Math.floor(1000 / 11);
     const i: number = bars.length - 1;
     const bar: Bar = bars[i];
-    const backtest: BacktestData = bar.backtests[strategy]!;
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 

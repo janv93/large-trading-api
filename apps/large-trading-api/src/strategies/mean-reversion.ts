@@ -1,4 +1,4 @@
-﻿import { Strategy, BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+﻿import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
 import Base from '../base';
 
 enum Action {
@@ -10,6 +10,29 @@ enum Action {
 }
 
 export default class MeanReversion extends Base {
+  public stepSetSignals(bars: Bar[], state: any, params: any): void {
+    const startStreak: number = Number(params.startStreak);
+    const bar: Bar = bars[bars.length - 1];
+
+    state.threshold ??= Number(params.threshold);
+    state.profitBasedTrailingStopLoss ??= Number(params.profitBasedTrailingStopLoss);
+    state.minDrop ??= 0.25;
+    state.streak ??= startStreak;
+    state.peak ??= bar.prices.close;
+    state.low ??= bar.prices.close;
+    state.isOpen ??= false;
+    state.isTrailing ??= false;
+
+    const action: Action = this.getAction(bar, state);
+
+    switch (action) {
+      case Action.Buy: this.buy(bar, state); break;
+      case Action.StartTrail: this.startTrail(bar, state); break;
+      case Action.Close: this.close(bar, state, startStreak); break;
+      case Action.SetHigh: this.setHigh(bar, state); break;
+    }
+  }
+
   /**
    * 1. wait until drop of minDrop, then buy
    * 2. if further drops, buy exponentially more
@@ -70,16 +93,17 @@ export default class MeanReversion extends Base {
     return (!state.isOpen || state.isTrailing) && close > state.peak;
   }
 
-  private buy(bar: Bar, state: any, strategy: Strategy) {
-    const backtest: BacktestData = bar.backtests[strategy]!;
+  private buy(bar: Bar, state: any) {
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
-    signals.push({
+    signals.push(createSignal({
+      uniqueIdentifier: Signal.Buy,
       signal: Signal.Buy,
       size: Math.pow(2, state.streak),  // start at 2^0
       price: closePrice
-    });
+    }));
 
     state.streak++;
     state.isOpen = true;
@@ -95,42 +119,20 @@ export default class MeanReversion extends Base {
     state.peak = bar.prices.close;
   }
 
-  private close(bar: Bar, state: any, strategy: Strategy, startStreak: number) {
-    const backtest: BacktestData = bar.backtests[strategy]!;
+  private close(bar: Bar, state: any, startStreak: number) {
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
-    signals.push({
+    signals.push(createSignal({
+      uniqueIdentifier: Signal.CloseAll,
       signal: Signal.CloseAll,
       price: closePrice
-    });
+    }));
 
     state.streak = startStreak;
     state.isOpen = false;
     state.isTrailing = false;
     state.peak = bar.prices.close;
-  }
-
-  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
-    const startStreak: number = Number(params.startStreak);
-    const bar: Bar = bars[bars.length - 1];
-
-    state.threshold ??= Number(params.threshold);
-    state.profitBasedTrailingStopLoss ??= Number(params.profitBasedTrailingStopLoss);
-    state.minDrop ??= 0.25;
-    state.streak ??= startStreak;
-    state.peak ??= bar.prices.close;
-    state.low ??= bar.prices.close;
-    state.isOpen ??= false;
-    state.isTrailing ??= false;
-
-    const action: Action = this.getAction(bar, state);
-
-    switch (action) {
-      case Action.Buy: this.buy(bar, state, strategy); break;
-      case Action.StartTrail: this.startTrail(bar, state); break;
-      case Action.Close: this.close(bar, state, strategy, startStreak); break;
-      case Action.SetHigh: this.setHigh(bar, state); break;
-    }
   }
 }

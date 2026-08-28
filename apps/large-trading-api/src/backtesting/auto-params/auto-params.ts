@@ -1,70 +1,10 @@
-﻿import { Strategy, StrategyConfigMulti, BacktesterState, Bar, MultiBenchmark, calcScore, countBars } from '@shared';
-import Base from '../base';
-import Backtester from './backtester/backtester';
+import { StrategyConfigMulti, BacktesterState, Bar, MultiBenchmark, countBars } from '@shared';
+import Base from '../../base';
+import Backtester from '../backtester/backtester';
 import deepmerge from 'deepmerge';
-import { Worker, isMainThread, workerData, parentPort } from 'worker_threads';
+import { Worker } from 'worker_threads';
 import * as os from 'os';
-
-
-// ── Worker thread entry point ────────────────────────────────────────────────
-if (!isMainThread) {
-  const { sharedBuffer, bufferLength, combo, strategy, strategyModulePath } = workerData;
-
-  const bytes = new Uint8Array(sharedBuffer, 0, bufferLength);
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const StrategyClass = require(strategyModulePath).default;
-  const strategyInstance = new StrategyClass();
-  const backtester = new Backtester();
-  strategyInstance.silent = true;
-  backtester.silent = true;
-
-  const tickers: Bar[][] = JSON.parse(Buffer.from(bytes).toString('utf-8'));
-  // Capture RSS here — after deserialization (the dominant allocation) and before
-  // processing, so GC has not had a chance to deflate the value yet.
-  const peakRss = process.memoryUsage().rss;
-
-  tickers.forEach((currentTicker: Bar[]) => {
-    currentTicker.forEach((bar: Bar) => {
-      bar.backtests[strategy] = { signals: [] };
-      bar.indicators = undefined;
-      bar.chart = undefined;
-    });
-  });
-
-  async function run() {
-    let steps = 0;
-    const reportProgress = () => { // batched so a long run does not flood the main thread
-      if (++steps % 1000 === 0) parentPort!.postMessage({ steps: 1000 });
-    };
-
-    for (const currentTicker of tickers) {
-      const signalState: any = {};
-      const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
-      for (let i = 0; i < currentTicker.length; i++) {
-        signalWindow.push(currentTicker[i]);
-        await strategyInstance.stepSetSignals(signalWindow, signalState, strategy, combo);
-        reportProgress();
-      }
-
-      const backtesterState: any = {};
-      const backtesterWindow: Bar[] = [];
-      for (let i = 0; i < currentTicker.length; i++) {
-        backtesterWindow.push(currentTicker[i]);
-        backtester.stepCalcBacktestPerformance(backtesterWindow, backtesterState, strategy, 0);
-        reportProgress();
-      }
-    }
-
-    const score: number = calcScore(tickers, strategy);
-    const result: MultiBenchmark = { score, params: combo };
-
-    parentPort!.postMessage({ steps: steps % 1000, result, peakRss });
-  }
-
-  run();
-}
-// ────────────────────────────────────────────────────────────────────────────
+import * as path from 'path';
 
 type ParamRange = { key: string, values: number[] };
 
@@ -78,18 +18,18 @@ export default class AutoParams extends Base {
     return (combos + 1) * countBars(tickers) * 2;
   }
 
-  public async handleStrategy(tickers: Bar[][], strategy: Strategy, config: Record<string, StrategyConfigMulti>, strategyInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
+  public async handleStrategy(tickers: Bar[][], config: Record<string, StrategyConfigMulti>, strategyInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
     const ranges: ParamRange[] = this.buildRanges(config);
     const benchmarks: MultiBenchmark[] = [];
     let bestTickers: Bar[][] = [];
     const strategyModulePath = this.resolveStrategyModulePath(strategyInstance);
 
-    const workerBenchmarks = await this.runWithWorkers(tickers, strategy, ranges, strategyModulePath!, onProgress);
+    const workerBenchmarks = await this.runWithWorkers(tickers, ranges, strategyModulePath!, onProgress);
     benchmarks.push(...workerBenchmarks);
 
     const best = workerBenchmarks.reduce((b, c) => c.score > b.score ? c : b, workerBenchmarks[0]);
     if (best?.params) {
-      bestTickers = await this.runStrategy(tickers, strategy, best.params, strategyInstance, onProgress);
+      bestTickers = await this.runStrategy(tickers, best.params, strategyInstance, onProgress);
     }
 
     benchmarks.sort((a, b) => a.score - b.score);
@@ -106,7 +46,6 @@ export default class AutoParams extends Base {
 
   private async runWithWorkers(
     tickers: Bar[][],
-    strategy: Strategy,
     ranges: ParamRange[],
     strategyModulePath: string,
     onProgress: (steps: number) => void
@@ -118,7 +57,7 @@ export default class AutoParams extends Base {
 
     const spawnWorker = (combo: Record<string, number>): Promise<{ result: MultiBenchmark, peakRss: number }> =>
       new Promise((resolve, reject) => {
-        const worker = new Worker(__filename, { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combo, strategy, strategyModulePath } });
+        const worker = new Worker(path.join(__dirname, 'worker.js'), { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combo, strategyModulePath } });
         worker.on('message', (message: any) => {
           if (message.steps) onProgress(message.steps);
           if (message.result) resolve(message);
@@ -199,18 +138,20 @@ export default class AutoParams extends Base {
     }
   }
 
-  private async runStrategy(tickers: Bar[][], strategy: Strategy, params: Record<string, number>, strategyInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
+  private async runStrategy(tickers: Bar[][], params: Record<string, number>, strategyInstance: any, onProgress: (steps: number) => void): Promise<Bar[][]> {
     const clonedTickers: Bar[][] = deepmerge([], tickers);
     const result: Bar[][] = [];
 
     for (const currentTicker of clonedTickers) {
-      currentTicker.forEach((bar: Bar) => { bar.backtests[strategy] = { signals: [] }; });
+      currentTicker.forEach((bar: Bar) => {
+        bar.backtest = { signals: [] };
+      });
 
       const signalState: any = {};
       const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
       for (let i = 0; i < currentTicker.length; i++) {
         signalWindow.push(currentTicker[i]);
-        await strategyInstance.stepSetSignals(signalWindow, signalState, strategy, params);
+        await strategyInstance.stepSetSignals(signalWindow, signalState, params);
         onProgress(1);
       }
 
@@ -218,7 +159,7 @@ export default class AutoParams extends Base {
       const backtesterWindow: Bar[] = [];
       for (let i = 0; i < currentTicker.length; i++) {
         backtesterWindow.push(currentTicker[i]);
-        this.backtest.stepCalcBacktestPerformance(backtesterWindow, backtesterState, strategy, 0);
+        this.backtest.stepCalcBacktestPerformance(backtesterWindow, backtesterState, 0);
         onProgress(1);
       }
 

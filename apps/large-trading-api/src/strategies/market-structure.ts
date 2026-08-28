@@ -1,11 +1,11 @@
-﻿import { BacktestSignal, Direction, Bar, MarketStructureStats, Signal, Strategy } from '@shared';
+﻿import { BacktestSignal, Direction, Bar, MarketStructureStats, Signal, createSignal } from '@shared';
 import PivotPointController from '../patterns/pivot-point';
 import Base from '../base';
 
 export default class MarketStructure extends Base {
   private pivotPointController = new PivotPointController();
 
-  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const space: number = Number(params.space);
     state.marketStructure ??= {};
     this.pivotPointController.stepMarketStructure(bars, state.marketStructure, space);
@@ -20,13 +20,13 @@ export default class MarketStructure extends Base {
     }
 
     if (currentMarketStructureStats.streak === 1 && state.lastMarketStructureStats.streak > 4) {
-      const signals: BacktestSignal[] = bar.backtests[strategy]!.signals;
+      const signals: BacktestSignal[] = bar.backtest.signals;
       const closePrice: number = bar.prices.close;
 
       if (currentMarketStructureStats.direction === Direction.Up) {
-        signals.push({ signal: Signal.Buy, size: state.lastMarketStructureStats.streak, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: state.lastMarketStructureStats.streak, price: closePrice }));
       } else if (currentMarketStructureStats.direction === Direction.Down) {
-        signals.push({ signal: Signal.Sell, size: state.lastMarketStructureStats.streak, price: closePrice });
+        signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: state.lastMarketStructureStats.streak, price: closePrice }));
       }
     }
 

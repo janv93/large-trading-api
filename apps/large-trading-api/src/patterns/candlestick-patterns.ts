@@ -6,7 +6,7 @@ export default class CandlestickPatternsController extends Base {
     super();
   }
 
-  public stepCandlestickPatterns(bars: Bar[]): void {
+  public stepCandlestickPatterns(bars: Bar[]): BarCandlestickPatterns {
     const i: number = bars.length - 1;
     const patterns: BarCandlestickPatterns = {};
 
@@ -20,9 +20,18 @@ export default class CandlestickPatternsController extends Base {
       this.detectThreeCandle(bars[i - 2].prices, bars[i - 1].prices, bars[i].prices, patterns);
     }
 
-    if (Object.keys(patterns).length > 0) {
-      bars[i].candlestickPatterns = patterns;
+    const bar: Bar = bars[i];
+    const newPatterns: BarCandlestickPatterns = {};
+
+    for (const pattern of Object.keys(patterns) as (keyof BarCandlestickPatterns)[]) {
+      if (!bar.candlestickPatterns?.[pattern]) newPatterns[pattern] = true;
     }
+
+    if (Object.keys(newPatterns).length > 0) {
+      bar.candlestickPatterns = { ...bar.candlestickPatterns, ...newPatterns };
+    }
+
+    return newPatterns;
   }
 
   private detectSingleCandle(p: BarPrices, patterns: BarCandlestickPatterns): void {

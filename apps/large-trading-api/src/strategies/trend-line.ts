@@ -1,4 +1,4 @@
-﻿import { Strategy, BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
+﻿import { BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition, createSignal } from '@shared';
 import Base from '../base';
 import { calcAverageChangeInPercent } from '@shared';
 import TrendLineController from '../patterns/trend-line';
@@ -7,7 +7,7 @@ export default class TrendLineBreakthrough extends Base {
   private trendLineController = new TrendLineController();
   private strategy = 'tSl'; // 'tpSl' or 'tSl'
 
-  public stepSetSignals(bars: Bar[], state: any, strategy: Strategy, params: any): void {
+  public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const percentOfProfit: number = Number(params.percentOfProfit);
     state.trendLines ??= {};
 
@@ -29,18 +29,19 @@ export default class TrendLineBreakthrough extends Base {
       const sl: number = averagePriceChange * 2;
 
       if (position === TrendLinePosition.Above) {
-        this.openBuyPosition(bar, strategy, score, breakthoughPrice, tp, sl, percentOfProfit);
+        this.openBuyPosition(bar, trendLine, score, breakthoughPrice, tp, sl, percentOfProfit);
       } else if (position === TrendLinePosition.Below) {
-        this.openSellPosition(bar, strategy, score, breakthoughPrice, tp, sl, percentOfProfit);
+        this.openSellPosition(bar, trendLine, score, breakthoughPrice, tp, sl, percentOfProfit);
       }
     });
   }
 
-  private openBuyPosition(bar: Bar, strategy: Strategy, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = bar.backtests[strategy]!;
+  private openBuyPosition(bar: Bar, trendLine: TrendLine, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
 
-    signals.push({
+    signals.push(createSignal({
+      uniqueIdentifier: trendLine,
       signal: Signal.Buy,
       size: score,
       price: breakthoughPrice,
@@ -55,14 +56,15 @@ export default class TrendLineBreakthrough extends Base {
           percentOfProfit
         }
       }
-    });
+    }));
   }
 
-  private openSellPosition(bar: Bar, strategy: Strategy, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = bar.backtests[strategy]!;
+  private openSellPosition(bar: Bar, trendLine: TrendLine, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
 
-    signals.push({
+    signals.push(createSignal({
+      uniqueIdentifier: trendLine,
       signal: Signal.Sell,
       size: score,
       price: breakthoughPrice,
@@ -77,6 +79,6 @@ export default class TrendLineBreakthrough extends Base {
           percentOfProfit
         }
       }
-    });
+    }));
   }
 }

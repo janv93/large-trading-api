@@ -23,6 +23,7 @@ export default class TrendLineController extends Base {
     for (const entry of state.candidateTrendLines) {
       const startIdx: number = entry.startIndex;
       const dx: number = i - startIdx;
+      if (dx === 0) continue;
 
       const startLow: number = bars[startIdx].prices.low;
       const startHigh: number = bars[startIdx].prices.high;
@@ -55,8 +56,10 @@ export default class TrendLineController extends Base {
               againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position)
             };
             if (rightBuffer && Math.round(dx * this.bufferPercentage) > 0) {
+              if (this.hasPendingTrendLine(state, trendLine)) return;
               state.pendingTrendLines!.push(trendLine);
             } else {
+              if (this.hasConfirmedTrendLine(state, trendLine)) return;
               this.confirmTrendLine(bars, state, trendLine);
             }
           }
@@ -68,7 +71,9 @@ export default class TrendLineController extends Base {
       entry.maxSlopeAbove = Math.max(entry.maxSlopeAbove, slopeAbove);
     }
 
-    state.candidateTrendLines.push({ startIndex: i, minSlopeBelow: Infinity, maxSlopeAbove: -Infinity });
+    if (!this.hasCandidateTrendLine(state, i)) {
+      state.candidateTrendLines.push({ startIndex: i, minSlopeBelow: Infinity, maxSlopeAbove: -Infinity });
+    }
   }
 
   /** runs `space` bars behind the live bar, because a pivot point is only known once `space` bars have confirmed it */
@@ -90,6 +95,7 @@ export default class TrendLineController extends Base {
       const startIdx: number = entry.startIndex;
       const { side, extremeSlope } = entry;
       const dx: number = i - startIdx;
+      if (dx === 0) continue;
 
       const isHigh: boolean = side === PivotPointSide.High;
       const startBar: Bar = bars[startIdx];
@@ -115,8 +121,9 @@ export default class TrendLineController extends Base {
               againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position)
             };
             if (rightBuffer && Math.round(dx * this.bufferPercentage) > 0) {
-              this.catchUpRightBuffer(bars, state, trendLine);
+              this.checkRightBuffer(bars, state, trendLine);
             } else {
+              if (this.hasConfirmedTrendLine(state, trendLine)) return;
               this.confirmTrendLine(bars, state, trendLine);
             }
           }
@@ -131,7 +138,9 @@ export default class TrendLineController extends Base {
 
     if (ppEnd) {
       const isHigh: boolean = ppEnd.side === PivotPointSide.High;
-      state.candidateTrendLines.push({ startIndex: i, side: ppEnd.side, extremeSlope: isHigh ? -Infinity : Infinity });
+      if (!this.hasCandidateTrendLine(state, i)) {
+        state.candidateTrendLines.push({ startIndex: i, side: ppEnd.side, extremeSlope: isHigh ? -Infinity : Infinity });
+      }
     }
   }
 
@@ -142,7 +151,7 @@ export default class TrendLineController extends Base {
     state.confirmedTrendLines = state.confirmedTrendLines.filter(trendLine => {
       if (trendLine.breakThroughIndex !== undefined) return false;
       if (i < trendLine.endIndex + Math.round(trendLine.length * this.breakthroughMaxLengthFactor)) return true;
-      this.removeTrendLine(bars, trendLine); // it ran out of room to break through, so it never will
+      this.removeTrendLine(bars, trendLine); // past the max length for a breakthrough, remove it from the chart
       return false;
     });
 
@@ -155,7 +164,7 @@ export default class TrendLineController extends Base {
       if (this.crossesTrendLine(bars, trendLine, i)) {
         bars[i].chart = bars[i].chart || {};
         bars[i].chart.trendLineBreakthroughs = bars[i].chart.trendLineBreakthroughs || [];
-        bars[i].chart.trendLineBreakthroughs.push(trendLine);
+        if (!this.hasTrendLineBreakthrough(bars[i], trendLine)) bars[i].chart.trendLineBreakthroughs.push(trendLine);
         trendLine.breakThroughIndex = i;
       }
     }
@@ -176,8 +185,7 @@ export default class TrendLineController extends Base {
     state.confirmedTrendLines!.push(trendLine);
   }
 
-  /** the line is built once its end pivot is confirmed, so part of its right buffer has already elapsed and can be checked immediately */
-  private catchUpRightBuffer(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): void {
+  private checkRightBuffer(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): void {
     const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
     const live: number = bars.length - 1;
 
@@ -185,14 +193,16 @@ export default class TrendLineController extends Base {
       if (this.crossesTrendLine(bars, trendLine, j)) return;
     }
 
-    if (live >= bufferEnd) this.confirmTrendLine(bars, state, trendLine);
-    else state.pendingTrendLines!.push(trendLine);
+    if (live >= bufferEnd) {
+      if (!this.hasConfirmedTrendLine(state, trendLine)) this.confirmTrendLine(bars, state, trendLine);
+    }
+    else if (!this.hasPendingTrendLine(state, trendLine)) state.pendingTrendLines!.push(trendLine);
   }
 
   private removeTrendLine(bars: Bar[], trendLine: TrendLine): void {
     const chart = bars[trendLine.startIndex]?.chart;
     if (!chart?.trendLines) return;
-    chart.trendLines = chart.trendLines.filter(t => t !== trendLine);
+    chart.trendLines = chart.trendLines.filter(existing => !this.isSameTrendLine(existing, trendLine));
   }
 
   private processRightBufferPending(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState): void {
@@ -202,11 +212,35 @@ export default class TrendLineController extends Base {
       const buffer = Math.round(trendLine.length * this.bufferPercentage);
       if (this.crossesTrendLine(bars, trendLine, i)) return false;
       if (i >= trendLine.endIndex + buffer) {
-        this.confirmTrendLine(bars, state, trendLine);
+        if (!this.hasConfirmedTrendLine(state, trendLine)) this.confirmTrendLine(bars, state, trendLine);
         return false;
       }
       return true;
     });
+  }
+
+  private hasCandidateTrendLine(state: TrendLineStepState | TrendLinesFromPivotPointsStepState, startIndex: number): boolean {
+    return state.candidateTrendLines!.some(entry => entry.startIndex === startIndex);
+  }
+
+  private hasPendingTrendLine(state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): boolean {
+    return state.pendingTrendLines!.some(existing => this.isSameTrendLine(existing, trendLine));
+  }
+
+  private hasConfirmedTrendLine(state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): boolean {
+    return state.confirmedTrendLines!.some(existing => this.isSameTrendLine(existing, trendLine));
+  }
+
+  private hasTrendLineBreakthrough(bar: Bar, trendLine: TrendLine): boolean {
+    return bar.chart!.trendLineBreakthroughs!.some(existing => this.isSameTrendLine(existing, trendLine));
+  }
+
+  private isSameTrendLine(first: TrendLine, second: TrendLine): boolean {
+    return this.isSameCurrentBarTrendLine(first, second) && first.endIndex === second.endIndex;
+  }
+
+  private isSameCurrentBarTrendLine(first: TrendLine, second: TrendLine): boolean {
+    return first.startIndex === second.startIndex && first.position === second.position;
   }
 
   private isLeftBufferUninterrupted(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition, linearFunction: LinearFunction): boolean {

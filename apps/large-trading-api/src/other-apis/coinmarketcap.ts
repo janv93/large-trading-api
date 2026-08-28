@@ -18,19 +18,6 @@ export default class Coinmarketcap extends Base {
     'X-CMC_Pro_API_Key': process.env.coinmarketcap_api_key
   };
 
-  public async getSymbol(name: string) {
-    const url: string = this.baseUrl + '/cryptocurrency/info';
-
-    const query = {
-      slug: name.toLowerCase()
-    };
-
-    const finalUrl: string = createUrl(url, query);
-
-    const res: AxiosResponse = await axios.get(finalUrl, { headers: this.headers });
-    return res.data.data['1'].symbol.toLowerCase();
-  }
-
   public async getCryptosByMarketCap(rank: number): Promise<string[]> {
     this.log(`Get cryptos by market cap`);
 

@@ -1,14 +1,6 @@
 import { Strategy, StrategyConfig } from '../../../../libs/shared/src/lib/interfaces';
 
 export const StrategyConfigs: Partial<Record<Strategy, StrategyConfig>> = {
-  [Strategy.Momentum]: {
-    default: {
-      streak: 5
-    },
-    autoParams: {
-      streak: { min: 3, max: 10, step: 1 }
-    }
-  },
   [Strategy.Macd]: {
     default: {
       fast: 12,

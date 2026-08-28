@@ -5,7 +5,7 @@ import { Bar, Strategy, BacktestSignal, BacktestStats, Signal } from '@shared';
 export class StatsService {
   public calcStats(bars: Bar[], strategy: Strategy, finalProfit: number): BacktestStats {
     const tradesCount: number = bars.reduce((acc: number, bar: Bar) => {
-      const backtestSignals: BacktestSignal[] = bar.backtests[strategy]!.signals;
+      const backtestSignals: BacktestSignal[] = bar.backtest.signals;
       return acc + backtestSignals.filter((s: BacktestSignal) => !this.isCloseSignal(s.signal)).length;
     }, 0);
 
@@ -36,7 +36,7 @@ export class StatsService {
     let maxDrawback: number = 0;
 
     bars.forEach((bar: Bar) => {
-      const profit: number = (bar.backtests[strategy]!.profit || 0) * 100;
+      const profit: number = (bar.backtest.profit || 0) * 100;
       high = Math.max(high, profit);
       maxDrawback = Math.max(maxDrawback, high - profit);
     });

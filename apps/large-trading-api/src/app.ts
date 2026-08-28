@@ -35,6 +35,7 @@ class App extends Base {
 
   private route(): void {
     this.app.post('/backtest', this.handle((req, res) => this.routes.backtest(req, res)));
+    this.app.post('/live', this.handle((req, res) => this.routes.live(req, res)));
   }
 
   private handle(fn: (req: Request, res: Response) => void | Promise<void>) {

@@ -1,10 +1,11 @@
 ﻿import Base from './base';
-import { Strategy, BacktesterState, Exchange, ExchangeSymbol, Bar, Run, Timeframe, countBars, formatDuration } from '@shared';
+import { Strategy, BacktesterState, Exchange, ExchangeSymbol, Bar, Run, Timeframe, countBars, formatDuration, timeframeToMilliseconds } from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Backtester from './backtesting/backtester/backtester';
-import AutoParams from './backtesting/auto-params';
+import AutoParams from './backtesting/auto-params/auto-params';
+import LiveReplay from './backtesting/live/live-replay';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
@@ -15,6 +16,7 @@ export default class Routes extends Base {
   private kucoin = new Kucoin();
   private backtester = new Backtester();
   private autoParams = new AutoParams();
+  private liveReplay = new LiveReplay();
   private cmc = new Coinmarketcap();
   private backtests: Record<string, any> = {};
 
@@ -36,7 +38,6 @@ export default class Routes extends Base {
         this.scanDir(fullPath);
       } else if (entry.name.endsWith('.js')) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
           const mod = require(fullPath);
           const ExportedClass = mod.default;
           if (typeof ExportedClass === 'function' && ExportedClass.name) {
@@ -52,7 +53,7 @@ export default class Routes extends Base {
 
   public async backtest(req: Request, res: Response): Promise<void> {
     const startTime = Date.now();
-    const { timeframe, times, commission, rank, strategies, symbols, autoSymbols } = req.body;
+    const { timeframe, times, commission, rank, strategy, symbols, autoSymbols } = req.body;
 
     res.setHeader('Content-Type', 'application/x-ndjson');
     res.setHeader('Transfer-Encoding', 'chunked');
@@ -63,14 +64,14 @@ export default class Routes extends Base {
       const exchangeSymbols: ExchangeSymbol[] = await this.getExchangeSymbols(autoSymbols, symbols, rank);
       let tickers: Bar[][] = await this.initBarsMulti(exchangeSymbols, timeframe, times);
 
-      this.startProgress(this.countSteps(tickers, strategies));
-      tickers = await this.handleStrategies(tickers, strategies);
+      this.startProgress(this.countSteps(tickers, strategy));
+      tickers = await this.handleStrategies(tickers, strategy);
 
       for (let i = 0; i < tickers.length; i++) {
         const bars: Bar[] = tickers[i];
         (tickers[i] as any) = null; // free memory as frontend allocates it
 
-        const runs: Run[] = this.backtestTicker(bars, strategies, Number(commission));
+        const runs: Run[] = this.backtestTicker(bars, Number(commission));
         await this.streamRuns(runs, res);
       }
 
@@ -83,42 +84,34 @@ export default class Routes extends Base {
   }
 
   /** every phase counts one step per bar it walks, so their shares of the progress bar fall out of the work they actually do */
-  private countSteps(tickers: Bar[][], strategies: any[]): number {
+  private countSteps(tickers: Bar[][], strategy: any): number {
     const bars: number = countBars(tickers);
-    const signalSteps: number = strategies.reduce((sum: number, strategy: any) => sum +
-      (strategy.autoParams ? this.autoParams.countSteps(tickers, strategy.config) : bars), 0);
+    const signalSteps: number = strategy.autoParams ? this.autoParams.countSteps(tickers, strategy.config) : bars;
     return signalSteps + bars;
   }
 
-  private async handleStrategies(tickers: Bar[][], strategies: any[]): Promise<Bar[][]> {
-    for (const strategy of strategies) {
-      if (strategy.autoParams) {
-        const strategyInstance = this.backtests[strategy.strategy];
-        tickers = await this.autoParams.handleStrategy(tickers, strategy.strategy, strategy.config, strategyInstance, (steps: number) => this.addProgress(steps));
-      } else {
-        await Promise.all(tickers.map((bars: Bar[]) => this.handleStrategy(bars, strategy.strategy, strategy.config)));
-      }
+  private async handleStrategies(tickers: Bar[][], strategy: any): Promise<Bar[][]> {
+    if (strategy.autoParams) {
+      const strategyInstance = this.backtests[strategy.strategy];
+      tickers = await this.autoParams.handleStrategy(tickers, strategy.config, strategyInstance, (steps: number) => this.addProgress(steps));
+    } else {
+      await Promise.all(tickers.map((bars: Bar[]) => this.handleStrategy(bars, strategy.strategy, strategy.config)));
     }
-
     return tickers;
   }
 
-  private backtestTicker(bars: Bar[], strategies: any[], commission: number): Run[] {
+  private backtestTicker(bars: Bar[], commission: number): Run[] {
     const barsZeroCommission: Bar[] = JSON.parse(JSON.stringify(bars));
-    const statesZero: BacktesterState[] = strategies.map(() => ({}));
-    const statesActual: BacktesterState[] = strategies.map(() => ({}));
+    const stateZero: BacktesterState = {};
+    const stateActual: BacktesterState = {};
     const windowZero: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
     const windowActual: Bar[] = [];
 
     for (let j = 0; j < bars.length; j++) {
       windowZero.push(barsZeroCommission[j]);
       windowActual.push(bars[j]);
-
-      for (let k = 0; k < strategies.length; k++) {
-        this.backtester.stepCalcBacktestPerformance(windowZero, statesZero[k], strategies[k].strategy, 0);
-        this.backtester.stepCalcBacktestPerformance(windowActual, statesActual[k], strategies[k].strategy, commission);
-      }
-
+      this.backtester.stepCalcBacktestPerformance(windowZero, stateZero, 0);
+      this.backtester.stepCalcBacktestPerformance(windowActual, stateActual, commission);
       this.addProgress(1);
     }
 
@@ -141,11 +134,9 @@ export default class Routes extends Base {
     });
   }
 
-  private async handleStrategy(bars: Bar[], strategy: Strategy, config: any): Promise<void> {
+  private async handleStrategy(bars: Bar[], strategy: Strategy, config: any): Promise<any> {
     bars.forEach((bar: Bar) => {
-      bar.backtests[strategy] = {
-        signals: []
-      };
+      bar.backtest = { signals: [] };
     });
 
     const strategyInstance = this.backtests[strategy];
@@ -156,23 +147,26 @@ export default class Routes extends Base {
 
     for (let i = 0; i < bars.length; i++) {
       window.push(bars[i]);
-      await strategyInstance.stepSetSignals(window, state, strategy, config);
+      await strategyInstance.stepSetSignals(window, state, config);
       this.addProgress(1);
     }
+
+    return state;
   }
 
-  private async initBars(exchangeSymbol: ExchangeSymbol, timeframe: Timeframe): Promise<Bar[]> {
+
+  private async initBars(exchangeSymbol: ExchangeSymbol, timeframe: Timeframe, fetchLatest?: boolean): Promise<Bar[]> {
     const { exchange, symbol, feed } = exchangeSymbol;
     switch (exchange) {
-      case Exchange.Binance: return binance.initBarsDatabase(symbol, timeframe);
+      case Exchange.Binance: return binance.initBarsDatabase(symbol, timeframe, fetchLatest);
       case Exchange.Kucoin: return this.kucoin.initBarsDatabase(symbol, timeframe);
-      case Exchange.Alpaca: return alpaca.initBarsDatabase(symbol, timeframe, feed);
+      case Exchange.Alpaca: return alpaca.initBarsDatabase(symbol, timeframe, feed, fetchLatest);
       default: throw new Error(`Invalid exchange ${exchange}`);
     }
   }
 
-  private async initBarsMulti(exchangeSymbols: ExchangeSymbol[], timeframe: Timeframe, times: number): Promise<Bar[][]> {
-    const bars: Bar[][] = await Promise.all(exchangeSymbols.map(exchangeSymbol => this.initBars(exchangeSymbol, timeframe)));
+  private async initBarsMulti(exchangeSymbols: ExchangeSymbol[], timeframe: Timeframe, times: number, fetchLatest?: boolean): Promise<Bar[][]> {
+    const bars: Bar[][] = await Promise.all(exchangeSymbols.map(exchangeSymbol => this.initBars(exchangeSymbol, timeframe, fetchLatest)));
 
     const barsInRange: Bar[][] = bars.map((bars: Bar[]) => {
       return bars.slice(-1000 * Number(times)); // get last times * 1000 timeframes
@@ -210,6 +204,39 @@ export default class Routes extends Base {
     const pairsFiltered: string[] = binancePairs.filter((c: string | undefined) => c) as string[];
     const rankPairs: string[] = pairsFiltered.slice(0, rank);
     return rankPairs;
+  }
+
+  public async live(req: Request, res: Response): Promise<void> {
+    const { timeframe, times, commission = 0, strategy, symbols, autoSymbols, rank, intervalMs = 5000 } = req.body;
+
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    req.headers['accept-encoding'] = 'identity';
+    const heartbeat: NodeJS.Timeout = setInterval(() => res.write('\n'), 20_000);
+
+    try {
+      const exchangeSymbols: ExchangeSymbol[] = await this.getExchangeSymbols(autoSymbols, symbols, rank);
+      const tickers: Bar[][] = await this.initBarsMulti(exchangeSymbols, timeframe, times, true);
+      const timeframeMs: number = timeframeToMilliseconds(timeframe);
+      const strategyModulePath: string | undefined = this.liveReplay.resolveStrategyModulePath(this.backtests[strategy.strategy]);
+      const onTick = (bar: Bar) => {
+        if (!res.writableEnded) res.write(JSON.stringify(bar) + '\n');
+      };
+
+      await this.liveReplay.run(
+        tickers,
+        strategy,
+        strategyModulePath,
+        timeframeMs,
+        intervalMs,
+        Number(commission),
+        onTick,
+        res
+      );
+    } finally {
+      clearInterval(heartbeat);
+      res.end();
+    }
   }
 
 }

@@ -96,7 +96,7 @@ class Database extends Base {
         },
         volume: bar.volume,
         numberOfTrades: bar.numberOfTrades,
-        backtests: {}
+        backtest: { signals: [] }
       }));
 
       mappedBars.sort((a, b) => a.times.open - b.times.open);

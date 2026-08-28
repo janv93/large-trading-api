@@ -1,4 +1,4 @@
-﻿import { Strategy, BacktestData, BacktestSignal, BacktesterState, Bar, Position, Signal, SignalReference, TakeProfitStopLoss, TrailingStopLoss } from '@shared';
+﻿import { BacktestData, BacktestSignal, BacktesterState, Bar, Position, Signal, SignalReference, TakeProfitStopLoss, TrailingStopLoss, createSignal } from '@shared';
 import Base from '../../base';
 import { isCloseSignal, isForceCloseSignal, calcPriceChange } from '@shared';
 
@@ -8,7 +8,7 @@ export default class Backtester extends Base {
    * @param commission commission of exchange, e.g. 0.0004 = 0.04%
    * @returns the bars with profits
    */
-  public stepCalcBacktestPerformance(bars: Bar[], state: BacktesterState, strategy: Strategy, commission: number): void {
+  public stepCalcBacktestPerformance(bars: Bar[], state: BacktesterState, commission: number): void {
     state.positions ??= [];
     state.profit ??= 0;
     state.volatility ??= 0;
@@ -17,31 +17,31 @@ export default class Backtester extends Base {
     const bar: Bar = bars[i];
 
     state.positions = (state.positions as Position[]).map((position: Position) => {
-      const closeSignal: Signal | undefined = this.getCloseSignal(position, bar, strategy);
-      state.profit! += this.calcProfitChange(position, bar, strategy, closeSignal);
+      const closeSignal: Signal | undefined = this.getCloseSignal(position, bar);
+      state.profit! += this.calcProfitChange(position, bar, closeSignal);
 
       if (closeSignal) {
-        this.addOrUpdateCloseSignal(position, bar, strategy, closeSignal);
-        state.profit! -= this.calcCloseFee(position, bar, strategy, closeSignal, commission);
+        this.addOrUpdateCloseSignal(position, bar, closeSignal);
+        state.profit! -= this.calcCloseFee(position, bar, closeSignal, commission);
         return undefined;
       } else {
-        return this.updateExistingPosition(position, bar, bars, strategy);
+        return this.updateExistingPosition(position, bar, bars);
       }
     });
 
     state.positions = state.positions.filter((position: Position | undefined) => position !== undefined);
-    this.addNewPositions(state.positions as Position[], bar, strategy, i, state.volatility);
-    state.profit -= this.calcOpenFee(bar, strategy, commission);
-    const backtest: BacktestData = bar.backtests[strategy]!;
+    this.addNewPositions(state.positions as Position[], bar, i, state.volatility);
+    state.profit -= this.calcOpenFee(bar, commission);
+    const backtest: BacktestData = bar.backtest!;
     backtest.profit = state.profit;
     backtest.openPositionSize = this.calcPositionSize(state.positions as Position[]);
     state.volatility = this.calcVolatility(bars, i);
   }
 
-  private getCloseSignal(position: Position, bar: Bar, strategy: Strategy): Signal | undefined {
+  private getCloseSignal(position: Position, bar: Bar): Signal | undefined {
     const size: number = position.size;
     const isForceClose: boolean = this.isForceClose(position, bar);
-    const closeBacktestSignal: BacktestSignal | undefined = this.findCloseBacktestSignal(position, bar, strategy);
+    const closeBacktestSignal: BacktestSignal | undefined = this.findCloseBacktestSignal(position, bar);
     const closeSignal: Signal | undefined = closeBacktestSignal?.signal;
 
     if ((!isForceClose && !closeBacktestSignal) || size === 0) return undefined;
@@ -81,8 +81,8 @@ export default class Backtester extends Base {
     }
   }
 
-  private findCloseBacktestSignal(position: Position, bar: Bar, strategy: Strategy): BacktestSignal | undefined {
-    return bar.backtests[strategy]?.signals.find((signal: BacktestSignal) => {
+  private findCloseBacktestSignal(position: Position, bar: Bar): BacktestSignal | undefined {
+    return bar.backtest.signals.find((signal: BacktestSignal) => {
       if (signal.signal === Signal.CloseAll) {
         return true;
       } else if (signal.signal === Signal.Close) {
@@ -94,24 +94,29 @@ export default class Backtester extends Base {
     });
   }
 
-  private calcProfitChange(position: Position, bar: Bar, strategy: Strategy, closeSignal: Signal | undefined): number {
+  private calcProfitChange(position: Position, bar: Bar, closeSignal: Signal | undefined): number {
     const lastPrice: number = position.price;
     const entryPrice: number = position.entryPrice;
     const entrySize: number = position.entrySize;
-    const currentPrice: number = closeSignal ? this.getClosePrice(position, closeSignal, bar, strategy) : bar.prices.close;
+    const currentPrice: number = closeSignal ? this.getClosePrice(position, closeSignal, bar) : bar.prices.close;
     const diff: number = currentPrice - lastPrice;
     const change: number = diff / entryPrice;
     const profitChange: number = change * entrySize;
     return profitChange;
   }
 
-  private addOrUpdateCloseSignal(position: Position, bar: Bar, strategy: Strategy, closeSignal: Signal) {
-    const signals: BacktestSignal[] = bar.backtests[strategy]!.signals;
+  private addOrUpdateCloseSignal(position: Position, bar: Bar, closeSignal: Signal) {
+    const signals: BacktestSignal[] = bar.backtest.signals;
     const signalReference: SignalReference = position.openSignalReference;
 
     if (isForceCloseSignal(closeSignal)) { // add force close to bar signals
-      const closePrice: number = this.getClosePrice(position, closeSignal!, bar, strategy);
-      signals.push({ signal: closeSignal!, price: closePrice, openSignalReferences: [signalReference] });
+      const closePrice: number = this.getClosePrice(position, closeSignal!, bar);
+      signals.push(createSignal({
+        uniqueIdentifier: { signal: closeSignal, openSignalReference: signalReference },
+        signal: closeSignal!,
+        price: closePrice,
+        openSignalReferences: [signalReference],
+      }));
     } else if (closeSignal === Signal.CloseAll) {  // add reference of all positions that are closed by this signal - this is mainly for completeness and the frontend using this reference
       const closeAllBacktestSignal: BacktestSignal = signals.find((signal: BacktestSignal) => signal.signal === Signal.CloseAll)!;
 
@@ -123,7 +128,7 @@ export default class Backtester extends Base {
     }
   }
 
-  private calcCloseFee(position: Position, bar: Bar, strategy: Strategy, closeSignal: Signal, commission: number): number {
+  private calcCloseFee(position: Position, bar: Bar, closeSignal: Signal, commission: number): number {
     if (closeSignal === Signal.Liquidation) {
       return 0;
     } else {
@@ -131,7 +136,7 @@ export default class Backtester extends Base {
       const entryPrice: number = position.entryPrice;
       const entrySize: number = position.entrySize;
       const currentSize: number = position.size;
-      const currentPrice: number = this.getClosePrice(position, closeSignal, bar, strategy);
+      const currentPrice: number = this.getClosePrice(position, closeSignal, bar);
       const priceChange: number = calcPriceChange(entryPrice, currentPrice!);
       // then determine the size of the position at close
       const sizeAtClose: number = currentSize > 0 ? entrySize * (1 + priceChange) : entrySize * (1 - priceChange);
@@ -142,7 +147,7 @@ export default class Backtester extends Base {
   }
 
   // update size and price of existing position in case it was not closed
-  private updateExistingPosition(position: Position, bar: Bar, bars: Bar[], strategy: Strategy): Position {
+  private updateExistingPosition(position: Position, bar: Bar, bars: Bar[]): Position {
     const entryPrice: number = position.entryPrice;
     const currentClose: number = bar.prices.close;
     const currentHigh: number = bar.prices.high;
@@ -158,12 +163,12 @@ export default class Backtester extends Base {
     position.price = currentClose;
     position.highestPrice = Math.max(position.highestPrice || 0, currentHigh);
     position.lowestPrice = Math.min(position.lowestPrice || Infinity, currentLow);
-    this.updateExistingPositionTrailingStopLoss(position, bars, strategy);
+    this.updateExistingPositionTrailingStopLoss(position, bars);
     return position;
   }
 
-  private updateExistingPositionTrailingStopLoss(position: Position, bars: Bar[], strategy: Strategy) {
-    const openSignal: BacktestSignal = bars[position.openSignalReference.barIndex].backtests[strategy]!.signals[position.openSignalReference.signalIndex];
+  private updateExistingPositionTrailingStopLoss(position: Position, bars: Bar[]) {
+    const openSignal: BacktestSignal = bars[position.openSignalReference.barIndex].backtest!.signals[position.openSignalReference.signalIndex];
     const trailingStopLoss: TrailingStopLoss | undefined = openSignal.positionCloseTrigger?.tSl;
 
     if (trailingStopLoss) {
@@ -202,8 +207,8 @@ export default class Backtester extends Base {
     }
   }
 
-  private addNewPositions(positions: Position[], bar: Bar, strategy: Strategy, barIndex: number, volatility: number) {
-    const backtest: BacktestData = bar.backtests[strategy]!;
+  private addNewPositions(positions: Position[], bar: Bar, barIndex: number, volatility: number) {
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal, signalIndex: number) => {
@@ -213,9 +218,9 @@ export default class Backtester extends Base {
     });
   }
 
-  private calcOpenFee(bar: Bar, strategy: Strategy, commission: number): number {
+  private calcOpenFee(bar: Bar, commission: number): number {
     let totalOpenFee = 0;
-    const backtest: BacktestData = bar.backtests[strategy]!;
+    const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal) => {
@@ -295,13 +300,13 @@ export default class Backtester extends Base {
     };
   }
 
-  private getClosePrice(position: Position, closeSignal: Signal, bar: Bar, strategy: Strategy): number {
+  private getClosePrice(position: Position, closeSignal: Signal, bar: Bar): number {
     let currentPrice: number;
 
     switch (closeSignal) {
       case Signal.Close:
       case Signal.CloseAll:
-        currentPrice = this.findCloseBacktestSignal(position, bar, strategy)!.price;
+        currentPrice = this.findCloseBacktestSignal(position, bar)!.price;
         break;
       case Signal.Liquidation: currentPrice = position.liquidationPrice; break;
       case Signal.StopLoss: currentPrice = position.stopLossPrice!; break;

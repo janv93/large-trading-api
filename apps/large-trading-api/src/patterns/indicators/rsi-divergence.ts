@@ -2,66 +2,59 @@ import {
   Bar,
   LinearFunction,
   RsiDivergenceData,
-  RsiDivergenceType,
   TrendLine,
   TrendLinePosition,
   TrendLineStepState,
   TrendLinesFromPivotPointsStepState,
 } from '@shared';
 
+interface RsiDivergenceStrengths {
+  regular?: number;
+  hidden?: number;
+}
+
+interface DetectedRsiDivergence extends RsiDivergenceStrengths {
+  originTrendLine: TrendLine;
+}
+
 export function stepRsiDivergence(
   bars: Bar[],
   state: TrendLineStepState | TrendLinesFromPivotPointsStepState,
   minStrength: number,
-): void {
+): RsiDivergenceData | undefined {
   state.confirmedTrendLines ??= [];
   const i: number = bars.length - 1;
-
-  const bullishStrengths: Map<number, number> = new Map();
-  const bearishStrengths: Map<number, number> = new Map();
-  const hiddenBullishStrengths: Map<number, number> = new Map();
-  const hiddenBearishStrengths: Map<number, number> = new Map();
+  const bar: Bar = bars[i];
+  const currentRsiDivergence: RsiDivergenceData | undefined = bar.indicators?.rsiDivergence;
+  const newDivergences: DetectedRsiDivergence[] = [];
 
   for (const trendLine of state.confirmedTrendLines) {
     if (trendLine.endIndex !== i) continue;
+    if (currentRsiDivergence?.originTrendLines.some(origin => isSameTrendLine(origin, trendLine))) continue;
 
-    const isDivergence: boolean = accumulateDivergenceStrength(
-      bars,
-      trendLine,
-      minStrength,
-      bullishStrengths,
-      bearishStrengths,
-      hiddenBullishStrengths,
-      hiddenBearishStrengths,
-    );
+    const divergence: RsiDivergenceStrengths | undefined = calcRsiDivergence(bars, trendLine, minStrength);
 
-    if (!isDivergence) {
+    if (!divergence) {
       const chart = bars[trendLine.startIndex]?.chart;
       if (chart?.trendLines) chart.trendLines = chart.trendLines.filter(line => line !== trendLine);
+    } else {
+      newDivergences.push({ ...divergence, originTrendLine: trendLine });
     }
   }
 
-  const rsiDivergence: RsiDivergenceData = buildRsiDivergenceData(
-    bullishStrengths.get(i) ?? 0,
-    bearishStrengths.get(i) ?? 0,
-    hiddenBullishStrengths.get(i) ?? 0,
-    hiddenBearishStrengths.get(i) ?? 0,
-  );
+  if (!newDivergences.length) return undefined;
 
-  if (rsiDivergence.regular || rsiDivergence.hidden) {
-    bars[i].indicators = { ...bars[i].indicators, rsiDivergence };
-  }
+  const newRsiDivergence: RsiDivergenceData = buildRsiDivergenceData(newDivergences);
+  const rsiDivergence: RsiDivergenceData = mergeRsiDivergenceData(currentRsiDivergence, newRsiDivergence);
+  bar.indicators = { ...bar.indicators, rsiDivergence };
+  return newRsiDivergence;
 }
 
-function accumulateDivergenceStrength(
+function calcRsiDivergence(
   bars: Bar[],
   trendLine: TrendLine,
   minStrength: number,
-  bullishStrengths: Map<number, number>,
-  bearishStrengths: Map<number, number>,
-  hiddenBullishStrengths: Map<number, number>,
-  hiddenBearishStrengths: Map<number, number>,
-): boolean {
+): RsiDivergenceStrengths | undefined {
   const startIndex: number = trendLine.startIndex;
   const endIndex: number = trendLine.endIndex;
   const length: number = trendLine.length;
@@ -76,7 +69,7 @@ function accumulateDivergenceStrength(
   const priceStdDev: number = calcCloseChangeStdDev(bars, startIndex, endIndex);
   const rsiStdDev: number = calcRsiChangeStdDev(localRsi);
 
-  if (priceStdDev === 0 || rsiStdDev === 0) return false;
+  if (priceStdDev === 0 || rsiStdDev === 0) return undefined;
 
   const sqrtLength: number = Math.sqrt(length);
   const normalizedPriceSlope: number = Math.tanh((endPrice - startPrice) / (priceStdDev * sqrtLength));
@@ -85,48 +78,51 @@ function accumulateDivergenceStrength(
   const rsiGoesUp: boolean = normalizedRsiSlope > 0;
   const isDivergence: boolean = priceGoesUp !== rsiGoesUp;
 
-  if (!isDivergence) return false;
-  if (Math.abs(normalizedPriceSlope) < minStrength || Math.abs(normalizedRsiSlope) < minStrength) return false;
-  if (!isRsiLineUninterrupted(localRsi, startIndex, endIndex, rsiGoesUp)) return false;
+  if (!isDivergence) return undefined;
+  if (Math.abs(normalizedPriceSlope) < minStrength || Math.abs(normalizedRsiSlope) < minStrength) return undefined;
+  if (!isRsiLineUninterrupted(localRsi, startIndex, endIndex, rsiGoesUp)) return undefined;
 
   const strength: number = Math.abs(normalizedPriceSlope - normalizedRsiSlope);
   const position: TrendLinePosition = trendLine.position;
 
   if (position === TrendLinePosition.Below && !priceGoesUp && rsiGoesUp) {
-    bullishStrengths.set(endIndex, (bullishStrengths.get(endIndex) ?? 0) + strength);
+    return { regular: strength };
   } else if (position === TrendLinePosition.Above && priceGoesUp && !rsiGoesUp) {
-    bearishStrengths.set(endIndex, (bearishStrengths.get(endIndex) ?? 0) + strength);
+    return { regular: -strength };
   } else if (position === TrendLinePosition.Below && priceGoesUp && !rsiGoesUp) {
-    hiddenBullishStrengths.set(endIndex, (hiddenBullishStrengths.get(endIndex) ?? 0) + strength);
+    return { hidden: strength };
   } else if (position === TrendLinePosition.Above && !priceGoesUp && rsiGoesUp) {
-    hiddenBearishStrengths.set(endIndex, (hiddenBearishStrengths.get(endIndex) ?? 0) + strength);
+    return { hidden: -strength };
   }
 
-  return true;
+  return undefined;
 }
 
-function buildRsiDivergenceData(bullish: number, bearish: number, hiddenBullish: number, hiddenBearish: number): RsiDivergenceData {
-  const rsiDivergence: RsiDivergenceData = {};
+function buildRsiDivergenceData(divergences: DetectedRsiDivergence[]): RsiDivergenceData {
+  const regular: number = divergences.reduce((sum, divergence) => sum + (divergence.regular ?? 0), 0);
+  const hidden: number = divergences.reduce((sum, divergence) => sum + (divergence.hidden ?? 0), 0);
 
-  const regularNet: number = bullish - bearish;
-  const regularStrength: number = Math.abs(regularNet);
-  if (regularStrength > 0) {
-    rsiDivergence.regular = {
-      type: regularNet > 0 ? RsiDivergenceType.Bullish : RsiDivergenceType.Bearish,
-      strength: regularStrength,
-    };
-  }
+  return createRsiDivergenceData(regular, hidden, divergences.map(divergence => divergence.originTrendLine));
+}
 
-  const hiddenNet: number = hiddenBullish - hiddenBearish;
-  const hiddenStrength: number = Math.abs(hiddenNet);
-  if (hiddenStrength > 0) {
-    rsiDivergence.hidden = {
-      type: hiddenNet > 0 ? RsiDivergenceType.HiddenBullish : RsiDivergenceType.HiddenBearish,
-      strength: hiddenStrength,
-    };
-  }
+function mergeRsiDivergenceData(current: RsiDivergenceData | undefined, added: RsiDivergenceData): RsiDivergenceData {
+  const regular: number = (current?.regular ?? 0) + (added.regular ?? 0);
+  const hidden: number = (current?.hidden ?? 0) + (added.hidden ?? 0);
+  return createRsiDivergenceData(regular, hidden, [...current?.originTrendLines ?? [], ...added.originTrendLines]);
+}
+
+function createRsiDivergenceData(regular: number, hidden: number, originTrendLines: TrendLine[]): RsiDivergenceData {
+  const rsiDivergence: RsiDivergenceData = { originTrendLines };
+
+  if (regular !== 0) rsiDivergence.regular = regular;
+  if (hidden !== 0) rsiDivergence.hidden = hidden;
 
   return rsiDivergence;
+}
+
+function isSameTrendLine(first: TrendLine, second: TrendLine): boolean {
+  return first.startIndex === second.startIndex &&
+    first.position === second.position;
 }
 
 function isRsiLineUninterrupted(localRsi: number[], startIndex: number, endIndex: number, rsiGoesUp: boolean): boolean {
