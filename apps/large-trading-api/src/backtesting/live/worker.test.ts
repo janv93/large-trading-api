@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { Bar, Exchange, ExchangeResponse, LatestPriceRequest, Timeframe, clone } from '@shared';
+import { Bar, Exchange, LiveLatestPriceResponse, Timeframe, clone } from '@shared';
 
 describe('live worker', () => {
   it('finalizes observed OHLC locally and requests only current prices across bar boundaries', async () => {
@@ -14,7 +14,7 @@ describe('live worker', () => {
     };
 
     const published: Bar[] = [];
-    const requests: LatestPriceRequest[] = [];
+    const requests: string[] = [];
     const strategyPrices: Bar['prices'][] = [];
     const backtesterPrices: Bar['prices'][] = [];
     const strategy = {
@@ -24,7 +24,7 @@ describe('live worker', () => {
     };
 
     let price = 11;
-    let respond!: (response: ExchangeResponse) => void;
+    let respond!: (response: LiveLatestPriceResponse) => void;
     let resume!: () => void;
     let reachedSleep!: () => void;
     let sleeping = new Promise<void>((resolve) => {
@@ -39,11 +39,11 @@ describe('live worker', () => {
         once: (_event: string, callback: typeof respond) => {
           respond = callback;
         },
-        postMessage: (message: Bar | LatestPriceRequest) => {
-          if ('action' in message) {
+        postMessage: (message: Bar | string) => {
+          if (message === 'getLatestPrice') {
             requests.push(message);
-            respond({ result: price });
-          } else {
+            respond({ price });
+          } else if (typeof message !== 'string') {
             published.push(clone(message));
           }
         },
@@ -89,7 +89,7 @@ describe('live worker', () => {
         await sleeping;
       }
 
-      expect(requests).toEqual(Array.from({ length: 5 }, () => ({ action: 'getLatestPrice' })));
+      expect(requests).toEqual(Array.from({ length: 5 }, () => 'getLatestPrice'));
       expect(published).toHaveLength(6);
       expect(published[4].times).toEqual({ open: 60_000, close: 119_999 });
       expect(published[4].prices).toEqual({ open: 11, high: 16, low: 8, close: 12 });

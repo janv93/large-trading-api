@@ -1,12 +1,9 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import {
-  BacktesterCall,
   BacktesterState,
   Bar,
   Exchange,
   LinearFunction,
-  LiveBacktesterInstance,
-  LiveStrategyInstance,
   LiveStrategyState,
   Signal,
   Slope,
@@ -20,8 +17,8 @@ import MeanReversion from '../../strategies/mean-reversion';
 import TrendLineController from '../../patterns/trend-line';
 import LiveWorkerLifecycle from './worker-lifecycle';
 
-class RecordingBacktester implements LiveBacktesterInstance {
-  public readonly calls: BacktesterCall[] = [];
+class RecordingBacktester {
+  public readonly calls: any[] = [];
 
   public stepCalcBacktestPerformance(bars: Bar[], state: BacktesterState): void {
     const bar: Bar = bars.at(-1)!;
@@ -37,7 +34,7 @@ class RecordingBacktester implements LiveBacktesterInstance {
   }
 }
 
-class CumulativeStrategy implements LiveStrategyInstance {
+class CumulativeStrategy {
   public activeCalls = 0;
 
   public stepSetSignals(bars: Bar[], state: LiveStrategyState): void {
@@ -74,7 +71,7 @@ class CumulativeStrategy implements LiveStrategyInstance {
   }
 }
 
-class FreezingStrategy implements LiveStrategyInstance {
+class FreezingStrategy {
   public readonly incomingBarDone: (boolean | undefined)[] = [];
   public readonly incomingMarkers: (number | undefined)[] = [];
   public calls = 0;
@@ -106,7 +103,7 @@ class FreezingStrategy implements LiveStrategyInstance {
   }
 }
 
-class DuplicateBuyStrategy implements LiveStrategyInstance {
+class DuplicateBuyStrategy {
   public stepSetSignals(bars: Bar[]): void {
     if (bars.length === 1) return;
     const bar: Bar = bars.at(-1)!;
@@ -122,7 +119,7 @@ class DuplicateBuyStrategy implements LiveStrategyInstance {
   }
 }
 
-class TrailingEntryStrategy implements LiveStrategyInstance {
+class TrailingEntryStrategy {
   public stepSetSignals(bars: Bar[]): void {
     if (bars.length === 1) return;
     const bar: Bar = bars.at(-1)!;
@@ -139,7 +136,7 @@ class TrailingEntryStrategy implements LiveStrategyInstance {
   }
 }
 
-class StopLossStrategy implements LiveStrategyInstance {
+class StopLossStrategy {
   public stepSetSignals(bars: Bar[]): void {
     if (bars.length !== 1) return;
 
@@ -157,7 +154,7 @@ class StopLossStrategy implements LiveStrategyInstance {
   }
 }
 
-class BarReferenceStrategy implements LiveStrategyInstance {
+class BarReferenceStrategy {
   public referencesMatched = false;
 
   public stepSetSignals(bars: Bar[], state: LiveStrategyState): void {
@@ -171,7 +168,7 @@ class BarReferenceStrategy implements LiveStrategyInstance {
   }
 }
 
-class RetainedBreakthroughStrategy implements LiveStrategyInstance {
+class RetainedBreakthroughStrategy {
   private readonly controller = new TrendLineController();
   public readonly incomingConfirmedCounts: number[] = [];
   public readonly incomingOriginBreakThroughIndexes: (number | undefined)[] = [];
@@ -202,7 +199,7 @@ class RetainedBreakthroughStrategy implements LiveStrategyInstance {
   }
 }
 
-class AccumulatingConfirmedTrendLineStrategy implements LiveStrategyInstance {
+class AccumulatingConfirmedTrendLineStrategy {
   public readonly incomingConfirmedCounts: number[] = [];
   public readonly incomingChartCounts: number[] = [];
   public readonly retainedReferencesMatched: boolean[] = [];
@@ -228,7 +225,7 @@ class AccumulatingConfirmedTrendLineStrategy implements LiveStrategyInstance {
   }
 }
 
-class ExpiringTrendLineStrategy implements LiveStrategyInstance {
+class ExpiringTrendLineStrategy {
   private readonly controller = new TrendLineController();
   public readonly incomingConfirmedCounts: number[] = [];
   public readonly incomingChartCounts: number[] = [];
@@ -272,14 +269,10 @@ function createTrendLine(endIndex: number): TrendLine {
   };
 }
 
-function createLifecycle(
-  strategyInstance: LiveStrategyInstance,
-  backtester: LiveBacktesterInstance,
-  strategyConfig: any = {},
-): LiveWorkerLifecycle {
+function createLifecycle(strategyInstance: any, backtesterInstance: any, strategyConfig: any = {}): LiveWorkerLifecycle {
   return new LiveWorkerLifecycle({
     strategyInstance,
-    backtester,
+    backtesterInstance,
     strategyConfig,
     timeframeMs: 60_000,
     commission: 0,
@@ -287,6 +280,10 @@ function createLifecycle(
 }
 
 describe('live worker lifecycle', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('retains cumulative discoveries while replacing each tick price and deduplicating signals', async () => {
     const strategy = new CumulativeStrategy();
     const backtester = new RecordingBacktester();
@@ -395,7 +392,8 @@ describe('live worker lifecycle', () => {
     await lifecycle.initialize([createBar(0, 10)]);
 
     await lifecycle.processTick(11);
-    lifecycle.finalizeBar(120_000);
+    jest.spyOn(Date, 'now').mockReturnValue(120_000);
+    lifecycle.finalizeBar();
 
     expect(strategy.referencesMatched).toBe(true);
     expect(lifecycle.getLastCommittedBar().times.open).toBe(60_000);
@@ -412,7 +410,8 @@ describe('live worker lifecycle', () => {
     expect(crossed.chart?.trendLineBreakthroughs).toHaveLength(1);
     expect(rebounded.chart?.trendLineBreakthroughs).toHaveLength(1);
 
-    lifecycle.finalizeBar(120_000);
+    jest.spyOn(Date, 'now').mockReturnValue(120_000);
+    lifecycle.finalizeBar();
     await lifecycle.processTick(9);
 
     expect(strategy.incomingConfirmedCounts).toEqual([1, 1, 0]);
@@ -443,8 +442,8 @@ describe('live worker lifecycle', () => {
     const confirmedCounts: number[] = [];
     const candidateSlopes: number[] = [];
 
-    const strategy: LiveStrategyInstance = {
-      stepSetSignals(bars, state): void {
+    const strategy = {
+      stepSetSignals(bars: Bar[], state: LiveStrategyState): void {
         if (bars.length < 11) return;
 
         if (bars.length === 11) {
@@ -482,7 +481,8 @@ describe('live worker lifecycle', () => {
     expect(confirmedCounts).toEqual(prices.map(() => 0));
     expect(candidateSlopes).toEqual(prices.map(() => Infinity));
 
-    lifecycle.finalizeBar(720_000);
+    jest.spyOn(Date, 'now').mockReturnValue(720_000);
+    lifecycle.finalizeBar();
     await lifecycle.processTick(9);
     await lifecycle.processTick(9);
 
@@ -521,7 +521,8 @@ describe('live worker lifecycle', () => {
     expect(strategy.calls).toBe(strategyCallsAtFreeze);
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
 
-    const finalized: Bar | undefined = lifecycle.finalizeBar(120_000);
+    jest.spyOn(Date, 'now').mockReturnValue(120_000);
+    const finalized: Bar | undefined = lifecycle.finalizeBar();
 
     expect(strategy.calls).toBe(strategyCallsAtFreeze);
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
@@ -554,22 +555,25 @@ describe('live worker lifecycle', () => {
 
     const callsBeforeRefresh: number = backtester.calls.length;
     const strategyCalls: number = strategy.calls;
-    expect(lifecycle.finalizeBar(119_999)).toBeUndefined();
+    const now = jest.spyOn(Date, 'now').mockReturnValue(119_999);
+    expect(lifecycle.finalizeBar()).toBeUndefined();
     expect(lifecycle.getLastCommittedBar().times.open).toBe(0);
     expect(backtester.calls).toHaveLength(callsBeforeRefresh);
 
-    const finalized: Bar = lifecycle.finalizeBar(120_000)!;
+    now.mockReturnValue(120_000);
+    const finalized: Bar = lifecycle.finalizeBar()!;
     expect(finalized).toBe(tickBars.at(-1));
     expect(finalized.prices).toEqual({ open: 11, high: 16, low: 8, close: 12 });
     expect(tickBars[0].prices).toEqual({ open: 11, high: 11, low: 11, close: 11 });
     expect(backtester.calls).toHaveLength(callsBeforeRefresh);
     expect(strategy.calls).toBe(strategyCalls);
-    expect(lifecycle.finalizeBar(120_000)).toBeUndefined();
+    expect(lifecycle.finalizeBar()).toBeUndefined();
 
     expect((await lifecycle.processTick(40)).times.open).toBe(120_000);
     expect(strategy.incomingMarkers.at(-1)).toBe(12);
     expect(strategy.incomingBarDone.at(-1)).toBe(false);
-    expect(lifecycle.finalizeBar(180_000)?.prices).toEqual({ open: 40, high: 40, low: 40, close: 40 });
+    now.mockReturnValue(180_000);
+    expect(lifecycle.finalizeBar()?.prices).toEqual({ open: 40, high: 40, low: 40, close: 40 });
   });
 
   it.each([11, 13])('commits a single tick at price %s without replaying either engine', async (price) => {
@@ -580,7 +584,8 @@ describe('live worker lifecycle', () => {
     const active: Bar = await lifecycle.processTick(price);
     const strategyCalls: number = strategy.calls;
     const backtesterCalls: number = backtester.calls.length;
-    expect(lifecycle.finalizeBar(120_000)).toBe(active);
+    const now = jest.spyOn(Date, 'now').mockReturnValue(120_000);
+    expect(lifecycle.finalizeBar()).toBe(active);
     expect(lifecycle.getLastCommittedBar()).toBe(active);
     expect(strategy.calls).toBe(strategyCalls);
     expect(backtester.calls).toHaveLength(backtesterCalls);
@@ -589,7 +594,8 @@ describe('live worker lifecycle', () => {
     expect(active.backtest.profit).toBe(10 + price);
     expect(active.backtest.signals).toHaveLength(price === 13 ? 1 : 0);
 
-    expect(lifecycle.finalizeBar(180_000)).toBeUndefined();
+    now.mockReturnValue(180_000);
+    expect(lifecycle.finalizeBar()).toBeUndefined();
   });
 
   it('finalizes only an observed bar after its timeframe has physically closed', async () => {
@@ -608,6 +614,5 @@ describe('live worker lifecycle', () => {
     now.mockReturnValue(120_000);
     expect(lifecycle.isActiveBarClosed()).toBe(true);
     expect(lifecycle.finalizeBar()).toBeDefined();
-    now.mockRestore();
   });
 });

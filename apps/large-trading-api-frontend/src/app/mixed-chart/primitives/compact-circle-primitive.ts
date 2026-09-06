@@ -9,10 +9,10 @@ import {
   SeriesType,
   Time,
 } from 'lightweight-charts';
-import { CompactCircleMarker, RenderedCompactCircle } from '@shared';
+import { ChartCompactCircleMarker, ChartRenderedCompactCircle } from '@shared';
 
 class CompactCirclePaneRenderer implements IPrimitivePaneRenderer {
-  constructor(private readonly _items: RenderedCompactCircle[]) {}
+  constructor(private readonly _items: ChartRenderedCompactCircle[]) {}
 
   draw(target: any): void {
     target.useBitmapCoordinateSpace(
@@ -21,7 +21,7 @@ class CompactCirclePaneRenderer implements IPrimitivePaneRenderer {
         const radius = 2 * pixelRatio;
         const offset = 5 * pixelRatio;
 
-        const itemsByColor = new Map<string, RenderedCompactCircle[]>();
+        const itemsByColor = new Map<string, ChartRenderedCompactCircle[]>();
 
         for (const item of this._items) {
           if (!itemsByColor.has(item.color)) itemsByColor.set(item.color, []);
@@ -50,7 +50,7 @@ class CompactCirclePaneRenderer implements IPrimitivePaneRenderer {
 class CompactCirclePaneView implements IPrimitivePaneView {
   private _renderer = new CompactCirclePaneRenderer([]);
 
-  update(items: RenderedCompactCircle[]): void {
+  update(items: ChartRenderedCompactCircle[]): void {
     this._renderer = new CompactCirclePaneRenderer(items);
   }
 
@@ -68,7 +68,7 @@ export class CompactCirclePrimitive implements ISeriesPrimitive<Time> {
   private _series: ISeriesApi<SeriesType, Time> | null = null;
   private _requestUpdate: (() => void) | null = null;
   private _paneView = new CompactCirclePaneView();
-  private _markers: CompactCircleMarker[] = [];
+  private _markers: ChartCompactCircleMarker[] = [];
 
   attached(param: SeriesAttachedParameter<Time, SeriesType>): void {
     this._chart = param.chart;
@@ -82,7 +82,7 @@ export class CompactCirclePrimitive implements ISeriesPrimitive<Time> {
     this._requestUpdate = null;
   }
 
-  setMarkers(markers: CompactCircleMarker[]): void {
+  setMarkers(markers: ChartCompactCircleMarker[]): void {
     this._markers = markers;
     this._requestUpdate?.();
   }
@@ -95,7 +95,7 @@ export class CompactCirclePrimitive implements ISeriesPrimitive<Time> {
       from: number;
       to: number;
     } | null;
-    const items: RenderedCompactCircle[] = [];
+    const items: ChartRenderedCompactCircle[] = [];
 
     let startIndex = 0;
 

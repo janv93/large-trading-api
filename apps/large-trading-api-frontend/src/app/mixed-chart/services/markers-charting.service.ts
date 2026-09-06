@@ -17,8 +17,8 @@ import {
   MarketStructureType,
   TrendLine,
   TrendLinePosition,
-  TrendLineSegment,
-  CompactCircleMarker,
+  ChartTrendLineSegment,
+  ChartCompactCircleMarker,
 } from '@shared';
 import { TrendLinesPrimitive } from '../primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from '../primitives/compact-circle-primitive';
@@ -28,8 +28,8 @@ import { LinearFunction } from '@shared';
 export class MarkersChartingService {
   private markersPivotPoints: SeriesMarker<Time>[] = [];
   private markersSignals: SeriesMarker<Time>[] = [];
-  private compactSignalMarkers: CompactCircleMarker[] = [];
-  private compactPivotPointMarkers: CompactCircleMarker[] = [];
+  private compactSignalMarkers: ChartCompactCircleMarker[] = [];
+  private compactPivotPointMarkers: ChartCompactCircleMarker[] = [];
   private currentHighlightedOpenTimes = new Set<number>();
 
   public drawAll(
@@ -61,7 +61,7 @@ export class MarkersChartingService {
     const threshold: number = isMulti ? 50 : 200;
 
     if (this.getVisibleMarkersCount(chart) > threshold) {
-      const combinedCompactMarkers: CompactCircleMarker[] = [
+      const combinedCompactMarkers: ChartCompactCircleMarker[] = [
         ...this.compactSignalMarkers,
         ...this.compactPivotPointMarkers,
       ];
@@ -142,7 +142,7 @@ export class MarkersChartingService {
 
   private setPivotPointMarkers(bars: Bar[]): void {
     const markers: SeriesMarker<Time>[] = [];
-    const compactMarkers: CompactCircleMarker[] = [];
+    const compactMarkers: ChartCompactCircleMarker[] = [];
 
     bars.forEach((bar: Bar) => {
       if (!bar.chart?.pivotPoint) return;
@@ -164,7 +164,7 @@ export class MarkersChartingService {
 
   private setSignalMarkers(bars: Bar[], strategy: Strategy): void {
     const markers: SeriesMarker<Time>[] = [];
-    const compactMarkers: CompactCircleMarker[] = [];
+    const compactMarkers: ChartCompactCircleMarker[] = [];
 
     bars.forEach((bar: Bar) => {
       if (!bar.backtest.signals.length) return;
@@ -189,7 +189,7 @@ export class MarkersChartingService {
     trendLinesPrimitive: TrendLinesPrimitive | undefined,
   ): void {
     if (!trendLinesPrimitive) return;
-    const segments: TrendLineSegment[] = [];
+    const segments: ChartTrendLineSegment[] = [];
 
     bars.forEach((bar: Bar) => {
       if (!bar.chart?.trendLines?.length) return;

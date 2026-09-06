@@ -1,6 +1,6 @@
 import { Worker } from 'worker_threads';
 import * as path from 'path';
-import { Bar, Exchange, LatestPriceRequest, LiveStrategyInstance, StrategyEntry } from '@shared';
+import { Bar, Exchange, LiveStrategyEntry } from '@shared';
 import { Response } from 'express';
 import binance from '../../exchanges/binance';
 import alpaca from '../../exchanges/alpaca';
@@ -8,8 +8,8 @@ import alpaca from '../../exchanges/alpaca';
 export default class Live {
   public async run(
     tickers: Bar[][],
-    strategy: StrategyEntry,
-    strategyInstance: LiveStrategyInstance,
+    strategyEntry: LiveStrategyEntry,
+    strategyInstance: any,
     timeframeMs: number,
     intervalMs: number,
     commission: number,
@@ -23,7 +23,7 @@ export default class Live {
 
     try {
       for (const bars of tickers) {
-        workers.push(this.spawnWorker(bars, strategy, strategyModulePath, timeframeMs, intervalMs, commission, onBar));
+        workers.push(this.spawnWorker(bars, strategyEntry, strategyModulePath, timeframeMs, intervalMs, commission, onBar));
       }
       const workerFailed = new Promise<never>((_, reject) => {
         workers.forEach((worker) => worker.once('error', reject));
@@ -35,14 +35,14 @@ export default class Live {
     }
   }
 
-  private resolveStrategyModulePath(strategyInstance: LiveStrategyInstance): string {
+  private resolveStrategyModulePath(strategyInstance: any): string {
     const constructor = strategyInstance.constructor;
     return Object.keys(require.cache).find((key) => require.cache[key]?.exports?.default === constructor)!;
   }
 
   private spawnWorker(
     bars: Bar[],
-    strategy: StrategyEntry,
+    strategyEntry: LiveStrategyEntry,
     strategyModulePath: string,
     timeframeMs: number,
     intervalMs: number,
@@ -50,15 +50,15 @@ export default class Live {
     onBar: (bar: Bar) => void,
   ): Worker {
     const worker = new Worker(path.join(__dirname, 'worker.js'), {
-      workerData: { bars, strategyConfig: strategy.config, strategyModulePath, timeframeMs, intervalMs, commission },
+      workerData: { bars, strategyConfig: strategyEntry.config, strategyModulePath, timeframeMs, intervalMs, commission },
     });
 
-    worker.on('message', (message: Bar | LatestPriceRequest) => {
-      if ('action' in message) {
+    worker.on('message', (message: Bar | string) => {
+      if (message === 'getLatestPrice') {
         this.handleLatestPriceRequest(worker, bars[0]).catch((err) => {
           worker.postMessage({ error: err.message });
         });
-      } else {
+      } else if (typeof message !== 'string') {
         onBar(message);
       }
     });
@@ -67,8 +67,8 @@ export default class Live {
   }
 
   private async handleLatestPriceRequest(worker: Worker, bar: Bar): Promise<void> {
-    const result: number = await this.getLatestPrice(bar);
-    worker.postMessage({ result });
+    const price: number = await this.getLatestPrice(bar);
+    worker.postMessage({ price });
   }
 
   private getLatestPrice(bar: Bar): Promise<number> {

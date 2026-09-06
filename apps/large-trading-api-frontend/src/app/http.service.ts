@@ -4,16 +4,13 @@ import { ChartConfig, Run } from '@shared';
 import { StrategyConfigs } from './strategy-configs';
 import { LoadingService } from './loader/loading.service';
 
-
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class HttpService {
   private baseUrl = 'http://127.0.0.1:3000';
 
-  constructor(
-    private loadingService: LoadingService
-  ) { }
+  constructor(private loadingService: LoadingService) {}
 
   public backtest(config: ChartConfig): Observable<Run[]> {
     const { autoSymbols, symbols, rank, timeframe, times, commission } = config;
@@ -26,14 +23,20 @@ export class HttpService {
       ...(autoSymbols ? { rank } : { symbols }),
       strategy: (() => {
         const strategyConfig = StrategyConfigs[config.strategy];
-        return { strategy: config.strategy, autoParams: config.autoParams, config: config.autoParams ? strategyConfig?.autoParams : strategyConfig?.default };
-      })()
+        return {
+          strategy: config.strategy,
+          autoParams: config.autoParams,
+          config: config.autoParams
+            ? strategyConfig?.autoParams
+            : strategyConfig?.default,
+        };
+      })(),
     };
 
     const url = this.baseUrl + '/backtest';
     this.loadingService.setLoadingText('Fetching backtest', '/backtest');
 
-    return new Observable<Run[]>(observer => {
+    return new Observable<Run[]>((observer) => {
       const controller = new AbortController();
 
       (async () => {
@@ -42,7 +45,7 @@ export class HttpService {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
-            signal: controller.signal
+            signal: controller.signal,
           });
 
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -70,5 +73,4 @@ export class HttpService {
       return () => controller.abort();
     });
   }
-
 }

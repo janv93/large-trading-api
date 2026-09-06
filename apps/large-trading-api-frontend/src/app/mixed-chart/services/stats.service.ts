@@ -1,22 +1,41 @@
 ﻿import { Injectable } from '@angular/core';
-import { Bar, Strategy, BacktestSignal, BacktestStats, Signal } from '@shared';
+import {
+  Bar,
+  Strategy,
+  BacktestSignal,
+  ChartBacktestStats,
+  Signal,
+} from '@shared';
 
 @Injectable({ providedIn: 'root' })
 export class StatsService {
-  public calcStats(bars: Bar[], strategy: Strategy, finalProfit: number): BacktestStats {
+  public calcStats(
+    bars: Bar[],
+    strategy: Strategy,
+    finalProfit: number,
+  ): ChartBacktestStats {
     const tradesCount: number = bars.reduce((acc: number, bar: Bar) => {
       const backtestSignals: BacktestSignal[] = bar.backtest.signals;
-      return acc + backtestSignals.filter((s: BacktestSignal) => !this.isCloseSignal(s.signal)).length;
+      return (
+        acc +
+        backtestSignals.filter(
+          (s: BacktestSignal) => !this.isCloseSignal(s.signal),
+        ).length
+      );
     }, 0);
 
     return {
       profit: Number(finalProfit.toFixed(2)),
       numberOfTrades: tradesCount,
-      maxDrawback: Number(this.calcMaxDrawback(bars, strategy).toFixed(2))
+      maxDrawback: Number(this.calcMaxDrawback(bars, strategy).toFixed(2)),
     };
   }
 
-  public getDrawbackColor(value: number, maxGreen: number, maxRed: number): string {
+  public getDrawbackColor(
+    value: number,
+    maxGreen: number,
+    maxRed: number,
+  ): string {
     if (value < 0) return 'rgb(255, 77, 77)';
 
     const range: number = maxRed - maxGreen;
@@ -46,6 +65,11 @@ export class StatsService {
 
   private isCloseSignal(signal?: Signal): boolean {
     if (!signal) return false;
-    return [Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
+    return [
+      Signal.Close,
+      Signal.Liquidation,
+      Signal.TakeProfit,
+      Signal.StopLoss,
+    ].includes(signal);
   }
 }

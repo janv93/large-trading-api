@@ -9,7 +9,7 @@ import {
   SeriesType,
   Time,
 } from 'lightweight-charts';
-import { RenderedLine, TrendLineSegment } from '@shared';
+import { ChartRenderedLine, ChartTrendLineSegment } from '@shared';
 
 function pointToSegmentDistance(
   px: number,
@@ -28,13 +28,13 @@ function pointToSegmentDistance(
 }
 
 class TrendLinesPaneRenderer implements IPrimitivePaneRenderer {
-  constructor(private readonly _lines: RenderedLine[]) {}
+  constructor(private readonly _lines: ChartRenderedLine[]) {}
 
   draw(target: any): void {
     target.useBitmapCoordinateSpace(
       ({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: any) => {
-        const normalLines: RenderedLine[] = [];
-        const highlightedLines: RenderedLine[] = [];
+        const normalLines: ChartRenderedLine[] = [];
+        const highlightedLines: ChartRenderedLine[] = [];
 
         for (const line of this._lines) {
           if (line.highlighted) highlightedLines.push(line);
@@ -86,7 +86,7 @@ class TrendLinesPaneRenderer implements IPrimitivePaneRenderer {
 class TrendLinesPaneView implements IPrimitivePaneView {
   private _renderer = new TrendLinesPaneRenderer([]);
 
-  update(lines: RenderedLine[]): void {
+  update(lines: ChartRenderedLine[]): void {
     this._renderer = new TrendLinesPaneRenderer(lines);
   }
 
@@ -104,7 +104,7 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
   private _series: ISeriesApi<SeriesType, Time> | null = null;
   private _requestUpdate: (() => void) | null = null;
   private _paneView = new TrendLinesPaneView();
-  private _segments: TrendLineSegment[] = [];
+  private _segments: ChartTrendLineSegment[] = [];
   private _hoverX: number | null = null;
   private _hoverY: number | null = null;
 
@@ -128,7 +128,7 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
     this._requestUpdate = null;
   }
 
-  setSegments(segments: TrendLineSegment[]): void {
+  setSegments(segments: ChartTrendLineSegment[]): void {
     this._segments = segments;
     this._requestUpdate?.();
   }
@@ -148,7 +148,7 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
       from: number;
       to: number;
     } | null;
-    const lines: RenderedLine[] = [];
+    const lines: ChartRenderedLine[] = [];
 
     for (let i = 0; i < this._segments.length; i++) {
       const seg = this._segments[i];

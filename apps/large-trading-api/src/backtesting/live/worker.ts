@@ -1,37 +1,42 @@
-import { workerData, parentPort } from 'worker_threads';
-import { Bar, LatestPriceRequest, ExchangeResponse, sleep } from '@shared';
+import { MessagePort, workerData, parentPort } from 'worker_threads';
+import { Bar, LiveLatestPriceResponse, sleep } from '@shared';
 import Backtester from '../backtester/backtester';
 import LiveWorkerLifecycle from './worker-lifecycle';
 
+if (!parentPort) {
+  throw new Error('This file must run as a worker thread.');
+}
+
+const port: MessagePort = parentPort;
 const { bars, strategyConfig, strategyModulePath, timeframeMs, intervalMs, commission } = workerData;
 
 const strategyInstance = new (require(strategyModulePath).default)();
 strategyInstance.silent = true;
-const backtester = new Backtester();
-const lifecycle = new LiveWorkerLifecycle({ strategyInstance, backtester, strategyConfig, timeframeMs, commission });
+const backtesterInstance = new Backtester();
+const lifecycle = new LiveWorkerLifecycle({ strategyInstance, backtesterInstance, strategyConfig, timeframeMs, commission });
 
-function requestExchange<T>(request: LatestPriceRequest): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    parentPort!.once('message', (message: ExchangeResponse) => {
+function getLatestPrice(): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+    port.once('message', (message: LiveLatestPriceResponse) => {
       if (message.error) reject(new Error(message.error));
-      else resolve(message.result as T);
+      else resolve(message.price!);
     });
 
-    parentPort!.postMessage(request);
+    port.postMessage('getLatestPrice');
   });
 }
 
 function finalizeBar(): void {
   const finalized: Bar | undefined = lifecycle.finalizeBar();
-  if (finalized) parentPort!.postMessage(finalized);
+  if (finalized) port.postMessage(finalized);
 }
 
 async function tick(): Promise<void> {
   if (lifecycle.isActiveBarClosed()) return;
-  const price: number = await requestExchange<number>({ action: 'getLatestPrice' });
+  const price: number = await getLatestPrice();
   if (lifecycle.isActiveBarClosed()) return; // Ignore a price fetched after its bar closed
   const tickBar: Bar = await lifecycle.processTick(price);
-  parentPort!.postMessage(tickBar);
+  port.postMessage(tickBar);
 }
 
 async function run(): Promise<void> {

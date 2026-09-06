@@ -1,5 +1,5 @@
 import {
-  CalculationState,
+  LiveCalculationState,
   BacktesterState,
   BacktestSignal,
   Bar,
@@ -10,13 +10,13 @@ import {
 } from '@shared';
 
 export default class LiveWorkerLifecycle {
-  private committedState: CalculationState = {
+  private committedState: LiveCalculationState = {
     window: [],
     strategyState: {},
     backtesterState: {},
   };
 
-  private activeSnapshot?: CalculationState;
+  private activeSnapshot?: LiveCalculationState;
   private activePrices?: Bar['prices'];
 
   public constructor(private readonly options: LiveWorkerLifecycleOptions) {}
@@ -29,18 +29,18 @@ export default class LiveWorkerLifecycle {
     return this.committedState.window.at(-1)!;
   }
 
-  public isActiveBarClosed(now: number = Date.now()): boolean {
+  public isActiveBarClosed(): boolean {
     const activeBar: Bar | undefined = this.activeSnapshot?.window.at(-1);
-    return activeBar !== undefined && now >= activeBar.times.open + this.options.timeframeMs;
+    return activeBar !== undefined && Date.now() >= activeBar.times.open + this.options.timeframeMs;
   }
 
-  public finalizeBar(now: number = Date.now()): Bar | undefined {
-    if (!this.isActiveBarClosed(now)) return;
+  public finalizeBar(): Bar | undefined {
+    if (!this.isActiveBarClosed()) return;
     return this.commitActiveBar();
   }
 
   public async processTick(price: number): Promise<Bar> {
-    const activeSnapshot: CalculationState | undefined = this.activeSnapshot;
+    const activeSnapshot: LiveCalculationState | undefined = this.activeSnapshot;
     let calculationWindow: Bar[];
     let strategyState: LiveStrategyState;
     let bar: Bar;
@@ -81,7 +81,7 @@ export default class LiveWorkerLifecycle {
     const backtesterState: BacktesterState = clone(activeSnapshot?.backtesterState ?? this.committedState.backtesterState);
     // Volatility is recalculated from the last committed value on every tick.
     backtesterState.volatility = this.committedState.backtesterState.volatility;
-    this.options.backtester.stepCalcBacktestPerformance(calculationWindow, backtesterState, this.options.commission);
+    this.options.backtesterInstance.stepCalcBacktestPerformance(calculationWindow, backtesterState, this.options.commission);
 
     this.activePrices = {
       open: this.activePrices?.open ?? price,
@@ -104,7 +104,7 @@ export default class LiveWorkerLifecycle {
     window.push(bar);
     await this.options.strategyInstance.stepSetSignals(window, strategyState, this.options.strategyConfig);
     strategyState.barDone = false;
-    this.options.backtester.stepCalcBacktestPerformance(window, backtesterState, this.options.commission);
+    this.options.backtesterInstance.stepCalcBacktestPerformance(window, backtesterState, this.options.commission);
   }
 
   private createTickBar(price: number, committed: Bar, previous?: Bar): Bar {
@@ -180,7 +180,7 @@ export default class LiveWorkerLifecycle {
   }
 
   private commitActiveBar(): Bar {
-    const activeSnapshot: CalculationState = this.activeSnapshot!;
+    const activeSnapshot: LiveCalculationState = this.activeSnapshot!;
     const activeBar: Bar = activeSnapshot.window.at(-1)!;
     activeBar.times.close = activeBar.times.open + this.options.timeframeMs - 1;
     activeBar.prices = this.activePrices!;

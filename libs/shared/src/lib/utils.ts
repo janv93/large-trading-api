@@ -1,9 +1,7 @@
 ﻿import { cloneDeep } from 'lodash';
-import { BacktestSignal, Bar, Signal, Timeframe, TickerMetrics } from './interfaces';
+import { BacktestSignal, Bar, Signal, Timeframe, TickerMetrics } from './interfaces/shared.interfaces';
 
-export function createSignal(
-  signal: Omit<BacktestSignal, 'uniqueIdentifier'> & { uniqueIdentifier: unknown },
-): BacktestSignal {
+export function createSignal(signal: Omit<BacktestSignal, 'uniqueIdentifier'> & { uniqueIdentifier: unknown }): BacktestSignal {
   return { ...signal, uniqueIdentifier: JSON.stringify(signal.uniqueIdentifier) };
 }
 
@@ -12,12 +10,18 @@ export function timeframeToMilliseconds(timeframe: Timeframe): number {
   const value = Number(timeframe.slice(0, timeframe.length - 1));
 
   switch (unit) {
-    case 'm': return value * 60000;
-    case 'h': return value * 60 * 60000;
-    case 'd': return value * 24 * 60 * 60000;
-    case 'w': return value * 7 * 24 * 60 * 60000;
-    case 'M': return value * 30 * 24 * 60 * 60000;
-    default: return -1;
+    case 'm':
+      return value * 60000;
+    case 'h':
+      return value * 60 * 60000;
+    case 'd':
+      return value * 24 * 60 * 60000;
+    case 'w':
+      return value * 7 * 24 * 60 * 60000;
+    case 'M':
+      return value * 30 * 24 * 60 * 60000;
+    default:
+      return -1;
   }
 }
 
@@ -33,7 +37,7 @@ export function createUrl(baseUrl: string, queryObj: any): string {
   let url = baseUrl;
   let firstParam = true;
 
-  Object.keys(queryObj).forEach(param => {
+  Object.keys(queryObj).forEach((param) => {
     const query = param + '=' + queryObj[param];
     url += firstParam ? '?' : '&';
     url += query;
@@ -47,7 +51,7 @@ export function createQuery(queryObj: any): string {
   let url = '';
   let firstParam = true;
 
-  Object.keys(queryObj).forEach(param => {
+  Object.keys(queryObj).forEach((param) => {
     const query = param + '=' + queryObj[param];
     url += firstParam ? '?' : '&';
     url += query;
@@ -58,7 +62,13 @@ export function createQuery(queryObj: any): string {
 }
 
 export function timestampToDate(timestamp: number): string {
-  return (new Date(timestamp)).toLocaleString('de-DE', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(timestamp).toLocaleString('de-DE', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export function timestampsToDateRange(timestampStart: number, timestampEnd: number): string {
@@ -73,12 +83,18 @@ export function calcStartTime(timeframe: Timeframe): number {
   const minTimestamp = 1000000000000; // Sept 2001 — minimum valid 13-digit ms timestamp, relevant for kucoin
 
   switch (unit) {
-    case 'm': return Math.max(now - ms * 100 * 1000, minTimestamp); // 100k * 1 min = 69 days - 100k * 15 min = 1k days
-    case 'h': return Math.max(now - ms * Math.round(100 / value) * 1000, minTimestamp); // 100k hours = 4k days
-    case 'd': return Math.max(now - ms * Math.round(10 / value) * 1000, minTimestamp); // 10k days = 27 years
-    case 'w': return Math.max(now - ms * 1000, minTimestamp); // 1k weeks = 38 years
-    case 'M': return Math.max(now - ms * 100, minTimestamp);
-    default: throw `timeframe ${timeframe} does not exist`;
+    case 'm':
+      return Math.max(now - ms * 100 * 1000, minTimestamp); // 100k * 1 min = 69 days - 100k * 15 min = 1k days
+    case 'h':
+      return Math.max(now - ms * Math.round(100 / value) * 1000, minTimestamp); // 100k hours = 4k days
+    case 'd':
+      return Math.max(now - ms * Math.round(10 / value) * 1000, minTimestamp); // 10k days = 27 years
+    case 'w':
+      return Math.max(now - ms * 1000, minTimestamp); // 1k weeks = 38 years
+    case 'M':
+      return Math.max(now - ms * 100, minTimestamp);
+    default:
+      throw `timeframe ${timeframe} does not exist`;
   }
 }
 
@@ -88,18 +104,20 @@ export function isBarOutdated(timeframe: Timeframe, lastOpen: number, lastFetch?
   const timeframeMs = timeframeToMilliseconds(timeframe);
 
   // e.g. if timeframe 1h and last fetch < 1h ago there are no new bars
-  if (lastFetch && (now - lastFetch) < timeframeMs) return false;
+  if (lastFetch && now - lastFetch < timeframeMs) return false;
 
   const diff = now - lastOpen;
 
   switch (unit) {
-    case 'm': return diff > 15 * 60 * 1000; // 15 min
-    default: return diff > 3 * timeframeMs; // 3 timeframes for anything > minutes
+    case 'm':
+      return diff > 15 * 60 * 1000; // 15 min
+    default:
+      return diff > 3 * timeframeMs; // 3 timeframes for anything > minutes
   }
 }
 
 export function sleep(ms: number): Promise<void> {
-  return new Promise<void>(r => setTimeout(r, ms));
+  return new Promise<void>((r) => setTimeout(r, ms));
 }
 
 export function cutOngoingBar(bars: Bar[]): Bar[] {
@@ -134,7 +152,7 @@ export function calcTickerMetrics(bars: Bar[]): TickerMetrics {
 }
 
 export function calcScore(tickers: Bar[][]): number {
-  const metrics: TickerMetrics[] = tickers.map(t => calcTickerMetrics(t));
+  const metrics: TickerMetrics[] = tickers.map((t) => calcTickerMetrics(t));
   if (metrics.length === 0) return 0;
 
   const totalWeight = metrics.reduce((sum, m) => sum + Math.sqrt(m.signalCount), 0);

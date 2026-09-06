@@ -1,4 +1,10 @@
-import { AlpacaFeed, ChartConfig, Exchange, Strategy, Timeframe } from '@shared';
+import {
+  AlpacaFeed,
+  ChartConfig,
+  Exchange,
+  Strategy,
+  Timeframe,
+} from '@shared';
 
 const STORAGE_KEY = 'large-trading.chartConfig.v1';
 
@@ -10,46 +16,61 @@ const DEFAULT_CONFIG: ChartConfig = {
   autoParams: false,
   symbols: [{ exchange: Exchange.Binance, symbol: 'BTCUSDT' }],
   autoSymbols: false,
-  rank: 15
+  rank: 15,
 };
 
 export function copyChartConfig(config: ChartConfig): ChartConfig {
   return structuredClone(config);
 }
 
-export function normalizeChartConfig(value: Partial<ChartConfig> | null | undefined): ChartConfig {
+export function normalizeChartConfig(
+  value: Partial<ChartConfig> | null | undefined,
+): ChartConfig {
   const timeframes = Object.values(Timeframe);
   const strategies = Object.values(Strategy);
   const exchanges = Object.values(Exchange);
 
   const symbols = Array.isArray(value?.symbols)
     ? value.symbols
-      .filter(item => exchanges.includes(item?.exchange) && typeof item?.symbol === 'string' && item.symbol.trim())
-      .map(item => ({
-        exchange: item.exchange,
-        symbol: item.symbol.trim().toUpperCase(),
-        ...(item.exchange === Exchange.Alpaca && item.feed === AlpacaFeed.Iex ? { feed: AlpacaFeed.Iex } : {})
-      }))
+        .filter(
+          (item) =>
+            exchanges.includes(item?.exchange) &&
+            typeof item?.symbol === 'string' &&
+            item.symbol.trim(),
+        )
+        .map((item) => ({
+          exchange: item.exchange,
+          symbol: item.symbol.trim().toUpperCase(),
+          ...(item.exchange === Exchange.Alpaca && item.feed === AlpacaFeed.Iex
+            ? { feed: AlpacaFeed.Iex }
+            : {}),
+        }))
     : DEFAULT_CONFIG.symbols;
 
   const strategyValue = value?.strategy;
 
   return {
-    timeframe: timeframes.includes(value?.timeframe as Timeframe) ? value!.timeframe! : DEFAULT_CONFIG.timeframe,
+    timeframe: timeframes.includes(value?.timeframe as Timeframe)
+      ? value!.timeframe!
+      : DEFAULT_CONFIG.timeframe,
     times: positiveInteger(value?.times, DEFAULT_CONFIG.times),
     commission: nonNegativeNumber(value?.commission, DEFAULT_CONFIG.commission),
-    strategy: strategies.includes(strategyValue as Strategy) ? strategyValue as Strategy : DEFAULT_CONFIG.strategy,
+    strategy: strategies.includes(strategyValue as Strategy)
+      ? (strategyValue as Strategy)
+      : DEFAULT_CONFIG.strategy,
     autoParams: Boolean(value?.autoParams),
     symbols: symbols.length ? symbols : copyChartConfig(DEFAULT_CONFIG).symbols,
     autoSymbols: Boolean(value?.autoSymbols),
-    rank: positiveInteger(value?.rank, DEFAULT_CONFIG.rank)
+    rank: positiveInteger(value?.rank, DEFAULT_CONFIG.rank),
   };
 }
 
 export function loadChartConfig(): ChartConfig {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? normalizeChartConfig(JSON.parse(stored)) : copyChartConfig(DEFAULT_CONFIG);
+    return stored
+      ? normalizeChartConfig(JSON.parse(stored))
+      : copyChartConfig(DEFAULT_CONFIG);
   } catch {
     return copyChartConfig(DEFAULT_CONFIG);
   }

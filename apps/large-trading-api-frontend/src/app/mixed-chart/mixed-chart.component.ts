@@ -1,9 +1,39 @@
-﻿import { Component, ElementRef, Inject, Input, OnChanges, OnDestroy, OnInit, Renderer2, signal, SimpleChanges, ViewChild } from '@angular/core';
-import { CandlestickData, createChart, IChartApi, ISeriesApi, LineData, MouseEventParams, Time, CrosshairMode, UTCTimestamp, HistogramData, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers, ISeriesMarkersPluginApi, IRange, TickMarkType } from 'lightweight-charts';
+﻿import {
+  Component,
+  ElementRef,
+  Inject,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  signal,
+  SimpleChanges,
+  ViewChild,
+} from '@angular/core';
+import {
+  CandlestickData,
+  createChart,
+  IChartApi,
+  ISeriesApi,
+  LineData,
+  MouseEventParams,
+  Time,
+  CrosshairMode,
+  UTCTimestamp,
+  HistogramData,
+  CandlestickSeries,
+  LineSeries,
+  HistogramSeries,
+  createSeriesMarkers,
+  ISeriesMarkersPluginApi,
+  IRange,
+  TickMarkType,
+} from 'lightweight-charts';
 import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
 import { WatermarkPrimitive } from './primitives/watermark-primitive';
-import { BacktestStats, Bar, ChartConfig, Run } from '@shared';
+import { ChartBacktestStats, Bar, ChartConfig, Run } from '@shared';
 import { isMultiConfig } from '../chart-config/chart-config';
 import { BaseComponent } from '../base-component';
 import { IndicatorSeriesService } from './services/indicator-series.service';
@@ -14,9 +44,12 @@ import { StatsService } from './services/stats.service';
   selector: 'mixed-chart',
   templateUrl: './mixed-chart.component.html',
   styleUrls: ['./mixed-chart.component.scss'],
-  standalone: false
+  standalone: false,
 })
-export class MixedChartComponent extends BaseComponent implements OnInit, OnChanges, OnDestroy {
+export class MixedChartComponent
+  extends BaseComponent
+  implements OnInit, OnChanges, OnDestroy
+{
   @ViewChild('container') containerRef: ElementRef;
   @ViewChild('legend') legend: ElementRef;
   @Input() runs: Run[];
@@ -31,8 +64,10 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   public readonly currentProfit = signal<number[]>([]);
   public readonly currentIndex = signal<number | undefined>(undefined);
   public readonly openPositionSize = signal<number | undefined>(undefined);
-  public readonly currentIndicatorValues = signal<{ label: string; value: string }[]>([]);
-  public stats: BacktestStats;
+  public readonly currentIndicatorValues = signal<
+    { label: string; value: string }[]
+  >([]);
+  public stats: ChartBacktestStats;
   public currentBars: Bar[];
 
   private chart: IChartApi;
@@ -45,17 +80,34 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   private seriesMarkersPlugin: ISeriesMarkersPluginApi<Time> | undefined;
   private positionSizeChecked: boolean = false;
   private finalProfit: number[] = [];
-  private crosshairMoveHandler: ((param: MouseEventParams<Time>) => void) | undefined;
+  private crosshairMoveHandler:
+    | ((param: MouseEventParams<Time>) => void)
+    | undefined;
   private visibleRangeChangeHandler: (() => void) | undefined;
   private lastVisibleRangeSize: number | undefined;
 
-  private readonly months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  private indicatorSeriesService: IndicatorSeriesService = new IndicatorSeriesService();
-  private markersChartingService: MarkersChartingService = new MarkersChartingService();
+  private readonly months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  private indicatorSeriesService: IndicatorSeriesService =
+    new IndicatorSeriesService();
+  private markersChartingService: MarkersChartingService =
+    new MarkersChartingService();
 
   constructor(
     public statsService: StatsService,
-    @Inject(Renderer2) private renderer: Renderer2
+    @Inject(Renderer2) private renderer: Renderer2,
   ) {
     super();
   }
@@ -73,8 +125,15 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.applyDisplayOptions();
     }
 
-    if (changes['showPositionSize']) this.positionSizeChecked = this.showPositionSize;
-    if (this.chart && (changes['showPositionSize'] || changes['showCharting'] || changes['showIndicators'])) this.applyDisplayOptions();
+    if (changes['showPositionSize'])
+      this.positionSizeChecked = this.showPositionSize;
+    if (
+      this.chart &&
+      (changes['showPositionSize'] ||
+        changes['showCharting'] ||
+        changes['showIndicators'])
+    )
+      this.applyDisplayOptions();
   }
 
   ngOnInit(): void {
@@ -96,7 +155,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
     }
 
     if (this.visibleRangeChangeHandler && this.chart) {
-      this.chart.timeScale().unsubscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
+      this.chart
+        .timeScale()
+        .unsubscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
     }
 
     if (this.chart) {
@@ -113,7 +174,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.drawMarkersAndCharting();
     } else {
       this.trendLinesPrimitive?.setSegments([]);
-      this.seriesMarkersPlugin!.setMarkers(this.markersChartingService.getMarkersSignals());
+      this.seriesMarkersPlugin!.setMarkers(
+        this.markersChartingService.getMarkersSignals(),
+      );
     }
 
     this.indicatorSeriesService.setVisible(this.showIndicators);
@@ -130,7 +193,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       height,
       leftPriceScale: { visible: !this.isMulti },
       rightPriceScale: { visible: !this.isMulti },
-      timeScale: { minBarSpacing: 0.001, timeVisible: true }
+      timeScale: { minBarSpacing: 0.001, timeVisible: true },
     });
 
     this.applyDarkTheme(this.chart);
@@ -145,7 +208,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
     this.currentBars = this.hasCommission
       ? this.runs[1].bars
       : this.runs[0].bars;
-    this.watermarkPrimitive?.setConfig(this.currentBars[0].symbol, this.currentBars[0].exchange, this.isMulti);
+    this.watermarkPrimitive?.setConfig(
+      this.currentBars[0].symbol,
+      this.currentBars[0].exchange,
+      this.isMulti,
+    );
   }
 
   private resizeUnlisten: (() => void) | undefined;
@@ -161,7 +228,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   }
 
   private drawSeries(): void {
-    this.indicatorSeriesService.draw(this.chart, this.currentBars, this.getPositionSizeAlpha());
+    this.indicatorSeriesService.draw(
+      this.chart,
+      this.currentBars,
+      this.getPositionSizeAlpha(),
+    );
     this.drawProfitSeries();
     this.initHistogramSeries();
     this.drawCandlestickSeries();
@@ -172,7 +243,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.openPositionSizeSeries = this.chart.addSeries(HistogramSeries, {
         priceScaleId: 'histogram',
         priceLineVisible: false,
-        lastValueVisible: false
+        lastValueVisible: false,
       });
     }
   }
@@ -182,25 +253,32 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.candlestickSeries = this.chart.addSeries(CandlestickSeries, {
         priceScaleId: 'right',
         priceLineVisible: false,
-        lastValueVisible: false
+        lastValueVisible: false,
       });
 
-      this.seriesMarkersPlugin = createSeriesMarkers(this.candlestickSeries, []);
+      this.seriesMarkersPlugin = createSeriesMarkers(
+        this.candlestickSeries,
+        [],
+      );
       this.trendLinesPrimitive = new TrendLinesPrimitive();
       this.candlestickSeries.attachPrimitive(this.trendLinesPrimitive);
       this.compactCirclePrimitive = new CompactCirclePrimitive();
       this.candlestickSeries.attachPrimitive(this.compactCirclePrimitive);
       this.watermarkPrimitive = new WatermarkPrimitive();
       this.candlestickSeries.attachPrimitive(this.watermarkPrimitive);
-      this.watermarkPrimitive.setConfig(this.currentBars[0].symbol, this.currentBars[0].exchange, this.isMulti);
+      this.watermarkPrimitive.setConfig(
+        this.currentBars[0].symbol,
+        this.currentBars[0].exchange,
+        this.isMulti,
+      );
     }
 
     const mapped = this.currentBars.map((bar: Bar) => ({
-      time: bar.times.open / 1000 as Time,
+      time: (bar.times.open / 1000) as Time,
       open: bar.prices.open,
       high: bar.prices.high,
       low: bar.prices.low,
-      close: bar.prices.close
+      close: bar.prices.close,
     }));
 
     this.candlestickSeries.setData(mapped);
@@ -213,15 +291,22 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       priceScaleId: 'left',
       priceLineVisible: false,
       lastValueVisible: false,
-      crosshairMarkerVisible: false
+      crosshairMarkerVisible: false,
     });
 
     const mapped = this.currentBars.map((bar: Bar) => {
       const currentProfit: number = (bar.backtest.profit || 0) * 100;
-      const color: string = currentProfit === 0
-        ? 'rgba(255,255,255,0.3)'
-        : currentProfit > 0 ? 'rgba(0,255,0,0.3)' : 'rgba(255,77,77,0.3)';
-      return { time: bar.times.open / 1000 as Time, value: currentProfit, color };
+      const color: string =
+        currentProfit === 0
+          ? 'rgba(255,255,255,0.3)'
+          : currentProfit > 0
+            ? 'rgba(0,255,0,0.3)'
+            : 'rgba(255,77,77,0.3)';
+      return {
+        time: (bar.times.open / 1000) as Time,
+        value: currentProfit,
+        color,
+      };
     });
 
     this.profitSeries!.setData(mapped);
@@ -235,7 +320,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.seriesMarkersPlugin!,
       this.compactCirclePrimitive!,
       this.trendLinesPrimitive,
-      this.isMulti
+      this.isMulti,
     );
   }
 
@@ -249,8 +334,11 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
 
   private getPositionSizeAlpha(): number {
     const logicalRange = this.chart?.timeScale().getVisibleLogicalRange();
-    const numVisibleBars: number = logicalRange ? logicalRange.to - logicalRange.from : 100;
-    const chartWidth: number = this.containerRef?.nativeElement?.clientWidth || 1000;
+    const numVisibleBars: number = logicalRange
+      ? logicalRange.to - logicalRange.from
+      : 100;
+    const chartWidth: number =
+      this.containerRef?.nativeElement?.clientWidth || 1000;
     const barsPerPixel: number = numVisibleBars / chartWidth;
     if (barsPerPixel <= 1) return 0.15;
     // target effective alpha per pixel = 0.15  =>  alpha = 1 - 0.85^(1/barsPerPixel)
@@ -262,10 +350,17 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
 
     const mapped = this.currentBars.map((bar: Bar) => {
       const openPositionSize: number = bar.backtest.openPositionSize!;
-      const color: string = openPositionSize === 0
-        ? 'transparent'
-        : openPositionSize > 0 ? `rgba(0, 255, 162, ${alpha})` : `rgba(255, 0, 170, ${alpha})`;
-      return { time: bar.times.open / 1000 as Time, value: openPositionSize, color };
+      const color: string =
+        openPositionSize === 0
+          ? 'transparent'
+          : openPositionSize > 0
+            ? `rgba(0, 255, 162, ${alpha})`
+            : `rgba(255, 0, 170, ${alpha})`;
+      return {
+        time: (bar.times.open / 1000) as Time,
+        value: openPositionSize,
+        color,
+      };
     });
 
     if (this.openPositionSizeSeries) {
@@ -301,39 +396,46 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       layout: { background: { color: '#1a1a1a' }, textColor: '#FFFFFF' },
       grid: {
         vertLines: { color: 'rgba(255, 255, 255, 0.0)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.0)' }
+        horzLines: { color: 'rgba(255, 255, 255, 0.0)' },
       },
       crosshair: {
         vertLine: { color: '#FFFFFF' },
         horzLine: { color: '#FFFFFF' },
-        mode: CrosshairMode.Normal
+        mode: CrosshairMode.Normal,
       },
       localization: {
         timeFormatter: (time: UTCTimestamp) => this.formatTimeByTimeframe(time),
         priceFormatter: (price: number) => {
-          if (price >= 1000 && price % 1000 === 0) return (price / 1000) + 'k';
+          if (price >= 1000 && price % 1000 === 0) return price / 1000 + 'k';
           if (price % 1 === 0) return price.toFixed(0);
           return price.toFixed(2);
-        }
+        },
       },
       timeScale: {
         tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) => {
           const ts = time as UTCTimestamp;
           const date = new Date(ts * 1000);
           const unit = this.config.timeframe.slice(-1);
-          if (tickMarkType === TickMarkType.Year) return date.getFullYear().toString();
-          if (tickMarkType === TickMarkType.Month) return `${this.months[date.getMonth()]} ${date.getFullYear()}`;
-          if (tickMarkType === TickMarkType.DayOfMonth) return `${date.getDate()} ${this.months[date.getMonth()]}`;
+          if (tickMarkType === TickMarkType.Year)
+            return date.getFullYear().toString();
+          if (tickMarkType === TickMarkType.Month)
+            return `${this.months[date.getMonth()]} ${date.getFullYear()}`;
+          if (tickMarkType === TickMarkType.DayOfMonth)
+            return `${date.getDate()} ${this.months[date.getMonth()]}`;
           const h = date.getHours().toString().padStart(2, '0');
           const m = date.getMinutes().toString().padStart(2, '0');
           return unit === 'm' ? `${h}:${m}` : `${h}:00`;
-        }
-      }
+        },
+      },
     });
   }
 
   private updateStats(): void {
-    this.stats = this.statsService.calcStats(this.currentBars, this.config.strategy, this.finalProfit[0]);
+    this.stats = this.statsService.calcStats(
+      this.currentBars,
+      this.config.strategy,
+      this.finalProfit[0],
+    );
   }
 
   private setFinalProfits(): void {
@@ -343,45 +445,80 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
 
   private subscribeVisibleRangeChange(): void {
     this.visibleRangeChangeHandler = () => {
-      const visibleRange: IRange<Time> | null = this.chart.timeScale().getVisibleRange();
+      const visibleRange: IRange<Time> | null = this.chart
+        .timeScale()
+        .getVisibleRange();
       const logicalRange = this.chart.timeScale().getVisibleLogicalRange();
       const timeRange: number | undefined = visibleRange
-        ? (visibleRange.to as UTCTimestamp) - (visibleRange.from as UTCTimestamp)
+        ? (visibleRange.to as UTCTimestamp) -
+          (visibleRange.from as UTCTimestamp)
         : undefined;
 
       if (timeRange === undefined) return;
-      if (this.lastVisibleRangeSize !== undefined && Math.abs(timeRange - this.lastVisibleRangeSize) / this.lastVisibleRangeSize < 0.1) return;
+      if (
+        this.lastVisibleRangeSize !== undefined &&
+        Math.abs(timeRange - this.lastVisibleRangeSize) /
+          this.lastVisibleRangeSize <
+          0.1
+      )
+        return;
 
       this.lastVisibleRangeSize = timeRange;
 
       if (this.showCharting) {
-        this.markersChartingService.drawMarkers(this.chart, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.isMulti);
+        this.markersChartingService.drawMarkers(
+          this.chart,
+          this.seriesMarkersPlugin!,
+          this.compactCirclePrimitive!,
+          this.isMulti,
+        );
       }
 
       if (this.openPositionSizeSeries && this.positionSizeChecked) {
         this.setOpenPositionSizeSeriesData();
       }
 
-      this.indicatorSeriesService.setMacdData(this.currentBars, this.getPositionSizeAlpha());
-      this.indicatorSeriesService.setRsiData(logicalRange ? logicalRange.to - logicalRange.from : this.currentBars.length);
+      this.indicatorSeriesService.setMacdData(
+        this.currentBars,
+        this.getPositionSizeAlpha(),
+      );
+      this.indicatorSeriesService.setRsiData(
+        logicalRange
+          ? logicalRange.to - logicalRange.from
+          : this.currentBars.length,
+      );
     };
 
-    this.chart.timeScale().subscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
+    this.chart
+      .timeScale()
+      .subscribeVisibleLogicalRangeChange(this.visibleRangeChangeHandler);
   }
 
   private subscribeCrosshairMove(): void {
     this.crosshairMoveHandler = (param: MouseEventParams<Time>) => {
       const index: number = param.logical as number;
       const bar: Bar = this.currentBars[index];
-      this.indicatorSeriesService.setRsiHover(param.hoveredSeries === this.indicatorSeriesService.getRsiSeries());
+      this.indicatorSeriesService.setRsiHover(
+        param.hoveredSeries === this.indicatorSeriesService.getRsiSeries(),
+      );
       this.updateLegend(param, index);
 
       if (bar && this.showCharting) {
-        this.markersChartingService.highlightOpenSignals(bar, this.currentBars, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.chart, this.isMulti);
+        this.markersChartingService.highlightOpenSignals(
+          bar,
+          this.currentBars,
+          this.seriesMarkersPlugin!,
+          this.compactCirclePrimitive!,
+          this.chart,
+          this.isMulti,
+        );
       }
 
       if (this.showCharting) {
-        this.markersChartingService.highlightTrendLines(param, this.trendLinesPrimitive);
+        this.markersChartingService.highlightTrendLines(
+          param,
+          this.trendLinesPrimitive,
+        );
       }
     };
 
@@ -389,7 +526,9 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   }
 
   private updateLegend(param: MouseEventParams<Time>, index: number): void {
-    const ohlc: CandlestickData = param.seriesData.get(this.candlestickSeries) as CandlestickData;
+    const ohlc: CandlestickData = param.seriesData.get(
+      this.candlestickSeries,
+    ) as CandlestickData;
 
     if (!ohlc) return;
 
@@ -402,19 +541,29 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
     this.currentOhlc.set(ohlc);
     this.currentIndex.set(index);
 
-    this.currentProfit.set([(() => {
-      const data: LineData = param.seriesData.get(this.profitSeries!) as LineData;
-      return data ? Number(data.value.toFixed(2)) : 0;
-    })()]);
+    this.currentProfit.set([
+      (() => {
+        const data: LineData = param.seriesData.get(
+          this.profitSeries!,
+        ) as LineData;
+        return data ? Number(data.value.toFixed(2)) : 0;
+      })(),
+    ]);
 
     if (this.openPositionSizeSeries) {
-      const openPositionSize: HistogramData = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;
+      const openPositionSize: HistogramData = param.seriesData.get(
+        this.openPositionSizeSeries,
+      ) as HistogramData;
 
       if (openPositionSize) {
         this.openPositionSize.set(Number(openPositionSize.value.toFixed(2)));
       }
     }
 
-    this.currentIndicatorValues.set(this.showIndicators ? this.indicatorSeriesService.getLegendValues(param) : []);
+    this.currentIndicatorValues.set(
+      this.showIndicators
+        ? this.indicatorSeriesService.getLegendValues(param)
+        : [],
+    );
   }
 }

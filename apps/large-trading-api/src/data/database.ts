@@ -1,8 +1,16 @@
 ﻿import mongoose from 'mongoose';
 import Base from '../base';
 import { calcStartTime } from '@shared';
-import { AlpacaFeed, AppConfig, Bar, Exchange, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
-import { BarSchema, AlpacaSymbolsSchema, TwitterUserTimelineSchema, AppConfigSchema, CmcTickersSchema as CmcTickersSchema, BinanceSymbolsSchema, BarFetchTimesSchema } from './schemas';
+import { AlpacaFeed, DatabaseMaintenanceState, Bar, Exchange, Timeframe, Tweet, TweetSentiment, TwitterTimeline } from '@shared';
+import {
+  BarSchema,
+  AlpacaSymbolsSchema,
+  TwitterUserTimelineSchema,
+  AppConfigSchema,
+  CmcTickersSchema as CmcTickersSchema,
+  BinanceSymbolsSchema,
+  BarFetchTimesSchema,
+} from './schemas';
 import { DeleteResult } from 'mongodb';
 
 mongoose.set('strictQuery', true);
@@ -34,7 +42,7 @@ class Database extends Base {
       return;
     } else {
       // check if doc with "filter" props exists. if not, adds doc with "filter" and "$setOnInsert" properties combined
-      const bulkWriteOperations = bars.map(bar => ({
+      const bulkWriteOperations = bars.map((bar) => ({
         updateOne: {
           filter: {
             symbol: bar.symbol,
@@ -42,7 +50,7 @@ class Database extends Base {
             ...(bar.feed ? { feed: bar.feed } : { feed: { $exists: false } }),
             timeframe: bar.timeframe,
             openTime: bar.times.open,
-            closeTime: bar.times.close
+            closeTime: bar.times.close,
           },
           update: {
             $setOnInsert: {
@@ -52,11 +60,11 @@ class Database extends Base {
               highPrice: bar.prices.high,
               lowPrice: bar.prices.low,
               volume: bar.volume,
-              numberOfTrades: bar.numberOfTrades
-            }
+              numberOfTrades: bar.numberOfTrades,
+            },
           },
-          upsert: true
-        }
+          upsert: true,
+        },
       }));
 
       try {
@@ -79,24 +87,24 @@ class Database extends Base {
         this.log('No bars found');
       }
 
-      const mappedBars: Bar[] = bars.map(bar => ({
+      const mappedBars: Bar[] = bars.map((bar) => ({
         symbol: bar.symbol,
         exchange: bar.exchange,
         ...(bar.feed ? { feed: bar.feed } : {}),
         timeframe: bar.timeframe,
         times: {
           open: bar.openTime,
-          close: bar.closeTime
+          close: bar.closeTime,
         },
         prices: {
           open: bar.openPrice,
           close: bar.closePrice,
           high: bar.highPrice,
-          low: bar.lowPrice
+          low: bar.lowPrice,
         },
         volume: bar.volume,
         numberOfTrades: bar.numberOfTrades,
-        backtest: { signals: [] }
+        backtest: { signals: [] },
       }));
 
       mappedBars.sort((a, b) => a.times.open - b.times.open);
@@ -130,7 +138,7 @@ class Database extends Base {
 
   // delete bars before a certain time too far in the past
   public async deleteOutdatedBars(): Promise<number | null> {
-    const appConfig: AppConfig | null = await this.getAppConfig();
+    const appConfig: DatabaseMaintenanceState | null = await this.getAppConfig();
     const oneDayAgo: Date = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     if (appConfig && appConfig.lastOutdatedBarRemoval > oneDayAgo) {
@@ -140,13 +148,13 @@ class Database extends Base {
     this.log('Deleting outdated bars');
 
     try {
-      const deleteConditions = Object.values(Timeframe).map(timeframe => ({
+      const deleteConditions = Object.values(Timeframe).map((timeframe) => ({
         timeframe,
-        openTime: { $lt: calcStartTime(timeframe) }
+        openTime: { $lt: calcStartTime(timeframe) },
       }));
 
       const result: DeleteResult = await this.bar.deleteMany({
-        $or: deleteConditions
+        $or: deleteConditions,
       });
 
       const totalDeleted = result.deletedCount;
@@ -166,24 +174,28 @@ class Database extends Base {
       const timelines = await this.twitterUserTimeline.find();
       let newSentiments = 0;
 
-      await Promise.all(timelines.map(async (timeline) => {
-        sentiments.forEach((sentiment) => {
-          const tweet = timeline.tweets.find((tweet) => tweet.id === sentiment.id);
+      await Promise.all(
+        timelines.map(async (timeline) => {
+          sentiments.forEach((sentiment) => {
+            const tweet = timeline.tweets.find((tweet) => tweet.id === sentiment.id);
 
-          if (tweet) {
-            const symbol = tweet.symbols.find((symbol) => symbol.symbol === sentiment.symbol);
-            if (!symbol) return;
-            const sentimentAlreadyExists = symbol.sentiments.find(s => s.sentiment === sentiment.sentiment && s.model === sentiment.model);
+            if (tweet) {
+              const symbol = tweet.symbols.find((symbol) => symbol.symbol === sentiment.symbol);
+              if (!symbol) return;
+              const sentimentAlreadyExists = symbol.sentiments.find(
+                (s) => s.sentiment === sentiment.sentiment && s.model === sentiment.model,
+              );
 
-            if (!sentimentAlreadyExists && sentiment.sentiment) {
-              symbol.sentiments.push({ sentiment: sentiment.sentiment, model: sentiment.model });
-              newSentiments++;
+              if (!sentimentAlreadyExists && sentiment.sentiment) {
+                symbol.sentiments.push({ sentiment: sentiment.sentiment, model: sentiment.model });
+                newSentiments++;
+              }
             }
-          }
-        });
+          });
 
-        await timeline.save();
-      }));
+          await timeline.save();
+        }),
+      );
 
       this.log(`Done writing ${newSentiments} sentiments`);
     } catch (err) {
@@ -199,7 +211,7 @@ class Database extends Base {
       const tweet = timeline.tweets.find((t) => t.id === tweetId);
       if (!tweet) return 0;
       const tweetSymbol = tweet.symbols.find((s) => s.symbol === symbol);
-      const sentiment = tweetSymbol?.sentiments.find(s => s.model === model)?.sentiment || 0;
+      const sentiment = tweetSymbol?.sentiments.find((s) => s.model === model)?.sentiment || 0;
       return sentiment;
     } catch (err) {
       this.logErr(`Failed to retrieve sentiment for tweet "${tweetId}", symbol "${symbol}" and model "${model}"`, err);
@@ -214,16 +226,16 @@ class Database extends Base {
     } else {
       this.log(`Writing ${tweets.length} tweets for user ${userId}...`);
 
-      const tweetDocuments = tweets.map(tweet => ({
+      const tweetDocuments = tweets.map((tweet) => ({
         id: tweet.id,
         time: tweet.time,
         text: tweet.text,
-        symbols: tweet.symbols.map(s => ({ symbol: s.symbol, originalSymbol: s.originalSymbol, sentiments: [] }))
+        symbols: tweet.symbols.map((s) => ({ symbol: s.symbol, originalSymbol: s.originalSymbol, sentiments: [] })),
       }));
 
       const userDocument = {
         id: userId,
-        tweets: tweetDocuments
+        tweets: tweetDocuments,
       };
 
       try {
@@ -245,19 +257,18 @@ class Database extends Base {
       if (user) {
         this.log(`Read Twitter user`);
 
-        const mappedTweets = user.tweets
-          .map(tweet => ({
-            id: tweet.id,
-            time: tweet.time,
-            text: tweet.text,
-            symbols: tweet.symbols
-          }));
+        const mappedTweets = user.tweets.map((tweet) => ({
+          id: tweet.id,
+          time: tweet.time,
+          text: tweet.text,
+          symbols: tweet.symbols,
+        }));
 
         mappedTweets.sort((a, b) => a.time - b.time);
 
         return {
           id: user.id,
-          tweets: mappedTweets
+          tweets: mappedTweets,
         };
       } else {
         this.log(`Twitter user ${userId} not found`);
@@ -276,11 +287,11 @@ class Database extends Base {
       const user = await this.twitterUserTimeline.findOne({ id: userId });
 
       if (user) {
-        user.tweets = newTweets.map(tweet => ({
+        user.tweets = newTweets.map((tweet) => ({
           id: tweet.id,
           time: tweet.time,
           text: tweet.text,
-          symbols: tweet.symbols
+          symbols: tweet.symbols,
         }));
 
         await user.save();
@@ -395,7 +406,12 @@ class Database extends Base {
 
   public async getBarFetchTime(symbol: string, timeframe: string, exchange: Exchange, feed?: AlpacaFeed): Promise<number | undefined> {
     try {
-      const document = await this.barFetchTimes.findOne({ symbol, timeframe, exchange, ...(feed ? { feed } : { feed: { $exists: false } }) });
+      const document = await this.barFetchTimes.findOne({
+        symbol,
+        timeframe,
+        exchange,
+        ...(feed ? { feed } : { feed: { $exists: false } }),
+      });
       return document ? new Date(document.updatedAt).getTime() : undefined;
     } catch (err) {
       this.logErr(`Failed to get bar fetch time for ${symbol}`, err);
@@ -415,7 +431,7 @@ class Database extends Base {
   }
 
   public async getHadStockSplitCleanup(): Promise<boolean> {
-    const appConfig: AppConfig | null = await this.getAppConfig();
+    const appConfig: DatabaseMaintenanceState | null = await this.getAppConfig();
     return appConfig?.hadStockSplitCleanup ?? false;
   }
 
@@ -439,9 +455,9 @@ class Database extends Base {
     }
   }
 
-  private async getAppConfig(): Promise<AppConfig | null> {
+  private async getAppConfig(): Promise<DatabaseMaintenanceState | null> {
     try {
-      const appConfig: AppConfig | null = await this.appConfig.findOne();
+      const appConfig: DatabaseMaintenanceState | null = await this.appConfig.findOne();
       this.log(`Read app config`);
       return appConfig;
     } catch (err) {
@@ -461,4 +477,4 @@ class Database extends Base {
   }
 }
 
-export default new Database();  // singleton
+export default new Database(); // singleton

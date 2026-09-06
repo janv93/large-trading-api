@@ -1,12 +1,28 @@
-import { Component, ElementRef, input, OnChanges, OnInit, output, SimpleChanges, ViewChild } from '@angular/core';
-import { AlpacaFeed, ChartConfig, Exchange, ExchangeSymbol, Strategy, Timeframe } from '@shared';
+import {
+  Component,
+  ElementRef,
+  input,
+  OnChanges,
+  OnInit,
+  output,
+  SimpleChanges,
+  ViewChild,
+} from '@angular/core';
+import {
+  AlpacaFeed,
+  ChartConfig,
+  Exchange,
+  ExchangeSymbol,
+  Strategy,
+  Timeframe,
+} from '@shared';
 import { copyChartConfig, normalizeChartConfig } from './chart-config';
 
 @Component({
   selector: 'chart-config',
   templateUrl: './chart-config.component.html',
   styleUrls: ['./chart-config.component.scss'],
-  standalone: false
+  standalone: false,
 })
 export class ChartConfigComponent implements OnChanges, OnInit {
   public readonly initialConfig = input.required<ChartConfig>();
@@ -18,9 +34,11 @@ export class ChartConfigComponent implements OnChanges, OnInit {
   private runOriginControl?: HTMLInputElement | HTMLSelectElement;
 
   public readonly timeframes = Object.values(Timeframe);
-  public readonly strategies = Object.values(Strategy).sort((a, b) => a.localeCompare(b));
+  public readonly strategies = Object.values(Strategy).sort((a, b) =>
+    a.localeCompare(b),
+  );
   public readonly exchanges = Object.values(Exchange)
-    .filter(exchange => exchange !== Exchange.BTSE)
+    .filter((exchange) => exchange !== Exchange.BTSE)
     .sort((a, b) => a.localeCompare(b));
 
   public ngOnInit(): void {
@@ -28,7 +46,12 @@ export class ChartConfigComponent implements OnChanges, OnInit {
   }
 
   public ngOnChanges(changes: SimpleChanges): void {
-    if (changes['disabled']?.previousValue !== true || changes['disabled'].currentValue !== false || !this.runOriginControl) return;
+    if (
+      changes['disabled']?.previousValue !== true ||
+      changes['disabled'].currentValue !== false ||
+      !this.runOriginControl
+    )
+      return;
 
     const control = this.runOriginControl;
     this.runOriginControl = undefined;
@@ -40,7 +63,11 @@ export class ChartConfigComponent implements OnChanges, OnInit {
   }
 
   public get canRun(): boolean {
-    return this.config.autoSymbols || (this.config.symbols.length > 0 && this.config.symbols.every(item => item.symbol.trim().length > 0));
+    return (
+      this.config.autoSymbols ||
+      (this.config.symbols.length > 0 &&
+        this.config.symbols.every((item) => item.symbol.trim().length > 0))
+    );
   }
 
   public addSymbol(): void {
@@ -77,7 +104,13 @@ export class ChartConfigComponent implements OnChanges, OnInit {
 
   public runOnEnter(event: Event): void {
     const target = event.target;
-    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) return;
+    if (
+      !(
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLSelectElement
+      )
+    )
+      return;
 
     event.preventDefault();
     this.runOriginControl = target;
@@ -99,7 +132,7 @@ export class ChartConfigComponent implements OnChanges, OnInit {
   }
 
   private closeSymbols(): void {
-    this.config.symbols.forEach(symbol => {
+    this.config.symbols.forEach((symbol) => {
       symbol.symbol = symbol.symbol.trim().toUpperCase();
     });
 
