@@ -2,6 +2,7 @@ import {
   BacktesterState,
   BacktestSignal,
   Bar,
+  BarPrices,
   clone,
   LiveCalculationState,
   LiveStrategyState,
@@ -17,7 +18,7 @@ export default class LiveWorkerLifecycle {
   };
 
   private activeSnapshot?: LiveCalculationState;
-  private activePrices?: Bar['prices'];
+  private activePrices?: BarPrices;
 
   public constructor(private readonly options: LiveWorkerLifecycleOptions) {}
 

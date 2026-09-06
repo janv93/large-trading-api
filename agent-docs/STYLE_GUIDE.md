@@ -10,6 +10,7 @@
 - Group enums first, after imports. Define interfaces before the supporting interfaces they reference in the same file.
 - Use `any` when typing interchangeable instances would add unnecessary complexity.
 - Use ordinary imports, not `import type` or inline `type` import modifiers.
+- Never use an indexed access type when an equivalent named type or interface already exists. Use the named declaration directly, for example `BarPrices` instead of `Bar['prices']`.
 - Never use specific string values as types. Use `string` and check specific values at runtime.
 - In TypeScript string literals, always use single quotes (`'`), never double quotes (`"`).
 - Separate a multi-line block from any adjacent single-line statement at the same indentation level with an empty line, both before and after the block:

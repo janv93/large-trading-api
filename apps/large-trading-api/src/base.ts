@@ -1,10 +1,10 @@
 import Logger from './logger';
 
 export default class Base {
+  public silent = false;
   private logger = new Logger();
   private stepsDone = 0;
   private stepsTotal = 0;
-  public silent = false;
 
   protected log(...args: any[]): void {
     this.logger.log(...args, this.constructor.name);
@@ -29,7 +29,7 @@ export default class Base {
   protected addProgress(steps: number): void {
     if (!this.stepsTotal) return;
     this.stepsDone += steps;
-    this.logProgress(Math.min(99, this.stepsDone / this.stepsTotal * 100)); // only endProgress may reach 100, which clears the bar
+    this.logProgress(Math.min(99, (this.stepsDone / this.stepsTotal) * 100)); // only endProgress may reach 100, which clears the bar
   }
 
   protected endProgress(): void {
