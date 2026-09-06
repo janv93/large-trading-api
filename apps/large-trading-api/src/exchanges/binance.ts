@@ -244,8 +244,7 @@ class Binance extends Base {
         exchange: this.exchange,
         timeframe,
         times: {
-          open: k[0],
-          close: k[6]
+          open: k[0]
         },
         prices: {
           open: Number(k[1]),

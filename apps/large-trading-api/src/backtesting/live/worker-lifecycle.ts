@@ -1,12 +1,12 @@
 import {
-  LiveCalculationState,
   BacktesterState,
   BacktestSignal,
   Bar,
+  clone,
+  LiveCalculationState,
   LiveStrategyState,
   LiveWorkerLifecycleOptions,
   TrendLine,
-  clone,
 } from '@shared';
 
 export default class LiveWorkerLifecycle {
@@ -182,7 +182,6 @@ export default class LiveWorkerLifecycle {
   private commitActiveBar(): Bar {
     const activeSnapshot: LiveCalculationState = this.activeSnapshot!;
     const activeBar: Bar = activeSnapshot.window.at(-1)!;
-    activeBar.times.close = activeBar.times.open + this.options.timeframeMs - 1;
     activeBar.prices = this.activePrices!;
     this.committedState = activeSnapshot;
     this.committedState.strategyState.barDone = false;

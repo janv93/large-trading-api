@@ -117,7 +117,6 @@ export interface Bar {
 
 export interface BarTimes {
   open: number;
-  close?: number;
 }
 
 export interface BarPrices {

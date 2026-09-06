@@ -7,7 +7,7 @@ describe('live worker', () => {
       symbol: 'BTCUSDT',
       exchange: Exchange.Binance,
       timeframe: Timeframe._1Minute,
-      times: { open: 0, close: 59_999 },
+      times: { open: 0 },
       prices: { open: 10, high: 10, low: 10, close: 10 },
       volume: 100,
       backtest: { signals: [] },
@@ -91,7 +91,7 @@ describe('live worker', () => {
 
       expect(requests).toEqual(Array.from({ length: 5 }, () => 'getLatestPrice'));
       expect(published).toHaveLength(6);
-      expect(published[4].times).toEqual({ open: 60_000, close: 119_999 });
+      expect(published[4].times).toEqual({ open: 60_000 });
       expect(published[4].prices).toEqual({ open: 11, high: 16, low: 8, close: 12 });
       expect(published[5].times.open).toBe(120_000);
       expect(published[5].prices).toEqual({ open: 20, high: 20, low: 20, close: 20 });

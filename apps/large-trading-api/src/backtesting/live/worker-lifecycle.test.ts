@@ -12,9 +12,9 @@ import {
   TrendLinePosition,
   createSignal,
 } from '@shared';
-import Backtester from '../backtester/backtester';
-import MeanReversion from '../../strategies/mean-reversion';
 import TrendLineController from '../../patterns/trend-line';
+import MeanReversion from '../../strategies/mean-reversion';
+import Backtester from '../backtester/backtester';
 import LiveWorkerLifecycle from './worker-lifecycle';
 
 class RecordingBacktester {
@@ -251,7 +251,7 @@ function createBar(openTime: number, price: number): Bar {
     symbol: 'BTCUSDT',
     exchange: Exchange.Binance,
     timeframe: Timeframe._1Minute,
-    times: { open: openTime, close: openTime + 59_999 },
+    times: { open: openTime },
     prices: { open: price, high: price, low: price, close: price },
     volume: 100,
     backtest: { signals: [] },
@@ -528,7 +528,7 @@ describe('live worker lifecycle', () => {
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
     expect(finalized).toBe(continued);
     expect(lifecycle.getLastCommittedBar()).toBe(continued);
-    expect(continued.times).toEqual({ open: 60_000, close: 119_999 });
+    expect(continued.times).toEqual({ open: 60_000 });
     expect(continued.prices).toEqual({ open: 12, high: 14, low: 12, close: 14 });
     expect(continued.volume).toBe(0);
 
@@ -589,7 +589,7 @@ describe('live worker lifecycle', () => {
     expect(lifecycle.getLastCommittedBar()).toBe(active);
     expect(strategy.calls).toBe(strategyCalls);
     expect(backtester.calls).toHaveLength(backtesterCalls);
-    expect(active.times).toEqual({ open: 60_000, close: 119_999 });
+    expect(active.times).toEqual({ open: 60_000 });
     expect(active.prices).toEqual({ open: price, high: price, low: price, close: price });
     expect(active.backtest.profit).toBe(10 + price);
     expect(active.backtest.signals).toHaveLength(price === 13 ? 1 : 0);

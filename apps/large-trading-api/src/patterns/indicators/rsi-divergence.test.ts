@@ -1,14 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import {
-  Bar,
-  Exchange,
-  LinearFunction,
-  Slope,
-  Timeframe,
-  TrendLine,
-  TrendLinePosition,
-  TrendLineStepState
-} from '@shared';
+import { Bar, Exchange, LinearFunction, Slope, Timeframe, TrendLine, TrendLinePosition, TrendLineStepState } from '@shared';
 import { stepRsiDivergence } from './rsi-divergence';
 
 function createBar(openTime: number, price: number): Bar {
@@ -16,10 +7,10 @@ function createBar(openTime: number, price: number): Bar {
     symbol: 'BTCUSDT',
     exchange: Exchange.Binance,
     timeframe: Timeframe._1Minute,
-    times: { open: openTime, close: openTime + 59_999 },
+    times: { open: openTime },
     prices: { open: price, high: price, low: price, close: price },
     volume: 100,
-    backtest: { signals: [] }
+    backtest: { signals: [] },
   };
 }
 
@@ -31,7 +22,7 @@ describe('stepRsiDivergence', () => {
       endIndex: 1,
       length: 1,
       slope: Slope.Ascending,
-      position: TrendLinePosition.Below
+      position: TrendLinePosition.Below,
     };
 
     const bars: Bar[] = [createBar(0, 10), createBar(60_000, 11)];
@@ -40,8 +31,8 @@ describe('stepRsiDivergence', () => {
     bars[1].indicators = {
       rsiDivergence: {
         regular: 1,
-        originTrendLines: [originTrendLine]
-      }
+        originTrendLines: [originTrendLine],
+      },
     };
 
     const state: TrendLineStepState = { confirmedTrendLines: [originTrendLine] };

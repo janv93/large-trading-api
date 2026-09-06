@@ -50,7 +50,6 @@ class Database extends Base {
             ...(bar.feed ? { feed: bar.feed } : { feed: { $exists: false } }),
             timeframe: bar.timeframe,
             openTime: bar.times.open,
-            closeTime: bar.times.close,
           },
           update: {
             $setOnInsert: {
@@ -94,7 +93,6 @@ class Database extends Base {
         timeframe: bar.timeframe,
         times: {
           open: bar.openTime,
-          close: bar.closeTime,
         },
         prices: {
           open: bar.openPrice,

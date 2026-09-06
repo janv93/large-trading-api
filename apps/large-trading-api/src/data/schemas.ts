@@ -42,10 +42,6 @@ export const BarSchema = new mongoose.Schema({
     required: true,
     index: true
   },
-  closeTime: {
-    type: Number,
-    required: false
-  },
   volume: {
     type: Number,
     required: true
