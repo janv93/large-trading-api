@@ -29,9 +29,6 @@ export class ChartConfigComponent implements OnChanges, OnInit {
   public readonly disabled = input(false);
   public readonly runRequested = output<ChartConfig>();
   public config: ChartConfig;
-  @ViewChild('symbolsPopover') private symbolsPopover?: ElementRef<HTMLElement>;
-  @ViewChild('runButton') private runButton?: ElementRef<HTMLButtonElement>;
-  private runOriginControl?: HTMLInputElement | HTMLSelectElement;
 
   public readonly timeframes = Object.values(Timeframe);
   public readonly strategies = Object.values(Strategy).sort((a, b) =>
@@ -40,6 +37,10 @@ export class ChartConfigComponent implements OnChanges, OnInit {
   public readonly exchanges = Object.values(Exchange)
     .filter((exchange) => exchange !== Exchange.BTSE)
     .sort((a, b) => a.localeCompare(b));
+
+  @ViewChild('symbolsPopover') private symbolsPopover?: ElementRef<HTMLElement>;
+  @ViewChild('runButton') private runButton?: ElementRef<HTMLButtonElement>;
+  private runOriginControl?: HTMLInputElement | HTMLSelectElement;
 
   public ngOnInit(): void {
     this.config = copyChartConfig(this.initialConfig());
@@ -131,6 +132,13 @@ export class ChartConfigComponent implements OnChanges, OnInit {
     this.closeSymbols();
   }
 
+  public run(): void {
+    if (!this.canRun) return;
+    const config = normalizeChartConfig(this.config);
+    this.config = copyChartConfig(config);
+    this.runRequested.emit(config);
+  }
+
   private closeSymbols(): void {
     this.config.symbols.forEach((symbol) => {
       symbol.symbol = symbol.symbol.trim().toUpperCase();
@@ -138,12 +146,5 @@ export class ChartConfigComponent implements OnChanges, OnInit {
 
     this.symbolsPopover?.nativeElement.hidePopover();
     setTimeout(() => this.runButton?.nativeElement.focus());
-  }
-
-  public run(): void {
-    if (!this.canRun) return;
-    const config = normalizeChartConfig(this.config);
-    this.config = copyChartConfig(config);
-    this.runRequested.emit(config);
   }
 }

@@ -1,21 +1,61 @@
 import axios, { AxiosResponse } from 'axios';
 import Base from '../base';
-import { createUrl } from '@shared';
-import cryptos from './coinmarketcap-all-cryptos';
 import database from '../data/database';
-
+import cryptos from './coinmarketcap-all-cryptos';
 
 // stablecoins and commodity-backed tokens to exclude from market cap rankings
-const EXCLUDED_COINS = new Set(['USDT', 'USDC', 'DAI', 'USD1', 'USDe', 'PYUSD', 'USDG', 'RLUSD', 'USDD', 'U', 'TUSD', 'EURC', 'FDUSD', 'XAUt', 'PAXG']);
+const EXCLUDED_COINS = new Set([
+  'USDT',
+  'USDC',
+  'DAI',
+  'USD1',
+  'USDe',
+  'PYUSD',
+  'USDG',
+  'RLUSD',
+  'USDD',
+  'U',
+  'TUSD',
+  'EURC',
+  'FDUSD',
+  'XAUt',
+  'PAXG',
+]);
 
 // fallback top coins when no API key is configured (stablecoins excluded)
-const FALLBACK_COINS = ['BTC', 'ETH', 'XRP', 'BNB', 'SOL', 'TRX', 'DOGE', 'HYPE', 'LEO', 'BCH', 'ADA', 'XMR', 'LINK', 'ZEC', 'CC', 'XLM', 'M', 'LTC', 'AVAX', 'HBAR', 'SUI', 'SHIB', 'TON', 'CRO', 'TAO'];
+const FALLBACK_COINS = [
+  'BTC',
+  'ETH',
+  'XRP',
+  'BNB',
+  'SOL',
+  'TRX',
+  'DOGE',
+  'HYPE',
+  'LEO',
+  'BCH',
+  'ADA',
+  'XMR',
+  'LINK',
+  'ZEC',
+  'CC',
+  'XLM',
+  'M',
+  'LTC',
+  'AVAX',
+  'HBAR',
+  'SUI',
+  'SHIB',
+  'TON',
+  'CRO',
+  'TAO',
+];
 
 export default class Coinmarketcap extends Base {
   private baseUrl = 'https://pro-api.coinmarketcap.com/v1';
 
   private headers = {
-    'X-CMC_Pro_API_Key': process.env.coinmarketcap_api_key
+    'X-CMC_Pro_API_Key': process.env.coinmarketcap_api_key,
   };
 
   public async getCryptosByMarketCap(rank: number): Promise<string[]> {
@@ -29,9 +69,7 @@ export default class Coinmarketcap extends Base {
     const url: string = this.baseUrl + '/cryptocurrency/listings/latest';
     const res: AxiosResponse = await axios.get(url, { headers: this.headers });
 
-    const filtered: string[] = (res.data.data as { symbol: string }[])
-      .map(c => c.symbol)
-      .filter(coin => !EXCLUDED_COINS.has(coin));
+    const filtered: string[] = (res.data.data as { symbol: string }[]).map((c) => c.symbol).filter((coin) => !EXCLUDED_COINS.has(coin));
 
     await database.updateCmcTickers(filtered);
     return filtered;

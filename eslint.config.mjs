@@ -3,7 +3,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default [
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**', '.nx/**', 'tmp/**'] },
+  { ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**', '**/.angular/**', '.nx/**', 'tmp/**'] },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -20,6 +20,7 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/ban-types': 'off',
       'no-case-declarations': 'off',

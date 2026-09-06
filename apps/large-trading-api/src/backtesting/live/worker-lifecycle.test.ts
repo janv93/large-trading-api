@@ -169,10 +169,10 @@ class BarReferenceStrategy {
 }
 
 class RetainedBreakthroughStrategy {
-  private readonly controller = new TrendLineController();
   public readonly incomingConfirmedCounts: number[] = [];
   public readonly incomingOriginBreakThroughIndexes: (number | undefined)[] = [];
   public readonly newBreakthroughCounts: number[] = [];
+  private readonly controller = new TrendLineController();
 
   public stepSetSignals(bars: Bar[], state: LiveStrategyState): void {
     state.trendLines ??= {};
@@ -226,9 +226,9 @@ class AccumulatingConfirmedTrendLineStrategy {
 }
 
 class ExpiringTrendLineStrategy {
-  private readonly controller = new TrendLineController();
   public readonly incomingConfirmedCounts: number[] = [];
   public readonly incomingChartCounts: number[] = [];
+  private readonly controller = new TrendLineController();
 
   public stepSetSignals(bars: Bar[], state: LiveStrategyState): void {
     state.trendLines ??= {};

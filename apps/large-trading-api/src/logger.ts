@@ -8,6 +8,19 @@ export default class Logger {
   private originalConsoleLog = console.log;
   private originalConsoleError = console.error;
 
+  private colors = {
+    black: '\x1b[30m',
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    magenta: '\x1b[35m',
+    cyan: '\x1b[36m',
+    white: '\x1b[37m',
+    orange: '\x1b[38;5;208m',
+    reset: '\x1b[0m',
+  };
+
   constructor() {
     console.log = (...args: any[]) => {
       this.clearProgress();
@@ -19,19 +32,6 @@ export default class Logger {
       this.originalConsoleError(...args);
     };
   }
-
-  private colors = {
-    black: '\x1b[30m',
-    red: '\x1b[31m',
-    green: '\x1b[32m',
-    yellow: '\x1b[33m',
-    blue: '\x1b[34m',
-    magenta: '\x1b[35m',
-    cyan: '\x1b[36m',
-    white: '\x1b[37m',
-    orange: '\x1b[38;5;208m',
-    reset: '\x1b[0m'
-  };
 
   public log(...args: any[]): void {
     const caller = args.pop();
@@ -73,20 +73,37 @@ export default class Logger {
     let color: string;
 
     switch (caller) {
-      case 'App': color = this.colors.blue; break;
-      case 'Routes': color = this.colors.magenta; break;
-      case 'Database': color = this.colors.green; break;
-      case 'Alpaca': color = this.colors.orange; break;
-      case 'Backtester': color = this.colors.cyan; break;
+      case 'App':
+        color = this.colors.blue;
+        break;
+      case 'Routes':
+        color = this.colors.magenta;
+        break;
+      case 'Database':
+        color = this.colors.green;
+        break;
+      case 'Alpaca':
+        color = this.colors.orange;
+        break;
+      case 'Backtester':
+        color = this.colors.cyan;
+        break;
       // crypto
       case 'Binance':
       case 'Kucoin':
       case 'Btse':
-      case 'Coinmarketcap': color = this.colors.yellow; break;
-      default: color = this.colors.white; break;
+      case 'Coinmarketcap':
+        color = this.colors.yellow;
+        break;
+      default:
+        color = this.colors.white;
+        break;
     }
 
-    const paddedName = caller.toUpperCase().slice(0, maxLength - 2).padEnd(maxLength);
+    const paddedName = caller
+      .toUpperCase()
+      .slice(0, maxLength - 2)
+      .padEnd(maxLength);
     return `${color}${paddedName}|${this.colors.reset}`;
   }
 

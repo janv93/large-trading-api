@@ -1,26 +1,26 @@
-﻿import Base from './base';
-import {
-  Strategy,
+﻿import {
   BacktesterState,
+  Bar,
   Exchange,
   ExchangeSymbol,
-  Bar,
   Run,
+  Strategy,
   Timeframe,
   countBars,
   formatDuration,
   timeframeToMilliseconds,
 } from '@shared';
-import alpaca from './exchanges/alpaca';
-import binance from './exchanges/binance';
-import Kucoin from './exchanges/kucoin';
-import Backtester from './backtesting/backtester/backtester';
-import AutoParams from './backtesting/auto-params/auto-params';
-import Live from './backtesting/live/live';
-import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import AutoParams from './backtesting/auto-params/auto-params';
+import Backtester from './backtesting/backtester/backtester';
+import Live from './backtesting/live/live';
+import Base from './base';
+import alpaca from './exchanges/alpaca';
+import binance from './exchanges/binance';
+import Kucoin from './exchanges/kucoin';
+import Coinmarketcap from './other-apis/coinmarketcap';
 
 export default class Routes extends Base {
   private kucoin = new Kucoin();
@@ -33,35 +33,6 @@ export default class Routes extends Base {
   constructor() {
     super();
     this.loadBacktests();
-  }
-
-  private loadBacktests(): void {
-    const backtestsDir = path.join(__dirname, 'strategies');
-    this.scanDir(backtestsDir);
-  }
-
-  private scanDir(dir: string): void {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-
-      if (entry.isDirectory()) {
-        this.scanDir(fullPath);
-      } else if (entry.name.endsWith('.js')) {
-        try {
-          const mod = require(fullPath);
-          const ExportedClass = mod.default;
-
-          if (typeof ExportedClass === 'function' && ExportedClass.name) {
-            const key = ExportedClass.name.charAt(0).toLowerCase() + ExportedClass.name.slice(1);
-            this.backtests[key] = new ExportedClass();
-          }
-        } catch (err: any) {
-          console.warn(`Failed to load backtest from ${fullPath}:`, err);
-        }
-      }
-    }
   }
 
   public async backtest(req: Request, res: Response): Promise<void> {
@@ -93,6 +64,59 @@ export default class Routes extends Base {
       this.endProgress();
       clearInterval(heartbeat);
       res.end();
+    }
+  }
+
+  public async handleLive(req: Request, res: Response): Promise<void> {
+    const { timeframe, times, commission = 0, strategy, symbols, autoSymbols, rank, intervalMs = 5000 } = req.body;
+
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    req.headers['accept-encoding'] = 'identity';
+    const heartbeat: NodeJS.Timeout = setInterval(() => res.write('\n'), 20_000);
+
+    try {
+      const exchangeSymbols: ExchangeSymbol[] = await this.getExchangeSymbols(autoSymbols, symbols, rank);
+      const tickers: Bar[][] = await this.initBarsMulti(exchangeSymbols, timeframe, times, true);
+      const timeframeMs: number = timeframeToMilliseconds(timeframe);
+
+      const onBar = (bar: Bar) => {
+        if (!res.writableEnded) res.write(JSON.stringify(bar) + '\n');
+      };
+
+      await this.live.run(tickers, strategy, this.backtests[strategy.strategy], timeframeMs, intervalMs, Number(commission), onBar, res);
+    } finally {
+      clearInterval(heartbeat);
+      res.end();
+    }
+  }
+
+  private loadBacktests(): void {
+    const backtestsDir = path.join(__dirname, 'strategies');
+    this.scanDir(backtestsDir);
+  }
+
+  private scanDir(dir: string): void {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        this.scanDir(fullPath);
+      } else if (entry.name.endsWith('.js')) {
+        try {
+          const mod = require(fullPath);
+          const ExportedClass = mod.default;
+
+          if (typeof ExportedClass === 'function' && ExportedClass.name) {
+            const key = ExportedClass.name.charAt(0).toLowerCase() + ExportedClass.name.slice(1);
+            this.backtests[key] = new ExportedClass();
+          }
+        } catch (err: any) {
+          console.warn(`Failed to load backtest from ${fullPath}:`, err);
+        }
+      }
     }
   }
 
@@ -233,29 +257,5 @@ export default class Routes extends Base {
     const pairsFiltered: string[] = binancePairs.filter((c: string | undefined) => c) as string[];
     const rankPairs: string[] = pairsFiltered.slice(0, rank);
     return rankPairs;
-  }
-
-  public async handleLive(req: Request, res: Response): Promise<void> {
-    const { timeframe, times, commission = 0, strategy, symbols, autoSymbols, rank, intervalMs = 5000 } = req.body;
-
-    res.setHeader('Content-Type', 'application/x-ndjson');
-    res.setHeader('Transfer-Encoding', 'chunked');
-    req.headers['accept-encoding'] = 'identity';
-    const heartbeat: NodeJS.Timeout = setInterval(() => res.write('\n'), 20_000);
-
-    try {
-      const exchangeSymbols: ExchangeSymbol[] = await this.getExchangeSymbols(autoSymbols, symbols, rank);
-      const tickers: Bar[][] = await this.initBarsMulti(exchangeSymbols, timeframe, times, true);
-      const timeframeMs: number = timeframeToMilliseconds(timeframe);
-
-      const onBar = (bar: Bar) => {
-        if (!res.writableEnded) res.write(JSON.stringify(bar) + '\n');
-      };
-
-      await this.live.run(tickers, strategy, this.backtests[strategy.strategy], timeframeMs, intervalMs, Number(commission), onBar, res);
-    } finally {
-      clearInterval(heartbeat);
-      res.end();
-    }
   }
 }

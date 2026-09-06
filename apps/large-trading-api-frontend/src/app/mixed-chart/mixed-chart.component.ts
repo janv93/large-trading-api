@@ -11,31 +11,31 @@
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { Bar, ChartBacktestStats, ChartConfig, Run } from '@shared';
 import {
   CandlestickData,
-  createChart,
-  IChartApi,
-  ISeriesApi,
-  LineData,
-  MouseEventParams,
-  Time,
-  CrosshairMode,
-  UTCTimestamp,
-  HistogramData,
   CandlestickSeries,
-  LineSeries,
-  HistogramSeries,
+  createChart,
   createSeriesMarkers,
-  ISeriesMarkersPluginApi,
+  CrosshairMode,
+  HistogramData,
+  HistogramSeries,
+  IChartApi,
   IRange,
+  ISeriesApi,
+  ISeriesMarkersPluginApi,
+  LineData,
+  LineSeries,
+  MouseEventParams,
   TickMarkType,
+  Time,
+  UTCTimestamp,
 } from 'lightweight-charts';
-import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
-import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
-import { WatermarkPrimitive } from './primitives/watermark-primitive';
-import { ChartBacktestStats, Bar, ChartConfig, Run } from '@shared';
-import { isMultiConfig } from '../chart-config/chart-config';
 import { BaseComponent } from '../base-component';
+import { isMultiConfig } from '../chart-config/chart-config';
+import { CompactCirclePrimitive } from './primitives/compact-circle-primitive';
+import { TrendLinesPrimitive } from './primitives/trend-lines-primitive';
+import { WatermarkPrimitive } from './primitives/watermark-primitive';
 import { IndicatorSeriesService } from './services/indicator-series.service';
 import { MarkersChartingService } from './services/markers-charting.service';
 import { StatsService } from './services/stats.service';
@@ -85,6 +85,7 @@ export class MixedChartComponent
     | undefined;
   private visibleRangeChangeHandler: (() => void) | undefined;
   private lastVisibleRangeSize: number | undefined;
+  private resizeUnlisten: (() => void) | undefined;
 
   private readonly months = [
     'Jan',
@@ -166,6 +167,10 @@ export class MixedChartComponent
     }
   }
 
+  public formatBarTime(time: Time): string {
+    return this.formatTimeByTimeframe(time as UTCTimestamp);
+  }
+
   private applyDisplayOptions(): void {
     this.positionSizeChecked = this.showPositionSize;
     this.drawOpenPositionSize();
@@ -214,8 +219,6 @@ export class MixedChartComponent
       this.isMulti,
     );
   }
-
-  private resizeUnlisten: (() => void) | undefined;
 
   private handleResize(): void {
     this.resizeUnlisten = this.renderer.listen('window', 'resize', () => {
@@ -366,10 +369,6 @@ export class MixedChartComponent
     if (this.openPositionSizeSeries) {
       this.openPositionSizeSeries.setData(mapped);
     }
-  }
-
-  public formatBarTime(time: Time): string {
-    return this.formatTimeByTimeframe(time as UTCTimestamp);
   }
 
   private formatTimeByTimeframe(time: UTCTimestamp): string {

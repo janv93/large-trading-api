@@ -1,13 +1,13 @@
 ﻿import { Component, computed, signal } from '@angular/core';
 import { ChartConfig, Run } from '@shared';
 import { finalize } from 'rxjs';
-import { HttpService } from '../http.service';
 import {
   copyChartConfig,
   isMultiConfig,
   loadChartConfig,
   saveChartConfig,
 } from '../chart-config/chart-config';
+import { HttpService } from '../http.service';
 import { LoadingService } from '../loader/loading.service';
 
 @Component({
@@ -36,6 +36,14 @@ export class AppComponent {
     const start = this.currentPage() * this.pageSize;
     return this.tickers().slice(start, start + this.pageSize);
   });
+
+  constructor(
+    public loadingService: LoadingService,
+    private httpService: HttpService,
+  ) {
+    this.runBacktest(this.activeConfig());
+  }
+
   public prevPage(): void {
     this.currentPage.update((page) => Math.max(0, page - 1));
   }
@@ -44,13 +52,6 @@ export class AppComponent {
     this.currentPage.update((page) =>
       Math.min(this.totalPages() - 1, page + 1),
     );
-  }
-
-  constructor(
-    public loadingService: LoadingService,
-    private httpService: HttpService,
-  ) {
-    this.runBacktest(this.activeConfig());
   }
 
   public runBacktest(config: ChartConfig): void {

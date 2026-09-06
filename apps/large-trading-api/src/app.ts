@@ -5,9 +5,9 @@ import express, { NextFunction, Request, Response } from 'express';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
 import Base from './base';
-import Routes from './routes';
 import database from './data/database';
 import alpaca from './exchanges/alpaca';
+import Routes from './routes';
 
 class App extends Base {
   public app: express.Application;
@@ -19,6 +19,27 @@ class App extends Base {
     this.routes = new Routes();
     this.config();
     this.route();
+  }
+
+  public async start(): Promise<void> {
+    this.log('Initializing App');
+
+    const [serverStarted, totalDeleted]: [Server, number | null, void] = await Promise.all([
+      this.startServer(),
+      database.deleteOutdatedBars(),
+      alpaca.deleteStockSplitSymbols(),
+    ]);
+
+    if (totalDeleted) {
+      this.log(`${totalDeleted} outdated bars deleted`);
+    }
+
+    const addressInfo: AddressInfo = serverStarted.address() as AddressInfo;
+    const address: string = addressInfo.address === '::' ? 'localhost' : addressInfo.address;
+    const port: number = addressInfo.port;
+
+    this.log(`Server is listening on ${address}:${port}`);
+    this.log('App initialized');
   }
 
   private config(): void {
@@ -34,8 +55,14 @@ class App extends Base {
   }
 
   private route(): void {
-    this.app.post('/backtest', this.handle((req, res) => this.routes.backtest(req, res)));
-    this.app.post('/live', this.handle((req, res) => this.routes.handleLive(req, res)));
+    this.app.post(
+      '/backtest',
+      this.handle((req, res) => this.routes.backtest(req, res)),
+    );
+    this.app.post(
+      '/live',
+      this.handle((req, res) => this.routes.handleLive(req, res)),
+    );
   }
 
   private handle(fn: (req: Request, res: Response) => void | Promise<void>) {
@@ -61,27 +88,6 @@ class App extends Base {
         resolve(server);
       });
     });
-  }
-
-  public async start(): Promise<void> {
-    this.log('Initializing App');
-
-    const [serverStarted, totalDeleted]: [Server, (number | null), void] = await Promise.all([
-      this.startServer(),
-      database.deleteOutdatedBars(),
-      alpaca.deleteStockSplitSymbols()
-    ]);
-
-    if (totalDeleted) {
-      this.log(`${totalDeleted} outdated bars deleted`);
-    }
-
-    const addressInfo: AddressInfo = serverStarted.address() as AddressInfo;
-    const address: string = addressInfo.address === '::' ? 'localhost' : addressInfo.address;
-    const port: number = addressInfo.port;
-
-    this.log(`Server is listening on ${address}:${port}`);
-    this.log('App initialized');
   }
 }
 

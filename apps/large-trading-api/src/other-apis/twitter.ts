@@ -1,12 +1,11 @@
-﻿import axios from 'axios';
+﻿import { Bar, createUrl, Tweet, TweetSymbol, TwitterTimeline, TwitterUser } from '@shared';
+import axios from 'axios';
 import OAuth from 'oauth';
 import { promisify } from 'util';
-import { createUrl } from '@shared';
-import binance from '../exchanges/binance';
-import database from '../data/database';
-import Coinmarketcap from './coinmarketcap';
-import { Tweet, TweetSymbol, TwitterUser, TwitterTimeline, Bar } from '@shared';
 import Base from '../base';
+import database from '../data/database';
+import binance from '../exchanges/binance';
+import Coinmarketcap from './coinmarketcap';
 
 export default class Twitter extends Base {
   private database = database;
@@ -15,13 +14,13 @@ export default class Twitter extends Base {
   private callCounter = 0;
 
   private headers = {
-    'Authorization': `Bearer ${process.env.twitter_bearer_token}`,
+    Authorization: `Bearer ${process.env.twitter_bearer_token}`,
   };
 
   public async getUserTweets(userId: string, binanceSymbols: string[], startTime: number): Promise<Tweet[]> {
     if (this.callCounter > 2900) {
       console.log('Waiting 1 minute, call limit reached...');
-      await new Promise(resolve => setTimeout(resolve, 60000));  // wait 1 minute after ~3000 call limit
+      await new Promise((resolve) => setTimeout(resolve, 60000)); // wait 1 minute after ~3000 call limit
       console.log('...Continue');
       this.callCounter = 0;
     }
@@ -35,7 +34,7 @@ export default class Twitter extends Base {
       max_results: 100,
       'tweet.fields': 'created_at',
       'user.fields': 'name',
-      start_time: new Date(startTime).toISOString().slice(0, -5) + 'Z'
+      start_time: new Date(startTime).toISOString().slice(0, -5) + 'Z',
     };
 
     const finalUrl = createUrl(url, query);
@@ -77,11 +76,11 @@ export default class Twitter extends Base {
   public async getAndSaveUserTweets(timeline: TwitterTimeline, binanceSymbols: string[], startTime: number): Promise<Tweet[]> {
     const latestTweet = timeline.tweets[timeline!.tweets.length - 1];
     const newTweets = await this.getUserTweets(timeline.id, binanceSymbols, latestTweet.time);
-    const latestTweetIndex = newTweets.findIndex(tweet => tweet.id === latestTweet.id);
+    const latestTweetIndex = newTweets.findIndex((tweet) => tweet.id === latestTweet.id);
     const newTweetsFromIndex = latestTweetIndex > -1 ? newTweets.slice(latestTweetIndex + 1) : newTweets;
     const allTweets = [...timeline.tweets, ...newTweetsFromIndex];
     await this.database.updateTwitterUserTweets(timeline.id, allTweets);
-    const tweetsFromStartTime = allTweets.filter(t => t.time >= startTime);
+    const tweetsFromStartTime = allTweets.filter((t) => t.time >= startTime);
     return tweetsFromStartTime;
   }
 
@@ -90,7 +89,7 @@ export default class Twitter extends Base {
 
     const query = {
       screen_name: user,
-      count: 200
+      count: 200,
     };
 
     const finalUrl = createUrl(url, query);
@@ -98,12 +97,12 @@ export default class Twitter extends Base {
     try {
       const res = await axios.get(finalUrl, { headers: this.headers });
 
-      return res.data.users.map(user => {
+      return res.data.users.map((user) => {
         return {
           name: user.screen_name,
           id: user.id_str,
           followers: user.followers_count,
-          following: user.friends_count
+          following: user.friends_count,
         };
       });
     } catch (err) {
@@ -117,27 +116,33 @@ export default class Twitter extends Base {
     const shortBinanceSymbols = binance.pairsToSymbols(binanceSymbols);
     const friends = await this.getFriends(userName);
     const latestUpdate = await this.database.getLatestTwitterChangeTime();
-    const needsUpdate = latestUpdate != 0 ? (Date.now() - latestUpdate) / (1000 * 60) > 10 : true;  // latest change in database longer than 10 minutes in the past
+    const needsUpdate = latestUpdate != 0 ? (Date.now() - latestUpdate) / (1000 * 60) > 10 : true; // latest change in database longer than 10 minutes in the past
 
-    const timelines = await Promise.all(friends.map(async user => {
-      const timeline = await this.database.getTwitterUserTimeline(user.id);
+    const timelines = await Promise.all(
+      friends.map(async (user) => {
+        const timeline = await this.database.getTwitterUserTimeline(user.id);
 
-      if (timeline) { // user exists: update user
-        const tweets = needsUpdate ? await this.getAndSaveUserTweets(timeline, shortBinanceSymbols, startTime) : timeline.tweets.filter(t => t.time >= startTime);
-        return { id: user.id, tweets };
-      } else {  // user not existing: create user
-        const tweets = await this.getUserTweets(user.id, shortBinanceSymbols, startTime);
-        await this.database.writeTwitterUserTimeline(user.id, tweets);
-        return { id: user.id, tweets };
-      }
-    }));
+        if (timeline) {
+          // user exists: update user
+          const tweets = needsUpdate
+            ? await this.getAndSaveUserTweets(timeline, shortBinanceSymbols, startTime)
+            : timeline.tweets.filter((t) => t.time >= startTime);
+          return { id: user.id, tweets };
+        } else {
+          // user not existing: create user
+          const tweets = await this.getUserTweets(user.id, shortBinanceSymbols, startTime);
+          await this.database.writeTwitterUserTimeline(user.id, tweets);
+          return { id: user.id, tweets };
+        }
+      }),
+    );
 
-    const timelinesWithTweets = timelines.filter(ti => ti.tweets.length);
+    const timelinesWithTweets = timelines.filter((ti) => ti.tweets.length);
     return timelinesWithTweets;
   }
 
   public addPriceToTweetSymbols(tweets: Tweet[], bars: Bar[]): Tweet[] {
-    tweets.forEach(t => {
+    tweets.forEach((t) => {
       const priceBar = bars.find((k, i) => {
         const nextBar = bars[i + 1];
 
@@ -149,7 +154,7 @@ export default class Twitter extends Base {
       });
 
       const barSymbol = binance.pairToSymbol(bars[0].symbol);
-      const symbol = t.symbols.find(s => s.symbol === barSymbol);
+      const symbol = t.symbols.find((s) => s.symbol === barSymbol);
 
       if (symbol && priceBar) {
         symbol.price = priceBar.prices.close;
@@ -165,15 +170,15 @@ export default class Twitter extends Base {
     const symbols = text.match(symbolPattern);
 
     if (symbols) {
-      const mapped = symbols.map(s => {
+      const mapped = symbols.map((s) => {
         const formatted = s.slice(1).toLowerCase();
         const short = allCryptos[formatted] || formatted;
         return { symbol: short, originalSymbol: s };
       });
 
-      const noDuplicates = mapped.filter((s, i) => i === mapped.findIndex(t => t.symbol === s.symbol));
-      const specificLength = noDuplicates.filter(s => s.symbol.length >= 3 && s.symbol.length <= 5);
-      const onlyBinanceSymbols = specificLength.filter(s => binanceSymbols.includes(s.symbol));
+      const noDuplicates = mapped.filter((s, i) => i === mapped.findIndex((t) => t.symbol === s.symbol));
+      const specificLength = noDuplicates.filter((s) => s.symbol.length >= 3 && s.symbol.length <= 5);
+      const onlyBinanceSymbols = specificLength.filter((s) => binanceSymbols.includes(s.symbol));
       return onlyBinanceSymbols;
     } else {
       return [];
@@ -186,14 +191,18 @@ export default class Twitter extends Base {
       'https://api.twitter.com/oauth/access_token',
       process.env.twitter_api_key,
       process.env.twitter_api_secret,
-      '1.0A', null, 'HMAC-SHA1'
+      '1.0A',
+      null,
+      'HMAC-SHA1',
     );
 
-    return promisify(oauth.get.bind(oauth))
+    return promisify(oauth.get.bind(oauth));
   }
 
   private async getOAuth2Token(): Promise<string> {
-    const response = await axios.post('https://api.twitter.com/oauth2/token', {},
+    const response = await axios.post(
+      'https://api.twitter.com/oauth2/token',
+      {},
       {
         auth: {
           username: process.env.twitter_api_key!,
@@ -205,7 +214,7 @@ export default class Twitter extends Base {
         params: {
           grant_type: 'client_credentials',
         },
-      }
+      },
     );
 
     return response.data.access_token;

@@ -1,29 +1,28 @@
 ﻿import {
+  BacktestData,
+  BacktestSignal,
+  Bar,
+  ChartCompactCircleMarker,
+  ChartTrendLineSegment,
+  LinearFunction,
+  MarketStructureType,
+  PivotPoint,
+  PivotPointSide,
+  Signal,
+  Strategy,
+  TrendLine,
+  TrendLinePosition,
+} from '@shared';
+import {
   IChartApi,
-  ISeriesApi,
+  ISeriesMarkersPluginApi,
+  MouseEventParams,
   SeriesMarker,
   Time,
   UTCTimestamp,
-  MouseEventParams,
 } from 'lightweight-charts';
-import {
-  Bar,
-  Strategy,
-  BacktestData,
-  BacktestSignal,
-  Signal,
-  PivotPoint,
-  PivotPointSide,
-  MarketStructureType,
-  TrendLine,
-  TrendLinePosition,
-  ChartTrendLineSegment,
-  ChartCompactCircleMarker,
-} from '@shared';
-import { TrendLinesPrimitive } from '../primitives/trend-lines-primitive';
 import { CompactCirclePrimitive } from '../primitives/compact-circle-primitive';
-import { ISeriesMarkersPluginApi } from 'lightweight-charts';
-import { LinearFunction } from '@shared';
+import { TrendLinesPrimitive } from '../primitives/trend-lines-primitive';
 
 export class MarkersChartingService {
   private markersPivotPoints: SeriesMarker<Time>[] = [];
@@ -343,7 +342,7 @@ export class MarkersChartingService {
   }
 
   private getPivotPointTemplate(bar: Bar): SeriesMarker<Time> {
-    const pivotPoint: PivotPoint = bar.chart?.pivotPoint!;
+    const pivotPoint: PivotPoint = bar.chart!.pivotPoint!;
     const marketStructure: MarketStructureType | undefined =
       pivotPoint.marketStructure;
 
