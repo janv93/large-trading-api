@@ -142,13 +142,6 @@ export interface LatestPriceRequest {
   action: 'getLatestPrice';
 }
 
-export interface HistoricalBarsRequest {
-  action: 'getBarsFromStartUntilNow';
-  fromOpenTime: number;
-}
-
-export type ExchangeRequest = LatestPriceRequest | HistoricalBarsRequest;
-
 export interface ExchangeResponse {
   result?: any;
   error?: string;

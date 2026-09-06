@@ -18,6 +18,20 @@ export default [
       'no-case-declarations': 'off',
       'no-constant-condition': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
+      '@typescript-eslint/member-ordering': [
+        'error',
+        {
+          default: [
+            'public-field',
+            'protected-field',
+            'private-field',
+            'constructor',
+            'public-method',
+            'protected-method',
+            'private-method',
+          ],
+        },
+      ],
       'unused-imports/no-unused-imports': 'error',
       'prefer-const': 'warn',
       'no-empty': 'warn',

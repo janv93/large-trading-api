@@ -8,8 +8,8 @@ Shared logic does not imply identical results: live prices expose observations t
 
 ## Design Principles
 
-- Current prices are point observations, not reconstructed historical candles. The exchange remains the authority for historical market data.
+- Live decisions use point-price observations. Completed live bars summarize only those observed ticks, so their OHLC can differ from exchange history. Historical data is used to initialize the engine, not to replay unobserved prices during live processing.
 - Repeated observations within one timeframe must not advance bar-based calculations as though multiple bars had elapsed.
 - Observed discoveries and invalidations remain meaningful after prices change. Preserving that information requires a deliberate distinction between lasting observations and provisional calculations.
 - A strategy can finish making decisions for the current bar before that bar closes. Open positions remain exposed to price changes regardless.
-- Historical confirmation must not repeat trading effects that already occurred during live processing.
+- Recording a completed bar must not repeat trading effects or expose earlier price extremes to positions opened later in that bar.

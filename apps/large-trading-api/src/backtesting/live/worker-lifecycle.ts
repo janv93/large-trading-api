@@ -17,6 +17,7 @@ export default class LiveWorkerLifecycle {
   };
 
   private activeSnapshot?: CalculationState;
+  private activePrices?: Bar['prices'];
 
   public constructor(private readonly options: LiveWorkerLifecycleOptions) {}
 
@@ -28,32 +29,14 @@ export default class LiveWorkerLifecycle {
     return this.committedState.window.at(-1)!;
   }
 
-  public shouldRefresh(): boolean {
-    const activeOpenTime: number =
-      this.activeSnapshot?.window.at(-1)?.times.open ?? this.getLastCommittedBar().times.open + this.options.timeframeMs;
-    return Date.now() >= activeOpenTime + this.options.timeframeMs;
+  public isActiveBarClosed(now: number = Date.now()): boolean {
+    const activeBar: Bar | undefined = this.activeSnapshot?.window.at(-1);
+    return activeBar !== undefined && now >= activeBar.times.open + this.options.timeframeMs;
   }
 
-  public async refreshWindow(fetchedBars: Bar[]): Promise<Bar[]> {
-    const lastOpenTime: number = this.getLastCommittedBar().times.open;
-    const newBars: Bar[] = fetchedBars.filter((bar) => bar.times.open > lastOpenTime);
-    const refreshedBars: Bar[] = [];
-    const activeBar: Bar | undefined = this.activeSnapshot?.window.at(-1);
-
-    if (activeBar) {
-      const historicalBar: Bar | undefined = newBars.find((bar) => bar.times.open === activeBar.times.open);
-      if (!historicalBar) return refreshedBars;
-      refreshedBars.push(this.commitActiveBar(historicalBar));
-    }
-
-    const committedOpenTime: number = this.getLastCommittedBar().times.open;
-
-    for (const bar of newBars.filter((bar) => bar.times.open > committedOpenTime)) {
-      await this.stepHistoricalBar(bar);
-      refreshedBars.push(bar);
-    }
-
-    return refreshedBars;
+  public finalizeBar(now: number = Date.now()): Bar | undefined {
+    if (!this.isActiveBarClosed(now)) return;
+    return this.commitActiveBar();
   }
 
   public async processTick(price: number): Promise<Bar> {
@@ -99,6 +82,13 @@ export default class LiveWorkerLifecycle {
     // Volatility is recalculated from the last committed value on every tick.
     backtesterState.volatility = this.committedState.backtesterState.volatility;
     this.options.backtester.stepCalcBacktestPerformance(calculationWindow, backtesterState, this.options.commission);
+
+    this.activePrices = {
+      open: this.activePrices?.open ?? price,
+      high: Math.max(this.activePrices?.high ?? price, price),
+      low: Math.min(this.activePrices?.low ?? price, price),
+      close: price,
+    };
 
     this.activeSnapshot = {
       window: calculationWindow,
@@ -189,14 +179,15 @@ export default class LiveWorkerLifecycle {
     });
   }
 
-  private commitActiveBar(historicalBar: Bar): Bar {
+  private commitActiveBar(): Bar {
     const activeSnapshot: CalculationState = this.activeSnapshot!;
     const activeBar: Bar = activeSnapshot.window.at(-1)!;
-    activeBar.times = clone(historicalBar.times);
-    activeBar.prices = clone(historicalBar.prices);
+    activeBar.times.close = activeBar.times.open + this.options.timeframeMs - 1;
+    activeBar.prices = this.activePrices!;
     this.committedState = activeSnapshot;
     this.committedState.strategyState.barDone = false;
     this.activeSnapshot = undefined;
+    this.activePrices = undefined;
     return activeBar;
   }
 }

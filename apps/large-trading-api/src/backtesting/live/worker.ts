@@ -1,5 +1,5 @@
 import { workerData, parentPort } from 'worker_threads';
-import { Bar, ExchangeRequest, ExchangeResponse, sleep } from '@shared';
+import { Bar, LatestPriceRequest, ExchangeResponse, sleep } from '@shared';
 import Backtester from '../backtester/backtester';
 import LiveWorkerLifecycle from './worker-lifecycle';
 
@@ -10,7 +10,7 @@ strategyInstance.silent = true;
 const backtester = new Backtester();
 const lifecycle = new LiveWorkerLifecycle({ strategyInstance, backtester, strategyConfig, timeframeMs, commission });
 
-function requestExchange<T>(request: ExchangeRequest): Promise<T> {
+function requestExchange<T>(request: LatestPriceRequest): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     parentPort!.once('message', (message: ExchangeResponse) => {
       if (message.error) reject(new Error(message.error));
@@ -21,32 +21,24 @@ function requestExchange<T>(request: ExchangeRequest): Promise<T> {
   });
 }
 
-async function refreshWindow(): Promise<void> {
-  if (!lifecycle.shouldRefresh()) return;
-  const lastCommittedBar: Bar = lifecycle.getLastCommittedBar();
-
-  const fetchedBars: Bar[] = await requestExchange<Bar[]>({
-    action: 'getBarsFromStartUntilNow',
-    fromOpenTime: lastCommittedBar.times.open,
-  });
-
-  const refreshedBars: Bar[] = await lifecycle.refreshWindow(fetchedBars);
-  refreshedBars.forEach((bar) => parentPort!.postMessage(bar));
+function finalizeBar(): void {
+  const finalized: Bar | undefined = lifecycle.finalizeBar();
+  if (finalized) parentPort!.postMessage(finalized);
 }
 
 async function tick(): Promise<void> {
-  if (lifecycle.shouldRefresh()) return;
+  if (lifecycle.isActiveBarClosed()) return;
   const price: number = await requestExchange<number>({ action: 'getLatestPrice' });
-  // Ignore a price fetched after its bar closed.
-  if (lifecycle.shouldRefresh()) return;
-  parentPort!.postMessage(await lifecycle.processTick(price));
+  if (lifecycle.isActiveBarClosed()) return; // Ignore a price fetched after its bar closed
+  const tickBar: Bar = await lifecycle.processTick(price);
+  parentPort!.postMessage(tickBar);
 }
 
 async function run(): Promise<void> {
   await lifecycle.initialize(bars);
 
   while (true) {
-    await refreshWindow();
+    finalizeBar();
     await tick();
     await sleep(intervalMs);
   }

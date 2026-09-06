@@ -395,7 +395,7 @@ describe('live worker lifecycle', () => {
     await lifecycle.initialize([createBar(0, 10)]);
 
     await lifecycle.processTick(11);
-    await lifecycle.refreshWindow([createBar(60_000, 12)]);
+    lifecycle.finalizeBar(120_000);
 
     expect(strategy.referencesMatched).toBe(true);
     expect(lifecycle.getLastCommittedBar().times.open).toBe(60_000);
@@ -412,7 +412,7 @@ describe('live worker lifecycle', () => {
     expect(crossed.chart?.trendLineBreakthroughs).toHaveLength(1);
     expect(rebounded.chart?.trendLineBreakthroughs).toHaveLength(1);
 
-    await lifecycle.refreshWindow([createBar(60_000, 9)]);
+    lifecycle.finalizeBar(120_000);
     await lifecycle.processTick(9);
 
     expect(strategy.incomingConfirmedCounts).toEqual([1, 1, 0]);
@@ -482,7 +482,7 @@ describe('live worker lifecycle', () => {
     expect(confirmedCounts).toEqual(prices.map(() => 0));
     expect(candidateSlopes).toEqual(prices.map(() => Infinity));
 
-    await lifecycle.refreshWindow([createBar(660_000, 9)]);
+    lifecycle.finalizeBar(720_000);
     await lifecycle.processTick(9);
     await lifecycle.processTick(9);
 
@@ -521,18 +521,14 @@ describe('live worker lifecycle', () => {
     expect(strategy.calls).toBe(strategyCallsAtFreeze);
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
 
-    const historical: Bar = createBar(60_000, 99);
-    historical.times.close = 119_999;
-    historical.prices = { open: 90, high: 105, low: 80, close: 99 };
-    historical.volume = 999;
-    const [finalized]: Bar[] = await lifecycle.refreshWindow([historical]);
+    const finalized: Bar | undefined = lifecycle.finalizeBar(120_000);
 
     expect(strategy.calls).toBe(strategyCallsAtFreeze);
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
     expect(finalized).toBe(continued);
     expect(lifecycle.getLastCommittedBar()).toBe(continued);
-    expect(continued.times).toEqual(historical.times);
-    expect(continued.prices).toEqual(historical.prices);
+    expect(continued.times).toEqual({ open: 60_000, close: 119_999 });
+    expect(continued.prices).toEqual({ open: 12, high: 14, low: 12, close: 14 });
     expect(continued.volume).toBe(0);
 
     const next: Bar = await lifecycle.processTick(20);
@@ -542,33 +538,41 @@ describe('live worker lifecycle', () => {
     expect(backtester.calls.at(-1)?.incomingProfit).toBe(49);
   });
 
-  it('waits on empty or stale history, then processes only later missed bars normally', async () => {
+  it('records tick OHLC only when finalizing and starts a fresh range for the next bar', async () => {
     const strategy = new FreezingStrategy();
     const backtester = new RecordingBacktester();
     const lifecycle: LiveWorkerLifecycle = createLifecycle(strategy, backtester);
     await lifecycle.initialize([createBar(0, 10)]);
-    const active: Bar = await lifecycle.processTick(11);
-    const callsBeforeRefresh: number = backtester.calls.length;
+    const observedPrices: number[] = [11, 16, 8, 12];
+    const tickBars: Bar[] = [];
 
-    expect(await lifecycle.refreshWindow([])).toEqual([]);
-    expect(await lifecycle.refreshWindow([createBar(0, 10)])).toEqual([]);
+    for (const price of observedPrices) {
+      const tick: Bar = await lifecycle.processTick(price);
+      expect(tick.prices).toEqual({ open: price, high: price, low: price, close: price });
+      tickBars.push(tick);
+    }
+
+    const callsBeforeRefresh: number = backtester.calls.length;
+    const strategyCalls: number = strategy.calls;
+    expect(lifecycle.finalizeBar(119_999)).toBeUndefined();
     expect(lifecycle.getLastCommittedBar().times.open).toBe(0);
     expect(backtester.calls).toHaveLength(callsBeforeRefresh);
 
-    const refreshed: Bar[] = await lifecycle.refreshWindow([createBar(60_000, 20), createBar(120_000, 30)]);
+    const finalized: Bar = lifecycle.finalizeBar(120_000)!;
+    expect(finalized).toBe(tickBars.at(-1));
+    expect(finalized.prices).toEqual({ open: 11, high: 16, low: 8, close: 12 });
+    expect(tickBars[0].prices).toEqual({ open: 11, high: 11, low: 11, close: 11 });
+    expect(backtester.calls).toHaveLength(callsBeforeRefresh);
+    expect(strategy.calls).toBe(strategyCalls);
+    expect(lifecycle.finalizeBar(120_000)).toBeUndefined();
 
-    expect(refreshed.map((bar) => bar.times.open)).toEqual([60_000, 120_000]);
-    expect(refreshed[0]).toBe(active);
-    expect(lifecycle.getLastCommittedBar().times.open).toBe(120_000);
-    expect(backtester.calls).toHaveLength(callsBeforeRefresh + 1);
-    expect(backtester.calls.at(-1)?.openTime).toBe(120_000);
-    expect(strategy.incomingMarkers.at(-1)).toBe(11);
-    expect((await lifecycle.processTick(40)).times.open).toBe(180_000);
-    expect(strategy.incomingMarkers.at(-1)).toBe(30);
+    expect((await lifecycle.processTick(40)).times.open).toBe(120_000);
+    expect(strategy.incomingMarkers.at(-1)).toBe(12);
     expect(strategy.incomingBarDone.at(-1)).toBe(false);
+    expect(lifecycle.finalizeBar(180_000)?.prices).toEqual({ open: 40, high: 40, low: 40, close: 40 });
   });
 
-  it.each([11, 13])('waits for matching history while retaining the tick at price %s', async (price) => {
+  it.each([11, 13])('commits a single tick at price %s without replaying either engine', async (price) => {
     const strategy = new FreezingStrategy();
     const backtester = new RecordingBacktester();
     const lifecycle: LiveWorkerLifecycle = createLifecycle(strategy, backtester);
@@ -576,46 +580,34 @@ describe('live worker lifecycle', () => {
     const active: Bar = await lifecycle.processTick(price);
     const strategyCalls: number = strategy.calls;
     const backtesterCalls: number = backtester.calls.length;
-    const laterBar: Bar = createBar(120_000, 30);
-
-    expect(await lifecycle.refreshWindow([laterBar])).toEqual([]);
-    expect(lifecycle.getLastCommittedBar().times.open).toBe(0);
+    expect(lifecycle.finalizeBar(120_000)).toBe(active);
+    expect(lifecycle.getLastCommittedBar()).toBe(active);
     expect(strategy.calls).toBe(strategyCalls);
     expect(backtester.calls).toHaveLength(backtesterCalls);
-    expect(active.times).toEqual({ open: 60_000 });
+    expect(active.times).toEqual({ open: 60_000, close: 119_999 });
     expect(active.prices).toEqual({ open: price, high: price, low: price, close: price });
     expect(active.backtest.profit).toBe(10 + price);
     expect(active.backtest.signals).toHaveLength(price === 13 ? 1 : 0);
 
-    const historicalBar: Bar = createBar(60_000, 20);
-    const refreshed: Bar[] = await lifecycle.refreshWindow([historicalBar, laterBar]);
-
-    expect(refreshed.map((bar) => bar.times.open)).toEqual([60_000, 120_000]);
-    expect(refreshed[0]).toBe(active);
-    expect(active.times).toEqual(historicalBar.times);
-    expect(active.prices).toEqual(historicalBar.prices);
-    expect(strategy.calls).toBe(strategyCalls + 1);
-    expect(strategy.incomingMarkers.at(-1)).toBe(price);
-    expect(strategy.incomingBarDone.at(-1)).toBe(false);
-    expect(backtester.calls).toHaveLength(backtesterCalls + 1);
-    expect(backtester.calls.at(-1)?.incomingProfit).toBe(10 + price);
-    expect(lifecycle.getLastCommittedBar()).toBe(laterBar);
+    expect(lifecycle.finalizeBar(180_000)).toBeUndefined();
   });
 
-  it('refreshes only after the active timeframe has physically closed', async () => {
+  it('finalizes only an observed bar after its timeframe has physically closed', async () => {
     const lifecycle: LiveWorkerLifecycle = createLifecycle(new DuplicateBuyStrategy(), new RecordingBacktester());
     await lifecycle.initialize([createBar(0, 10)]);
     const now = jest.spyOn(Date, 'now');
 
     now.mockReturnValue(119_999);
-    expect(lifecycle.shouldRefresh()).toBe(false);
+    expect(lifecycle.isActiveBarClosed()).toBe(false);
     now.mockReturnValue(120_000);
-    expect(lifecycle.shouldRefresh()).toBe(true);
+    expect(lifecycle.isActiveBarClosed()).toBe(false);
+    expect(lifecycle.finalizeBar()).toBeUndefined();
     await lifecycle.processTick(11);
     now.mockReturnValue(119_999);
-    expect(lifecycle.shouldRefresh()).toBe(false);
+    expect(lifecycle.isActiveBarClosed()).toBe(false);
     now.mockReturnValue(120_000);
-    expect(lifecycle.shouldRefresh()).toBe(true);
+    expect(lifecycle.isActiveBarClosed()).toBe(true);
+    expect(lifecycle.finalizeBar()).toBeDefined();
     now.mockRestore();
   });
 });

@@ -1,6 +1,6 @@
 import { Worker } from 'worker_threads';
 import * as path from 'path';
-import { AlpacaFeed, Bar, Exchange, ExchangeRequest, LiveStrategyInstance, StrategyEntry } from '@shared';
+import { Bar, Exchange, LatestPriceRequest, LiveStrategyInstance, StrategyEntry } from '@shared';
 import { Response } from 'express';
 import binance from '../../exchanges/binance';
 import alpaca from '../../exchanges/alpaca';
@@ -53,9 +53,9 @@ export default class Live {
       workerData: { bars, strategyConfig: strategy.config, strategyModulePath, timeframeMs, intervalMs, commission },
     });
 
-    worker.on('message', (message: Bar | ExchangeRequest) => {
+    worker.on('message', (message: Bar | LatestPriceRequest) => {
       if ('action' in message) {
-        this.handleExchangeRequest(worker, bars[0], message).catch((err) => {
+        this.handleLatestPriceRequest(worker, bars[0]).catch((err) => {
           worker.postMessage({ error: err.message });
         });
       } else {
@@ -66,9 +66,8 @@ export default class Live {
     return worker;
   }
 
-  private async handleExchangeRequest(worker: Worker, bar: Bar, request: ExchangeRequest): Promise<void> {
-    const result: number | Bar[] =
-      request.action === 'getLatestPrice' ? await this.getLatestPrice(bar) : await this.getBarsFromStartUntilNow(bar, request.fromOpenTime);
+  private async handleLatestPriceRequest(worker: Worker, bar: Bar): Promise<void> {
+    const result: number = await this.getLatestPrice(bar);
     worker.postMessage({ result });
   }
 
@@ -80,17 +79,6 @@ export default class Live {
         return alpaca.getLatestPrice(bar.symbol, bar.feed);
       default:
         throw new Error(`Live prices not supported for ${bar.exchange}`);
-    }
-  }
-
-  private getBarsFromStartUntilNow(bar: Bar, fromOpenTime: number): Promise<Bar[]> {
-    switch (bar.exchange) {
-      case Exchange.Binance:
-        return binance.getBarsFromStartUntilNow(bar.symbol, fromOpenTime, bar.timeframe);
-      case Exchange.Alpaca:
-        return alpaca.getBarsFromStartUntilNow(bar.symbol, fromOpenTime, bar.timeframe, bar.feed as AlpacaFeed);
-      default:
-        throw new Error(`Bar refresh not supported for ${bar.exchange}`);
     }
   }
 }
