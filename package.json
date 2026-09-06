@@ -11,16 +11,22 @@
   "scripts": {
     "b": "cross-env NX_PROCESS_KILL_GRACE_PERIOD=0 npx nx serve large-trading-api",
     "f": "npx nx serve large-trading-api-frontend",
-    "test": "npx nx test large-trading-api"
+    "test": "npx nx test large-trading-api",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
     "@angular/build": "22.1.3",
     "@angular/compiler": "22.1.1",
     "@angular/compiler-cli": "22.1.1",
+    "@eslint/js": "^10.0.1",
     "@nx/angular": "23.1.1",
     "@nx/jest": "23.1.1",
     "@nx/node": "23.1.1",
     "cross-env": "^10.1.0",
-    "nx": "23.1.1"
+    "eslint": "^10.10.0",
+    "globals": "^17.9.0",
+    "nx": "23.1.1",
+    "typescript-eslint": "^8.69.0"
   }
 }

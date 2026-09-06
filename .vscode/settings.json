@@ -2,6 +2,9 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "prettier.printWidth": 140,
   "prettier.singleQuote": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
   "terminal.integrated.env.windows": {
     "NX_DAEMON": "false"
   }
