@@ -3,7 +3,7 @@
 - Never define interfaces solely for tests.
 - Never adapt production code to tests. Adapt tests to the intended production behavior, not production behavior to test implementation details.
   Example to avoid: adding `finalizeBar(now = Date.now())` solely so tests can supply a time. Keep `finalizeBar()` and mock `Date.now()` in the tests instead.
-- Keep generic shared declarations in `libs/shared/src/lib/interfaces/shared.interfaces.ts` or other reusable shared files. Group feature-specific declarations in `libs/shared/src/lib/interfaces/<use-case>.interfaces.ts`. Keep `libs/shared/src/lib/interfaces.ts` as a re-export-only entry point.
+- Keep generic shared declarations in `libs/shared/src/lib/interfaces/shared.interfaces.ts` or other reusable shared files. Group feature-specific declarations in `libs/shared/src/lib/interfaces/<use-case>.interfaces.ts`.
 - Never introduce circular dependencies.
 - Never move generic, reusable interfaces such as `BarWithIndex` into a feature-specific file or give them a feature-specific prefix merely because they currently have one consumer. Keep them in the shared interfaces file.
 - Prefix interfaces exclusive to one feature with that feature's name. For example, use `LiveCalculationState`, not `CalculationState`, for live-only state.

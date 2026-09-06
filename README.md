@@ -9,19 +9,21 @@ Backtest any custom trading strategy on cryptos, stocks, ETFs. The code provides
 
 ## Projects
 
-| Project | Path | Description |
-|---|---|---|
-| `large-trading-api` | `apps/large-trading-api` | Node.js backend — backtesting engine |
+| Project                      | Path                              | Description                                                            |
+| ---------------------------- | --------------------------------- | ---------------------------------------------------------------------- |
+| `large-trading-api`          | `apps/large-trading-api`          | Node.js backend — backtesting engine                                   |
 | `large-trading-api-frontend` | `apps/large-trading-api-frontend` | Angular frontend — charting and visualization using Lightweight Charts |
 
 ## Getting Started
 
 ### Requirements
+
 - Node.js (e.g. 24.19.0)
 - MongoDB (local or cloud)
 - API keys for at least one exchange: Binance, KuCoin, or Alpaca (Binance + Alpaca recommended for full ticker coverage)
 
 ### Setup
+
 1. Add credentials of at least 1 exchange and MongoDB connection string to `apps/large-trading-api/.env` (copy from `apps/large-trading-api/_.env`)
 2. Install dependencies from the monorepo root:
    ```bash
@@ -40,7 +42,7 @@ Backtest any custom trading strategy on cryptos, stocks, ETFs. The code provides
 ## Add and use backtests
 
 1. Add or use existing backtests in `apps/large-trading-api/src/strategies` — see `example.ts` for reference
-2. Add strategy to the Strategy enum in `libs/shared/src/lib/interfaces.ts` and make sure the value is the exact same name as your backtest class. Your backtest class will then be instantiated automatically.
+2. Add strategy to the Strategy enum in `libs/shared/src/lib/interfaces/shared.interfaces.ts` and make sure the value is the exact same name as your strategy class. Your strategy class will then be instantiated automatically.
 3. Add strategy to `apps/large-trading-api-frontend/src/app/strategy-configs.ts` which contains the variable parameters sent over the API
 
 ## Todos
