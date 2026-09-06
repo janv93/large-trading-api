@@ -21,6 +21,7 @@ export function normalizeChartConfig(value: Partial<ChartConfig> | null | undefi
   const timeframes = Object.values(Timeframe);
   const strategies = Object.values(Strategy);
   const exchanges = Object.values(Exchange);
+
   const symbols = Array.isArray(value?.symbols)
     ? value.symbols
       .filter(item => exchanges.includes(item?.exchange) && typeof item?.symbol === 'string' && item.symbol.trim())
@@ -30,6 +31,7 @@ export function normalizeChartConfig(value: Partial<ChartConfig> | null | undefi
         ...(item.exchange === Exchange.Alpaca && item.feed === AlpacaFeed.Iex ? { feed: AlpacaFeed.Iex } : {})
       }))
     : DEFAULT_CONFIG.symbols;
+
   const strategyValue = value?.strategy;
 
   return {

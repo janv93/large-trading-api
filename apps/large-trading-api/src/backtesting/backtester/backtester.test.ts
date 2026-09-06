@@ -10,13 +10,16 @@ describe('Backtester', () => {
     backtester = new Backtester();
   });
 
-  const runStep = (bars: Bar[], commission: number): void => {
+  const runStep = (bars: Bar[], commission: number): BacktesterState => {
     const state: BacktesterState = {};
     const window: Bar[] = [];
+
     for (let i = 0; i < bars.length; i++) {
       window.push(bars[i]);
       backtester.stepCalcBacktestPerformance(window, state, commission);
     }
+
+    return state;
   };
 
   it('should calculate profit correctly without commission', () => {
@@ -727,7 +730,7 @@ describe('Backtester', () => {
       }
     ];
 
-    runStep(bars, 0);
+    const state: BacktesterState = runStep(bars, 0);
     const backtests: BacktestData[] = bars.map(k => k.backtest!);
 
     expect(backtests[0].profit).toBe(0);    // A just opened
@@ -736,5 +739,83 @@ describe('Backtester', () => {
     expect(backtests[2].openPositionSize).toBeCloseTo(1.5); // only B remains open (size = 1 * (1 + 0.5))
     expect(backtests[3].profit).toBe(3);    // B closed (300→400, +50%)
     expect(backtests[3].openPositionSize).toBe(0);
+    expect(state.positions!.map(position => position.closeSignalReference)).toEqual([
+      { barIndex: 2, signalIndex: 0 },
+      { barIndex: 3, signalIndex: 0 }
+    ]);
   });
+
+  it('keeps one position per opening reference while repeatedly evaluating the same bar', () => {
+    const bar: Bar = {
+      symbol: 'BTCUSDT',
+      timeframe: Timeframe._1Day,
+      exchange: Exchange.Binance,
+      times: { open: 0, close: 0 },
+      prices: { open: 100, high: 100, low: 100, close: 100 },
+      volume: 0,
+      backtest: {
+        signals: [{
+          signal: Signal.Buy,
+          price: 100,
+          size: 1,
+          positionCloseTrigger: { tpSl: { takeProfit: 0.2, stopLoss: 0.1 } }
+        }]
+      }
+    };
+
+    const state: BacktesterState = {};
+
+    backtester.stepCalcBacktestPerformance([bar], state, 0.01);
+    bar.prices = { open: 110, high: 110, low: 110, close: 110 };
+    backtester.stepCalcBacktestPerformance([bar], state, 0.01);
+
+    expect(state.positions).toHaveLength(1);
+    expect(state.positions![0].closed).toBe(false);
+    expect(bar.backtest.profit).toBeCloseTo(0.09);
+
+    bar.prices = { open: 89, high: 89, low: 89, close: 89 };
+    backtester.stepCalcBacktestPerformance([bar], state, 0.01);
+    bar.prices = { open: 100, high: 100, low: 100, close: 100 };
+    backtester.stepCalcBacktestPerformance([bar], state, 0.01);
+
+    expect(state.positions).toHaveLength(1);
+    expect(state.positions![0].closed).toBe(true);
+    expect(state.positions![0].closeSignalReference).toEqual({ barIndex: 0, signalIndex: 1 });
+    expect(bar.backtest.openPositionSize).toBe(0);
+  });
+
+  it('replaces CloseAll with targeted closes before opening replacement positions', () => {
+    const first: Bar = {
+      symbol: 'BTCUSDT', timeframe: Timeframe._1Day, exchange: Exchange.Binance,
+      times: { open: 0 }, prices: { open: 100, high: 100, low: 100, close: 100 }, volume: 0,
+      backtest: {
+        signals: [
+          { signal: Signal.Buy, price: 100, size: 1 },
+          { signal: Signal.Buy, price: 100, size: 1 }
+        ]
+      }
+    };
+    const second: Bar = {
+      ...first,
+      times: { open: 1 }, prices: { open: 110, high: 110, low: 110, close: 110 },
+      backtest: { signals: [{ signal: Signal.CloseAll, price: 110 }, { signal: Signal.Buy, price: 110, size: 1 }] }
+    };
+
+    const state: BacktesterState = {};
+
+    backtester.stepCalcBacktestPerformance([first], state, 0);
+    backtester.stepCalcBacktestPerformance([first, second], state, 0);
+    second.prices = { open: 120, high: 120, low: 120, close: 120 };
+    backtester.stepCalcBacktestPerformance([first, second], state, 0);
+
+    expect(second.backtest.signals.map(signal => signal.signal)).toEqual([
+      Signal.Close, Signal.Close, Signal.Buy
+    ]);
+    expect(second.backtest.signals.slice(0, 2).map(signal => signal.openSignalReferences)).toEqual([
+      [{ barIndex: 0, signalIndex: 0 }],
+      [{ barIndex: 0, signalIndex: 1 }]
+    ]);
+    expect(state.positions!.map(position => position.closed)).toEqual([true, true, false]);
+  });
+
 });

@@ -72,6 +72,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       this.drawSeries();
       this.applyDisplayOptions();
     }
+
     if (changes['showPositionSize']) this.positionSizeChecked = this.showPositionSize;
     if (this.chart && (changes['showPositionSize'] || changes['showCharting'] || changes['showIndicators'])) this.applyDisplayOptions();
   }
@@ -152,6 +153,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
   private handleResize(): void {
     this.resizeUnlisten = this.renderer.listen('window', 'resize', () => {
       const container = this.containerRef.nativeElement;
+
       if (this.chart) {
         this.chart.resize(container.clientWidth, container.clientHeight);
       }
@@ -200,6 +202,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       low: bar.prices.low,
       close: bar.prices.close
     }));
+
     this.candlestickSeries.setData(mapped);
   }
 
@@ -220,6 +223,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
         : currentProfit > 0 ? 'rgba(0,255,0,0.3)' : 'rgba(255,77,77,0.3)';
       return { time: bar.times.open / 1000 as Time, value: currentProfit, color };
     });
+
     this.profitSeries!.setData(mapped);
   }
 
@@ -255,6 +259,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
 
   private setOpenPositionSizeSeriesData(): void {
     const alpha: number = this.getPositionSizeAlpha();
+
     const mapped = this.currentBars.map((bar: Bar) => {
       const openPositionSize: number = bar.backtest.openPositionSize!;
       const color: string = openPositionSize === 0
@@ -278,6 +283,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
     const day = date.getDate().toString().padStart(2, '0');
     const month = this.months[date.getMonth()];
     const year = date.getFullYear();
+
     if (unit === 'm') {
       const h = date.getHours().toString().padStart(2, '0');
       const m = date.getMinutes().toString().padStart(2, '0');
@@ -286,6 +292,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       const h = date.getHours().toString().padStart(2, '0');
       return `${day} ${month} ${year} ${h}:00`;
     }
+
     return `${day} ${month} ${year}`;
   }
 
@@ -346,6 +353,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
       if (this.lastVisibleRangeSize !== undefined && Math.abs(timeRange - this.lastVisibleRangeSize) / this.lastVisibleRangeSize < 0.1) return;
 
       this.lastVisibleRangeSize = timeRange;
+
       if (this.showCharting) {
         this.markersChartingService.drawMarkers(this.chart, this.seriesMarkersPlugin!, this.compactCirclePrimitive!, this.isMulti);
       }
@@ -401,6 +409,7 @@ export class MixedChartComponent extends BaseComponent implements OnInit, OnChan
 
     if (this.openPositionSizeSeries) {
       const openPositionSize: HistogramData = param.seriesData.get(this.openPositionSizeSeries) as HistogramData;
+
       if (openPositionSize) {
         this.openPositionSize.set(Number(openPositionSize.value.toFixed(2)));
       }

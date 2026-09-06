@@ -1,8 +1,7 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import unusedImports from "eslint-plugin-unused-imports";
-
+import globals from 'globals';
+import pluginJs from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
   { languageOptions: { globals: globals.browser } },
@@ -21,7 +20,7 @@ export default [
       '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
       'unused-imports/no-unused-imports': 'error',
       'prefer-const': 'warn',
-      'no-empty': 'warn'
-    }
-  }
+      'no-empty': 'warn',
+    },
+  },
 ];

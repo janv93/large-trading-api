@@ -1,22 +1,32 @@
 ﻿import Base from './base';
-import { Strategy, BacktesterState, Exchange, ExchangeSymbol, Bar, Run, Timeframe, countBars, formatDuration, timeframeToMilliseconds } from '@shared';
+import {
+  Strategy,
+  BacktesterState,
+  Exchange,
+  ExchangeSymbol,
+  Bar,
+  Run,
+  Timeframe,
+  countBars,
+  formatDuration,
+  timeframeToMilliseconds,
+} from '@shared';
 import alpaca from './exchanges/alpaca';
 import binance from './exchanges/binance';
 import Kucoin from './exchanges/kucoin';
 import Backtester from './backtesting/backtester/backtester';
 import AutoParams from './backtesting/auto-params/auto-params';
-import LiveReplay from './backtesting/live/live-replay';
+import Live from './backtesting/live/live';
 import Coinmarketcap from './other-apis/coinmarketcap';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
-
 export default class Routes extends Base {
   private kucoin = new Kucoin();
   private backtester = new Backtester();
   private autoParams = new AutoParams();
-  private liveReplay = new LiveReplay();
+  private live = new Live();
   private cmc = new Coinmarketcap();
   private backtests: Record<string, any> = {};
 
@@ -32,14 +42,17 @@ export default class Routes extends Base {
 
   private scanDir(dir: string): void {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
+
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
+
       if (entry.isDirectory()) {
         this.scanDir(fullPath);
       } else if (entry.name.endsWith('.js')) {
         try {
           const mod = require(fullPath);
           const ExportedClass = mod.default;
+
           if (typeof ExportedClass === 'function' && ExportedClass.name) {
             const key = ExportedClass.name.charAt(0).toLowerCase() + ExportedClass.name.slice(1);
             this.backtests[key] = new ExportedClass();
@@ -93,10 +106,13 @@ export default class Routes extends Base {
   private async handleStrategies(tickers: Bar[][], strategy: any): Promise<Bar[][]> {
     if (strategy.autoParams) {
       const strategyInstance = this.backtests[strategy.strategy];
-      tickers = await this.autoParams.handleStrategy(tickers, strategy.config, strategyInstance, (steps: number) => this.addProgress(steps));
+      tickers = await this.autoParams.handleStrategy(tickers, strategy.config, strategyInstance, (steps: number) =>
+        this.addProgress(steps),
+      );
     } else {
       await Promise.all(tickers.map((bars: Bar[]) => this.handleStrategy(bars, strategy.strategy, strategy.config)));
     }
+
     return tickers;
   }
 
@@ -117,7 +133,7 @@ export default class Routes extends Base {
 
     return [
       { bars: barsZeroCommission, commission: 0 },
-      { bars, commission }
+      { bars, commission },
     ];
   }
 
@@ -127,8 +143,15 @@ export default class Routes extends Base {
     if (drained) return;
 
     await new Promise<void>((resolve, reject) => {
-      const onDrain = () => { res.removeListener('error', onError); resolve(); };
-      const onError = (err: Error) => { res.removeListener('drain', onDrain); reject(err); };
+      const onDrain = () => {
+        res.removeListener('error', onError);
+        resolve();
+      };
+      const onError = (err: Error) => {
+        res.removeListener('drain', onDrain);
+        reject(err);
+      };
+
       res.once('drain', onDrain);
       res.once('error', onError);
     });
@@ -154,38 +177,44 @@ export default class Routes extends Base {
     return state;
   }
 
-
   private async initBars(exchangeSymbol: ExchangeSymbol, timeframe: Timeframe, fetchLatest?: boolean): Promise<Bar[]> {
     const { exchange, symbol, feed } = exchangeSymbol;
+
     switch (exchange) {
-      case Exchange.Binance: return binance.initBarsDatabase(symbol, timeframe, fetchLatest);
-      case Exchange.Kucoin: return this.kucoin.initBarsDatabase(symbol, timeframe);
-      case Exchange.Alpaca: return alpaca.initBarsDatabase(symbol, timeframe, feed, fetchLatest);
-      default: throw new Error(`Invalid exchange ${exchange}`);
+      case Exchange.Binance:
+        return binance.initBarsDatabase(symbol, timeframe, fetchLatest);
+      case Exchange.Kucoin:
+        return this.kucoin.initBarsDatabase(symbol, timeframe);
+      case Exchange.Alpaca:
+        return alpaca.initBarsDatabase(symbol, timeframe, feed, fetchLatest);
+      default:
+        throw new Error(`Invalid exchange ${exchange}`);
     }
   }
 
-  private async initBarsMulti(exchangeSymbols: ExchangeSymbol[], timeframe: Timeframe, times: number, fetchLatest?: boolean): Promise<Bar[][]> {
-    const bars: Bar[][] = await Promise.all(exchangeSymbols.map(exchangeSymbol => this.initBars(exchangeSymbol, timeframe, fetchLatest)));
+  private async initBarsMulti(
+    exchangeSymbols: ExchangeSymbol[],
+    timeframe: Timeframe,
+    times: number,
+    fetchLatest?: boolean,
+  ): Promise<Bar[][]> {
+    const bars: Bar[][] = await Promise.all(exchangeSymbols.map((exchangeSymbol) => this.initBars(exchangeSymbol, timeframe, fetchLatest)));
 
     const barsInRange: Bar[][] = bars.map((bars: Bar[]) => {
       return bars.slice(-1000 * Number(times)); // get last times * 1000 timeframes
     });
 
-    return barsInRange.filter(k => k.length);  // filter out not found symbols
+    return barsInRange.filter((k) => k.length); // filter out not found symbols
   }
 
   private async getExchangeSymbols(autoSymbols: boolean, symbols?: ExchangeSymbol[], rank?: number): Promise<ExchangeSymbol[]> {
     if (autoSymbols) {
       const indices = ['SPY', 'QQQ', 'IWM', 'DAX'];
-      const [stockSymbols, cryptoSymbols] = await Promise.all([
-        this.getMultiStocks(rank!),
-        this.getMultiCryptos(rank!)
-      ]);
+      const [stockSymbols, cryptoSymbols] = await Promise.all([this.getMultiStocks(rank!), this.getMultiCryptos(rank!)]);
       return [
-        ...stockSymbols.map(symbol => ({ exchange: Exchange.Alpaca, symbol })),
-        ...indices.slice(0, rank!).map(symbol => ({ exchange: Exchange.Alpaca, symbol })),
-        ...cryptoSymbols.map(symbol => ({ exchange: Exchange.Binance, symbol }))
+        ...stockSymbols.map((symbol) => ({ exchange: Exchange.Alpaca, symbol })),
+        ...indices.slice(0, rank!).map((symbol) => ({ exchange: Exchange.Alpaca, symbol })),
+        ...cryptoSymbols.map((symbol) => ({ exchange: Exchange.Binance, symbol })),
       ];
     }
 
@@ -206,7 +235,7 @@ export default class Routes extends Base {
     return rankPairs;
   }
 
-  public async live(req: Request, res: Response): Promise<void> {
+  public async handleLive(req: Request, res: Response): Promise<void> {
     const { timeframe, times, commission = 0, strategy, symbols, autoSymbols, rank, intervalMs = 5000 } = req.body;
 
     res.setHeader('Content-Type', 'application/x-ndjson');
@@ -218,25 +247,15 @@ export default class Routes extends Base {
       const exchangeSymbols: ExchangeSymbol[] = await this.getExchangeSymbols(autoSymbols, symbols, rank);
       const tickers: Bar[][] = await this.initBarsMulti(exchangeSymbols, timeframe, times, true);
       const timeframeMs: number = timeframeToMilliseconds(timeframe);
-      const strategyModulePath: string | undefined = this.liveReplay.resolveStrategyModulePath(this.backtests[strategy.strategy]);
-      const onTick = (bar: Bar) => {
+
+      const onBar = (bar: Bar) => {
         if (!res.writableEnded) res.write(JSON.stringify(bar) + '\n');
       };
 
-      await this.liveReplay.run(
-        tickers,
-        strategy,
-        strategyModulePath,
-        timeframeMs,
-        intervalMs,
-        Number(commission),
-        onTick,
-        res
-      );
+      await this.live.run(tickers, strategy, this.backtests[strategy.strategy], timeframeMs, intervalMs, Number(commission), onBar, res);
     } finally {
       clearInterval(heartbeat);
       res.end();
     }
   }
-
 }

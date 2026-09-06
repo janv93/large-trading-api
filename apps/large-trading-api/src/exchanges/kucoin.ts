@@ -59,6 +59,7 @@ export default class Kucoin extends Base {
    */
   public async getBarsFromStartUntilNow(symbol: string, startTime: number, endTime: number, timeframe: Timeframe): Promise<Bar[]> {
     const valid = await this.isValidSymbol(symbol);
+
     if (!valid) {
       this.log(`Invalid symbol ${symbol}`);
       return [];

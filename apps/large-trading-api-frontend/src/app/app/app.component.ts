@@ -24,6 +24,7 @@ export class AppComponent {
   public readonly pageSize = 50;
   public readonly currentPage = signal(0);
   public readonly totalPages = computed(() => Math.ceil(this.tickers().length / this.pageSize));
+
   public readonly pagedTickers = computed(() => {
     const start = this.currentPage() * this.pageSize;
     return this.tickers().slice(start, start + this.pageSize);
@@ -71,6 +72,7 @@ export class AppComponent {
             return (a[0].bars.at(-1)?.backtest!.profit || 0) - (b[0].bars.at(-1)?.backtest!.profit || 0);
           }));
         }
+
         saveChartConfig(activeConfig);
         this.loadingService.setLoadingText();
       }

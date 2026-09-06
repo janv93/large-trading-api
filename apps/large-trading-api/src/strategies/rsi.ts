@@ -1,5 +1,5 @@
 ﻿import { stepRsi } from '../patterns/indicators/rsi';
-import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
+import { BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../base';
 
 export default class Rsi extends Base {
@@ -20,25 +20,29 @@ export default class Rsi extends Base {
 
     if (state.lastSignal === Signal.Buy) {
       if (rsiValue > rsiThresholdHigh) {
-        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-        signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: 1, price: closePrice }));
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
         state.lastSignal = Signal.Sell;
+        state.barDone = true;
       }
     } else if (state.lastSignal === Signal.Sell) {
       if (rsiValue < rsiThresholdLow) {
-        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-        signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: 1, price: closePrice }));
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
         state.lastSignal = Signal.Buy;
+        state.barDone = true;
       }
     } else {
       if (rsiValue > rsiThresholdHigh) {
-        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-        signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: 1, price: closePrice }));
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
         state.lastSignal = Signal.Sell;
+        state.barDone = true;
       } else if (rsiValue < rsiThresholdLow) {
-        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-        signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: 1, price: closePrice }));
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
         state.lastSignal = Signal.Buy;
+        state.barDone = true;
       }
     }
   }

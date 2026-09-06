@@ -13,11 +13,13 @@ class Binance extends Base {
 
   public async getLatestPrice(symbol: string): Promise<number> {
     await this.waitIfRateLimitReached();
+
     const response: AxiosResponse = await axios.get('https://fapi.binance.com/fapi/v2/ticker/price', {
       params: { symbol }
     });
 
     const price = Number(response.data.price);
+
     if (!Number.isFinite(price)) {
       throw new Error(`Invalid Binance price response for ${symbol}`);
     }
@@ -177,6 +179,7 @@ class Binance extends Base {
     };
 
     const hmac: string = this.createHmac(createUrl('', queryObj));
+
     const url: string = createUrl('https://fapi.binance.com/fapi/v1/order', {
       ...queryObj,
       signature: hmac

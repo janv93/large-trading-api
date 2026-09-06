@@ -28,6 +28,7 @@ tickers.forEach((currentTicker: Bar[]) => {
 
 async function run() {
   let steps = 0;
+
   const reportProgress = () => { // batched so a long run does not flood the main thread
     if (++steps % 1000 === 0) parentPort!.postMessage({ steps: 1000 });
   };
@@ -35,6 +36,7 @@ async function run() {
   for (const currentTicker of tickers) {
     const signalState: any = {};
     const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
+
     for (let i = 0; i < currentTicker.length; i++) {
       signalWindow.push(currentTicker[i]);
       await strategyInstance.stepSetSignals(signalWindow, signalState, combo);
@@ -43,6 +45,7 @@ async function run() {
 
     const backtesterState: any = {};
     const backtesterWindow: Bar[] = [];
+
     for (let i = 0; i < currentTicker.length; i++) {
       backtesterWindow.push(currentTicker[i]);
       backtester.stepCalcBacktestPerformance(backtesterWindow, backtesterState, 0);

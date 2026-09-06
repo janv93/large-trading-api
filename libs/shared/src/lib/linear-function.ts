@@ -22,6 +22,7 @@ export class LinearFunction {
     if (tolerance !== undefined) {
       return this.m * x + this.b > y * (1 - tolerance) && this.m * x + this.b < y * (1 + tolerance);
     }
+
     return this.m * x + this.b === y;
   }
 }

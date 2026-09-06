@@ -9,6 +9,7 @@ export function stepBb(bars: Bar[], period: number): void {
   const variance: number = window.reduce((sum, bar) => sum + Math.pow(bar.prices.close - middleBand, 2), 0) / period;
   const standardDeviation: number = Math.sqrt(variance);
   const bar: Bar = bars[i];
+
   bar.indicators = {
     ...bar.indicators,
     bb: { upper: middleBand + 2 * standardDeviation, middle: middleBand, lower: middleBand - 2 * standardDeviation } as BollingerBands,

@@ -32,6 +32,7 @@ export class ChartConfigComponent implements OnChanges, OnInit {
 
     const control = this.runOriginControl;
     this.runOriginControl = undefined;
+
     setTimeout(() => {
       control.classList.remove('run-origin');
       control.focus();
@@ -101,6 +102,7 @@ export class ChartConfigComponent implements OnChanges, OnInit {
     this.config.symbols.forEach(symbol => {
       symbol.symbol = symbol.symbol.trim().toUpperCase();
     });
+
     this.symbolsPopover?.nativeElement.hidePopover();
     setTimeout(() => this.runButton?.nativeElement.focus());
   }

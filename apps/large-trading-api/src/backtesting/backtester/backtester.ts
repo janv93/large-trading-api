@@ -15,23 +15,26 @@ export default class Backtester extends Base {
 
     const i: number = bars.length - 1;
     const bar: Bar = bars[i];
+    this.replaceCloseAllSignals(state.positions, bar);
 
-    state.positions = (state.positions as Position[]).map((position: Position) => {
+    state.positions.forEach((position: Position) => {
+      if (position.closed) return;
+
       const closeSignal: Signal | undefined = this.getCloseSignal(position, bar);
       state.profit! += this.calcProfitChange(position, bar, closeSignal);
 
       if (closeSignal) {
-        this.addOrUpdateCloseSignal(position, bar, closeSignal);
+        this.addForceCloseSignal(position, bar, closeSignal);
+        this.setCloseSignalReference(position, bar, closeSignal, i);
         state.profit! -= this.calcCloseFee(position, bar, closeSignal, commission);
-        return undefined;
+        position.closed = true;
       } else {
-        return this.updateExistingPosition(position, bar, bars);
+        this.updateExistingPosition(position, bar, bars);
       }
     });
 
-    state.positions = state.positions.filter((position: Position | undefined) => position !== undefined);
-    this.addNewPositions(state.positions as Position[], bar, i, state.volatility);
-    state.profit -= this.calcOpenFee(bar, commission);
+    const openedSignals: BacktestSignal[] = this.addNewPositions(state.positions, bar, i, state.volatility);
+    state.profit -= this.calcOpenFee(openedSignals, commission);
     const backtest: BacktestData = bar.backtest!;
     backtest.profit = state.profit;
     backtest.openPositionSize = this.calcPositionSize(state.positions as Position[]);
@@ -83,15 +86,34 @@ export default class Backtester extends Base {
 
   private findCloseBacktestSignal(position: Position, bar: Bar): BacktestSignal | undefined {
     return bar.backtest.signals.find((signal: BacktestSignal) => {
-      if (signal.signal === Signal.CloseAll) {
-        return true;
-      } else if (signal.signal === Signal.Close) {
-        return signal.openSignalReferences!.some((signalReference: SignalReference) => {
-          return signalReference.barIndex === position.openSignalReference.barIndex
-            && signalReference.signalIndex === position.openSignalReference.signalIndex;
-        });
+      if (signal.signal === Signal.Close) {
+        return this.referencesPosition(signal, position);
       }
     });
+  }
+
+  private replaceCloseAllSignals(positions: Position[], bar: Bar): void {
+    bar.backtest.signals = bar.backtest.signals.flatMap((signal: BacktestSignal) => {
+      if (signal.signal !== Signal.CloseAll) return [signal];
+
+      return positions
+        .filter(position => !position.closed)
+        .map(position => ({
+          signal: Signal.Close,
+          price: signal.price,
+          openSignalReferences: [position.openSignalReference]
+        }));
+    });
+  }
+
+  private referencesPosition(signal: BacktestSignal, position: Position): boolean {
+    return signal.openSignalReferences?.some((signalReference: SignalReference) => {
+      return this.isSameSignalReference(signalReference, position.openSignalReference);
+    }) ?? false;
+  }
+
+  private isSameSignalReference(first: SignalReference, second: SignalReference): boolean {
+    return first.barIndex === second.barIndex && first.signalIndex === second.signalIndex;
   }
 
   private calcProfitChange(position: Position, bar: Bar, closeSignal: Signal | undefined): number {
@@ -105,27 +127,27 @@ export default class Backtester extends Base {
     return profitChange;
   }
 
-  private addOrUpdateCloseSignal(position: Position, bar: Bar, closeSignal: Signal) {
+  private addForceCloseSignal(position: Position, bar: Bar, closeSignal: Signal): void {
+    if (!isForceCloseSignal(closeSignal)) return;
+
     const signals: BacktestSignal[] = bar.backtest.signals;
-    const signalReference: SignalReference = position.openSignalReference;
+    const openSignalReference: SignalReference = position.openSignalReference;
+    const closePrice: number = this.getClosePrice(position, closeSignal, bar);
 
-    if (isForceCloseSignal(closeSignal)) { // add force close to bar signals
-      const closePrice: number = this.getClosePrice(position, closeSignal!, bar);
-      signals.push(createSignal({
-        uniqueIdentifier: { signal: closeSignal, openSignalReference: signalReference },
-        signal: closeSignal!,
-        price: closePrice,
-        openSignalReferences: [signalReference],
-      }));
-    } else if (closeSignal === Signal.CloseAll) {  // add reference of all positions that are closed by this signal - this is mainly for completeness and the frontend using this reference
-      const closeAllBacktestSignal: BacktestSignal = signals.find((signal: BacktestSignal) => signal.signal === Signal.CloseAll)!;
+    signals.push(createSignal({
+      uniqueIdentifier: { signal: closeSignal, openSignalReference },
+      signal: closeSignal,
+      price: closePrice,
+      openSignalReferences: [openSignalReference],
+    }));
+  }
 
-      if (closeAllBacktestSignal.openSignalReferences?.length) {
-        closeAllBacktestSignal.openSignalReferences.push(signalReference);
-      } else {
-        closeAllBacktestSignal.openSignalReferences = [signalReference];
-      }
-    }
+  private setCloseSignalReference(position: Position, bar: Bar, closeSignal: Signal, barIndex: number): void {
+    const signalIndex: number = bar.backtest.signals.findIndex((signal: BacktestSignal) => {
+      return signal.signal === closeSignal && this.referencesPosition(signal, position);
+    });
+
+    position.closeSignalReference = { barIndex, signalIndex };
   }
 
   private calcCloseFee(position: Position, bar: Bar, closeSignal: Signal, commission: number): number {
@@ -207,26 +229,34 @@ export default class Backtester extends Base {
     }
   }
 
-  private addNewPositions(positions: Position[], bar: Bar, barIndex: number, volatility: number) {
+  private addNewPositions(positions: Position[], bar: Bar, barIndex: number, volatility: number): BacktestSignal[] {
     const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
+    const openedSignals: BacktestSignal[] = [];
 
     signals.forEach((signal: BacktestSignal, signalIndex: number) => {
-      if (!isCloseSignal(signal.signal)) {
+      if (isCloseSignal(signal.signal)) return;
+
+      const openSignalReference: SignalReference = { barIndex, signalIndex };
+
+      const positionExists: boolean = positions.some(position => {
+        return this.isSameSignalReference(position.openSignalReference, openSignalReference);
+      });
+
+      if (!positionExists) {
         positions.push(this.createPosition(signal, barIndex, signalIndex, volatility));
+        openedSignals.push(signal);
       }
     });
+
+    return openedSignals;
   }
 
-  private calcOpenFee(bar: Bar, commission: number): number {
+  private calcOpenFee(signals: BacktestSignal[], commission: number): number {
     let totalOpenFee = 0;
-    const backtest: BacktestData = bar.backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
 
     signals.forEach((signal: BacktestSignal) => {
-      if (!isCloseSignal(signal.signal)) {
-        totalOpenFee += commission * signal.size!
-      }
+      totalOpenFee += commission * signal.size!;
     });
 
     return totalOpenFee;
@@ -234,7 +264,7 @@ export default class Backtester extends Base {
 
   private calcPositionSize(positions: Position[]): number {
     return positions.reduce((acc: number, position: Position) => {
-      return acc + position.size;
+      return position.closed ? acc : acc + position.size;
     }, 0);
   }
 
@@ -289,6 +319,7 @@ export default class Backtester extends Base {
     }
 
     return {
+      closed: false,
       size: size!,
       entrySize: entrySize!,
       price: signalPrice,
@@ -305,7 +336,6 @@ export default class Backtester extends Base {
 
     switch (closeSignal) {
       case Signal.Close:
-      case Signal.CloseAll:
         currentPrice = this.findCloseBacktestSignal(position, bar)!.price;
         break;
       case Signal.Liquidation: currentPrice = position.liquidationPrice; break;
@@ -391,6 +421,7 @@ export default class Backtester extends Base {
     } else if (tSl) {
       return { takeProfit: undefined, stopLoss: tSl.stopLoss };
     }
+
     return { takeProfit: undefined, stopLoss: undefined };
   }
 

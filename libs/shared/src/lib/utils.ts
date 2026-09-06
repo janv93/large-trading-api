@@ -91,6 +91,7 @@ export function isBarOutdated(timeframe: Timeframe, lastOpen: number, lastFetch?
   if (lastFetch && (now - lastFetch) < timeframeMs) return false;
 
   const diff = now - lastOpen;
+
   switch (unit) {
     case 'm': return diff > 15 * 60 * 1000; // 15 min
     default: return diff > 3 * timeframeMs; // 3 timeframes for anything > minutes

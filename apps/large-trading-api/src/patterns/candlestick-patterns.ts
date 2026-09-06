@@ -80,6 +80,7 @@ export default class CandlestickPatternsController extends Base {
     // Spinning Top: body 10–40% of range, both shadows present and roughly equal
     if (bodyRatio >= 0.1 && bodyRatio <= 0.4 && upperShadow > 0 && lowerShadow > 0) {
       const shadowRatio: number = Math.min(upperShadow, lowerShadow) / Math.max(upperShadow, lowerShadow);
+
       if (shadowRatio >= 0.5) {
         patterns.spinningTop = true;
       }
@@ -117,6 +118,7 @@ export default class CandlestickPatternsController extends Base {
     // Piercing Line: prev bearish, curr bullish opens below prev low, closes above 50% into prev body
     if (!prevBullish && currBullish && curr.open < prev.low && prevBody > 0) {
       const midpoint: number = prev.open - prevBody * 0.5;
+
       if (curr.close > midpoint && curr.close < prev.open) {
         patterns.piercingLine = true;
       }
@@ -125,6 +127,7 @@ export default class CandlestickPatternsController extends Base {
     // Dark Cloud Cover: prev bullish, curr bearish opens above prev high, closes below 50% into prev body
     if (prevBullish && !currBullish && curr.open > prev.high && prevBody > 0) {
       const midpoint: number = prev.open + prevBody * 0.5;
+
       if (curr.close < midpoint && curr.close > prev.open) {
         patterns.darkCloudCover = true;
       }
@@ -151,6 +154,7 @@ export default class CandlestickPatternsController extends Base {
     // Morning Star: large bearish → small middle candle opens below first close → large bullish closes > 50% into first
     if (!firstBullish && midBody < firstBody * 0.5 && lastBullish && mid.open < first.close) {
       const midpoint: number = first.open - firstBody * 0.5;
+
       if (last.close > midpoint) {
         patterns.morningStar = true;
       }
@@ -159,6 +163,7 @@ export default class CandlestickPatternsController extends Base {
     // Evening Star: large bullish → small middle candle opens above first close → large bearish closes < 50% into first
     if (firstBullish && midBody < firstBody * 0.5 && !lastBullish && mid.open > first.close) {
       const midpoint: number = first.open + firstBody * 0.5;
+
       if (last.close < midpoint) {
         patterns.eveningStar = true;
       }

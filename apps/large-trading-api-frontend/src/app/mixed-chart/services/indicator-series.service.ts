@@ -42,18 +42,21 @@ export class IndicatorSeriesService {
       chart.removeSeries(this.bbSeries.lower);
       this.bbSeries = undefined;
     }
+
     if (this.rsiSeries && !hasRsi) { chart.removeSeries(this.rsiSeries); this.rsiSeries = undefined; }
     if (this.atrSeries && !hasAtr) { chart.removeSeries(this.atrSeries); this.atrSeries = undefined; }
     if (this.macdHistogramSeries && !hasMacd) { chart.removeSeries(this.macdHistogramSeries); this.macdHistogramSeries = undefined; }
 
     // create series only if not yet present, then always update data
     const emaColors: string[] = ['#FFD700', '#FF8C00', '#FF4500', '#FF1493'];
+
     Array.from(emaPeriods).sort((a, b) => a - b).forEach((period: number, i: number) => {
       if (!this.emaSeries.has(period)) {
         const series: ISeriesApi<'Line'> = chart.addSeries(LineSeries, {
           priceScaleId: 'right', color: emaColors[i % emaColors.length], lineWidth: 1,
           priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false
         });
+
         this.emaSeries.set(period, series);
       }
       const data: LineData[] = bars
@@ -63,12 +66,14 @@ export class IndicatorSeriesService {
     });
 
     const smaColors: string[] = ['#00BFFF', '#00FA9A', '#7B68EE', '#20B2AA'];
+
     Array.from(smaPeriods).sort((a, b) => a - b).forEach((period: number, i: number) => {
       if (!this.smaSeries.has(period)) {
         const series: ISeriesApi<'Line'> = chart.addSeries(LineSeries, {
           priceScaleId: 'right', color: smaColors[i % smaColors.length], lineWidth: 1,
           priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false
         });
+
         this.smaSeries.set(period, series);
       }
       const data: LineData[] = bars
@@ -90,12 +95,14 @@ export class IndicatorSeriesService {
         priceScaleId: 'right', color: 'rgba(100, 200, 100, 0.7)', lineWidth: 1,
         priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false
       });
+
       this.bbSeries = { upper: upperSeries, middle: middleSeries, lower: lowerSeries };
     }
     if (hasBb && this.bbSeries) {
       const upperData: LineData[] = [];
       const middleData: LineData[] = [];
       const lowerData: LineData[] = [];
+
       bars.forEach((bar: Bar) => {
         if (!bar.indicators?.bb) return;
         const time: Time = bar.times.open / 1000 as Time;
@@ -103,6 +110,7 @@ export class IndicatorSeriesService {
         middleData.push({ time, value: bar.indicators.bb.middle });
         lowerData.push({ time, value: bar.indicators.bb.lower });
       });
+
       this.bbSeries.upper.setData(upperData);
       this.bbSeries.middle.setData(middleData);
       this.bbSeries.lower.setData(lowerData);
@@ -115,6 +123,7 @@ export class IndicatorSeriesService {
         // skip the O(n) visible-range data scan — return fixed range immediately
         autoscaleInfoProvider: () => ({ priceRange: { minValue: 0, maxValue: 100 } })
       });
+
       chart.priceScale('rsi').applyOptions({ visible: false, scaleMargins: { top: 0, bottom: 0 } });
     }
     if (hasRsi) {
@@ -127,6 +136,7 @@ export class IndicatorSeriesService {
         priceScaleId: 'atr', color: '#1ABC9C', lineWidth: 1,
         priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false
       });
+
       chart.priceScale('atr').applyOptions({ visible: false });
     }
     if (hasAtr && this.atrSeries) {
@@ -140,6 +150,7 @@ export class IndicatorSeriesService {
       this.macdHistogramSeries = chart.addSeries(HistogramSeries, {
         priceScaleId: 'macd', priceLineVisible: false, lastValueVisible: false
       });
+
       chart.priceScale('macd').applyOptions({ visible: false });
     }
     if (hasMacd && this.macdHistogramSeries) {
@@ -166,15 +177,18 @@ export class IndicatorSeriesService {
     // Downsample: keep at most 500 points so the renderer doesn't process every noisy tick
     const step: number = Math.max(1, Math.floor(numVisibleBars / 500));
     const data: LineData[] = [];
+
     for (let i = 0; i < this.rsiBars.length; i += step) {
       const k: Bar = this.rsiBars[i];
       data.push({ time: k.times.open / 1000 as Time, value: k.indicators!.rsi! });
     }
+
     this.rsiSeries.setData(data);
   }
 
   public setMacdData(bars: Bar[], alpha: number): void {
     if (!this.macdHistogramSeries) return;
+
     const data: HistogramData[] = bars
       .filter(k => k.indicators?.macd !== undefined)
       .map(k => ({
@@ -182,6 +196,7 @@ export class IndicatorSeriesService {
         value: k.indicators!.macd!.histogram,
         color: k.indicators!.macd!.histogram >= 0 ? `rgba(100, 180, 255, ${alpha})` : `rgba(255, 160, 50, ${alpha})`
       }));
+
     this.macdHistogramSeries.setData(data);
   }
 
@@ -191,11 +206,13 @@ export class IndicatorSeriesService {
 
     this.emaSeries.forEach(applyVisible);
     this.smaSeries.forEach(applyVisible);
+
     if (this.bbSeries) {
       applyVisible(this.bbSeries.upper);
       applyVisible(this.bbSeries.middle);
       applyVisible(this.bbSeries.lower);
     }
+
     if (this.rsiSeries) applyVisible(this.rsiSeries);
     if (this.atrSeries) applyVisible(this.atrSeries);
     if (this.macdHistogramSeries) applyVisible(this.macdHistogramSeries);
@@ -216,6 +233,7 @@ export class IndicatorSeriesService {
       const upper = param.seriesData.get(this.bbSeries.upper) as LineData;
       const middle = param.seriesData.get(this.bbSeries.middle) as LineData;
       const lower = param.seriesData.get(this.bbSeries.lower) as LineData;
+
       if (upper && middle && lower) {
         values.push({ label: 'BB', value: `${upper.value.toFixed(2)} / ${middle.value.toFixed(2)} / ${lower.value.toFixed(2)}` });
       }

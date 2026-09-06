@@ -1,4 +1,4 @@
-﻿import { BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition, createSignal } from '@shared';
+﻿import { BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../base';
 import { calcAverageChangeInPercent } from '@shared';
 import TrendLineController from '../patterns/trend-line';
@@ -12,11 +12,10 @@ export default class TrendLineBreakthrough extends Base {
     state.trendLines ??= {};
 
     this.trendLineController.stepTrendLines(bars, state.trendLines, 40, 200, true, true);
-    this.trendLineController.stepTrendLineBreakthroughs(bars, state.trendLines, true);
+    const breakthroughs: TrendLine[] = this.trendLineController.stepTrendLineBreakthroughs(bars, state.trendLines, true);
 
     const bar: Bar = bars[bars.length - 1];
-    const breakthroughs: TrendLine[] | undefined = bar.chart?.trendLineBreakthroughs;
-    if (!breakthroughs) return;
+    if (!breakthroughs.length) return;
 
     breakthroughs.forEach((trendLine: TrendLine) => {
       const length: number = trendLine.length;
@@ -40,8 +39,7 @@ export default class TrendLineBreakthrough extends Base {
     const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
 
-    signals.push(createSignal({
-      uniqueIdentifier: trendLine,
+    signals.push({
       signal: Signal.Buy,
       size: score,
       price: breakthoughPrice,
@@ -56,15 +54,14 @@ export default class TrendLineBreakthrough extends Base {
           percentOfProfit
         }
       }
-    }));
+    });
   }
 
   private openSellPosition(bar: Bar, trendLine: TrendLine, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
     const backtest: BacktestData = bar.backtest!;
     const signals: BacktestSignal[] = backtest.signals;
 
-    signals.push(createSignal({
-      uniqueIdentifier: trendLine,
+    signals.push({
       signal: Signal.Sell,
       size: score,
       price: breakthoughPrice,
@@ -79,6 +76,6 @@ export default class TrendLineBreakthrough extends Base {
           percentOfProfit
         }
       }
-    }));
+    });
   }
 }

@@ -9,8 +9,8 @@ export class BaseComponent {
   }
 
   protected isForceCloseSignal(signal?: Signal): boolean {
-    const isCloseSignal: boolean = (this.isCloseSignal(signal));
-    return isCloseSignal && signal !== Signal.CloseAll && signal !== Signal.Close;
+    if (!signal) return false;
+    return [Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
   }
 
   // interpolates source value between source range to target value between target range

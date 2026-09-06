@@ -138,15 +138,17 @@ export default class TrendLineController extends Base {
 
     if (ppEnd) {
       const isHigh: boolean = ppEnd.side === PivotPointSide.High;
+
       if (!this.hasCandidateTrendLine(state, i)) {
         state.candidateTrendLines.push({ startIndex: i, side: ppEnd.side, extremeSlope: isHigh ? -Infinity : Infinity });
       }
     }
   }
 
-  public stepTrendLineBreakthroughs(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, rightBuffer: boolean): void {
+  public stepTrendLineBreakthroughs(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, rightBuffer: boolean): TrendLine[] {
     state.confirmedTrendLines ??= [];
     const i: number = bars.length - 1;
+    const newBreakthroughs: TrendLine[] = [];
 
     state.confirmedTrendLines = state.confirmedTrendLines.filter(trendLine => {
       if (trendLine.breakThroughIndex !== undefined) return false;
@@ -164,10 +166,17 @@ export default class TrendLineController extends Base {
       if (this.crossesTrendLine(bars, trendLine, i)) {
         bars[i].chart = bars[i].chart || {};
         bars[i].chart.trendLineBreakthroughs = bars[i].chart.trendLineBreakthroughs || [];
-        if (!this.hasTrendLineBreakthrough(bars[i], trendLine)) bars[i].chart.trendLineBreakthroughs.push(trendLine);
+
+        if (!this.hasTrendLineBreakthrough(bars[i], trendLine)) {
+          bars[i].chart.trendLineBreakthroughs.push(trendLine);
+          newBreakthroughs.push(trendLine);
+        }
+
         trendLine.breakThroughIndex = i;
       }
     }
+
+    return newBreakthroughs;
   }
 
   private crossesTrendLine(bars: Bar[], trendLine: TrendLine, index: number): boolean {
@@ -208,13 +217,16 @@ export default class TrendLineController extends Base {
   private processRightBufferPending(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState): void {
     if (!state.pendingTrendLines?.length) return;
     const i = bars.length - 1;
+
     state.pendingTrendLines = state.pendingTrendLines.filter(trendLine => {
       const buffer = Math.round(trendLine.length * this.bufferPercentage);
       if (this.crossesTrendLine(bars, trendLine, i)) return false;
+
       if (i >= trendLine.endIndex + buffer) {
         if (!this.hasConfirmedTrendLine(state, trendLine)) this.confirmTrendLine(bars, state, trendLine);
         return false;
       }
+
       return true;
     });
   }

@@ -28,6 +28,7 @@ export default class AutoParams extends Base {
     benchmarks.push(...workerBenchmarks);
 
     const best = workerBenchmarks.reduce((b, c) => c.score > b.score ? c : b, workerBenchmarks[0]);
+
     if (best?.params) {
       bestTickers = await this.runStrategy(tickers, best.params, strategyInstance, onProgress);
     }
@@ -58,10 +59,12 @@ export default class AutoParams extends Base {
     const spawnWorker = (combo: Record<string, number>): Promise<{ result: MultiBenchmark, peakRss: number }> =>
       new Promise((resolve, reject) => {
         const worker = new Worker(path.join(__dirname, 'worker.js'), { workerData: { sharedBuffer, bufferLength: encoded.byteLength, combo, strategyModulePath } });
+
         worker.on('message', (message: any) => {
           if (message.steps) onProgress(message.steps);
           if (message.result) resolve(message);
         });
+
         worker.on('error', reject);
         worker.on('exit', code => { if (code !== 0) reject(new Error(`Worker exited with code ${code}`)); });
       });
@@ -110,9 +113,11 @@ export default class AutoParams extends Base {
     return Object.entries(configs).map(([key, config]) => {
       const step = config.step ?? 1;
       const values: number[] = [];
+
       for (let v = config.min; v <= config.max + step * 0.5; v += step) {
         values.push(Math.round(v * 1e10) / 1e10);
       }
+
       return { key, values };
     });
   }
@@ -149,6 +154,7 @@ export default class AutoParams extends Base {
 
       const signalState: any = {};
       const signalWindow: Bar[] = []; // grown by push, a slice per bar would copy the whole prefix and make the run quadratic
+
       for (let i = 0; i < currentTicker.length; i++) {
         signalWindow.push(currentTicker[i]);
         await strategyInstance.stepSetSignals(signalWindow, signalState, params);
@@ -157,6 +163,7 @@ export default class AutoParams extends Base {
 
       const backtesterState: BacktesterState = {};
       const backtesterWindow: Bar[] = [];
+
       for (let i = 0; i < currentTicker.length; i++) {
         backtesterWindow.push(currentTicker[i]);
         this.backtest.stepCalcBacktestPerformance(backtesterWindow, backtesterState, 0);

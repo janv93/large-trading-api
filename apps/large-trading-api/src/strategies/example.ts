@@ -20,5 +20,6 @@ export default class Example extends Base {
     if (i === interval * 6) signals.push({ signal: Signal.Buy, size, price: closePrice, positionCloseTrigger: { tpSl: { takeProfit: 0.05, stopLoss: 0.02 } } });
     if (i === interval * 7) signals.push({ signal: Signal.Sell, size, price: closePrice, positionCloseTrigger: { tSl: { stopLoss: 0.03 } } });
     if (i === interval * 8) signals.push({ signal: Signal.Buy, size, price: closePrice, positionCloseTrigger: { tSl: { stopLoss: 0.03, percentOfProfit: 0.5 } } });
+    state.barDone = true;
   }
 }

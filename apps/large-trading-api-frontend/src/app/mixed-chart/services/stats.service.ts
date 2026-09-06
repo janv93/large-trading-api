@@ -46,6 +46,6 @@ export class StatsService {
 
   private isCloseSignal(signal?: Signal): boolean {
     if (!signal) return false;
-    return [Signal.CloseAll, Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
+    return [Signal.Close, Signal.Liquidation, Signal.TakeProfit, Signal.StopLoss].includes(signal);
   }
 }

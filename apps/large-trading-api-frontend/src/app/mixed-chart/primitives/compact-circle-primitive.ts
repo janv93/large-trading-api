@@ -7,51 +7,43 @@ import {
   PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
   SeriesType,
-  Time
+  Time,
 } from 'lightweight-charts';
-
-export interface CompactCircleMarker {
-  time: number;
-  price: number;
-  side: 'above' | 'below';
-  color: string;
-}
-
-interface RenderedCompactCircle {
-  x: number;
-  y: number;
-  side: 'above' | 'below';
-  color: string;
-}
+import { CompactCircleMarker, RenderedCompactCircle } from '@shared';
 
 class CompactCirclePaneRenderer implements IPrimitivePaneRenderer {
-  constructor(private readonly _items: RenderedCompactCircle[]) { }
+  constructor(private readonly _items: RenderedCompactCircle[]) {}
 
   draw(target: any): void {
-    target.useBitmapCoordinateSpace(({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: any) => {
-      const pixelRatio = Math.min(horizontalPixelRatio, verticalPixelRatio);
-      const radius = 2 * pixelRatio;
-      const offset = 5 * pixelRatio;
+    target.useBitmapCoordinateSpace(
+      ({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: any) => {
+        const pixelRatio = Math.min(horizontalPixelRatio, verticalPixelRatio);
+        const radius = 2 * pixelRatio;
+        const offset = 5 * pixelRatio;
 
-      const itemsByColor = new Map<string, RenderedCompactCircle[]>();
-      for (const item of this._items) {
-        if (!itemsByColor.has(item.color)) itemsByColor.set(item.color, []);
-        itemsByColor.get(item.color)!.push(item);
-      }
+        const itemsByColor = new Map<string, RenderedCompactCircle[]>();
 
-      for (const [color, items] of itemsByColor) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        for (const item of items) {
-          const x = item.x * horizontalPixelRatio;
-          const baseY = item.y * verticalPixelRatio;
-          const y = item.side === 'above' ? baseY - offset : baseY + offset;
-          ctx.moveTo(x + radius, y);
-          ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        for (const item of this._items) {
+          if (!itemsByColor.has(item.color)) itemsByColor.set(item.color, []);
+          itemsByColor.get(item.color)!.push(item);
         }
-        ctx.fill();
-      }
-    });
+
+        for (const [color, items] of itemsByColor) {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+
+          for (const item of items) {
+            const x = item.x * horizontalPixelRatio;
+            const baseY = item.y * verticalPixelRatio;
+            const y = item.side === 'above' ? baseY - offset : baseY + offset;
+            ctx.moveTo(x + radius, y);
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+          }
+
+          ctx.fill();
+        }
+      },
+    );
   }
 }
 
@@ -99,20 +91,27 @@ export class CompactCirclePrimitive implements ISeriesPrimitive<Time> {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
-    const visibleRange = timeScale.getVisibleRange() as { from: number, to: number } | null;
+    const visibleRange = timeScale.getVisibleRange() as {
+      from: number;
+      to: number;
+    } | null;
     const items: RenderedCompactCircle[] = [];
 
     let startIndex = 0;
+
     if (visibleRange && this._markers.length > 0) {
-      let l = 0, r = this._markers.length - 1;
+      let l = 0,
+        r = this._markers.length - 1;
       while (l <= r) {
         const m = (l + r) >> 1;
+
         if (this._markers[m].time < visibleRange.from) {
           l = m + 1;
         } else {
           r = m - 1;
         }
       }
+
       startIndex = Math.max(0, l - 1);
     }
 

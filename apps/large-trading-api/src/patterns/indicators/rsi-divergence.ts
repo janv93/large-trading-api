@@ -1,21 +1,14 @@
 import {
   Bar,
+  DetectedRsiDivergence,
   LinearFunction,
   RsiDivergenceData,
+  RsiDivergenceStrengths,
   TrendLine,
   TrendLinePosition,
   TrendLineStepState,
   TrendLinesFromPivotPointsStepState,
-} from '@shared';
-
-interface RsiDivergenceStrengths {
-  regular?: number;
-  hidden?: number;
-}
-
-interface DetectedRsiDivergence extends RsiDivergenceStrengths {
-  originTrendLine: TrendLine;
-}
+} from "@shared";
 
 export function stepRsiDivergence(
   bars: Bar[],
@@ -30,13 +23,13 @@ export function stepRsiDivergence(
 
   for (const trendLine of state.confirmedTrendLines) {
     if (trendLine.endIndex !== i) continue;
-    if (currentRsiDivergence?.originTrendLines.some(origin => isSameTrendLine(origin, trendLine))) continue;
+    if (currentRsiDivergence?.originTrendLines.some((origin) => isSameTrendLine(origin, trendLine))) continue;
 
     const divergence: RsiDivergenceStrengths | undefined = calcRsiDivergence(bars, trendLine, minStrength);
 
     if (!divergence) {
       const chart = bars[trendLine.startIndex]?.chart;
-      if (chart?.trendLines) chart.trendLines = chart.trendLines.filter(line => line !== trendLine);
+      if (chart?.trendLines) chart.trendLines = chart.trendLines.filter((line) => line !== trendLine);
     } else {
       newDivergences.push({ ...divergence, originTrendLine: trendLine });
     }
@@ -50,11 +43,7 @@ export function stepRsiDivergence(
   return newRsiDivergence;
 }
 
-function calcRsiDivergence(
-  bars: Bar[],
-  trendLine: TrendLine,
-  minStrength: number,
-): RsiDivergenceStrengths | undefined {
+function calcRsiDivergence(bars: Bar[], trendLine: TrendLine, minStrength: number): RsiDivergenceStrengths | undefined {
   const startIndex: number = trendLine.startIndex;
   const endIndex: number = trendLine.endIndex;
   const length: number = trendLine.length;
@@ -102,13 +91,17 @@ function buildRsiDivergenceData(divergences: DetectedRsiDivergence[]): RsiDiverg
   const regular: number = divergences.reduce((sum, divergence) => sum + (divergence.regular ?? 0), 0);
   const hidden: number = divergences.reduce((sum, divergence) => sum + (divergence.hidden ?? 0), 0);
 
-  return createRsiDivergenceData(regular, hidden, divergences.map(divergence => divergence.originTrendLine));
+  return createRsiDivergenceData(
+    regular,
+    hidden,
+    divergences.map((divergence) => divergence.originTrendLine),
+  );
 }
 
 function mergeRsiDivergenceData(current: RsiDivergenceData | undefined, added: RsiDivergenceData): RsiDivergenceData {
   const regular: number = (current?.regular ?? 0) + (added.regular ?? 0);
   const hidden: number = (current?.hidden ?? 0) + (added.hidden ?? 0);
-  return createRsiDivergenceData(regular, hidden, [...current?.originTrendLines ?? [], ...added.originTrendLines]);
+  return createRsiDivergenceData(regular, hidden, [...(current?.originTrendLines ?? []), ...added.originTrendLines]);
 }
 
 function createRsiDivergenceData(regular: number, hidden: number, originTrendLines: TrendLine[]): RsiDivergenceData {
@@ -121,8 +114,7 @@ function createRsiDivergenceData(regular: number, hidden: number, originTrendLin
 }
 
 function isSameTrendLine(first: TrendLine, second: TrendLine): boolean {
-  return first.startIndex === second.startIndex &&
-    first.position === second.position;
+  return first.startIndex === second.startIndex && first.position === second.position;
 }
 
 function isRsiLineUninterrupted(localRsi: number[], startIndex: number, endIndex: number, rsiGoesUp: boolean): boolean {
@@ -180,17 +172,21 @@ function calcLocalRsi(bars: Bar[], startIndex: number, endIndex: number, period:
 
 function calcCloseChangeStdDev(bars: Bar[], startIndex: number, endIndex: number): number {
   const changes: number[] = [];
+
   for (let i = startIndex + 1; i <= endIndex; i++) {
     changes.push(bars[i].prices.close - bars[i - 1].prices.close);
   }
+
   return calcStdDev(changes);
 }
 
 function calcRsiChangeStdDev(localRsi: number[]): number {
   const changes: number[] = [];
+
   for (let i = 1; i < localRsi.length; i++) {
     changes.push(localRsi[i] - localRsi[i - 1]);
   }
+
   return calcStdDev(changes);
 }
 

@@ -93,11 +93,13 @@ export class WatermarkPrimitive implements ISeriesPrimitive<Time> {
 
     if (!isMulti) {
       const img = new Image();
+
       img.onload = () => {
         this._image = img;
         this._paneView.update(this._symbol, this._image, this._isMulti);
         this._requestUpdate?.();
       };
+
       img.src = `assets/images/${exchange.toLowerCase()}.png`;
     } else {
       this._image = null;

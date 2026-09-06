@@ -1,4 +1,4 @@
-﻿import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
+﻿import { BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../base';
 
 enum Action {
@@ -98,16 +98,16 @@ export default class MeanReversion extends Base {
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
-    signals.push(createSignal({
-      uniqueIdentifier: Signal.Buy,
+    signals.push({
       signal: Signal.Buy,
       size: Math.pow(2, state.streak),  // start at 2^0
       price: closePrice
-    }));
+    });
 
     state.streak++;
     state.isOpen = true;
     state.low = bar.prices.close;
+    state.barDone = true;
   }
 
   private startTrail(bar: Bar, state: any) {
@@ -124,15 +124,15 @@ export default class MeanReversion extends Base {
     const signals: BacktestSignal[] = backtest.signals;
     const closePrice: number = bar.prices.close;
 
-    signals.push(createSignal({
-      uniqueIdentifier: Signal.CloseAll,
+    signals.push({
       signal: Signal.CloseAll,
       price: closePrice
-    }));
+    });
 
     state.streak = startStreak;
     state.isOpen = false;
     state.isTrailing = false;
     state.peak = bar.prices.close;
+    state.barDone = true;
   }
 }

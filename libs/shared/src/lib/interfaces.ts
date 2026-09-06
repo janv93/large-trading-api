@@ -4,11 +4,11 @@ export enum Exchange {
   Binance = 'BINANCE',
   Kucoin = 'KUCOIN',
   Alpaca = 'ALPACA',
-  BTSE = 'BTSE'
+  BTSE = 'BTSE',
 }
 
 export enum AlpacaFeed {
-  Iex = 'iex'
+  Iex = 'iex',
 }
 
 export enum Timeframe {
@@ -27,7 +27,7 @@ export enum Timeframe {
   _1Week = '1w',
   _1Month = '1M',
   _3Months = '3M',
-  _6Months = '6M'
+  _6Months = '6M',
 }
 
 export enum Strategy {
@@ -41,46 +41,46 @@ export enum Strategy {
   MarketStructure = 'marketStructure',
   RsiDivergence = 'rsiDivergence',
   Example = 'example',
-  CandlestickPatterns = 'candlestickPatterns'
+  CandlestickPatterns = 'candlestickPatterns',
 }
 
 export enum PivotPointSide {
   High = 'HIGH',
-  Low = 'LOW'
+  Low = 'LOW',
 }
 
 export enum Signal {
   // these are set in the backtests
   Buy = 'BUY',
   Sell = 'SELL',
-  Close = 'CLOSE',  // close a specific position
-  CloseAll = 'CLOSEALL',  // close all open positions
+  Close = 'CLOSE', // close a specific position
+  CloseAll = 'CLOSEALL', // close all open positions
   // these are only set by the backtester
   Liquidation = 'LIQUIDATION',
   TakeProfit = 'TAKEPROFIT',
-  StopLoss = 'STOPLOSS'
+  StopLoss = 'STOPLOSS',
 }
 
 export enum CloseType {
   Close = 'CLOSE',
   StopLoss = 'STOPLOSS',
   TakeProfit = 'TAKEPROFIT',
-  Liquidation = 'LIQUIDATION'
+  Liquidation = 'LIQUIDATION',
 }
 
 export enum Slope {
   Ascending = 'ASC',
-  Descending = 'DESC'
+  Descending = 'DESC',
 }
 
 export enum TrendLinePosition {
   Above = 'ABOVE',
-  Below = 'BELOW'
+  Below = 'BELOW',
 }
 
 export enum LogLevel {
   Default = 'DEFAULT',
-  NoDb = 'NODB'
+  NoDb = 'NODB',
 }
 
 export interface ExchangeSymbol {
@@ -111,6 +111,55 @@ export interface ChartConfig {
   rank: number;
 }
 
+export interface LiveStrategyState {
+  barDone?: boolean;
+  [key: string]: any;
+}
+
+export interface LiveStrategyInstance {
+  stepSetSignals(bars: Bar[], state: LiveStrategyState, config: any): void | Promise<void>;
+}
+
+export interface LiveBacktesterInstance {
+  stepCalcBacktestPerformance(bars: Bar[], state: BacktesterState, commission: number): void;
+}
+
+export interface LiveWorkerLifecycleOptions {
+  strategyInstance: LiveStrategyInstance;
+  backtester: LiveBacktesterInstance;
+  strategyConfig: any;
+  timeframeMs: number;
+  commission: number;
+}
+
+export interface CalculationState {
+  window: Bar[];
+  strategyState: LiveStrategyState;
+  backtesterState: BacktesterState;
+}
+
+export interface LatestPriceRequest {
+  action: 'getLatestPrice';
+}
+
+export interface HistoricalBarsRequest {
+  action: 'getBarsFromStartUntilNow';
+  fromOpenTime: number;
+}
+
+export type ExchangeRequest = LatestPriceRequest | HistoricalBarsRequest;
+
+export interface ExchangeResponse {
+  result?: any;
+  error?: string;
+}
+
+export interface BacktesterCall {
+  openTime: number;
+  incomingProfit: number;
+  signalIdentifiers: (string | undefined)[];
+}
+
 export interface StrategyConfig {
   default: Record<string, any>;
   autoParams?: Record<string, StrategyConfigMulti>;
@@ -126,12 +175,12 @@ export enum MarketStructureType {
   HH = 'HH',
   HL = 'HL',
   LH = 'LH',
-  LL = 'LL'
+  LL = 'LL',
 }
 
 export enum Direction {
   Up = 'UP',
-  Down = 'DOWN'
+  Down = 'DOWN',
 }
 
 export interface AppConfig {
@@ -176,7 +225,7 @@ export interface BarChart {
   pivotPoint?: PivotPoint;
   marketStructure?: MarketStructureStats;
   trendLines?: TrendLine[]; // trend lines that start from this bar
-  trendLineBreakthroughs?: TrendLine[];  // trend lines that break through this bar
+  trendLineBreakthroughs?: TrendLine[]; // trend lines that break through this bar
 }
 
 export interface PivotPoint {
@@ -196,9 +245,18 @@ export interface RsiDivergenceData {
   originTrendLines: TrendLine[];
 }
 
+export interface RsiDivergenceStrengths {
+  regular?: number;
+  hidden?: number;
+}
+
+export interface DetectedRsiDivergence extends RsiDivergenceStrengths {
+  originTrendLine: TrendLine;
+}
+
 export interface BarIndicators {
-  ema?: Record<number, number>;   // keyed by period, e.g. ema[20] = value
-  sma?: Record<number, number>;   // keyed by period, e.g. sma[50] = value
+  ema?: Record<number, number>; // keyed by period, e.g. ema[20] = value
+  sma?: Record<number, number>; // keyed by period, e.g. sma[50] = value
   macd?: MacdValues;
   rsi?: number;
   bb?: BollingerBands;
@@ -271,7 +329,7 @@ export enum BullishCandlestickPattern {
   PiercingLine = 'piercingLine',
   TweezersBottom = 'tweezersBottom',
   MorningStar = 'morningStar',
-  ThreeWhiteSoldiers = 'threeWhiteSoldiers'
+  ThreeWhiteSoldiers = 'threeWhiteSoldiers',
 }
 
 export enum BearishCandlestickPattern {
@@ -283,7 +341,7 @@ export enum BearishCandlestickPattern {
   DarkCloudCover = 'darkCloudCover',
   TweezersTop = 'tweezersTop',
   EveningStar = 'eveningStar',
-  ThreeBlackCrows = 'threeBlackCrows'
+  ThreeBlackCrows = 'threeBlackCrows',
 }
 
 export interface BarCandlestickPatterns {
@@ -321,7 +379,7 @@ export interface BollingerBands {
 export enum BollingerBand {
   Lower = 'LOWER',
   Middle = 'MIDDLE',
-  Upper = 'UPPER'
+  Upper = 'UPPER',
 }
 
 export interface MacdValues {
@@ -341,25 +399,56 @@ export interface TrendLine {
   againstTrend?: boolean;
 }
 
+export interface CompactCircleMarker {
+  time: number;
+  price: number;
+  side: 'above' | 'below';
+  color: string;
+}
+
+export interface RenderedCompactCircle {
+  x: number;
+  y: number;
+  side: 'above' | 'below';
+  color: string;
+}
+
+export interface TrendLineSegment {
+  startTime: number;
+  startValue: number;
+  endTime: number;
+  endValue: number;
+  startIndex: number;
+  endIndex: number;
+}
+
+export interface RenderedLine {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  highlighted: boolean;
+}
+
 // information for backtest and calculated backtest data
 export interface BacktestData {
-  signals: BacktestSignal[];  // allow multiple independent signals for multiple independent positions
+  signals: BacktestSignal[]; // allow multiple independent signals for multiple independent positions
   profit?: number; // calculated profit at current bar
-  openPositionSize?: number;  // calculated position size open at current bar
+  openPositionSize?: number; // calculated position size open at current bar
 }
 
 export interface BacktestSignal {
-  uniqueIdentifier?: string;  // only needed for live mode, in case multiple ticks within the same bar trigger the same signal, this is used to deduplicate them
+  uniqueIdentifier?: string; // only needed for live mode, in case multiple ticks within the same bar trigger the same signal, this is used to deduplicate them
   signal: Signal;
   price: number;
-  size?: number;  // not required if close
+  size?: number; // not required if close
   positionCloseTrigger?: PositionCloseTrigger;
-  openSignalReferences?: SignalReference[];  // only for closes to refer to the position which is closed
+  openSignalReferences?: SignalReference[]; // only for closes to refer to the position which is closed
 }
 
 export interface SignalReference {
   barIndex: number;
-  signalIndex: number;
+  signalIndex: number; // index of the signal in the bar's backtest signals array in case there are multiple signals in the same bar
 }
 
 export interface PositionCloseTrigger {
@@ -370,7 +459,7 @@ export interface PositionCloseTrigger {
 export interface TakeProfitStopLoss {
   takeProfit: number;
   stopLoss: number;
-  asVolatilityFactor?: boolean;  // if true, tp/sl are multiplied by (ATR / price) at entry — requires ATR indicator to be calculated
+  asVolatilityFactor?: boolean; // if true, tp/sl are multiplied by (ATR / price) at entry — requires ATR indicator to be calculated
 }
 
 export interface TrailingStopLoss {
@@ -432,6 +521,7 @@ export interface StockInfo {
 }
 
 export interface Position {
+  closed: boolean;
   size: number; // current size, changing - positive means long, negative short
   entrySize: number; // size at entry, does not change
   price: number;
@@ -442,10 +532,11 @@ export interface Position {
   takeProfitPrice?: number;
   stopLossPrice?: number;
   openSignalReference: SignalReference;
+  closeSignalReference?: SignalReference;
 }
 
 export interface BacktesterState {
-  positions?: Array<Position | undefined>;
+  positions?: Position[];
   profit?: number;
   volatility?: number;
 }

@@ -35,7 +35,7 @@ class App extends Base {
 
   private route(): void {
     this.app.post('/backtest', this.handle((req, res) => this.routes.backtest(req, res)));
-    this.app.post('/live', this.handle((req, res) => this.routes.live(req, res)));
+    this.app.post('/live', this.handle((req, res) => this.routes.handleLive(req, res)));
   }
 
   private handle(fn: (req: Request, res: Response) => void | Promise<void>) {
@@ -47,6 +47,7 @@ class App extends Base {
       } catch (err) {
         const origin = err instanceof Error ? err.stack?.split('\n')[1]?.trim() : undefined;
         this.log(`Error on ${req.originalUrl}: ${err}${origin ? ` (${origin})` : ''}`);
+
         if (!res.headersSent) {
           res.status(500).json({ error: 'Internal server error' });
         }

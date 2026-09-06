@@ -6,6 +6,7 @@ import database from '../data/database';
 
 class Alpaca extends Base {
   readonly exchange = Exchange.Alpaca;
+
   private baseUrls = {
     baseUrlDatav1: 'https://data.alpaca.markets/v1beta1',
     baseUrlDatav2: 'https://api.alpaca.markets/v2',
@@ -18,12 +19,14 @@ class Alpaca extends Base {
 
   public async getLatestPrice(symbol: string, feed?: AlpacaFeed): Promise<number> {
     await this.waitIfRateLimitReached();
+
     const response: AxiosResponse = await axios.get(`${this.baseUrls.baseUrlv2}/stocks/${symbol}/trades/latest`, {
       ...this.getRequestOptions(),
       params: feed ? { feed } : undefined
     });
 
     const price = Number(response.data.trade?.p);
+
     if (!Number.isFinite(price)) {
       throw new Error(`Invalid Alpaca price response for ${symbol}`);
     }

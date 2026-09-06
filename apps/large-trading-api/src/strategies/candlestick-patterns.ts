@@ -23,9 +23,9 @@ export default class CandlestickPatterns extends Base {
     const netScore: number = bullishScore - bearishScore;
 
     if (netScore >= minScore) {
-      signals.push(createSignal({ uniqueIdentifier: newPatterns, signal: Signal.Buy, size: 1, price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } }));
+      signals.push(createSignal({ uniqueIdentifier: newPatterns, signal: Signal.Buy, size: Math.abs(netScore), price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } }));
     } else if (netScore <= -minScore) {
-      signals.push(createSignal({ uniqueIdentifier: newPatterns, signal: Signal.Sell, size: 1, price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } }));
+      signals.push(createSignal({ uniqueIdentifier: newPatterns, signal: Signal.Sell, size: Math.abs(netScore), price: closePrice, positionCloseTrigger: { tpSl: { takeProfit, stopLoss, asVolatilityFactor: true } } }));
     }
   }
 }

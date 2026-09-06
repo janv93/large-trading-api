@@ -1,5 +1,5 @@
 ﻿import { stepEma } from '../patterns/indicators/ema';
-import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
+import { BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../base';
 
 export default class Ema extends Base {
@@ -41,19 +41,22 @@ export default class Ema extends Base {
     const momentumSwitchClose = moveClose !== state.lastMoveClose;
 
     if (state.positionOpen && momentumSwitchClose && state.lastMoveOpen !== moveClose) {
-      signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+      signals.push({ signal: Signal.CloseAll, price: closePrice });
       state.positionOpen = false;
+      state.barDone = true;
     }
 
     if (!state.positionOpen && momentumSwitchOpen) {
       if (moveOpen === 'up') {
-        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-        signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: 1, price: closePrice }));
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
         state.positionOpen = true;
+        state.barDone = true;
       } else if (moveOpen === 'down') {
-        signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-        signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: 1, price: closePrice }));
+        signals.push({ signal: Signal.CloseAll, price: closePrice });
+        signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
         state.positionOpen = true;
+        state.barDone = true;
       }
     }
 

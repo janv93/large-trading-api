@@ -97,6 +97,7 @@ export default class Twitter extends Base {
 
     try {
       const res = await axios.get(finalUrl, { headers: this.headers });
+
       return res.data.users.map(user => {
         return {
           name: user.screen_name,
@@ -206,6 +207,7 @@ export default class Twitter extends Base {
         },
       }
     );
+
     return response.data.access_token;
   }
 
@@ -216,6 +218,7 @@ export default class Twitter extends Base {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+
       return response.data;
     };
   }

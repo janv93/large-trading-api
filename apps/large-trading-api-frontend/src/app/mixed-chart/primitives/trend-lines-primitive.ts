@@ -7,27 +7,18 @@ import {
   PrimitivePaneViewZOrder,
   SeriesAttachedParameter,
   SeriesType,
-  Time
+  Time,
 } from 'lightweight-charts';
+import { RenderedLine, TrendLineSegment } from '@shared';
 
-export interface TrendLineSegment {
-  startTime: number;
-  startValue: number;
-  endTime: number;
-  endValue: number;
-  startIndex: number;
-  endIndex: number;
-}
-
-interface RenderedLine {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  highlighted: boolean;
-}
-
-function pointToSegmentDistance(px: number, py: number, x1: number, y1: number, x2: number, y2: number): number {
+function pointToSegmentDistance(
+  px: number,
+  py: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): number {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const lenSq = dx * dx + dy * dy;
@@ -37,40 +28,58 @@ function pointToSegmentDistance(px: number, py: number, x1: number, y1: number, 
 }
 
 class TrendLinesPaneRenderer implements IPrimitivePaneRenderer {
-  constructor(private readonly _lines: RenderedLine[]) { }
+  constructor(private readonly _lines: RenderedLine[]) {}
 
   draw(target: any): void {
-    target.useBitmapCoordinateSpace(({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: any) => {
-      const normalLines: RenderedLine[] = [];
-      const highlightedLines: RenderedLine[] = [];
+    target.useBitmapCoordinateSpace(
+      ({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: any) => {
+        const normalLines: RenderedLine[] = [];
+        const highlightedLines: RenderedLine[] = [];
 
-      for (const line of this._lines) {
-        if (line.highlighted) highlightedLines.push(line);
-        else normalLines.push(line);
-      }
-
-      ctx.lineWidth = horizontalPixelRatio;
-
-      if (normalLines.length > 0) {
-        ctx.beginPath();
-        ctx.strokeStyle = '#2196f3';
-        for (const line of normalLines) {
-          ctx.moveTo(line.x1 * horizontalPixelRatio, line.y1 * verticalPixelRatio);
-          ctx.lineTo(line.x2 * horizontalPixelRatio, line.y2 * verticalPixelRatio);
+        for (const line of this._lines) {
+          if (line.highlighted) highlightedLines.push(line);
+          else normalLines.push(line);
         }
-        ctx.stroke();
-      }
 
-      if (highlightedLines.length > 0) {
-        ctx.beginPath();
-        ctx.strokeStyle = 'yellow';
-        for (const line of highlightedLines) {
-          ctx.moveTo(line.x1 * horizontalPixelRatio, line.y1 * verticalPixelRatio);
-          ctx.lineTo(line.x2 * horizontalPixelRatio, line.y2 * verticalPixelRatio);
+        ctx.lineWidth = horizontalPixelRatio;
+
+        if (normalLines.length > 0) {
+          ctx.beginPath();
+          ctx.strokeStyle = '#2196f3';
+
+          for (const line of normalLines) {
+            ctx.moveTo(
+              line.x1 * horizontalPixelRatio,
+              line.y1 * verticalPixelRatio,
+            );
+            ctx.lineTo(
+              line.x2 * horizontalPixelRatio,
+              line.y2 * verticalPixelRatio,
+            );
+          }
+
+          ctx.stroke();
         }
-        ctx.stroke();
-      }
-    });
+
+        if (highlightedLines.length > 0) {
+          ctx.beginPath();
+          ctx.strokeStyle = 'yellow';
+
+          for (const line of highlightedLines) {
+            ctx.moveTo(
+              line.x1 * horizontalPixelRatio,
+              line.y1 * verticalPixelRatio,
+            );
+            ctx.lineTo(
+              line.x2 * horizontalPixelRatio,
+              line.y2 * verticalPixelRatio,
+            );
+          }
+
+          ctx.stroke();
+        }
+      },
+    );
   }
 }
 
@@ -135,11 +144,15 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
-    const visibleRange = timeScale.getVisibleRange() as { from: number, to: number } | null;
+    const visibleRange = timeScale.getVisibleRange() as {
+      from: number;
+      to: number;
+    } | null;
     const lines: RenderedLine[] = [];
 
     for (let i = 0; i < this._segments.length; i++) {
       const seg = this._segments[i];
+
       if (visibleRange) {
         // If it starts after the visible range, we can stop entirely
         // assuming segments are sorted by startTime!
@@ -158,7 +171,9 @@ export class TrendLinesPrimitive implements ISeriesPrimitive<Time> {
       let highlighted = false;
 
       if (this._hoverX !== null && this._hoverY !== null) {
-        highlighted = pointToSegmentDistance(this._hoverX, this._hoverY, x1, y1, x2, y2) <= 5;
+        highlighted =
+          pointToSegmentDistance(this._hoverX, this._hoverY, x1, y1, x2, y2) <=
+          5;
       }
 
       lines.push({ x1, y1, x2, y2, highlighted });

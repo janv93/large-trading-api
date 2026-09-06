@@ -1,5 +1,5 @@
 ﻿import { stepMacd } from '../patterns/indicators/macd';
-import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
+import { BacktestData, BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../base';
 
 export default class Macd extends Base {
@@ -36,23 +36,26 @@ export default class Macd extends Base {
       if (!state.positionOpen) {
         if (move === 'down' && h > 0) {
           if (h > 0.003) {
-            signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-            signals.push(createSignal({ uniqueIdentifier: Signal.Sell, signal: Signal.Sell, size: 1, price: closePrice }));
+            signals.push({ signal: Signal.CloseAll, price: closePrice });
+            signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
             state.positionOpen = true;
             state.positionOpenType = Signal.Sell;
+            state.barDone = true;
           }
         } else if (move === 'up' && h < 0) {
           if (h < -0.003) {
-            signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
-            signals.push(createSignal({ uniqueIdentifier: Signal.Buy, signal: Signal.Buy, size: 1, price: closePrice }));
+            signals.push({ signal: Signal.CloseAll, price: closePrice });
+            signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
             state.positionOpen = true;
             state.positionOpenType = Signal.Buy;
+            state.barDone = true;
           }
         }
       } else {
         if ((state.positionOpenType === Signal.Sell && h < 0) || (state.positionOpenType === Signal.Buy && h > 0)) {
-          signals.push(createSignal({ uniqueIdentifier: Signal.CloseAll, signal: Signal.CloseAll, price: closePrice }));
+          signals.push({ signal: Signal.CloseAll, price: closePrice });
           state.positionOpen = false;
+          state.barDone = true;
         }
       }
     }
