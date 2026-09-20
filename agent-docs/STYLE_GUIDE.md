@@ -26,5 +26,6 @@
   ```
 
 - Use clear, concise variable names; avoid unclear abbreviations such as `ctor` for `constructor`.
+- Never create a variable solely to shorten syntax. Access the existing value directly; for example, use `this.activeState` rather than introducing `const activeState = this.activeState` only as an alias.
 - Do not inline collection transformations such as `filter` or `map` in loop headers. Assign the result to a descriptive variable before the loop.
 - Structure code clearly and reasonably from first principles. Do not preserve complexity or technical debt merely because it already exists; retain it only when intentional, and document what is retained and why in the relevant feature's `AGENTS.md`.

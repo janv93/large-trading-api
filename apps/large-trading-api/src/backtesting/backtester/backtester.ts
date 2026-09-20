@@ -1,17 +1,18 @@
 ﻿import {
   BacktestData,
   BacktestSignal,
+  BacktesterPosition,
   BacktesterState,
   Bar,
-  BacktesterPosition,
   Signal,
   SignalReference,
   TakeProfitStopLoss,
   TrailingStopLoss,
-  createSignal,
+  calcPriceChange,
+  isCloseSignal,
+  isForceCloseSignal,
 } from '@shared';
 import Base from '../../base';
-import { isCloseSignal, isForceCloseSignal, calcPriceChange } from '@shared';
 
 export default class Backtester extends Base {
   /**
@@ -155,14 +156,11 @@ export default class Backtester extends Base {
     const openSignalReference: SignalReference = position.openSignalReference;
     const closePrice: number = this.getClosePrice(position, closeSignal, bar);
 
-    signals.push(
-      createSignal({
-        uniqueIdentifier: { signal: closeSignal, openSignalReference },
-        signal: closeSignal,
-        price: closePrice,
-        openSignalReferences: [openSignalReference],
-      }),
-    );
+    signals.push({
+      signal: closeSignal,
+      price: closePrice,
+      openSignalReferences: [openSignalReference],
+    });
   }
 
   private setCloseSignalReference(position: BacktesterPosition, bar: Bar, closeSignal: Signal, barIndex: number): void {
