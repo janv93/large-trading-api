@@ -119,6 +119,24 @@ class DuplicateBuyStrategy {
   }
 }
 
+class CompletingDuplicateBuyStrategy {
+  public stepSetSignals(bars: Bar[], state: LiveStrategyState): void {
+    if (bars.length === 1) return;
+    const bar: Bar = bars.at(-1)!;
+
+    bar.backtest.signals.push(
+      createSignal({
+        uniqueIdentifier: Signal.Buy,
+        signal: Signal.Buy,
+        size: 1,
+        price: bar.prices.close,
+      }),
+    );
+
+    if (bar.prices.close === 102) state.barDone = true;
+  }
+}
+
 class TrailingEntryStrategy {
   public stepSetSignals(bars: Bar[]): void {
     if (bars.length === 1) return;
@@ -312,7 +330,7 @@ describe('live worker lifecycle', () => {
     expect(second.backtest.signals.map((signal) => signal.uniqueIdentifier)).toEqual(['"one-entry"', '"backtester-close"']);
     expect(second.backtest.signals[0].price).toBe(11);
     expect(backtester.calls.at(-1)?.signalIdentifiers).toEqual(['"one-entry"', '"backtester-close"']);
-    expect(lifecycle.getLastCommittedBar().times.open).toBe(0);
+    expect(first.times.open).toBe(second.times.open);
   });
 
   it('deduplicates retained strategy signals before the real backtester opens positions', async () => {
@@ -325,6 +343,18 @@ describe('live worker lifecycle', () => {
     expect(second.backtest.signals).toHaveLength(1);
     expect(second.backtest.signals[0].price).toBe(101);
     expect(second.backtest.openPositionSize).toBeCloseTo(102 / 101);
+  });
+
+  it('deduplicates retained strategy signals when the strategy completes', async () => {
+    const lifecycle: LiveWorkerLifecycle = createLifecycle(new CompletingDuplicateBuyStrategy(), new Backtester());
+    await lifecycle.initialize([createBar(0, 100)]);
+
+    await lifecycle.processTick(101);
+    const completed: Bar = await lifecycle.processTick(102);
+
+    expect(completed.backtest.signals).toHaveLength(1);
+    expect(completed.backtest.signals[0].price).toBe(101);
+    expect(completed.backtest.openPositionSize).toBeCloseTo(102 / 101);
   });
 
   it('carries a position across ticks and never reopens its retained entry after it closes', async () => {
@@ -359,12 +389,14 @@ describe('live worker lifecycle', () => {
 
     const completed: Bar = await lifecycle.processTick(70);
     const strategyCallsAtCompletion: number = stepSetSignals.mock.calls.length;
-    const continued: Bar = await lifecycle.processTick(95);
 
     expect(completed.backtest.signals.map((signal) => signal.signal)).toContain(Signal.Buy);
     expect(completed.backtest.signals.find((signal) => signal.signal === Signal.Buy)?.uniqueIdentifier).toBeUndefined();
     expect(completed.backtest.openPositionSize).toBe(1);
-    expect(continued).not.toBe(completed);
+
+    const continued: Bar = await lifecycle.processTick(95);
+
+    expect(continued).toBe(completed);
     expect(continued.prices.close).toBe(95);
     expect(continued.backtest.signals.find((signal) => signal.signal === Signal.Buy)?.price).toBe(70);
     expect(continued.backtest.openPositionSize).toBeCloseTo(95 / 70);
@@ -379,10 +411,10 @@ describe('live worker lifecycle', () => {
     const rebounded: Bar = await lifecycle.processTick(100);
 
     expect(triggered.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.StopLoss]);
-    expect(triggered.backtest.signals[0].uniqueIdentifier).toBeDefined();
+    expect(triggered.backtest.signals[0]).not.toHaveProperty('uniqueIdentifier');
     expect(triggered.backtest.openPositionSize).toBe(0);
     expect(rebounded.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.StopLoss]);
-    expect(rebounded.backtest.signals[0].uniqueIdentifier).toBe(triggered.backtest.signals[0].uniqueIdentifier);
+    expect(rebounded.backtest.signals[0]).toEqual(triggered.backtest.signals[0]);
     expect(rebounded.backtest.openPositionSize).toBe(0);
   });
 
@@ -393,10 +425,10 @@ describe('live worker lifecycle', () => {
 
     await lifecycle.processTick(11);
     jest.spyOn(Date, 'now').mockReturnValue(120_000);
-    lifecycle.finalizeBar();
+    const finalized: Bar | undefined = lifecycle.finalizeBar();
 
     expect(strategy.referencesMatched).toBe(true);
-    expect(lifecycle.getLastCommittedBar().times.open).toBe(60_000);
+    expect(finalized?.times.open).toBe(60_000);
   });
 
   it('keeps a retained trend-line breakthrough retired after a later tick rebounds', async () => {
@@ -502,7 +534,7 @@ describe('live worker lifecycle', () => {
     expect(strategy.incomingChartCounts).toEqual([1, 0]);
   });
 
-  it('freezes strategy state at completion while continuing backtester ticks until commit', async () => {
+  it('freezes strategy state at completion while continuing backtester ticks until the bar closes', async () => {
     const strategy = new FreezingStrategy();
     const backtester = new RecordingBacktester();
     const lifecycle: LiveWorkerLifecycle = createLifecycle(strategy, backtester);
@@ -514,11 +546,12 @@ describe('live worker lifecycle', () => {
     const backtesterCallsAtFreeze: number = backtester.calls.length;
     const continued: Bar = await lifecycle.processTick(14);
 
-    expect(continued).not.toBe(frozen);
+    expect(continued).toBe(frozen);
     expect(continued.prices.close).toBe(14);
     expect(continued.indicators?.ema?.[1]).toBe(13);
     expect(continued.backtest.signals[0].price).toBe(13);
     expect(strategy.calls).toBe(strategyCallsAtFreeze);
+    expect(strategy.incomingMarkers).toEqual([0, 0]);
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
 
     jest.spyOn(Date, 'now').mockReturnValue(120_000);
@@ -527,7 +560,6 @@ describe('live worker lifecycle', () => {
     expect(strategy.calls).toBe(strategyCallsAtFreeze);
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
     expect(finalized).toBe(continued);
-    expect(lifecycle.getLastCommittedBar()).toBe(continued);
     expect(continued.times).toEqual({ open: 60_000 });
     expect(continued.prices).toEqual({ open: 12, high: 14, low: 12, close: 14 });
     expect(continued.volume).toBe(0);
@@ -537,6 +569,9 @@ describe('live worker lifecycle', () => {
     expect(strategy.incomingBarDone.at(-1)).toBe(false);
     expect(strategy.incomingMarkers.at(-1)).toBe(13);
     expect(backtester.calls.at(-1)?.incomingProfit).toBe(49);
+
+    await lifecycle.processTick(21);
+    expect(strategy.incomingMarkers).toEqual([0, 0, 13, 13]);
   });
 
   it('records tick OHLC only when finalizing and starts a fresh range for the next bar', async () => {
@@ -557,7 +592,7 @@ describe('live worker lifecycle', () => {
     const strategyCalls: number = strategy.calls;
     const now = jest.spyOn(Date, 'now').mockReturnValue(119_999);
     expect(lifecycle.finalizeBar()).toBeUndefined();
-    expect(lifecycle.getLastCommittedBar().times.open).toBe(0);
+    expect(tickBars.at(-1)?.prices).toEqual({ open: 12, high: 12, low: 12, close: 12 });
     expect(backtester.calls).toHaveLength(callsBeforeRefresh);
 
     now.mockReturnValue(120_000);
@@ -576,7 +611,7 @@ describe('live worker lifecycle', () => {
     expect(lifecycle.finalizeBar()?.prices).toEqual({ open: 40, high: 40, low: 40, close: 40 });
   });
 
-  it.each([11, 13])('commits a single tick at price %s without replaying either engine', async (price) => {
+  it.each([11, 13])('finalizes a single tick at price %s without replaying either engine', async (price) => {
     const strategy = new FreezingStrategy();
     const backtester = new RecordingBacktester();
     const lifecycle: LiveWorkerLifecycle = createLifecycle(strategy, backtester);
@@ -586,7 +621,6 @@ describe('live worker lifecycle', () => {
     const backtesterCalls: number = backtester.calls.length;
     const now = jest.spyOn(Date, 'now').mockReturnValue(120_000);
     expect(lifecycle.finalizeBar()).toBe(active);
-    expect(lifecycle.getLastCommittedBar()).toBe(active);
     expect(strategy.calls).toBe(strategyCalls);
     expect(backtester.calls).toHaveLength(backtesterCalls);
     expect(active.times).toEqual({ open: 60_000 });

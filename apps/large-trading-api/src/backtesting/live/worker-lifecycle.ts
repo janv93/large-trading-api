@@ -1,190 +1,132 @@
-import {
-  BacktesterState,
-  BacktestSignal,
-  Bar,
-  BarPrices,
-  clone,
-  LiveCalculationState,
-  LiveStrategyState,
-  LiveWorkerLifecycleOptions,
-  TrendLine,
-} from '@shared';
+import { BacktesterState, BacktestSignal, Bar, BarPrices, clone, LiveStrategyState, LiveWorkerLifecycleOptions, TrendLine } from '@shared';
 
 export default class LiveWorkerLifecycle {
-  private committedState: LiveCalculationState = {
-    window: [],
-    strategyState: {},
-    backtesterState: {},
-  };
-
-  private activeState?: LiveCalculationState;
-  private activePrices?: BarPrices;
+  private bars: Bar[] = [];
+  private strategyState: LiveStrategyState = {};
+  private readonly backtesterState: BacktesterState = {};
+  private strategyInput = { bars: this.bars, state: this.strategyState };
+  private barPrices?: BarPrices;
+  private barVolatility?: number;
 
   public constructor(private readonly options: LiveWorkerLifecycleOptions) {}
 
   public async initialize(bars: Bar[]): Promise<void> {
-    for (const bar of bars) await this.stepHistoricalBar(bar);
-  }
-
-  public getLastCommittedBar(): Bar {
-    return this.committedState.window.at(-1)!;
+    for (const bar of bars) {
+      this.bars.push(bar);
+      await this.options.strategyInstance.stepSetSignals(this.bars, this.strategyState, this.options.strategyConfig);
+      this.strategyState.barDone = false;
+      this.options.backtesterInstance.stepCalcBacktestPerformance(this.bars, this.backtesterState, this.options.commission);
+    }
   }
 
   public isActiveBarClosed(): boolean {
-    const activeBar: Bar | undefined = this.activeState?.window.at(-1);
-    return activeBar !== undefined && Date.now() >= activeBar.times.open + this.options.timeframeMs;
+    return this.barPrices !== undefined && Date.now() >= this.bars.at(-1)!.times.open + this.options.timeframeMs;
   }
 
   public finalizeBar(): Bar | undefined {
     if (!this.isActiveBarClosed()) return;
-    return this.commitActiveBar();
+    const lastBar: Bar = this.bars.at(-1)!;
+    lastBar.prices = this.barPrices!;
+    this.strategyState.barDone = false;
+    this.barPrices = undefined;
+    return lastBar;
   }
 
   public async processTick(price: number): Promise<Bar> {
-    const activeState: LiveCalculationState | undefined = this.activeState;
-    const [window, strategyState] = await this.calculateStrategyTick(price, activeState);
-    const backtesterState: BacktesterState = this.calculateBacktesterTick(window, activeState);
-    const bar: Bar = window.at(-1)!;
-    this.setOhlc(price);
-    this.activeState = { window, strategyState, backtesterState };
+    if (!this.barPrices) {
+      this.strategyInput = { bars: this.bars, state: this.strategyState };
+      this.barVolatility = this.backtesterState.volatility;
+    }
+
+    const prices: BarPrices = { open: price, high: price, low: price, close: price };
+
+    if (this.strategyState.barDone === true) {
+      this.bars.at(-1)!.prices = prices;
+    } else {
+      await this.evaluateStrategy(prices);
+    }
+
+    const bar: Bar = this.bars.at(-1)!;
+    this.backtesterState.volatility = this.barVolatility;
+    this.options.backtesterInstance.stepCalcBacktestPerformance(this.bars, this.backtesterState, this.options.commission);
+
+    this.barPrices = {
+      open: this.barPrices?.open ?? price,
+      high: Math.max(this.barPrices?.high ?? price, price),
+      low: Math.min(this.barPrices?.low ?? price, price),
+      close: price,
+    };
+
     return bar;
   }
 
-  private async calculateStrategyTick(price: number, activeState: LiveCalculationState | undefined): Promise<[Bar[], LiveStrategyState]> {
-    if (activeState?.strategyState.barDone === true) {
-      const snapshot = clone({
-        window: activeState.window,
-        strategyState: activeState.strategyState,
-      });
-      const bar: Bar = snapshot.window.at(-1)!;
-      bar.prices = { open: price, high: price, low: price, close: price };
+  private async evaluateStrategy(prices: BarPrices): Promise<void> {
+    const previousBar: Bar = this.strategyInput.bars.at(-1)!;
+    const previousTick: Bar | undefined = this.barPrices ? this.bars.at(-1) : undefined;
 
-      return [snapshot.window, snapshot.strategyState];
-    }
-
-    const snapshot = clone({
-      window: this.committedState.window,
-      strategyState: this.committedState.strategyState,
-      previousBar: activeState?.window.at(-1),
-      retainedConfirmedTrendLines: activeState?.strategyState.trendLines?.confirmedTrendLines,
-      retainedPendingTrendLines: activeState?.strategyState.trendLines?.pendingTrendLines,
-      retainedTrendLineCharts: activeState?.window.slice(0, -1).map((bar) => bar.chart?.trendLines),
-    });
-    this.restoreRetainedTrendLines(
-      snapshot.window,
-      snapshot.strategyState,
-      snapshot.retainedConfirmedTrendLines,
-      snapshot.retainedPendingTrendLines,
-      snapshot.retainedTrendLineCharts,
-    );
-    const bar: Bar = this.createTickBar(price, snapshot.window.at(-1)!, snapshot.previousBar);
-    const window: Bar[] = [...snapshot.window, bar];
-
-    await this.options.strategyInstance.stepSetSignals(window, snapshot.strategyState, this.options.strategyConfig);
-    if (snapshot.strategyState.barDone !== true) this.deduplicateSignals(bar);
-
-    return [window, snapshot.strategyState];
-  }
-
-  private calculateBacktesterTick(window: Bar[], activeState: LiveCalculationState | undefined): BacktesterState {
-    const backtesterState: BacktesterState = clone(activeState?.backtesterState ?? this.committedState.backtesterState);
-    backtesterState.volatility = this.committedState.backtesterState.volatility;
-    this.options.backtesterInstance.stepCalcBacktestPerformance(window, backtesterState, this.options.commission);
-    return backtesterState;
-  }
-
-  private setOhlc(price: number): void {
-    this.activePrices = {
-      open: this.activePrices?.open ?? price,
-      high: Math.max(this.activePrices?.high ?? price, price),
-      low: Math.min(this.activePrices?.low ?? price, price),
-      close: price,
-    };
-  }
-
-  private async stepHistoricalBar(bar: Bar): Promise<void> {
-    const { window, strategyState, backtesterState } = this.committedState;
-    window.push(bar);
-    await this.options.strategyInstance.stepSetSignals(window, strategyState, this.options.strategyConfig);
-    strategyState.barDone = false;
-    this.options.backtesterInstance.stepCalcBacktestPerformance(window, backtesterState, this.options.commission);
-  }
-
-  private createTickBar(price: number, committed: Bar, previous?: Bar): Bar {
-    const rsiDivergence = previous?.indicators?.rsiDivergence;
-    const trendLineBreakthroughs = previous?.chart?.trendLineBreakthroughs;
-
-    return {
-      symbol: committed.symbol,
-      exchange: committed.exchange,
-      ...(committed.feed ? { feed: committed.feed } : {}),
-      timeframe: committed.timeframe,
-      times: { open: committed.times.open + this.options.timeframeMs },
-      prices: { open: price, high: price, low: price, close: price },
+    const bar: Bar = {
+      symbol: previousBar.symbol,
+      exchange: previousBar.exchange,
+      ...(previousBar.feed ? { feed: previousBar.feed } : {}),
+      timeframe: previousBar.timeframe,
+      times: { open: previousBar.times.open + this.options.timeframeMs },
+      prices,
       volume: 0,
-      ...(previous?.candlestickPatterns ? { candlestickPatterns: previous.candlestickPatterns } : {}),
-      ...(rsiDivergence ? { indicators: { rsiDivergence } } : {}),
-      ...(trendLineBreakthroughs ? { chart: { trendLineBreakthroughs } } : {}),
-      backtest: { signals: previous?.backtest.signals ?? [] },
+      candlestickPatterns: previousTick?.candlestickPatterns,
+      indicators: previousTick?.indicators?.rsiDivergence ? { rsiDivergence: previousTick.indicators.rsiDivergence } : undefined,
+      chart: previousTick?.chart?.trendLineBreakthroughs
+        ? { trendLineBreakthroughs: previousTick.chart.trendLineBreakthroughs }
+        : undefined,
+      backtest: { signals: previousTick?.backtest.signals ?? [] },
     };
+
+    const input = clone({ ...this.strategyInput, bar });
+    input.bars.push(input.bar);
+    await this.options.strategyInstance.stepSetSignals(input.bars, input.state, this.options.strategyConfig);
+    input.bar.backtest.signals = this.deduplicateSignals(input.bar.backtest.signals);
+    this.bars = input.bars;
+    this.strategyState = input.state;
+    this.retainTrendLines();
   }
 
-  private restoreRetainedTrendLines(
-    window: Bar[],
-    strategyState: LiveStrategyState,
-    confirmedTrendLines: TrendLine[] | undefined,
-    pendingTrendLines: TrendLine[] | undefined,
-    trendLineCharts: (TrendLine[] | undefined)[] | undefined,
-  ): void {
-    if (confirmedTrendLines !== undefined) {
-      strategyState.trendLines ??= {};
-      strategyState.trendLines.confirmedTrendLines = confirmedTrendLines;
+  private retainTrendLines(): void {
+    if (!this.strategyState.trendLines && !this.strategyInput.state.trendLines) return;
+
+    if (this.strategyState.trendLines?.confirmedTrendLines !== undefined) {
+      this.strategyInput.state.trendLines ??= {};
+      this.strategyInput.state.trendLines.confirmedTrendLines = this.strategyState.trendLines.confirmedTrendLines;
     }
 
-    if (pendingTrendLines !== undefined && strategyState.trendLines?.pendingTrendLines) {
-      strategyState.trendLines.pendingTrendLines = strategyState.trendLines.pendingTrendLines.filter((trendLine) =>
-        pendingTrendLines.some(
-          (retained) =>
-            retained.startIndex === trendLine.startIndex &&
-            retained.endIndex === trendLine.endIndex &&
-            retained.position === trendLine.position,
-        ),
+    if (this.strategyInput.state.trendLines?.pendingTrendLines && this.strategyState.trendLines?.pendingTrendLines !== undefined) {
+      this.strategyInput.state.trendLines.pendingTrendLines = this.strategyInput.state.trendLines.pendingTrendLines.filter(
+        (trendLine: TrendLine) =>
+          this.strategyState.trendLines.pendingTrendLines.some(
+            (retained: TrendLine) =>
+              retained.startIndex === trendLine.startIndex &&
+              retained.endIndex === trendLine.endIndex &&
+              retained.position === trendLine.position,
+          ),
       );
     }
 
-    trendLineCharts?.forEach((trendLines, index) => {
-      const bar: Bar | undefined = window[index];
-      if (!bar) return;
-
-      if (trendLines === undefined) {
-        if (bar.chart) delete bar.chart.trendLines;
-        return;
+    this.strategyInput.bars.forEach((bar, index) => {
+      if (this.bars[index].chart?.trendLines !== undefined) {
+        bar.chart ??= {};
+        bar.chart.trendLines = this.bars[index].chart!.trendLines;
+      } else if (bar.chart) {
+        delete bar.chart.trendLines;
       }
-
-      bar.chart ??= {};
-      bar.chart.trendLines = trendLines;
     });
   }
 
-  private deduplicateSignals(bar: Bar): void {
+  private deduplicateSignals(signals: BacktestSignal[]): BacktestSignal[] {
     const identifiers = new Set<string>();
 
-    bar.backtest.signals = bar.backtest.signals.filter((signal: BacktestSignal) => {
+    return signals.filter((signal: BacktestSignal) => {
       if (signal.uniqueIdentifier === undefined) return true;
       if (identifiers.has(signal.uniqueIdentifier)) return false;
       identifiers.add(signal.uniqueIdentifier);
       return true;
     });
-  }
-
-  private commitActiveBar(): Bar {
-    const activeState: LiveCalculationState = this.activeState!;
-    const activeBar: Bar = activeState.window.at(-1)!;
-    activeBar.prices = this.activePrices!;
-    this.committedState = activeState;
-    this.committedState.strategyState.barDone = false;
-    this.activeState = undefined;
-    this.activePrices = undefined;
-    return activeBar;
   }
 }
