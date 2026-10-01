@@ -110,8 +110,7 @@ class Binance extends Base {
     }
 
     // already in database
-    const lastBar: Bar = dbBars[dbBars.length - 1];
-    const newStart: number = lastBar.times.open;
+    const newStart: number = dbBars[dbBars.length - 1].times.open;
 
     if (fetchLatest || isBarOutdated(timeframe, newStart)) {
       const newBars: Bar[] = await this.getBarsFromStartUntilNow(symbol, newStart, timeframe);

@@ -1,4 +1,4 @@
-﻿import { BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+﻿import { BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../base';
 
 enum Action {
@@ -94,8 +94,7 @@ export default class MeanReversion extends Base {
   }
 
   private buy(bar: Bar, state: any) {
-    const backtest: BacktestData = bar.backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = bar.backtest.signals;
     const closePrice: number = bar.prices.close;
 
     signals.push({
@@ -120,8 +119,7 @@ export default class MeanReversion extends Base {
   }
 
   private close(bar: Bar, state: any, startStreak: number) {
-    const backtest: BacktestData = bar.backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = bar.backtest.signals;
     const closePrice: number = bar.prices.close;
 
     signals.push({

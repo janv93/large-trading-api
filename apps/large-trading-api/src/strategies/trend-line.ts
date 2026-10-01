@@ -1,4 +1,4 @@
-﻿import { BacktestData, BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
+﻿import { BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../base';
 import { calcAverageChangeInPercent } from '@shared';
 import TrendLineController from '../patterns/trend-line';
@@ -36,8 +36,7 @@ export default class TrendLineBreakthrough extends Base {
   }
 
   private openBuyPosition(bar: Bar, trendLine: TrendLine, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = bar.backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = bar.backtest.signals;
 
     signals.push({
       signal: Signal.Buy,
@@ -58,8 +57,7 @@ export default class TrendLineBreakthrough extends Base {
   }
 
   private openSellPosition(bar: Bar, trendLine: TrendLine, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
-    const backtest: BacktestData = bar.backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = bar.backtest.signals;
 
     signals.push({
       signal: Signal.Sell,

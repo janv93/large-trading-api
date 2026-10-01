@@ -318,7 +318,6 @@ export class MixedChartComponent
   private drawMarkersAndCharting(): void {
     this.markersChartingService.drawAll(
       this.currentBars,
-      this.config.strategy,
       this.chart,
       this.seriesMarkersPlugin!,
       this.compactCirclePrimitive!,

@@ -1,4 +1,4 @@
-﻿import { BacktestData, BacktestSignal, Bar, Signal, createSignal } from '@shared';
+﻿import { BacktestSignal, Bar, Signal, createSignal } from '@shared';
 import Base from '../base';
 import { stepRsiDivergence } from '../patterns/indicators/rsi-divergence';
 import TrendLineController from '../patterns/trend-line';
@@ -19,17 +19,32 @@ export default class RsiDivergence extends Base {
     const bar: Bar = bars[bars.length - 1];
     if (!rsiDiv) return;
 
-    const backtest: BacktestData = bar.backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = bar.backtest.signals;
     const closePrice: number = bar.prices.close;
     const { regular, hidden } = rsiDiv;
 
     const strength: number = (regular ?? 0) + (hidden ?? 0);
 
     if (strength > 0) {
-      signals.push(createSignal({ uniqueIdentifier: rsiDiv.originTrendLines, signal: Signal.Buy, size: strength, price: closePrice, positionCloseTrigger: { tSl: { stopLoss } } }));
+      signals.push(
+        createSignal({
+          uniqueIdentifier: rsiDiv.originTrendLines,
+          signal: Signal.Buy,
+          size: strength,
+          price: closePrice,
+          positionCloseTrigger: { tSl: { stopLoss } },
+        }),
+      );
     } else if (strength < 0) {
-      signals.push(createSignal({ uniqueIdentifier: rsiDiv.originTrendLines, signal: Signal.Sell, size: Math.abs(strength), price: closePrice, positionCloseTrigger: { tSl: { stopLoss } } }));
+      signals.push(
+        createSignal({
+          uniqueIdentifier: rsiDiv.originTrendLines,
+          signal: Signal.Sell,
+          size: Math.abs(strength),
+          price: closePrice,
+          positionCloseTrigger: { tSl: { stopLoss } },
+        }),
+      );
     }
   }
 }

@@ -1,6 +1,6 @@
-﻿import { stepMacd } from '../patterns/indicators/macd';
-import { BacktestData, BacktestSignal, Bar, Signal } from '@shared';
+﻿import { BacktestSignal, Bar, Signal } from '@shared';
 import Base from '../base';
+import { stepMacd } from '../patterns/indicators/macd';
 
 export default class Macd extends Base {
   public stepSetSignals(bars: Bar[], state: any, params: any): void {
@@ -14,8 +14,7 @@ export default class Macd extends Base {
     const macd = bar.indicators?.macd;
     if (!macd) return;
 
-    const backtest: BacktestData = bar.backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = bar.backtest.signals;
     const closePrice: number = bar.prices.close;
     const h: number = macd.histogram;
 

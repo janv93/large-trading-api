@@ -89,8 +89,7 @@ class Alpaca extends Base {
     }
 
     // already in database
-    const lastBar: Bar = dbBars[dbBars.length - 1];
-    const lastBarTime: number = lastBar.times.open;
+    const lastBarTime: number = dbBars[dbBars.length - 1].times.open;
 
     const cacheKey = `${symbol}_${timeframe}_${feed ?? 'sip'}`;
     const lastFetch: number | undefined = this.lastFetchTime.get(cacheKey) ?? await database.getBarFetchTime(symbol, timeframe, this.exchange, feed);

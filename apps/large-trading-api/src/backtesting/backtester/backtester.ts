@@ -211,9 +211,8 @@ export default class Backtester extends Base {
   }
 
   private updateExistingPositionTrailingStopLoss(position: BacktesterPosition, bars: Bar[]) {
-    const openSignal: BacktestSignal =
-      bars[position.openSignalReference.barIndex].backtest!.signals[position.openSignalReference.signalIndex];
-    const trailingStopLoss: TrailingStopLoss | undefined = openSignal.positionCloseTrigger?.tSl;
+    const trailingStopLoss: TrailingStopLoss | undefined =
+      bars[position.openSignalReference.barIndex].backtest.signals[position.openSignalReference.signalIndex].positionCloseTrigger?.tSl;
 
     if (trailingStopLoss) {
       const baseStopLoss: number = trailingStopLoss.stopLoss;
@@ -254,8 +253,7 @@ export default class Backtester extends Base {
   }
 
   private addNewPositions(positions: BacktesterPosition[], bars: Bar[], barIndex: number): BacktestSignal[] {
-    const backtest: BacktestData = bars[barIndex].backtest!;
-    const signals: BacktestSignal[] = backtest.signals;
+    const signals: BacktestSignal[] = bars[barIndex].backtest.signals;
     const openedSignals: BacktestSignal[] = [];
 
     signals.forEach((signal: BacktestSignal, signalIndex: number) => {

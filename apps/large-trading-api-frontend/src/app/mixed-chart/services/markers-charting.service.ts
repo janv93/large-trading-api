@@ -1,5 +1,4 @@
 ﻿import {
-  BacktestData,
   BacktestSignal,
   Bar,
   ChartCompactCircleMarker,
@@ -9,7 +8,6 @@
   PivotPoint,
   PivotPointSide,
   Signal,
-  Strategy,
   TrendLine,
   TrendLinePosition,
 } from '@shared';
@@ -33,7 +31,6 @@ export class MarkersChartingService {
 
   public drawAll(
     bars: Bar[],
-    strategy: Strategy,
     chart: IChartApi,
     seriesMarkersPlugin: ISeriesMarkersPluginApi<Time>,
     compactCirclePrimitive: CompactCirclePrimitive,
@@ -41,7 +38,7 @@ export class MarkersChartingService {
     isMulti: boolean,
   ): void {
     this.setPivotPointMarkers(bars);
-    this.setSignalMarkers(bars, strategy);
+    this.setSignalMarkers(bars);
     this.drawMarkers(
       chart,
       seriesMarkersPlugin,
@@ -92,10 +89,8 @@ export class MarkersChartingService {
     chart: IChartApi,
     isMulti: boolean,
   ): void {
-    const backtest: BacktestData = bar.backtest!;
-
     const newOpenTimes: Set<number> = new Set(
-      backtest.signals.flatMap(
+      bar.backtest.signals.flatMap(
         (signal) =>
           signal.openSignalReferences?.map(
             (ref) => bars[ref.barIndex].times.open,
@@ -161,13 +156,13 @@ export class MarkersChartingService {
     this.compactPivotPointMarkers = compactMarkers;
   }
 
-  private setSignalMarkers(bars: Bar[], strategy: Strategy): void {
+  private setSignalMarkers(bars: Bar[]): void {
     const markers: SeriesMarker<Time>[] = [];
     const compactMarkers: ChartCompactCircleMarker[] = [];
 
     bars.forEach((bar: Bar) => {
       if (!bar.backtest.signals.length) return;
-      const marker: SeriesMarker<Time> = this.getSignalTemplate(bar, strategy);
+      const marker: SeriesMarker<Time> = this.getSignalTemplate(bar);
       markers.push(marker);
 
       compactMarkers.push({
@@ -249,9 +244,8 @@ export class MarkersChartingService {
     );
   }
 
-  private getSignalTemplate(bar: Bar, strategy: Strategy): SeriesMarker<Time> {
-    const backtest: BacktestData = bar.backtest!;
-    const backtestSignals: BacktestSignal[] = backtest.signals;
+  private getSignalTemplate(bar: Bar): SeriesMarker<Time> {
+    const backtestSignals: BacktestSignal[] = bar.backtest.signals;
     const signals: Signal[] = backtestSignals.map(
       (s: BacktestSignal) => s.signal,
     );

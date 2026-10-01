@@ -90,8 +90,7 @@ export default class PivotPointController extends Base {
     let direction: Direction | undefined;
 
     for (let i = barsWithMarketStructure.length - 1; i >= 0; i--) {
-      const currentBar: BarWithIndex = barsWithMarketStructure[i];
-      const marketStructure: MarketStructureType = currentBar.bar.chart!.pivotPoint!.marketStructure!;
+      const marketStructure: MarketStructureType = barsWithMarketStructure[i].bar.chart!.pivotPoint!.marketStructure!;
       const currentDirection: Direction = [MarketStructureType.HH, MarketStructureType.HL].includes(marketStructure)
         ? Direction.Up
         : Direction.Down;
