@@ -172,6 +172,23 @@ class StopLossStrategy {
   }
 }
 
+class VolatilityEntryStrategy {
+  public stepSetSignals(bars: Bar[]): void {
+    if (bars.length !== 3) return;
+    const bar: Bar = bars.at(-1)!;
+
+    bar.backtest.signals.push(
+      createSignal({
+        uniqueIdentifier: 'volatility-entry',
+        signal: Signal.Buy,
+        size: 1,
+        price: bar.prices.close,
+        positionCloseTrigger: { tpSl: { takeProfit: 1, stopLoss: 1, asVolatilityFactor: true } },
+      }),
+    );
+  }
+}
+
 class BarReferenceStrategy {
   public referencesMatched = false;
 
@@ -416,6 +433,20 @@ describe('live worker lifecycle', () => {
     expect(rebounded.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.StopLoss]);
     expect(rebounded.backtest.signals[0]).toEqual(triggered.backtest.signals[0]);
     expect(rebounded.backtest.openPositionSize).toBe(0);
+  });
+
+  it('scales volatility-based exits by the observed range of the completed bar', async () => {
+    const lifecycle: LiveWorkerLifecycle = createLifecycle(new VolatilityEntryStrategy(), new Backtester());
+    await lifecycle.initialize([createBar(0, 100)]);
+
+    for (const price of [100, 120, 80, 100]) await lifecycle.processTick(price);
+    jest.spyOn(Date, 'now').mockReturnValue(120_000);
+    lifecycle.finalizeBar();
+    await lifecycle.processTick(100);
+    const dipped: Bar = await lifecycle.processTick(70);
+
+    expect(dipped.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.Buy]);
+    expect(dipped.backtest.openPositionSize).toBeCloseTo(0.7);
   });
 
   it('keeps strategy state bar references attached to the retained calculation window', async () => {

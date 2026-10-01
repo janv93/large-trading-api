@@ -162,7 +162,7 @@ export interface PositionCloseTrigger {
 export interface TakeProfitStopLoss {
   takeProfit: number;
   stopLoss: number;
-  asVolatilityFactor?: boolean; // if true, tp/sl are multiplied by (ATR / price) at entry — requires ATR indicator to be calculated
+  asVolatilityFactor?: boolean; // if true, tp/sl are multiplied by (ATR / price) of the completed bars before entry
 }
 
 export interface TrailingStopLoss {

@@ -3,7 +3,6 @@ import { SignalReference } from './shared.interfaces';
 export interface BacktesterState {
   positions?: BacktesterPosition[];
   profit?: number;
-  volatility?: number;
 }
 
 export interface BacktesterPosition {

@@ -6,7 +6,6 @@ export default class LiveWorkerLifecycle {
   private readonly backtesterState: BacktesterState = {};
   private strategyInput = { bars: this.bars, state: this.strategyState };
   private barPrices?: BarPrices;
-  private barVolatility?: number;
 
   public constructor(private readonly options: LiveWorkerLifecycleOptions) {}
 
@@ -35,7 +34,6 @@ export default class LiveWorkerLifecycle {
   public async processTick(price: number): Promise<Bar> {
     if (!this.barPrices) {
       this.strategyInput = { bars: this.bars, state: this.strategyState };
-      this.barVolatility = this.backtesterState.volatility;
     }
 
     const prices: BarPrices = { open: price, high: price, low: price, close: price };
@@ -47,7 +45,6 @@ export default class LiveWorkerLifecycle {
     }
 
     const bar: Bar = this.bars.at(-1)!;
-    this.backtesterState.volatility = this.barVolatility;
     this.options.backtesterInstance.stepCalcBacktestPerformance(this.bars, this.backtesterState, this.options.commission);
 
     this.barPrices = {

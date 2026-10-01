@@ -23,7 +23,6 @@ export default class Backtester extends Base {
   public stepCalcBacktestPerformance(bars: Bar[], state: BacktesterState, commission: number): void {
     state.positions ??= [];
     state.profit ??= 0;
-    state.volatility ??= 0;
 
     const i: number = bars.length - 1;
     const bar: Bar = bars[i];
@@ -45,12 +44,11 @@ export default class Backtester extends Base {
       }
     });
 
-    const openedSignals: BacktestSignal[] = this.addNewPositions(state.positions, bar, i, state.volatility);
+    const openedSignals: BacktestSignal[] = this.addNewPositions(state.positions, bars, i);
     state.profit -= this.calcOpenFee(openedSignals, commission);
     const backtest: BacktestData = bar.backtest!;
     backtest.profit = state.profit;
     backtest.openPositionSize = this.calcPositionSize(state.positions as BacktesterPosition[]);
-    state.volatility = this.calcVolatility(bars, i);
   }
 
   private getCloseSignal(position: BacktesterPosition, bar: Bar): Signal | undefined {
@@ -255,8 +253,8 @@ export default class Backtester extends Base {
     }
   }
 
-  private addNewPositions(positions: BacktesterPosition[], bar: Bar, barIndex: number, volatility: number): BacktestSignal[] {
-    const backtest: BacktestData = bar.backtest!;
+  private addNewPositions(positions: BacktesterPosition[], bars: Bar[], barIndex: number): BacktestSignal[] {
+    const backtest: BacktestData = bars[barIndex].backtest!;
     const signals: BacktestSignal[] = backtest.signals;
     const openedSignals: BacktestSignal[] = [];
 
@@ -270,7 +268,7 @@ export default class Backtester extends Base {
       });
 
       if (!positionExists) {
-        positions.push(this.createPosition(signal, barIndex, signalIndex, volatility));
+        positions.push(this.createPosition(signal, bars, barIndex, signalIndex));
         openedSignals.push(signal);
       }
     });
@@ -312,13 +310,13 @@ export default class Backtester extends Base {
     return atr / bars[barIndex].prices.close; // normalized ATR as fraction of price
   }
 
-  private createPosition(signal: BacktestSignal, barIndex: number, signalIndex: number, volatility: number): BacktesterPosition {
+  private createPosition(signal: BacktestSignal, bars: Bar[], barIndex: number, signalIndex: number): BacktesterPosition {
     const signalSize: number = signal.size!;
     const signalPrice: number = signal.price;
     const tpSl: TakeProfitStopLoss | undefined = signal.positionCloseTrigger?.tpSl;
     const tSl: TrailingStopLoss | undefined = signal.positionCloseTrigger?.tSl;
 
-    const { takeProfit, stopLoss } = this.resolveTpSl(tpSl, tSl, volatility);
+    const { takeProfit, stopLoss } = this.resolveTpSl(tpSl, tSl, bars, barIndex);
 
     this.assertParam({ takeProfit });
     this.assertParam({ stopLoss });
@@ -454,9 +452,11 @@ export default class Backtester extends Base {
   private resolveTpSl(
     tpSl: TakeProfitStopLoss | undefined,
     tSl: TrailingStopLoss | undefined,
-    volatility: number,
+    bars: Bar[],
+    barIndex: number,
   ): { takeProfit: number | undefined; stopLoss: number | undefined } {
     if (tpSl?.asVolatilityFactor) {
+      const volatility: number = barIndex > 0 ? this.calcVolatility(bars, barIndex - 1) : 0; // completed bars only, so repeated evaluations of a bar agree
       return { takeProfit: tpSl.takeProfit * volatility, stopLoss: tpSl.stopLoss * volatility };
     } else if (tpSl) {
       return { takeProfit: tpSl.takeProfit, stopLoss: tpSl.stopLoss };
