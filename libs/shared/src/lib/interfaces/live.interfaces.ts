@@ -1,5 +1,4 @@
-import { BacktesterState } from './backtester.interfaces';
-import { Bar, Strategy } from './shared.interfaces';
+import { Bar, BarPrices, Strategy } from './shared.interfaces';
 
 export interface LiveStrategyEntry {
   strategy: Strategy;
@@ -14,10 +13,14 @@ export interface LiveWorkerLifecycleOptions {
   commission: number;
 }
 
-export interface LiveCalculationState {
-  window: Bar[];
-  strategyState: LiveStrategyState;
-  backtesterState: BacktesterState;
+export interface LiveActiveBar {
+  latestTick: LiveStrategyContext;
+  observedPrices: BarPrices;
+}
+
+export interface LiveStrategyContext {
+  bars: Bar[];
+  state: LiveStrategyState;
 }
 
 export interface LiveStrategyState {
