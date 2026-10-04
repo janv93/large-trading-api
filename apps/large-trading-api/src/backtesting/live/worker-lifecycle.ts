@@ -63,10 +63,11 @@ export default class LiveWorkerLifecycle {
     }
 
     const tick: LiveStrategyContext = clone({
-      bars: [...this.committed.bars, this.createActiveBar(prices)],
+      bars: [...this.committed.bars, this.active?.latestTick.bars.at(-1) ?? this.createBar(prices)],
       state: this.committed.state,
     });
 
+    tick.bars.at(-1)!.prices = prices;
     await this.runStrategy(tick);
     const activeBar: Bar = tick.bars.at(-1)!;
     activeBar.backtest.signals = this.deduplicateSignals(activeBar.backtest.signals);
@@ -74,12 +75,9 @@ export default class LiveWorkerLifecycle {
     return tick;
   }
 
-  /** Starts the active bar at the current price, carrying over what earlier ticks of this bar observed. */
-  private createActiveBar(prices: BarPrices): Bar {
+  private createBar(prices: BarPrices): Bar {
     const lastCompletedBar: Bar = this.committed.bars.at(-1)!;
-    const previousTickBar: Bar | undefined = this.active?.latestTick.bars.at(-1);
 
-    // Carried values must not reference bar objects, which would belong to the previous tick's copy.
     return {
       symbol: lastCompletedBar.symbol,
       exchange: lastCompletedBar.exchange,
@@ -88,12 +86,7 @@ export default class LiveWorkerLifecycle {
       times: { open: lastCompletedBar.times.open + this.options.timeframeMs },
       prices,
       volume: 0,
-      candlestickPatterns: previousTickBar?.candlestickPatterns,
-      indicators: previousTickBar?.indicators?.rsiDivergence ? { rsiDivergence: previousTickBar.indicators.rsiDivergence } : undefined,
-      chart: previousTickBar?.chart?.trendLineBreakthroughs
-        ? { trendLineBreakthroughs: previousTickBar.chart.trendLineBreakthroughs }
-        : undefined,
-      backtest: { signals: previousTickBar?.backtest.signals ?? [] },
+      backtest: { signals: [] },
     };
   }
 
