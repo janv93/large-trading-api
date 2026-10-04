@@ -11,7 +11,7 @@ import {
 } from '@shared';
 
 export default class LiveWorkerLifecycle {
-  private committed: LiveStrategyContext = { bars: [], state: {} }; // bar-start state plus lasting trend-line results; each tick evaluates a fresh copy
+  private committed: LiveStrategyContext = { bars: [], state: {} }; // bar-start state plus the latest tick's trend lines; each tick evaluates a fresh copy
   private active?: LiveActiveBar;
   private readonly backtesterState: BacktesterState = {};
 
@@ -90,25 +90,10 @@ export default class LiveWorkerLifecycle {
     };
   }
 
-  /** Keeps this tick's trend-line confirmations, breakthroughs, expiries and pending removals, including their chart drawings, for later ticks of this bar. */
+  /** Carries this tick's trend lines and their chart drawings to later ticks of this bar. Unlike other state they can be carried, because evaluating the bar again only adds the new price to them instead of counting another bar. */
   private retainTrendLines(tick: LiveStrategyContext): void {
     if (!tick.state.trendLines) return;
-    this.committed.state.trendLines ??= {};
-
-    if (tick.state.trendLines.confirmedTrendLines) {
-      this.committed.state.trendLines.confirmedTrendLines = tick.state.trendLines.confirmedTrendLines;
-    }
-
-    if (this.committed.state.trendLines.pendingTrendLines && tick.state.trendLines.pendingTrendLines) {
-      this.committed.state.trendLines.pendingTrendLines = this.committed.state.trendLines.pendingTrendLines.filter((pending: TrendLine) =>
-        tick.state.trendLines.pendingTrendLines.some(
-          (remaining: TrendLine) =>
-            remaining.startIndex === pending.startIndex &&
-            remaining.endIndex === pending.endIndex &&
-            remaining.position === pending.position,
-        ),
-      );
-    }
+    this.committed.state.trendLines = tick.state.trendLines;
 
     this.committed.bars.forEach((bar: Bar, index: number) => {
       const trendLines: TrendLine[] | undefined = tick.bars[index].chart?.trendLines;

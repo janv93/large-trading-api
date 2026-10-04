@@ -496,10 +496,10 @@ describe('live worker lifecycle', () => {
   });
 
   it.each([
-    { prices: [11, 9], remaining: 0 },
-    { prices: [9, 11, 9], remaining: 0 },
-    { prices: [9, 9], remaining: 1 },
-  ])('preserves pending-line transitions across ticks $prices', async ({ prices, remaining }) => {
+    { prices: [11, 9], remaining: 0, incomingSlopes: [Infinity, 1 / 11] },
+    { prices: [9, 11, 9], remaining: 0, incomingSlopes: [Infinity, -1 / 11, -1 / 11] },
+    { prices: [9, 9], remaining: 1, incomingSlopes: [Infinity, -1 / 11] },
+  ])('carries the trend-line state across ticks $prices', async ({ prices, remaining, incomingSlopes }) => {
     const controller = new TrendLineController();
     const pendingCounts: number[] = [];
     const confirmedCounts: number[] = [];
@@ -542,7 +542,7 @@ describe('live worker lifecycle', () => {
 
     expect(pendingCounts.at(-1)).toBe(remaining);
     expect(confirmedCounts).toEqual(prices.map(() => 0));
-    expect(candidateSlopes).toEqual(prices.map(() => Infinity));
+    expect(candidateSlopes).toEqual(incomingSlopes);
 
     jest.spyOn(Date, 'now').mockReturnValue(720_000);
     lifecycle.finalizeBar();
