@@ -1,4 +1,4 @@
-﻿import { BarCandlestickPatterns, Bar, BarPrices } from '@shared';
+﻿import { Bar, BarCandlestickPatterns, BarPrices } from '@shared';
 import Base from '../base';
 
 export default class CandlestickPatternsController extends Base {
@@ -6,8 +6,10 @@ export default class CandlestickPatternsController extends Base {
     super();
   }
 
-  public stepCandlestickPatterns(bars: Bar[]): BarCandlestickPatterns {
-    const i: number = bars.length - 1;
+  /** Detects patterns ending at the previous bar, because a pattern is only known once its last candle has closed. */
+  public stepCandlestickPatterns(bars: Bar[]): void {
+    const i: number = bars.length - 2;
+    if (i < 0) return;
     const patterns: BarCandlestickPatterns = {};
 
     this.detectSingleCandle(bars[i].prices, patterns);
@@ -20,18 +22,9 @@ export default class CandlestickPatternsController extends Base {
       this.detectThreeCandle(bars[i - 2].prices, bars[i - 1].prices, bars[i].prices, patterns);
     }
 
-    const bar: Bar = bars[i];
-    const newPatterns: BarCandlestickPatterns = {};
-
-    for (const pattern of Object.keys(patterns) as (keyof BarCandlestickPatterns)[]) {
-      if (!bar.candlestickPatterns?.[pattern]) newPatterns[pattern] = true;
+    if (Object.keys(patterns).length > 0) {
+      bars[i].candlestickPatterns = patterns;
     }
-
-    if (Object.keys(newPatterns).length > 0) {
-      bar.candlestickPatterns = { ...bar.candlestickPatterns, ...newPatterns };
-    }
-
-    return newPatterns;
   }
 
   private detectSingleCandle(p: BarPrices, patterns: BarCandlestickPatterns): void {
@@ -88,35 +81,35 @@ export default class CandlestickPatternsController extends Base {
   }
 
   private detectTwoCandle(prev: BarPrices, curr: BarPrices, patterns: BarCandlestickPatterns): void {
-    const prevBullish: boolean = prev.close >= prev.open;
-    const currBullish: boolean = curr.close >= curr.open;
+    const prevBullish: boolean = prev.close > prev.open;
+    const prevBearish: boolean = prev.close < prev.open;
+    const currBullish: boolean = curr.close > curr.open;
+    const currBearish: boolean = curr.close < curr.open;
     const prevBody: number = Math.abs(prev.close - prev.open);
     const currBody: number = Math.abs(curr.close - curr.open);
 
     // Bullish Engulfing: prev bearish, curr bullish body fully engulfs prev body
-    if (!prevBullish && currBullish && curr.open < prev.close && curr.close > prev.open) {
+    if (prevBearish && currBullish && curr.open < prev.close && curr.close > prev.open) {
       patterns.bullishEngulfing = true;
     }
 
     // Bearish Engulfing: prev bullish, curr bearish body fully engulfs prev body
-    if (prevBullish && !currBullish && curr.open > prev.close && curr.close < prev.open) {
+    if (prevBullish && currBearish && curr.open > prev.close && curr.close < prev.open) {
       patterns.bearishEngulfing = true;
     }
 
     // Bullish Harami: prev bearish large, curr small bullish body contained inside prev body
-    if (!prevBullish && currBullish && prevBody > 0 && currBody < prevBody * 0.5 &&
-      curr.open > prev.close && curr.close < prev.open) {
+    if (prevBearish && currBullish && prevBody > 0 && currBody < prevBody * 0.5 && curr.open > prev.close && curr.close < prev.open) {
       patterns.bullishHarami = true;
     }
 
     // Bearish Harami: prev bullish large, curr small bearish body contained inside prev body
-    if (prevBullish && !currBullish && prevBody > 0 && currBody < prevBody * 0.5 &&
-      curr.open < prev.close && curr.close > prev.open) {
+    if (prevBullish && currBearish && prevBody > 0 && currBody < prevBody * 0.5 && curr.open < prev.close && curr.close > prev.open) {
       patterns.bearishHarami = true;
     }
 
     // Piercing Line: prev bearish, curr bullish opens below prev low, closes above 50% into prev body
-    if (!prevBullish && currBullish && curr.open < prev.low && prevBody > 0) {
+    if (prevBearish && currBullish && curr.open < prev.low && prevBody > 0) {
       const midpoint: number = prev.open - prevBody * 0.5;
 
       if (curr.close > midpoint && curr.close < prev.open) {
@@ -125,7 +118,7 @@ export default class CandlestickPatternsController extends Base {
     }
 
     // Dark Cloud Cover: prev bullish, curr bearish opens above prev high, closes below 50% into prev body
-    if (prevBullish && !currBullish && curr.open > prev.high && prevBody > 0) {
+    if (prevBullish && currBearish && curr.open > prev.high && prevBody > 0) {
       const midpoint: number = prev.open + prevBody * 0.5;
 
       if (curr.close < midpoint && curr.close > prev.open) {
@@ -134,25 +127,28 @@ export default class CandlestickPatternsController extends Base {
     }
 
     // Tweezer Top: prev bullish, curr bearish, both share approximately the same high
-    if (prevBullish && !currBullish && prev.high > 0 && Math.abs(prev.high - curr.high) / prev.high < 0.001) {
+    if (prevBullish && currBearish && prev.high > 0 && Math.abs(prev.high - curr.high) / prev.high < 0.001) {
       patterns.tweezersTop = true;
     }
 
     // Tweezer Bottom: prev bearish, curr bullish, both share approximately the same low
-    if (!prevBullish && currBullish && prev.low > 0 && Math.abs(prev.low - curr.low) / prev.low < 0.001) {
+    if (prevBearish && currBullish && prev.low > 0 && Math.abs(prev.low - curr.low) / prev.low < 0.001) {
       patterns.tweezersBottom = true;
     }
   }
 
   private detectThreeCandle(first: BarPrices, mid: BarPrices, last: BarPrices, patterns: BarCandlestickPatterns): void {
-    const firstBullish: boolean = first.close >= first.open;
-    const midBullish: boolean = mid.close >= mid.open;
-    const lastBullish: boolean = last.close >= last.open;
+    const firstBullish: boolean = first.close > first.open;
+    const firstBearish: boolean = first.close < first.open;
+    const midBullish: boolean = mid.close > mid.open;
+    const midBearish: boolean = mid.close < mid.open;
+    const lastBullish: boolean = last.close > last.open;
+    const lastBearish: boolean = last.close < last.open;
     const firstBody: number = Math.abs(first.close - first.open);
     const midBody: number = Math.abs(mid.close - mid.open);
 
     // Morning Star: large bearish → small middle candle opens below first close → large bullish closes > 50% into first
-    if (!firstBullish && midBody < firstBody * 0.5 && lastBullish && mid.open < first.close) {
+    if (firstBearish && midBody < firstBody * 0.5 && lastBullish && mid.open < first.close) {
       const midpoint: number = first.open - firstBody * 0.5;
 
       if (last.close > midpoint) {
@@ -161,7 +157,7 @@ export default class CandlestickPatternsController extends Base {
     }
 
     // Evening Star: large bullish → small middle candle opens above first close → large bearish closes < 50% into first
-    if (firstBullish && midBody < firstBody * 0.5 && !lastBullish && mid.open > first.close) {
+    if (firstBullish && midBody < firstBody * 0.5 && lastBearish && mid.open > first.close) {
       const midpoint: number = first.open + firstBody * 0.5;
 
       if (last.close < midpoint) {
@@ -170,16 +166,32 @@ export default class CandlestickPatternsController extends Base {
     }
 
     // Three White Soldiers: three consecutive bullish candles, each opening within prior body and closing higher
-    if (firstBullish && midBullish && lastBullish &&
-      mid.open > first.open && mid.open < first.close && mid.close > first.close &&
-      last.open > mid.open && last.open < mid.close && last.close > mid.close) {
+    if (
+      firstBullish &&
+      midBullish &&
+      lastBullish &&
+      mid.open > first.open &&
+      mid.open < first.close &&
+      mid.close > first.close &&
+      last.open > mid.open &&
+      last.open < mid.close &&
+      last.close > mid.close
+    ) {
       patterns.threeWhiteSoldiers = true;
     }
 
     // Three Black Crows: three consecutive bearish candles, each opening within prior body and closing lower
-    if (!firstBullish && !midBullish && !lastBullish &&
-      mid.open < first.open && mid.open > first.close && mid.close < first.close &&
-      last.open < mid.open && last.open > mid.close && last.close < mid.close) {
+    if (
+      firstBearish &&
+      midBearish &&
+      lastBearish &&
+      mid.open < first.open &&
+      mid.open > first.close &&
+      mid.close < first.close &&
+      last.open < mid.open &&
+      last.open > mid.close &&
+      last.close < mid.close
+    ) {
       patterns.threeBlackCrows = true;
     }
   }
