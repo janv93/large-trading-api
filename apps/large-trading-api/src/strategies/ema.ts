@@ -6,40 +6,29 @@ export default class Ema extends Base {
   public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const periodOpen = Number(params.periodOpen);
     const periodClose = Number(params.periodClose);
-    state.emaOpen ??= {};
-    state.emaClose ??= {};
-    stepEma(bars, state.emaOpen, periodOpen);
-    stepEma(bars, state.emaClose, periodClose);
+    stepEma(bars, periodOpen);
+    stepEma(bars, periodClose);
 
     const bar: Bar = bars[bars.length - 1];
     const eOpen: number | undefined = bar.indicators?.ema?.[periodOpen];
     const eClose: number | undefined = bar.indicators?.ema?.[periodClose];
-    if (eOpen === undefined || eClose === undefined) return;
+    const previousEmaOpen: number | undefined = bars.at(-2)?.indicators?.ema?.[periodOpen];
+    const previousEmaClose: number | undefined = bars.at(-2)?.indicators?.ema?.[periodClose];
+    const earlierEmaOpen: number | undefined = bars.at(-3)?.indicators?.ema?.[periodOpen];
+    const earlierEmaClose: number | undefined = bars.at(-3)?.indicators?.ema?.[periodClose];
+
+    if ([eOpen, eClose, previousEmaOpen, previousEmaClose, earlierEmaOpen, earlierEmaClose].includes(undefined)) return;
 
     const signals: BacktestSignal[] = bar.backtest.signals;
     const closePrice: number = bar.prices.close;
+    const moveOpen = eOpen! - previousEmaOpen! > 0 ? 'up' : 'down';
+    const moveClose = eClose! - previousEmaClose! > 0 ? 'up' : 'down';
+    const previousMoveOpen = previousEmaOpen! - earlierEmaOpen! > 0 ? 'up' : 'down';
+    const previousMoveClose = previousEmaClose! - earlierEmaClose! > 0 ? 'up' : 'down';
+    const momentumSwitchOpen = moveOpen !== previousMoveOpen;
+    const momentumSwitchClose = moveClose !== previousMoveClose;
 
-    if (state.lastEmaOpen === undefined) {
-      state.lastEmaOpen = eOpen;
-      state.lastEmaClose = eClose;
-      return;
-    }
-
-    const moveOpen = eOpen - state.lastEmaOpen > 0 ? 'up' : 'down';
-    const moveClose = eClose - state.lastEmaClose! > 0 ? 'up' : 'down';
-
-    if (state.lastMoveOpen === undefined) {
-      state.lastMoveOpen = moveOpen;
-      state.lastMoveClose = moveClose;
-      state.lastEmaOpen = eOpen;
-      state.lastEmaClose = eClose;
-      return;
-    }
-
-    const momentumSwitchOpen = moveOpen !== state.lastMoveOpen;
-    const momentumSwitchClose = moveClose !== state.lastMoveClose;
-
-    if (state.positionOpen && momentumSwitchClose && state.lastMoveOpen !== moveClose) {
+    if (state.positionOpen && momentumSwitchClose && previousMoveOpen !== moveClose) {
       signals.push({ signal: Signal.CloseAll, price: closePrice });
       state.positionOpen = false;
       state.barDone = true;
@@ -58,10 +47,5 @@ export default class Ema extends Base {
         state.barDone = true;
       }
     }
-
-    state.lastMoveOpen = moveOpen;
-    state.lastEmaOpen = eOpen;
-    state.lastMoveClose = moveClose;
-    state.lastEmaClose = eClose;
   }
 }

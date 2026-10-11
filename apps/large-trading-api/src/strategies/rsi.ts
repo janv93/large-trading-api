@@ -5,11 +5,10 @@ import { stepRsi } from '../patterns/indicators/rsi';
 export default class Rsi extends Base {
   public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const length = Number(params.length);
-    state.rsi ??= {};
-    stepRsi(bars, state.rsi, length);
+    stepRsi(bars, length);
 
     const bar: Bar = bars[bars.length - 1];
-    const rsiValue: number | undefined = bar.indicators?.rsi;
+    const rsiValue: number | undefined = bar.indicators?.rsi?.value;
     if (rsiValue === undefined) return;
 
     const rsiThresholdHigh = 60;

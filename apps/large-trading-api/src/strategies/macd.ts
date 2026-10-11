@@ -7,42 +7,33 @@ export default class Macd extends Base {
     const fast = Number(params.fast);
     const slow = Number(params.slow);
     const signal = Number(params.signal);
-    state.macd ??= {};
-    stepMacd(bars, state.macd, fast, slow, signal);
+    stepMacd(bars, fast, slow, signal);
 
     const bar: Bar = bars[bars.length - 1];
     const macd = bar.indicators?.macd;
-    if (!macd) return;
+    const histogramOneAgo: number | undefined = bars.at(-2)?.indicators?.macd?.histogram;
+    const histogramTwoAgo: number | undefined = bars.at(-3)?.indicators?.macd?.histogram;
+    if (!macd || [histogramOneAgo, histogramTwoAgo].includes(undefined)) return;
 
     const signals: BacktestSignal[] = bar.backtest.signals;
     const closePrice: number = bar.prices.close;
-    const h: number = macd.histogram;
-
-    if (state.lastHistogram === undefined) {
-      state.lastHistogram = h;
-      return;
-    }
-
-    const move = h - state.lastHistogram > 0 ? 'up' : 'down';
-
-    if (!state.lastMove) {
-      state.lastMove = move;
-    }
-
-    const momentumSwitch = move !== state.lastMove;
+    const histogram: number = macd.histogram;
+    const move = histogram - histogramOneAgo! > 0 ? 'up' : 'down';
+    const previousMove = histogramOneAgo! - histogramTwoAgo! > 0 ? 'up' : 'down';
+    const momentumSwitch = move !== previousMove;
 
     if (momentumSwitch) {
       if (!state.positionOpen) {
-        if (move === 'down' && h > 0) {
-          if (h > 0.003) {
+        if (move === 'down' && histogram > 0) {
+          if (histogram > 0.003) {
             signals.push({ signal: Signal.CloseAll, price: closePrice });
             signals.push({ signal: Signal.Sell, size: 1, price: closePrice });
             state.positionOpen = true;
             state.positionOpenType = Signal.Sell;
             state.barDone = true;
           }
-        } else if (move === 'up' && h < 0) {
-          if (h < -0.003) {
+        } else if (move === 'up' && histogram < 0) {
+          if (histogram < -0.003) {
             signals.push({ signal: Signal.CloseAll, price: closePrice });
             signals.push({ signal: Signal.Buy, size: 1, price: closePrice });
             state.positionOpen = true;
@@ -51,15 +42,12 @@ export default class Macd extends Base {
           }
         }
       } else {
-        if ((state.positionOpenType === Signal.Sell && h < 0) || (state.positionOpenType === Signal.Buy && h > 0)) {
+        if ((state.positionOpenType === Signal.Sell && histogram < 0) || (state.positionOpenType === Signal.Buy && histogram > 0)) {
           signals.push({ signal: Signal.CloseAll, price: closePrice });
           state.positionOpen = false;
           state.barDone = true;
         }
       }
     }
-
-    state.lastHistogram = h;
-    state.lastMove = move;
   }
 }

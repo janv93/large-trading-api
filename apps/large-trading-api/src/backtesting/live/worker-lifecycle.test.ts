@@ -190,15 +190,19 @@ class VolatilityEntryStrategy {
 }
 
 class BarReferenceStrategy {
-  public referencesMatched = false;
+  public referencesMatched = true;
+  public bars?: Bar[];
+  public state?: LiveStrategyState;
 
   public stepSetSignals(bars: Bar[], state: LiveStrategyState): void {
     if (bars.length === 1) {
+      this.bars = bars;
+      this.state = state;
       state.reference = bars[0];
       return;
     }
 
-    this.referencesMatched = state.reference === bars[0];
+    this.referencesMatched &&= state.reference === bars[0] && this.bars === bars && this.state === state;
     state.reference.chart = { marketStructure: { streak: bars.length, direction: 'UP' } };
   }
 }
@@ -326,6 +330,7 @@ describe('live worker lifecycle', () => {
     await lifecycle.initialize([createBar(0, 10)]);
 
     const first: Bar = await lifecycle.processTick(11);
+    expect(first.prices).toEqual({ open: 11, high: 11, low: 11, close: 11 });
 
     first.backtest.signals.push(
       createSignal({
@@ -337,7 +342,7 @@ describe('live worker lifecycle', () => {
 
     const second: Bar = await lifecycle.processTick(12);
 
-    expect(first.prices).toEqual({ open: 11, high: 11, low: 11, close: 11 });
+    expect(second).toBe(first);
     expect(second.prices).toEqual({ open: 12, high: 12, low: 12, close: 12 });
     expect(second.times.open).toBe(60_000);
     expect(second.candlestickPatterns).toEqual({ hammer: true, doji: true });
@@ -379,14 +384,16 @@ describe('live worker lifecycle', () => {
     await lifecycle.initialize([createBar(0, 100)]);
 
     const opened: Bar = await lifecycle.processTick(110);
-    const trailed: Bar = await lifecycle.processTick(130);
-    const stopped: Bar = await lifecycle.processTick(100);
-    const rebounded: Bar = await lifecycle.processTick(120);
-
     expect(opened.backtest.openPositionSize).toBe(1);
+
+    const trailed: Bar = await lifecycle.processTick(130);
     expect(trailed.backtest.openPositionSize).toBeCloseTo(1.181818);
+
+    const stopped: Bar = await lifecycle.processTick(100);
     expect(stopped.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.Buy, Signal.StopLoss]);
     expect(stopped.backtest.openPositionSize).toBe(0);
+
+    const rebounded: Bar = await lifecycle.processTick(120);
     expect(rebounded.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.Buy, Signal.StopLoss]);
     expect(rebounded.backtest.openPositionSize).toBe(0);
     expect(rebounded.backtest.profit).toBeCloseTo(0.063636);
@@ -449,17 +456,26 @@ describe('live worker lifecycle', () => {
     expect(dipped.backtest.openPositionSize).toBeCloseTo(0.7);
   });
 
-  it('keeps strategy state bar references attached to the retained calculation window', async () => {
+  it('shares the bars array, earlier bars, and strategy state across ticks and bar boundaries', async () => {
     const strategy = new BarReferenceStrategy();
     const lifecycle: LiveWorkerLifecycle = createLifecycle(strategy, new RecordingBacktester());
-    await lifecycle.initialize([createBar(0, 10)]);
+    const initialBar: Bar = createBar(0, 10);
+    await lifecycle.initialize([initialBar]);
 
-    await lifecycle.processTick(11);
+    const active: Bar = await lifecycle.processTick(11);
+    expect(await lifecycle.processTick(12)).toBe(active);
     jest.spyOn(Date, 'now').mockReturnValue(120_000);
     const finalized: Bar | undefined = lifecycle.finalizeBar();
+    const next: Bar = await lifecycle.processTick(13);
 
     expect(strategy.referencesMatched).toBe(true);
+    expect(strategy.bars).toHaveLength(3);
+    expect(strategy.bars?.[0]).toBe(initialBar);
+    expect(strategy.bars?.[1]).toBe(finalized);
+    expect(strategy.bars?.[2]).toBe(next);
+    expect(finalized).toBe(active);
     expect(finalized?.times.open).toBe(60_000);
+    expect(initialBar.chart?.marketStructure?.streak).toBe(3);
   });
 
   it('keeps a retained trend-line breakthrough retired after a later tick rebounds', async () => {
@@ -565,7 +581,7 @@ describe('live worker lifecycle', () => {
     expect(strategy.incomingChartCounts).toEqual([1, 0]);
   });
 
-  it('freezes strategy state at completion while continuing backtester ticks until the bar closes', async () => {
+  it('carries strategy state until completion and continues backtester ticks until the bar closes', async () => {
     const strategy = new FreezingStrategy();
     const backtester = new RecordingBacktester();
     const lifecycle: LiveWorkerLifecycle = createLifecycle(strategy, backtester);
@@ -582,7 +598,7 @@ describe('live worker lifecycle', () => {
     expect(continued.indicators?.ema?.[1]).toBe(13);
     expect(continued.backtest.signals[0].price).toBe(13);
     expect(strategy.calls).toBe(strategyCallsAtFreeze);
-    expect(strategy.incomingMarkers).toEqual([0, 0]);
+    expect(strategy.incomingMarkers).toEqual([0, 12]);
     expect(backtester.calls).toHaveLength(backtesterCallsAtFreeze + 1);
 
     jest.spyOn(Date, 'now').mockReturnValue(120_000);
@@ -602,7 +618,7 @@ describe('live worker lifecycle', () => {
     expect(backtester.calls.at(-1)?.incomingProfit).toBe(49);
 
     await lifecycle.processTick(21);
-    expect(strategy.incomingMarkers).toEqual([0, 0, 13, 13]);
+    expect(strategy.incomingMarkers).toEqual([0, 12, 13, 20]);
   });
 
   it('records tick OHLC only when finalizing and starts a fresh range for the next bar', async () => {
@@ -630,7 +646,7 @@ describe('live worker lifecycle', () => {
     const finalized: Bar = lifecycle.finalizeBar()!;
     expect(finalized).toBe(tickBars.at(-1));
     expect(finalized.prices).toEqual({ open: 11, high: 16, low: 8, close: 12 });
-    expect(tickBars[0].prices).toEqual({ open: 11, high: 11, low: 11, close: 11 });
+    expect(tickBars.every((tick) => tick === finalized)).toBe(true);
     expect(backtester.calls).toHaveLength(callsBeforeRefresh);
     expect(strategy.calls).toBe(strategyCalls);
     expect(lifecycle.finalizeBar()).toBeUndefined();

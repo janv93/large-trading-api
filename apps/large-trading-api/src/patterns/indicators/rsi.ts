@@ -1,30 +1,31 @@
-import { Bar, RsiState } from '@shared';
+import { Bar, RsiValues } from '@shared';
 
-export function stepRsi(bars: Bar[], state: RsiState, period: number): void {
-  const i: number = bars.length - 1;
-  if (i < period) return;
+export function stepRsi(bars: Bar[], period: number): void {
+  const index: number = bars.length - 1;
+  if (index < period) return;
 
-  if (state.avgGain === undefined || state.avgLoss === undefined) {
-    state.avgGain = 0;
-    state.avgLoss = 0;
+  const previousRsi: RsiValues | undefined = bars.at(-2)?.indicators?.rsi;
+  let avgGain: number = 0;
+  let avgLoss: number = 0;
 
-    for (let j = 1; j <= period; j++) {
-      const change: number = bars[j].prices.close - bars[j - 1].prices.close;
-      if (change > 0) state.avgGain += change;
-      else state.avgLoss += Math.abs(change);
+  if (previousRsi === undefined) {
+    for (let barIndex = 1; barIndex <= period; barIndex++) {
+      const change: number = bars[barIndex].prices.close - bars[barIndex - 1].prices.close;
+      if (change > 0) avgGain += change;
+      else avgLoss += Math.abs(change);
     }
 
-    state.avgGain /= period;
-    state.avgLoss /= period;
+    avgGain /= period;
+    avgLoss /= period;
   } else {
-    const change: number = bars[i].prices.close - bars[i - 1].prices.close;
+    const change: number = bars[index].prices.close - bars[index - 1].prices.close;
     const gain: number = change > 0 ? change : 0;
     const loss: number = change < 0 ? Math.abs(change) : 0;
-    state.avgGain = (state.avgGain * (period - 1) + gain) / period;
-    state.avgLoss = (state.avgLoss * (period - 1) + loss) / period;
+    avgGain = (previousRsi.avgGain * (period - 1) + gain) / period;
+    avgLoss = (previousRsi.avgLoss * (period - 1) + loss) / period;
   }
 
-  const relativeStrength: number = state.avgLoss === 0 ? Infinity : state.avgGain / state.avgLoss;
-  const bar: Bar = bars[i];
-  bar.indicators = { ...bar.indicators, rsi: 100 - 100 / (1 + relativeStrength) };
+  const relativeStrength: number = avgLoss === 0 ? Infinity : avgGain / avgLoss;
+  const bar: Bar = bars[index];
+  bar.indicators = { ...bar.indicators, rsi: { value: 100 - 100 / (1 + relativeStrength), avgGain, avgLoss } };
 }

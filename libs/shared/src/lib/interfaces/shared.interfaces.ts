@@ -205,7 +205,7 @@ export interface BarIndicators {
   ema?: Record<number, number>; // keyed by period, e.g. ema[20] = value
   sma?: Record<number, number>; // keyed by period, e.g. sma[50] = value
   macd?: MacdValues;
-  rsi?: number;
+  rsi?: RsiValues;
   bb?: BollingerBands;
   atr?: number;
   rsiDivergence?: RsiDivergenceData;
@@ -215,6 +215,12 @@ export interface MacdValues {
   macdLine: number;
   signal: number;
   histogram: number;
+}
+
+export interface RsiValues {
+  value: number;
+  avgGain: number;
+  avgLoss: number;
 }
 
 export interface BollingerBands {

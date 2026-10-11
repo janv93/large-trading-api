@@ -1,4 +1,4 @@
-import { Bar, BarPrices, Strategy } from './shared.interfaces';
+import { Strategy } from './shared.interfaces';
 
 export interface LiveStrategyEntry {
   strategy: Strategy;
@@ -11,16 +11,6 @@ export interface LiveWorkerLifecycleOptions {
   strategyConfig: any;
   timeframeMs: number;
   commission: number;
-}
-
-export interface LiveActiveBar {
-  latestTick: LiveStrategyContext;
-  observedPrices: BarPrices;
-}
-
-export interface LiveStrategyContext {
-  bars: Bar[];
-  state: LiveStrategyState;
 }
 
 export interface LiveStrategyState {

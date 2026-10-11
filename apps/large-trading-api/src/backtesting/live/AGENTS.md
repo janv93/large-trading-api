@@ -10,8 +10,10 @@ Strategies were written for backtests. A backtest calls a strategy once per comp
 
 Everything specific to live follows from this mismatch between "once per completed bar" and "many times during a bar":
 
-- Strategies treat every call as a new bar, so every tick is evaluated from the state at the bar's start. Otherwise each tick would count as an extra bar.
-- Starting over forgets what earlier ticks saw. Findings that must not be forgotten, such as a trend line that already broke or a signal that was already emitted, are carried from tick to tick by live. They are the same for every strategy, so live handles them once. Letting each strategy mark which of its values survive a tick was considered, but it would change every strategy, and one forgotten value would silently distort only live results.
-- Positions are not reset between ticks, because an opened or closed position cannot be taken back: a position opened on one tick stays open, and a stop loss hit on one tick stays hit even if the price recovers. For the same reason, nothing runs again when the bar closes. Running the strategy again would produce signals that never acted on any position, and running the backtester again would open and close positions a second time and could stop out a position because of a price extreme from before it was opened.
+Carrying information forward is the starting point, because rebuilding it on each tick adds complexity and can discard findings that must survive, such as a trend line that already broke or a signal that was already emitted. Keeping those findings with the same bars also preserves the links between calculations and chart drawings.
+
+Repeated ticks belong to the same bar, so indicator accumulators and bar counters must not treat each tick as an additional bar.
+
+Positions are not reset between ticks, because an opened or closed position cannot be taken back: a position opened on one tick stays open, and a stop loss hit on one tick stays hit even if the price recovers. For the same reason, nothing runs again when the bar closes. Running the strategy again would produce signals that never acted on any position, and running the backtester again would open and close positions a second time and could stop out a position because of a price extreme from before it was opened.
 
 Live results therefore differ from a backtest on the same period: a live bar contains only the prices that were actually observed, and decisions were made on them as they arrived.
