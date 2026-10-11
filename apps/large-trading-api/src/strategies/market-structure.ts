@@ -1,6 +1,6 @@
-﻿import { BacktestSignal, Direction, Bar, MarketStructureStats, Signal } from '@shared';
-import PivotPointController from '../patterns/pivot-point';
+﻿import { BacktestSignal, Bar, Direction, MarketStructureStats, Signal } from '@shared';
 import Base from '../base';
+import PivotPointController from '../patterns/pivot-point';
 
 export default class MarketStructure extends Base {
   private pivotPointController = new PivotPointController();
@@ -12,26 +12,20 @@ export default class MarketStructure extends Base {
 
     const bar: Bar = bars[bars.length - 1];
     const currentMarketStructureStats: MarketStructureStats | undefined = bar.chart?.marketStructure;
-    if (!currentMarketStructureStats) return;
+    const marketStructureOneAgo: MarketStructureStats | undefined = bars.at(-2)?.chart?.marketStructure;
+    if (!currentMarketStructureStats || !marketStructureOneAgo) return;
 
-    if (!state.lastMarketStructureStats) {
-      state.lastMarketStructureStats = currentMarketStructureStats;
-      return;
-    }
-
-    if (currentMarketStructureStats.streak === 1 && state.lastMarketStructureStats.streak > 4) {
+    if (currentMarketStructureStats.streak === 1 && marketStructureOneAgo.streak > 4) {
       const signals: BacktestSignal[] = bar.backtest.signals;
       const closePrice: number = bar.prices.close;
 
       if (currentMarketStructureStats.direction === Direction.Up) {
-        signals.push({ signal: Signal.Buy, size: state.lastMarketStructureStats.streak, price: closePrice });
+        signals.push({ signal: Signal.Buy, size: marketStructureOneAgo.streak, price: closePrice });
         state.barDone = true;
       } else if (currentMarketStructureStats.direction === Direction.Down) {
-        signals.push({ signal: Signal.Sell, size: state.lastMarketStructureStats.streak, price: closePrice });
+        signals.push({ signal: Signal.Sell, size: marketStructureOneAgo.streak, price: closePrice });
         state.barDone = true;
       }
     }
-
-    state.lastMarketStructureStats = currentMarketStructureStats;
   }
 }
