@@ -36,8 +36,8 @@ export default class TrendLineController extends Base {
     this.processRightBufferPending(bars, state);
     state.candidateTrendLines = state.candidateTrendLines.filter((entry) => i - entry.startIndex <= maxLength);
 
-    for (const entry of state.candidateTrendLines) {
-      const startIdx: number = entry.startIndex;
+    for (const candidate of state.candidateTrendLines) {
+      const startIdx: number = candidate.startIndex;
       const dx: number = i - startIdx;
       if (dx === 0) continue;
 
@@ -50,16 +50,18 @@ export default class TrendLineController extends Base {
 
       if (dx >= minLength) {
         const isValidBelow: boolean =
-          slopeBelow <= entry.minSlopeBelow && (!againstTrend || this.isTrendLineAgainstTrend(startLow, endLow, TrendLinePosition.Below));
+          slopeBelow <= candidate.minSlopeBelow &&
+          (!againstTrend || this.isTrendLineAgainstTrend(startLow, endLow, TrendLinePosition.Below));
         const isValidAbove: boolean =
-          slopeAbove >= entry.maxSlopeAbove && (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endHigh, TrendLinePosition.Above));
+          slopeAbove >= candidate.maxSlopeAbove &&
+          (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endHigh, TrendLinePosition.Above));
 
-        const candidates: [boolean, number, number, TrendLinePosition][] = [
+        const currentLines: [boolean, number, number, TrendLinePosition][] = [
           [isValidBelow, startLow, endLow, TrendLinePosition.Below],
           [isValidAbove, startHigh, endHigh, TrendLinePosition.Above],
         ];
 
-        candidates.forEach(([isValid, startPrice, endPrice, position]) => {
+        currentLines.forEach(([isValid, startPrice, endPrice, position]) => {
           this.removeCrossedTrendLineInCurrentBar(bars, state, startIdx, i, position);
           if (!isValid) return;
           const linearFunction: LinearFunction = new LinearFunction(startIdx, startPrice, i, endPrice);
@@ -85,8 +87,8 @@ export default class TrendLineController extends Base {
       }
 
       // update after the check so that i is not included in the check at this step
-      entry.minSlopeBelow = Math.min(entry.minSlopeBelow, slopeBelow);
-      entry.maxSlopeAbove = Math.max(entry.maxSlopeAbove, slopeAbove);
+      candidate.minSlopeBelow = Math.min(candidate.minSlopeBelow, slopeBelow);
+      candidate.maxSlopeAbove = Math.max(candidate.maxSlopeAbove, slopeAbove);
     }
 
     if (!this.hasCandidateTrendLine(state, i)) {
