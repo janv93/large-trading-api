@@ -8,7 +8,7 @@ import {
   TrendLinePosition,
   TrendLineStepState,
   TrendLinesFromPivotPointsStepState,
-} from "@shared";
+} from '@shared';
 
 export function stepRsiDivergence(
   bars: Bar[],
@@ -22,17 +22,12 @@ export function stepRsiDivergence(
   const newDivergences: DetectedRsiDivergence[] = [];
 
   for (const trendLine of state.confirmedTrendLines) {
+    removeLineWithoutDivergence(bars, state, trendLine);
     if (trendLine.endIndex !== i) continue;
     if (currentRsiDivergence?.originTrendLines.some((origin) => isSameTrendLine(origin, trendLine))) continue;
 
     const divergence: RsiDivergenceStrengths | undefined = calcRsiDivergence(bars, trendLine, minStrength);
-
-    if (!divergence) {
-      const chart = bars[trendLine.startIndex]?.chart;
-      if (chart?.trendLines) chart.trendLines = chart.trendLines.filter((line) => line !== trendLine);
-    } else {
-      newDivergences.push({ ...divergence, originTrendLine: trendLine });
-    }
+    if (divergence) newDivergences.push({ ...divergence, originTrendLine: trendLine });
   }
 
   if (!newDivergences.length) return undefined;
@@ -41,6 +36,24 @@ export function stepRsiDivergence(
   const rsiDivergence: RsiDivergenceData = mergeRsiDivergenceData(currentRsiDivergence, newRsiDivergence);
   bar.indicators = { ...bar.indicators, rsiDivergence };
   return newRsiDivergence;
+}
+
+function removeLineWithoutDivergence(
+  bars: Bar[],
+  state: TrendLineStepState | TrendLinesFromPivotPointsStepState,
+  trendLine: TrendLine,
+): void {
+  const previousIndex: number = bars.length - 2;
+  const previousRsiDivergence: RsiDivergenceData | undefined = bars[previousIndex]?.indicators?.rsiDivergence;
+
+  if (
+    trendLine.endIndex === previousIndex &&
+    !previousRsiDivergence?.originTrendLines.some((origin) => isSameTrendLine(origin, trendLine))
+  ) {
+    state.confirmedTrendLines = state.confirmedTrendLines!.filter((line) => line !== trendLine);
+    const chart = bars[trendLine.startIndex]?.chart;
+    if (chart?.trendLines) chart.trendLines = chart.trendLines.filter((line) => line !== trendLine);
+  }
 }
 
 function calcRsiDivergence(bars: Bar[], trendLine: TrendLine, minStrength: number): RsiDivergenceStrengths | undefined {

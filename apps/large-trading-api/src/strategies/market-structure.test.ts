@@ -76,7 +76,7 @@ describe('market-structure strategy', () => {
 
     for (let index = 0; index < 360; index++) {
       const phase: number = index % 120;
-      const price: number = 100 + (phase < 60 ? phase : 120 - phase) + (index % 3 === 2 ? 3 : 0);
+      const price: number = 100 + (phase < 60 ? phase : 120 - phase) + [0, 3, -3][index % 3];
       state.barDone = false;
       bars.push(createBar(index * 60_000, price));
       strategy.stepSetSignals(bars, state, { space: 2 });

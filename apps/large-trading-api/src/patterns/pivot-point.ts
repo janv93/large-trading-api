@@ -1,9 +1,9 @@
-﻿import { Direction, Bar, BarWithIndex, MarketStructureState, MarketStructureType, PivotPoint, PivotPointSide } from '@shared';
+﻿import { Bar, BarWithIndex, Direction, MarketStructureState, MarketStructureType, PivotPoint, PivotPointSide } from '@shared';
 import Base from '../base';
 
 export default class PivotPointController extends Base {
   public stepPivotPoints(bars: Bar[], space: number): void {
-    const j: number = bars.length - 1 - space;
+    const j: number = bars.length - 2 - space;
     if (j < 0) return;
 
     const pivotPoint: PivotPoint | null = this.getPivotPoint(bars, j, space);
@@ -18,7 +18,7 @@ export default class PivotPointController extends Base {
   public stepMarketStructure(bars: Bar[], state: MarketStructureState, space: number): void {
     state.barsWithPivotPoints ??= [];
 
-    const j: number = bars.length - 1 - space;
+    const j: number = bars.length - 2 - space;
 
     if (j >= 0) {
       const pivot: PivotPoint | null = this.getPivotPoint(bars, j, space);
@@ -150,10 +150,10 @@ export default class PivotPointController extends Base {
     const bar: Bar = bars[i];
     const currentHigh: number = bar.prices.high;
     const currentLow: number = bar.prices.low;
-    const isLeftHigh: boolean = bars.slice(i - space + 1, i).every((k) => k.prices.high <= currentHigh);
-    const isRightHigh: boolean = bars.slice(i + 1, i + space).every((k) => k.prices.high <= currentHigh);
-    const isLeftLow: boolean = bars.slice(i - space + 1, i).every((k) => k.prices.low >= currentLow);
-    const isRightLow: boolean = bars.slice(i + 1, i + space).every((k) => k.prices.low >= currentLow);
+    const isLeftHigh: boolean = bars.slice(i - space, i).every((k) => k.prices.high <= currentHigh);
+    const isRightHigh: boolean = bars.slice(i + 1, i + space + 1).every((k) => k.prices.high <= currentHigh);
+    const isLeftLow: boolean = bars.slice(i - space, i).every((k) => k.prices.low >= currentLow);
+    const isRightLow: boolean = bars.slice(i + 1, i + space + 1).every((k) => k.prices.low >= currentLow);
     const isHigh: boolean = isLeftHigh && isRightHigh;
     const isLow: boolean = isLeftLow && isRightLow;
     const pivotPointSide: PivotPointSide | null = isHigh ? PivotPointSide.High : isLow ? PivotPointSide.Low : null;

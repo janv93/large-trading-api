@@ -14,6 +14,7 @@ import {
 } from '@shared';
 import TrendLineController from '../../patterns/trend-line';
 import MeanReversion from '../../strategies/mean-reversion';
+import RsiDivergence from '../../strategies/rsi-divergence';
 import Backtester from '../backtester/backtester';
 import LiveWorkerLifecycle from './worker-lifecycle';
 
@@ -355,6 +356,78 @@ describe('live worker lifecycle', () => {
     expect(first.times.open).toBe(second.times.open);
   });
 
+  it.each([{ initialTicks: [] }, { initialTicks: [102] }])(
+    'detects and retains a new RSI divergence after initial ticks $initialTicks',
+    async ({ initialTicks }) => {
+      const lifecycle: LiveWorkerLifecycle = createLifecycle(new RsiDivergence(), new Backtester(), {
+        minLength: 5,
+        maxLength: 5,
+        minStrength: 0.01,
+        stopLoss: 0.1,
+      });
+
+      const history: Bar[] = [120, 100, 110, 108, 107, 105].map((price, index) => createBar(index * 60_000, price));
+      await lifecycle.initialize(history);
+
+      for (const bar of history) {
+        expect(bar.indicators?.rsiDivergence).toBeUndefined();
+        expect(bar.backtest.signals).toEqual([]);
+      }
+
+      for (const price of initialTicks) {
+        const tick: Bar = await lifecycle.processTick(price);
+        expect(tick.indicators?.rsiDivergence).toBeUndefined();
+        expect(tick.backtest.signals).toEqual([]);
+        expect(tick.backtest.openPositionSize).toBe(0);
+      }
+
+      const discovered: Bar = await lifecycle.processTick(99);
+      const divergence = discovered.indicators?.rsiDivergence;
+      expect(divergence?.regular).toBeGreaterThan(0);
+      expect(divergence?.originTrendLines).toHaveLength(1);
+      expect(divergence?.originTrendLines[0]).toMatchObject({ startIndex: 1, endIndex: 6, position: TrendLinePosition.Below });
+      expect(history[1].chart?.trendLines).toContain(divergence?.originTrendLines[0]);
+      const strength: number = divergence!.regular!;
+      expect(discovered.backtest.signals).toHaveLength(1);
+      expect(discovered.backtest.signals[0]).toMatchObject({ signal: Signal.Buy, size: strength, price: 99 });
+      expect(discovered.backtest.openPositionSize).toBeCloseTo(strength);
+
+      for (const price of [99, 102, 101]) {
+        const tick: Bar = await lifecycle.processTick(price);
+        expect(tick.indicators?.rsiDivergence).toBe(divergence);
+        expect(tick.indicators?.rsiDivergence?.regular).toBe(strength);
+        expect(tick.indicators?.rsiDivergence?.originTrendLines).toHaveLength(1);
+        expect(history[1].chart?.trendLines).toContain(divergence?.originTrendLines[0]);
+        expect(tick.backtest.signals).toHaveLength(1);
+        expect(tick.backtest.signals[0]).toMatchObject({ signal: Signal.Buy, size: strength, price: 99 });
+        expect(tick.backtest.openPositionSize).toBeCloseTo((strength * price) / 99);
+      }
+
+      const stopped: Bar = await lifecycle.processTick(90);
+      expect(stopped.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.Buy, Signal.StopLoss]);
+      expect(stopped.backtest.openPositionSize).toBe(0);
+
+      const replacement: TrendLine | undefined = history[1].chart?.trendLines?.find(
+        (line) => line.endIndex === 6 && line.position === TrendLinePosition.Below,
+      );
+
+      expect(replacement).toBeDefined();
+      expect(replacement).not.toBe(divergence?.originTrendLines[0]);
+      expect(replacement?.function.getY(6)).toBeCloseTo(90);
+      expect(divergence?.originTrendLines[0].function.getY(6)).toBeCloseTo(99);
+
+      const rebounded: Bar = await lifecycle.processTick(102);
+      expect(rebounded.indicators?.rsiDivergence).toBe(divergence);
+      expect(rebounded.indicators?.rsiDivergence?.regular).toBe(strength);
+      expect(rebounded.indicators?.rsiDivergence?.originTrendLines).toHaveLength(1);
+      expect(divergence?.originTrendLines[0].function.getY(6)).toBeCloseTo(99);
+      expect(history[1].chart?.trendLines).toContain(replacement);
+      expect(replacement?.function.getY(6)).toBeCloseTo(90);
+      expect(rebounded.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.Buy, Signal.StopLoss]);
+      expect(rebounded.backtest.openPositionSize).toBe(0);
+    },
+  );
+
   it('deduplicates retained strategy signals before the real backtester opens positions', async () => {
     const lifecycle: LiveWorkerLifecycle = createLifecycle(new DuplicateBuyStrategy(), new Backtester());
     await lifecycle.initialize([createBar(0, 100)]);
@@ -425,6 +498,88 @@ describe('live worker lifecycle', () => {
     expect(continued.backtest.signals.find((signal) => signal.signal === Signal.Buy)?.price).toBe(70);
     expect(continued.backtest.openPositionSize).toBeCloseTo(95 / 70);
     expect(stepSetSignals).toHaveBeenCalledTimes(strategyCallsAtCompletion);
+  });
+
+  it('keeps mean-reversion buys and their size progression to once per bar', async () => {
+    const lifecycle: LiveWorkerLifecycle = createLifecycle(new MeanReversion(), new Backtester(), {
+      startStreak: 0,
+      threshold: 0.05,
+      profitBasedTrailingStopLoss: 0.5,
+    });
+
+    await lifecycle.initialize([createBar(0, 100)]);
+
+    const bought: Bar = await lifecycle.processTick(70);
+    expect(bought.backtest.signals).toHaveLength(1);
+    expect(bought.backtest.signals[0]).toMatchObject({ signal: Signal.Buy, size: 1, price: 70 });
+    expect(bought.backtest.openPositionSize).toBe(1);
+
+    for (const price of [70, 65, 60]) {
+      const tick: Bar = await lifecycle.processTick(price);
+      expect(tick.backtest.signals).toHaveLength(1);
+      expect(tick.backtest.signals[0]).toMatchObject({ signal: Signal.Buy, size: 1, price: 70 });
+      expect(tick.backtest.openPositionSize).toBeCloseTo(price / 70);
+    }
+
+    jest.spyOn(Date, 'now').mockReturnValue(120_000);
+    expect(lifecycle.finalizeBar()).toBe(bought);
+
+    const nextBuy: Bar = await lifecycle.processTick(60);
+    expect(nextBuy.backtest.signals).toHaveLength(1);
+    expect(nextBuy.backtest.signals[0]).toMatchObject({ signal: Signal.Buy, size: 2, price: 60 });
+    expect(nextBuy.backtest.openPositionSize).toBeCloseTo(60 / 70 + 2);
+
+    for (const price of [60, 55, 50]) {
+      const tick: Bar = await lifecycle.processTick(price);
+      expect(tick.backtest.signals).toHaveLength(1);
+      expect(tick.backtest.signals[0]).toMatchObject({ signal: Signal.Buy, size: 2, price: 60 });
+      expect(tick.backtest.openPositionSize).toBeCloseTo(price / 70 + (2 * price) / 60);
+    }
+  });
+
+  it.each([false, true])('retains the mean-reversion trailing peak and closes once (new bar before drop: %s)', async (newBarBeforeDrop) => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(120_000);
+
+    const lifecycle: LiveWorkerLifecycle = createLifecycle(new MeanReversion(), new Backtester(), {
+      startStreak: 0,
+      threshold: 0.05,
+      profitBasedTrailingStopLoss: 0.5,
+    });
+
+    await lifecycle.initialize([createBar(0, 100), createBar(60_000, 70)]);
+
+    for (const price of [78, 82, 81, 100, 99, 86]) {
+      const tick: Bar = await lifecycle.processTick(price);
+      expect(tick.backtest.signals).toEqual([]);
+      expect(tick.backtest.openPositionSize).toBeCloseTo(price / 70);
+    }
+
+    if (newBarBeforeDrop) {
+      now.mockReturnValue(180_000);
+      expect(lifecycle.finalizeBar()?.prices).toEqual({ open: 78, high: 100, low: 78, close: 86 });
+    }
+
+    const closed: Bar = await lifecycle.processTick(84);
+    expect(closed.backtest.signals).toHaveLength(1);
+    expect(closed.backtest.signals[0]).toMatchObject({ signal: Signal.Close, price: 84 });
+    expect(closed.backtest.openPositionSize).toBe(0);
+    expect(closed.backtest.profit).toBeCloseTo(0.2);
+
+    for (const price of [84, 60, 100]) {
+      const tick: Bar = await lifecycle.processTick(price);
+      expect(tick.backtest.signals).toHaveLength(1);
+      expect(tick.backtest.signals[0]).toMatchObject({ signal: Signal.Close, price: 84 });
+      expect(tick.backtest.openPositionSize).toBe(0);
+      expect(tick.backtest.profit).toBeCloseTo(0.2);
+    }
+
+    now.mockReturnValue(closed.times.open + 60_000);
+    expect(lifecycle.finalizeBar()).toBe(closed);
+
+    const restarted: Bar = await lifecycle.processTick(60);
+    expect(restarted.backtest.signals).toHaveLength(1);
+    expect(restarted.backtest.signals[0]).toMatchObject({ signal: Signal.Buy, size: 1, price: 60 });
+    expect(restarted.backtest.openPositionSize).toBe(1);
   });
 
   it('keeps a retained stop-loss applied after a later tick moves away from its trigger', async () => {
@@ -561,6 +716,14 @@ describe('live worker lifecycle', () => {
     expect(candidateSlopes).toEqual(incomingSlopes);
 
     jest.spyOn(Date, 'now').mockReturnValue(720_000);
+    lifecycle.finalizeBar();
+    await lifecycle.processTick(9);
+    await lifecycle.processTick(9);
+
+    expect(pendingCounts.slice(-2)).toEqual([remaining, remaining]);
+    expect(confirmedCounts.slice(-2)).toEqual([0, 0]);
+
+    jest.spyOn(Date, 'now').mockReturnValue(780_000);
     lifecycle.finalizeBar();
     await lifecycle.processTick(9);
     await lifecycle.processTick(9);

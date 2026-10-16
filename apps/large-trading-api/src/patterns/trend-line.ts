@@ -1,6 +1,15 @@
-﻿import Base from '../base';
-import { Bar, PivotPoint, PivotPointSide, Slope, TrendLine, TrendLinePosition, TrendLinesFromPivotPointsStepState, TrendLineStepState } from '@shared';
-import { LinearFunction } from '@shared';
+﻿import {
+  Bar,
+  LinearFunction,
+  PivotPoint,
+  PivotPointSide,
+  Slope,
+  TrendLine,
+  TrendLinePosition,
+  TrendLinesFromPivotPointsStepState,
+  TrendLineStepState,
+} from '@shared';
+import Base from '../base';
 
 export default class TrendLineController extends Base {
   private readonly bufferPercentage = 0.2;
@@ -10,7 +19,14 @@ export default class TrendLineController extends Base {
    * add trend lines to bars that connect uninterrupted highs/lows
    * difference to addTrendLinesFromPivotPoints: buffers are defined by slope of the trend line instead of simply horizontal (0)
    */
-  public stepTrendLines(bars: Bar[], state: TrendLineStepState, minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
+  public stepTrendLines(
+    bars: Bar[],
+    state: TrendLineStepState,
+    minLength: number,
+    maxLength: number,
+    againstTrend: boolean,
+    rightBuffer: boolean,
+  ): void {
     state.candidateTrendLines ??= [];
     state.confirmedTrendLines ??= [];
     state.pendingTrendLines ??= [];
@@ -18,7 +34,7 @@ export default class TrendLineController extends Base {
     const i: number = bars.length - 1;
 
     this.processRightBufferPending(bars, state);
-    state.candidateTrendLines = state.candidateTrendLines.filter(entry => i - entry.startIndex <= maxLength);
+    state.candidateTrendLines = state.candidateTrendLines.filter((entry) => i - entry.startIndex <= maxLength);
 
     for (const entry of state.candidateTrendLines) {
       const startIdx: number = entry.startIndex;
@@ -33,8 +49,10 @@ export default class TrendLineController extends Base {
       const slopeAbove: number = (endHigh - startHigh) / dx;
 
       if (dx >= minLength) {
-        const isValidBelow: boolean = slopeBelow <= entry.minSlopeBelow && (!againstTrend || this.isTrendLineAgainstTrend(startLow, endLow, TrendLinePosition.Below));
-        const isValidAbove: boolean = slopeAbove >= entry.maxSlopeAbove && (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endHigh, TrendLinePosition.Above));
+        const isValidBelow: boolean =
+          slopeBelow <= entry.minSlopeBelow && (!againstTrend || this.isTrendLineAgainstTrend(startLow, endLow, TrendLinePosition.Below));
+        const isValidAbove: boolean =
+          slopeAbove >= entry.maxSlopeAbove && (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endHigh, TrendLinePosition.Above));
 
         const candidates: [boolean, number, number, TrendLinePosition][] = [
           [isValidBelow, startLow, endLow, TrendLinePosition.Below],
@@ -42,6 +60,7 @@ export default class TrendLineController extends Base {
         ];
 
         candidates.forEach(([isValid, startPrice, endPrice, position]) => {
+          this.removeCrossedTrendLineInCurrentBar(bars, state, startIdx, i, position);
           if (!isValid) return;
           const linearFunction: LinearFunction = new LinearFunction(startIdx, startPrice, i, endPrice);
 
@@ -53,13 +72,12 @@ export default class TrendLineController extends Base {
               length: dx,
               slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
               position,
-              againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position)
+              againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position),
             };
             if (rightBuffer && Math.round(dx * this.bufferPercentage) > 0) {
               if (this.hasPendingTrendLine(state, trendLine)) return;
               state.pendingTrendLines!.push(trendLine);
             } else {
-              if (this.hasConfirmedTrendLine(state, trendLine)) return;
               this.confirmTrendLine(bars, state, trendLine);
             }
           }
@@ -76,20 +94,28 @@ export default class TrendLineController extends Base {
     }
   }
 
-  /** runs `space` bars behind the live bar, because a pivot point is only known once `space` bars have confirmed it */
-  public stepTrendLinesFromPivotPoints(bars: Bar[], state: TrendLinesFromPivotPointsStepState, space: number, minLength: number, maxLength: number, againstTrend: boolean, rightBuffer: boolean): void {
+  /** Uses a pivot only after all bars in its right buffer have closed. */
+  public stepTrendLinesFromPivotPoints(
+    bars: Bar[],
+    state: TrendLinesFromPivotPointsStepState,
+    space: number,
+    minLength: number,
+    maxLength: number,
+    againstTrend: boolean,
+    rightBuffer: boolean,
+  ): void {
     state.candidateTrendLines ??= [];
     state.confirmedTrendLines ??= [];
     state.pendingTrendLines ??= [];
 
-    const i: number = bars.length - 1 - space;
+    const i: number = bars.length - 2 - space;
     if (i < 0) return;
 
-    const endBar: Bar = bars[i];
-    const ppEnd: PivotPoint | undefined = endBar.chart?.pivotPoint;
+    const currentBar: Bar = bars[i];
+    const currentPivotPoint: PivotPoint | undefined = currentBar.chart?.pivotPoint;
 
     this.processRightBufferPending(bars, state);
-    state.candidateTrendLines = state.candidateTrendLines.filter(entry => i - entry.startIndex <= maxLength);
+    state.candidateTrendLines = state.candidateTrendLines.filter((entry) => i - entry.startIndex <= maxLength);
 
     for (const entry of state.candidateTrendLines) {
       const startIdx: number = entry.startIndex;
@@ -100,10 +126,10 @@ export default class TrendLineController extends Base {
       const isHigh: boolean = side === PivotPointSide.High;
       const startBar: Bar = bars[startIdx];
       const startPrice: number = isHigh ? startBar.prices.high : startBar.prices.low;
-      const endPrice: number = isHigh ? endBar.prices.high : endBar.prices.low;
+      const endPrice: number = isHigh ? currentBar.prices.high : currentBar.prices.low;
       const currentSlope: number = (endPrice - startPrice) / dx;
 
-      if (dx >= minLength && ppEnd?.side === side) {
+      if (dx >= minLength && currentPivotPoint?.side === side) {
         const position: TrendLinePosition = isHigh ? TrendLinePosition.Above : TrendLinePosition.Below;
         const isUninterrupted: boolean = isHigh ? currentSlope >= extremeSlope : currentSlope <= extremeSlope;
 
@@ -118,12 +144,18 @@ export default class TrendLineController extends Base {
               length: dx,
               slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
               position,
-              againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position)
+              againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position),
             };
             if (rightBuffer && Math.round(dx * this.bufferPercentage) > 0) {
-              this.checkRightBuffer(bars, state, trendLine);
+              if (this.rightBufferCleared(bars, trendLine)) {
+                const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
+                const live: number = bars.length - 1;
+
+                if (live > bufferEnd) {
+                  this.confirmTrendLine(bars, state, trendLine);
+                } else if (!this.hasPendingTrendLine(state, trendLine)) state.pendingTrendLines!.push(trendLine);
+              }
             } else {
-              if (this.hasConfirmedTrendLine(state, trendLine)) return;
               this.confirmTrendLine(bars, state, trendLine);
             }
           }
@@ -131,26 +163,28 @@ export default class TrendLineController extends Base {
       }
 
       // update after the check so that i is not included in the check at this step
-      entry.extremeSlope = isHigh
-        ? Math.max(extremeSlope, currentSlope)
-        : Math.min(extremeSlope, currentSlope);
+      entry.extremeSlope = isHigh ? Math.max(extremeSlope, currentSlope) : Math.min(extremeSlope, currentSlope);
     }
 
-    if (ppEnd) {
-      const isHigh: boolean = ppEnd.side === PivotPointSide.High;
+    if (currentPivotPoint) {
+      const isHigh: boolean = currentPivotPoint.side === PivotPointSide.High;
 
       if (!this.hasCandidateTrendLine(state, i)) {
-        state.candidateTrendLines.push({ startIndex: i, side: ppEnd.side, extremeSlope: isHigh ? -Infinity : Infinity });
+        state.candidateTrendLines.push({ startIndex: i, side: currentPivotPoint.side, extremeSlope: isHigh ? -Infinity : Infinity });
       }
     }
   }
 
-  public stepTrendLineBreakthroughs(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, rightBuffer: boolean): TrendLine[] {
+  public stepTrendLineBreakthroughs(
+    bars: Bar[],
+    state: TrendLineStepState | TrendLinesFromPivotPointsStepState,
+    rightBuffer: boolean,
+  ): TrendLine[] {
     state.confirmedTrendLines ??= [];
     const i: number = bars.length - 1;
     const newBreakthroughs: TrendLine[] = [];
 
-    state.confirmedTrendLines = state.confirmedTrendLines.filter(trendLine => {
+    state.confirmedTrendLines = state.confirmedTrendLines.filter((trendLine) => {
       if (trendLine.breakThroughIndex !== undefined) return false;
       if (i < trendLine.endIndex + Math.round(trendLine.length * this.breakthroughMaxLengthFactor)) return true;
       this.removeTrendLine(bars, trendLine); // past the max length for a breakthrough, remove it from the chart
@@ -179,14 +213,30 @@ export default class TrendLineController extends Base {
     return newBreakthroughs;
   }
 
+  // in case stepTrendLines is triggered multiple ticks per the same bar, a previous tick's trend line can be invalidated if the new tick's price crosses the line and thus must be removed
+  private removeCrossedTrendLineInCurrentBar(
+    bars: Bar[],
+    state: TrendLineStepState,
+    startIndex: number,
+    endIndex: number,
+    position: TrendLinePosition,
+  ): void {
+    const existingTrendLine: TrendLine | undefined = state.confirmedTrendLines!.find(
+      (line) => line.startIndex === startIndex && line.endIndex === endIndex && line.position === position,
+    );
+
+    if (!existingTrendLine || !this.crossesTrendLine(bars, existingTrendLine, endIndex)) return;
+    state.confirmedTrendLines = state.confirmedTrendLines!.filter((line) => line !== existingTrendLine);
+    this.removeTrendLine(bars, existingTrendLine);
+  }
+
   private crossesTrendLine(bars: Bar[], trendLine: TrendLine, index: number): boolean {
     const linePrice: number = trendLine.function.getY(index);
-    return trendLine.position === TrendLinePosition.Above
-      ? bars[index].prices.high > linePrice
-      : bars[index].prices.low < linePrice;
+    return trendLine.position === TrendLinePosition.Above ? bars[index].prices.high > linePrice : bars[index].prices.low < linePrice;
   }
 
   private confirmTrendLine(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): void {
+    if (this.hasConfirmedTrendLine(state, trendLine)) return;
     const startBar: Bar = bars[trendLine.startIndex];
     startBar.chart = startBar.chart || {};
     startBar.chart.trendLines = startBar.chart.trendLines || [];
@@ -194,57 +244,52 @@ export default class TrendLineController extends Base {
     state.confirmedTrendLines!.push(trendLine);
   }
 
-  private checkRightBuffer(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): void {
+  private rightBufferCleared(bars: Bar[], trendLine: TrendLine): boolean {
     const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
-    const live: number = bars.length - 1;
 
-    for (let j = trendLine.endIndex + 1; j <= Math.min(live, bufferEnd); j++) {
-      if (this.crossesTrendLine(bars, trendLine, j)) return;
+    for (let index = trendLine.endIndex + 1; index <= Math.min(bars.length - 1, bufferEnd); index++) {
+      if (this.crossesTrendLine(bars, trendLine, index)) return false;
     }
 
-    if (live >= bufferEnd) {
-      if (!this.hasConfirmedTrendLine(state, trendLine)) this.confirmTrendLine(bars, state, trendLine);
-    }
-    else if (!this.hasPendingTrendLine(state, trendLine)) state.pendingTrendLines!.push(trendLine);
+    return true;
   }
 
   private removeTrendLine(bars: Bar[], trendLine: TrendLine): void {
     const chart = bars[trendLine.startIndex]?.chart;
     if (!chart?.trendLines) return;
-    chart.trendLines = chart.trendLines.filter(existing => !this.isSameTrendLine(existing, trendLine));
+    chart.trendLines = chart.trendLines.filter((existing) => !this.isSameTrendLine(existing, trendLine));
   }
 
   private processRightBufferPending(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState): void {
     if (!state.pendingTrendLines?.length) return;
     const i = bars.length - 1;
 
-    state.pendingTrendLines = state.pendingTrendLines.filter(trendLine => {
-      const buffer = Math.round(trendLine.length * this.bufferPercentage);
-      if (this.crossesTrendLine(bars, trendLine, i)) return false;
+    state.pendingTrendLines = state.pendingTrendLines.filter((trendLine) => {
+      const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
 
-      if (i >= trendLine.endIndex + buffer) {
-        if (!this.hasConfirmedTrendLine(state, trendLine)) this.confirmTrendLine(bars, state, trendLine);
+      if (i > bufferEnd) {
+        this.confirmTrendLine(bars, state, trendLine);
         return false;
       }
 
-      return true;
+      return this.rightBufferCleared(bars, trendLine);
     });
   }
 
   private hasCandidateTrendLine(state: TrendLineStepState | TrendLinesFromPivotPointsStepState, startIndex: number): boolean {
-    return state.candidateTrendLines!.some(entry => entry.startIndex === startIndex);
+    return state.candidateTrendLines!.some((entry) => entry.startIndex === startIndex);
   }
 
   private hasPendingTrendLine(state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): boolean {
-    return state.pendingTrendLines!.some(existing => this.isSameTrendLine(existing, trendLine));
+    return state.pendingTrendLines!.some((existing) => this.isSameTrendLine(existing, trendLine));
   }
 
   private hasConfirmedTrendLine(state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): boolean {
-    return state.confirmedTrendLines!.some(existing => this.isSameTrendLine(existing, trendLine));
+    return state.confirmedTrendLines!.some((existing) => this.isSameTrendLine(existing, trendLine));
   }
 
   private hasTrendLineBreakthrough(bar: Bar, trendLine: TrendLine): boolean {
-    return bar.chart!.trendLineBreakthroughs!.some(existing => this.isSameTrendLine(existing, trendLine));
+    return bar.chart!.trendLineBreakthroughs!.some((existing) => this.isSameTrendLine(existing, trendLine));
   }
 
   private isSameTrendLine(first: TrendLine, second: TrendLine): boolean {
@@ -255,17 +300,26 @@ export default class TrendLineController extends Base {
     return first.startIndex === second.startIndex && first.position === second.position;
   }
 
-  private isLeftBufferUninterrupted(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition, linearFunction: LinearFunction): boolean {
+  private isLeftBufferUninterrupted(
+    bars: Bar[],
+    startIndex: number,
+    endIndex: number,
+    position: TrendLinePosition,
+    linearFunction: LinearFunction,
+  ): boolean {
     const length: number = endIndex - startIndex;
     const buffer: number = Math.round(length * this.bufferPercentage);
-    const crosses = (k: Bar, x: number) => position === TrendLinePosition.Above ? k.prices.high > linearFunction.getY(x) : k.prices.low < linearFunction.getY(x);
+    const crosses = (k: Bar, x: number) =>
+      position === TrendLinePosition.Above ? k.prices.high > linearFunction.getY(x) : k.prices.low < linearFunction.getY(x);
     return bars.slice(Math.max(0, startIndex - buffer + 1), startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
   }
 
   // if trend line is on opposite side of trend (e.g. trend is up, line is below price)
   private isTrendLineAgainstTrend(startPrice: number, endPrice: number, position: TrendLinePosition): boolean {
     const slope: Slope = startPrice < endPrice ? Slope.Ascending : Slope.Descending;
-    return (slope === Slope.Ascending && position === TrendLinePosition.Below) ||
-      (slope === Slope.Descending && position === TrendLinePosition.Above);
+    return (
+      (slope === Slope.Ascending && position === TrendLinePosition.Below) ||
+      (slope === Slope.Descending && position === TrendLinePosition.Above)
+    );
   }
 }
