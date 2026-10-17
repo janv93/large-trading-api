@@ -37,6 +37,23 @@ it('keeps a confirmed line when its endpoint tick repeats despite floating-point
   expect(state.confirmedTrendLines).toContain(confirmed);
 });
 
+it('accepts a line through a bar that lies exactly on it despite floating-point error', () => {
+  const controller = new TrendLineController();
+  const state: TrendLineStepState = {};
+  const bars: Bar[] = [];
+
+  for (const price of [120, 100, 100.1, 100.2]) {
+    bars.push(createBar(bars.length, price));
+    controller.stepTrendLines(bars, state, 2, 2, false, false);
+  }
+
+  const line: TrendLine | undefined = state.confirmedTrendLines!.find(
+    (line) => line.startIndex === 1 && line.endIndex === 3 && line.position === TrendLinePosition.Below,
+  );
+
+  expect(line).toBeDefined();
+});
+
 describe.each([
   { position: TrendLinePosition.Below, direction: 1 },
   { position: TrendLinePosition.Above, direction: -1 },

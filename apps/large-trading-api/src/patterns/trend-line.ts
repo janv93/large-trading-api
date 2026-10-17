@@ -3,6 +3,7 @@
   LinearFunction,
   PivotPoint,
   PivotPointSide,
+  roundToSignificantDigits,
   Slope,
   TrendLine,
   TrendLinePosition,
@@ -45,8 +46,8 @@ export default class TrendLineController extends Base {
       const startHigh: number = bars[startIdx].prices.high;
       const endLow: number = bars[i].prices.low;
       const endHigh: number = bars[i].prices.high;
-      const slopeBelow: number = (endLow - startLow) / dx;
-      const slopeAbove: number = (endHigh - startHigh) / dx;
+      const slopeBelow: number = roundToSignificantDigits((endLow - startLow) / dx, 10);
+      const slopeAbove: number = roundToSignificantDigits((endHigh - startHigh) / dx, 10);
 
       if (dx >= minLength) {
         const isValidBelow: boolean =
@@ -129,7 +130,7 @@ export default class TrendLineController extends Base {
       const startBar: Bar = bars[startIdx];
       const startPrice: number = isHigh ? startBar.prices.high : startBar.prices.low;
       const endPrice: number = isHigh ? currentBar.prices.high : currentBar.prices.low;
-      const currentSlope: number = (endPrice - startPrice) / dx;
+      const currentSlope: number = roundToSignificantDigits((endPrice - startPrice) / dx, 10);
 
       if (dx >= minLength && currentPivotPoint?.side === side) {
         const position: TrendLinePosition = isHigh ? TrendLinePosition.Above : TrendLinePosition.Below;

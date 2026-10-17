@@ -1,8 +1,13 @@
 ﻿import { cloneDeep } from 'lodash';
-import { BacktestSignal, Bar, Signal, Timeframe, TickerMetrics } from './interfaces/shared.interfaces';
+import { BacktestSignal, Bar, Signal, TickerMetrics, Timeframe } from './interfaces/shared.interfaces';
 
 export function createSignal(signal: Omit<BacktestSignal, 'uniqueIdentifier'> & { uniqueIdentifier: unknown }): BacktestSignal {
   return { ...signal, uniqueIdentifier: JSON.stringify(signal.uniqueIdentifier) };
+}
+
+// tiny floating-point errors break exact comparisons of computed values that are mathematically equal
+export function roundToSignificantDigits(value: number, digits: number): number {
+  return Number(value.toPrecision(digits));
 }
 
 export function timeframeToMilliseconds(timeframe: Timeframe): number {

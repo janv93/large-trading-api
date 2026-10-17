@@ -1,7 +1,4 @@
-// tiny floating-point errors break exact comparisons of computed values that are mathematically equal
-export function roundToSignificantDigits(value: number, digits: number): number {
-  return Number(value.toPrecision(digits));
-}
+import { roundToSignificantDigits } from './utils';
 
 export class LinearFunction {
   public m: number;
