@@ -8,6 +8,7 @@
   TrendLine,
   TrendLinePosition,
   TrendLinesFromPivotPointsStepState,
+  TrendLineStartEntry,
   TrendLineStepState,
 } from '@shared';
 import Base from '../base';
@@ -16,10 +17,6 @@ export default class TrendLineController extends Base {
   private readonly bufferPercentage = 0.2;
   private readonly breakthroughMaxLengthFactor = 1;
 
-  /**
-   * add trend lines to bars that connect uninterrupted highs/lows
-   * difference to addTrendLinesFromPivotPoints: buffers are defined by slope of the trend line instead of simply horizontal (0)
-   */
   public stepTrendLines(
     bars: Bar[],
     state: TrendLineStepState,
@@ -35,65 +32,17 @@ export default class TrendLineController extends Base {
     const i: number = bars.length - 1;
 
     this.processRightBufferPending(bars, state);
-    state.candidateTrendLines = state.candidateTrendLines.filter((entry) => i - entry.startIndex <= maxLength);
+    this.removeCrossedCurrentBarTrendLines(bars, state);
+    this.updateCandidateTrendLines(bars, state, maxLength);
 
     for (const candidate of state.candidateTrendLines) {
-      const startIdx: number = candidate.startIndex;
-      const dx: number = i - startIdx;
-      if (dx === 0) continue;
+      for (const position of [TrendLinePosition.Below, TrendLinePosition.Above]) {
+        const isSlopeUpdated: boolean = this.updateSlope(bars, candidate, position);
+        if (!isSlopeUpdated || i - candidate.startIndex < minLength) continue;
 
-      const startLow: number = bars[startIdx].prices.low;
-      const startHigh: number = bars[startIdx].prices.high;
-      const endLow: number = bars[i].prices.low;
-      const endHigh: number = bars[i].prices.high;
-      const slopeBelow: number = roundToSignificantDigits((endLow - startLow) / dx, 10);
-      const slopeAbove: number = roundToSignificantDigits((endHigh - startHigh) / dx, 10);
-
-      if (dx >= minLength) {
-        const isValidBelow: boolean =
-          slopeBelow <= candidate.minSlopeBelow &&
-          (!againstTrend || this.isTrendLineAgainstTrend(startLow, endLow, TrendLinePosition.Below));
-        const isValidAbove: boolean =
-          slopeAbove >= candidate.maxSlopeAbove &&
-          (!againstTrend || this.isTrendLineAgainstTrend(startHigh, endHigh, TrendLinePosition.Above));
-
-        const currentLines: [boolean, number, number, TrendLinePosition][] = [
-          [isValidBelow, startLow, endLow, TrendLinePosition.Below],
-          [isValidAbove, startHigh, endHigh, TrendLinePosition.Above],
-        ];
-
-        currentLines.forEach(([isValid, startPrice, endPrice, position]) => {
-          this.removeCrossedTrendLineInCurrentBar(bars, state, startIdx, i, position);
-          if (!isValid) return;
-          const linearFunction: LinearFunction = new LinearFunction(startIdx, startPrice, i, endPrice);
-
-          if (this.isLeftBufferUninterrupted(bars, startIdx, i, position, linearFunction)) {
-            const trendLine: TrendLine = {
-              function: linearFunction,
-              startIndex: startIdx,
-              endIndex: i,
-              length: dx,
-              slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
-              position,
-              againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position),
-            };
-            if (rightBuffer && Math.round(dx * this.bufferPercentage) > 0) {
-              if (this.hasPendingTrendLine(state, trendLine)) return;
-              state.pendingTrendLines!.push(trendLine);
-            } else {
-              this.confirmTrendLine(bars, state, trendLine);
-            }
-          }
-        });
+        const trendLine: TrendLine = this.createTrendLine(bars, candidate.startIndex, i, position);
+        if (this.isTrendLineAccepted(bars, trendLine, againstTrend)) this.addTrendLine(bars, state, trendLine, rightBuffer);
       }
-
-      // update after the check so that i is not included in the check at this step
-      candidate.minSlopeBelow = Math.min(candidate.minSlopeBelow, slopeBelow);
-      candidate.maxSlopeAbove = Math.max(candidate.maxSlopeAbove, slopeAbove);
-    }
-
-    if (!this.hasCandidateTrendLine(state, i)) {
-      state.candidateTrendLines.push({ startIndex: i, minSlopeBelow: Infinity, maxSlopeAbove: -Infinity });
     }
   }
 
@@ -216,26 +165,79 @@ export default class TrendLineController extends Base {
     return newBreakthroughs;
   }
 
-  // in case stepTrendLines is triggered multiple ticks per the same bar, a previous tick's trend line can be invalidated if the new tick's price crosses the line and thus must be removed
-  private removeCrossedTrendLineInCurrentBar(
-    bars: Bar[],
-    state: TrendLineStepState,
-    startIndex: number,
-    endIndex: number,
-    position: TrendLinePosition,
-  ): void {
-    const isCrossedCurrentLine = (line: TrendLine): boolean =>
-      line.startIndex === startIndex &&
-      line.endIndex === endIndex &&
-      line.position === position &&
-      this.crossesTrendLine(bars, line, endIndex);
+  // a later tick can cross a line that an earlier tick of the same bar created
+  private removeCrossedCurrentBarTrendLines(bars: Bar[], state: TrendLineStepState): void {
+    const i: number = bars.length - 1;
+    const isCrossed = (trendLine: TrendLine): boolean => trendLine.endIndex === i && this.crossesTrendLine(bars, trendLine, i);
+    state.pendingTrendLines = state.pendingTrendLines!.filter((trendLine) => !isCrossed(trendLine));
 
-    state.pendingTrendLines = state.pendingTrendLines!.filter((line) => !isCrossedCurrentLine(line));
-    const crossedTrendLine: TrendLine | undefined = state.confirmedTrendLines!.find(isCrossedCurrentLine);
-    if (!crossedTrendLine) return;
+    state.confirmedTrendLines = state.confirmedTrendLines!.filter((trendLine) => {
+      if (!isCrossed(trendLine)) return true;
+      this.removeTrendLine(bars, trendLine);
+      return false;
+    });
+  }
 
-    state.confirmedTrendLines = state.confirmedTrendLines!.filter((line) => line !== crossedTrendLine);
-    this.removeTrendLine(bars, crossedTrendLine);
+  // a line needs two bars, so the latest start is the bar before the current one
+  private updateCandidateTrendLines(bars: Bar[], state: TrendLineStepState, maxLength: number): void {
+    const i: number = bars.length - 1;
+
+    if (i > 0 && !this.hasCandidateTrendLine(state, i - 1)) {
+      state.candidateTrendLines!.push({ startIndex: i - 1, minSlopeBelow: Infinity, maxSlopeAbove: -Infinity });
+    }
+
+    state.candidateTrendLines = state.candidateTrendLines!.filter((candidate) => i - candidate.startIndex <= maxLength);
+  }
+
+  // the line to the current bar crosses no bar since its start exactly when its slope is the most extreme so far
+  private updateSlope(bars: Bar[], candidate: TrendLineStartEntry, position: TrendLinePosition): boolean {
+    const i: number = bars.length - 1;
+    const startPrice: number = this.getPrice(bars[candidate.startIndex], position);
+    const endPrice: number = this.getPrice(bars[i], position);
+    const slope: number = roundToSignificantDigits((endPrice - startPrice) / (i - candidate.startIndex), 10);
+
+    if (position === TrendLinePosition.Below) {
+      if (slope > candidate.minSlopeBelow) return false;
+      candidate.minSlopeBelow = slope;
+    } else {
+      if (slope < candidate.maxSlopeAbove) return false;
+      candidate.maxSlopeAbove = slope;
+    }
+
+    return true;
+  }
+
+  private createTrendLine(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition): TrendLine {
+    const startPrice: number = this.getPrice(bars[startIndex], position);
+    const endPrice: number = this.getPrice(bars[endIndex], position);
+    const linearFunction: LinearFunction = new LinearFunction(startIndex, startPrice, endIndex, endPrice);
+
+    return {
+      function: linearFunction,
+      startIndex,
+      endIndex,
+      length: endIndex - startIndex,
+      slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
+      position,
+      againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position),
+    };
+  }
+
+  private isTrendLineAccepted(bars: Bar[], trendLine: TrendLine, againstTrend: boolean): boolean {
+    if (againstTrend && !trendLine.againstTrend) return false;
+    return this.isLeftBufferUninterrupted(bars, trendLine.startIndex, trendLine.endIndex, trendLine.position, trendLine.function);
+  }
+
+  private addTrendLine(bars: Bar[], state: TrendLineStepState, trendLine: TrendLine, rightBuffer: boolean): void {
+    if (rightBuffer && Math.round(trendLine.length * this.bufferPercentage) > 0) {
+      if (!this.hasPendingTrendLine(state, trendLine)) state.pendingTrendLines!.push(trendLine);
+    } else {
+      this.confirmTrendLine(bars, state, trendLine);
+    }
+  }
+
+  private getPrice(bar: Bar, position: TrendLinePosition): number {
+    return position === TrendLinePosition.Below ? bar.prices.low : bar.prices.high;
   }
 
   private crossesTrendLine(bars: Bar[], trendLine: TrendLine, index: number): boolean {
