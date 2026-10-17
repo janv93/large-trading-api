@@ -4,10 +4,11 @@
   "description": "Backtesting API for cryptos, stocks etc.",
   "main": "index.js",
   "scripts": {
-    "start": "npm run remove:dist && tsc && tsc-alias && node --max-old-space-size=16384 dist/apps/large-trading-api/src/app.js",
+    "build": "npm run remove:dist && tsc --noEmit && node build.mjs",
+    "start": "npm run build && node --enable-source-maps --max-old-space-size=16384 ../../dist/apps/large-trading-api/app.js",
     "start:board": "rm -rf log && python -m webbrowser http://localhost:6006/ && tensorboard --logdir=log",
-    "test": "npm run remove:dist && jest",
-    "remove:dist": "rm -rf dist",
+    "test": "jest",
+    "remove:dist": "rm -rf ../../dist/apps/large-trading-api",
     "lint": "npx eslint \"**/*.ts\"",
     "lint:fix": "npx eslint --fix \"**/*.ts\""
   },
@@ -51,7 +52,7 @@
     "@swc/core": "^1.15.47",
     "@swc/jest": "^0.2.39",
     "@types/node": "^26.2.0",
-    "jest": "^30.4.2",
-    "tsc-alias": "^1.8.17"
+    "esbuild": "^0.28.2",
+    "jest": "^30.4.2"
   }
 }
