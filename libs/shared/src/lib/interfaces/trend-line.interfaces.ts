@@ -16,6 +16,7 @@ export interface TrendLinesFromPivotPointsStepState {
   candidateTrendLines?: TrendLinesFromPivotPointsStartEntry[];
   confirmedTrendLines?: TrendLine[];
   pendingTrendLines?: TrendLine[];
+  lastProcessedIndex?: number;
 }
 
 export interface TrendLinesFromPivotPointsStartEntry {

@@ -7,6 +7,7 @@
   Slope,
   TrendLine,
   TrendLinePosition,
+  TrendLinesFromPivotPointsStartEntry,
   TrendLinesFromPivotPointsStepState,
   TrendLineStartEntry,
   TrendLineStepState,
@@ -61,69 +62,28 @@ export default class TrendLineController extends Base {
     state.pendingTrendLines ??= [];
 
     const i: number = bars.length - 2 - space;
-    if (i < 0) return;
+    // a repeated tick brings no new closed bar, and processing the same bar again would recreate lines broken in the meantime
+    if (i < 0 || i === state.lastProcessedIndex) return;
 
+    state.lastProcessedIndex = i;
     const lastClosedIndex: number = bars.length - 2;
-    const currentBar: Bar = bars[i];
-    const currentPivotPoint: PivotPoint | undefined = currentBar.chart?.pivotPoint;
+    const pivotPoint: PivotPoint | undefined = bars[i].chart?.pivotPoint;
 
     this.processRightBufferPending(bars, state, lastClosedIndex);
-    state.candidateTrendLines = state.candidateTrendLines.filter((entry) => i - entry.startIndex <= maxLength);
+    state.candidateTrendLines = state.candidateTrendLines.filter((candidate) => i - candidate.startIndex <= maxLength);
 
-    for (const entry of state.candidateTrendLines) {
-      const startIdx: number = entry.startIndex;
-      const { side, extremeSlope } = entry;
-      const dx: number = i - startIdx;
-      if (dx === 0) continue;
+    for (const candidate of state.candidateTrendLines) {
+      const position: TrendLinePosition = candidate.side === PivotPointSide.High ? TrendLinePosition.Above : TrendLinePosition.Below;
+      const isSlopeUpdated: boolean = this.updatePivotSlope(bars, candidate, i, position);
+      if (!isSlopeUpdated || i - candidate.startIndex < minLength || pivotPoint?.side !== candidate.side) continue;
 
-      const isHigh: boolean = side === PivotPointSide.High;
-      const startBar: Bar = bars[startIdx];
-      const startPrice: number = isHigh ? startBar.prices.high : startBar.prices.low;
-      const endPrice: number = isHigh ? currentBar.prices.high : currentBar.prices.low;
-      const currentSlope: number = roundToSignificantDigits((endPrice - startPrice) / dx, 10);
-
-      if (dx >= minLength && currentPivotPoint?.side === side) {
-        const position: TrendLinePosition = isHigh ? TrendLinePosition.Above : TrendLinePosition.Below;
-        const isUninterrupted: boolean = isHigh ? currentSlope >= extremeSlope : currentSlope <= extremeSlope;
-
-        if (isUninterrupted && (!againstTrend || this.isTrendLineAgainstTrend(startPrice, endPrice, position))) {
-          const linearFunction: LinearFunction = new LinearFunction(startIdx, startPrice, i, endPrice);
-
-          if (this.isLeftBufferUninterrupted(bars, startIdx, i, position, linearFunction)) {
-            const trendLine: TrendLine = {
-              function: linearFunction,
-              startIndex: startIdx,
-              endIndex: i,
-              length: dx,
-              slope: linearFunction.m > 0 ? Slope.Ascending : Slope.Descending,
-              position,
-              againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position),
-            };
-            if (rightBuffer && Math.round(dx * this.bufferPercentage) > 0) {
-              if (this.rightBufferCleared(bars, trendLine, lastClosedIndex)) {
-                const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
-
-                if (lastClosedIndex >= bufferEnd) {
-                  this.confirmTrendLine(bars, state, trendLine);
-                } else if (!this.hasPendingTrendLine(state, trendLine)) state.pendingTrendLines!.push(trendLine);
-              }
-            } else {
-              this.confirmTrendLine(bars, state, trendLine);
-            }
-          }
-        }
-      }
-
-      // update after the check so that i is not included in the check at this step
-      entry.extremeSlope = isHigh ? Math.max(extremeSlope, currentSlope) : Math.min(extremeSlope, currentSlope);
+      const trendLine: TrendLine = this.createTrendLine(bars, candidate.startIndex, i, position);
+      if (this.isTrendLineAccepted(bars, trendLine, againstTrend)) this.addPivotTrendLine(bars, state, trendLine, rightBuffer);
     }
 
-    if (currentPivotPoint) {
-      const isHigh: boolean = currentPivotPoint.side === PivotPointSide.High;
-
-      if (!this.hasCandidateTrendLine(state, i)) {
-        state.candidateTrendLines.push({ startIndex: i, side: currentPivotPoint.side, extremeSlope: isHigh ? -Infinity : Infinity });
-      }
+    if (pivotPoint) {
+      const extremeSlope: number = pivotPoint.side === PivotPointSide.High ? -Infinity : Infinity;
+      state.candidateTrendLines.push({ startIndex: i, side: pivotPoint.side, extremeSlope });
     }
   }
 
@@ -191,10 +151,7 @@ export default class TrendLineController extends Base {
 
   // the line to the current bar crosses no bar since its start exactly when its slope is the most extreme so far
   private updateSlope(bars: Bar[], candidate: TrendLineStartEntry, position: TrendLinePosition): boolean {
-    const i: number = bars.length - 1;
-    const startPrice: number = this.getPrice(bars[candidate.startIndex], position);
-    const endPrice: number = this.getPrice(bars[i], position);
-    const slope: number = roundToSignificantDigits((endPrice - startPrice) / (i - candidate.startIndex), 10);
+    const slope: number = this.calcSlope(bars, candidate.startIndex, bars.length - 1, position);
 
     if (position === TrendLinePosition.Below) {
       if (slope > candidate.minSlopeBelow) return false;
@@ -205,6 +162,26 @@ export default class TrendLineController extends Base {
     }
 
     return true;
+  }
+
+  // same rule as updateSlope, for a pivot that only tracks its own side
+  private updatePivotSlope(
+    bars: Bar[],
+    candidate: TrendLinesFromPivotPointsStartEntry,
+    endIndex: number,
+    position: TrendLinePosition,
+  ): boolean {
+    const slope: number = this.calcSlope(bars, candidate.startIndex, endIndex, position);
+    const isSlopeUpdated: boolean =
+      position === TrendLinePosition.Above ? slope >= candidate.extremeSlope : slope <= candidate.extremeSlope;
+    if (isSlopeUpdated) candidate.extremeSlope = slope;
+    return isSlopeUpdated;
+  }
+
+  private calcSlope(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition): number {
+    const startPrice: number = this.getPrice(bars[startIndex], position);
+    const endPrice: number = this.getPrice(bars[endIndex], position);
+    return roundToSignificantDigits((endPrice - startPrice) / (endIndex - startIndex), 10);
   }
 
   private createTrendLine(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition): TrendLine {
@@ -236,6 +213,18 @@ export default class TrendLineController extends Base {
     }
   }
 
+  // a pivot line ends in the past, so part of its right buffer may already have closed
+  private addPivotTrendLine(bars: Bar[], state: TrendLinesFromPivotPointsStepState, trendLine: TrendLine, rightBuffer: boolean): void {
+    const hasRightBuffer: boolean = rightBuffer && Math.round(trendLine.length * this.bufferPercentage) > 0;
+    if (hasRightBuffer && !this.isRightBufferCleared(bars, trendLine, bars.length - 2)) return;
+
+    if (!hasRightBuffer || this.isRightBufferClosed(bars, trendLine)) {
+      this.confirmTrendLine(bars, state, trendLine);
+    } else {
+      state.pendingTrendLines!.push(trendLine);
+    }
+  }
+
   private getPrice(bar: Bar, position: TrendLinePosition): number {
     return position === TrendLinePosition.Below ? bar.prices.low : bar.prices.high;
   }
@@ -254,7 +243,7 @@ export default class TrendLineController extends Base {
     state.confirmedTrendLines!.push(trendLine);
   }
 
-  private rightBufferCleared(bars: Bar[], trendLine: TrendLine, lastIndex: number): boolean {
+  private isRightBufferCleared(bars: Bar[], trendLine: TrendLine, lastIndex: number): boolean {
     const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
 
     for (let index = trendLine.endIndex + 1; index <= Math.min(lastIndex, bufferEnd); index++) {
@@ -264,20 +253,24 @@ export default class TrendLineController extends Base {
     return true;
   }
 
+  private isRightBufferClosed(bars: Bar[], trendLine: TrendLine): boolean {
+    const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
+    return bars.length - 2 >= bufferEnd;
+  }
+
   private removeTrendLine(bars: Bar[], trendLine: TrendLine): void {
     const chart = bars[trendLine.startIndex]?.chart;
     if (!chart?.trendLines) return;
     chart.trendLines = chart.trendLines.filter((existing) => !this.isSameTrendLine(existing, trendLine));
   }
 
-  // lastIndex is the newest bar allowed to drop a line; a line is confirmed once all of its right buffer bars have closed
+  // lastIndex is the newest bar allowed to drop a line
   private processRightBufferPending(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, lastIndex: number): void {
     if (!state.pendingTrendLines?.length) return;
 
     state.pendingTrendLines = state.pendingTrendLines.filter((trendLine) => {
-      const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
-      if (!this.rightBufferCleared(bars, trendLine, lastIndex)) return false;
-      if (bars.length - 2 < bufferEnd) return true;
+      if (!this.isRightBufferCleared(bars, trendLine, lastIndex)) return false;
+      if (!this.isRightBufferClosed(bars, trendLine)) return true;
 
       this.confirmTrendLine(bars, state, trendLine);
       return false;

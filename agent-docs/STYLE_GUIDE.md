@@ -26,6 +26,7 @@
   ```
 
 - Use clear, concise variable names; avoid unclear abbreviations such as `ctor` for `constructor`.
+- Name every function that returns a boolean after what it returns, in a form such as `is...` or `has...`, for example `isRightBufferClosed`. Never return a boolean from a function named after an action, such as `settleRightBuffer`; separate the action from the check instead.
 - Never store a helper value used in only one place, such as a fixed array to iterate over, as a class field. Write it inline where it is used.
 - Never create a variable solely to shorten syntax. Access the existing value directly; for example, use `this.activeState` rather than introducing `const activeState = this.activeState` only as an alias.
 - Do not inline collection transformations such as `filter` or `map` in loop headers. Assign the result to a descriptive variable before the loop.

@@ -175,4 +175,51 @@ describe.each([
     expect(run(false)).toHaveLength(crossed ? 0 : 1);
     expect(run(true)).toHaveLength(crossed ? 0 : 1);
   });
+
+  it('does not recreate a line that a tick of the ongoing bar broke', () => {
+    const reflectPrice = (price: number): number => 10 + direction * (price - 10);
+    const ticks: number[] = [10.5, 9, 9].map(reflectPrice);
+    const isLine = (line: TrendLine): boolean => line.startIndex === 2 && line.endIndex === 10;
+
+    const run = (live: boolean): number[] => {
+      const controller = new PivotPointController();
+      const trendLineController = new TrendLineController();
+      const state: TrendLinesFromPivotPointsStepState = {};
+      const bars: Bar[] = [];
+      let breakthroughCount: number = 0;
+
+      const step = (): void => {
+        controller.stepPivotPoints(bars, 1);
+        trendLineController.stepTrendLinesFromPivotPoints(bars, state, 1, 8, 8, false, false);
+        breakthroughCount += trendLineController.stepTrendLineBreakthroughs(bars, state, false).filter(isLine).length;
+      };
+
+      for (const price of [9, 9, 10, 9, 9, 9, 9, 9, 9, 9, 10, 9]) {
+        bars.push(createBar(bars.length, reflectPrice(price)));
+        step();
+      }
+
+      bars.push(createBar(bars.length, ticks[0]));
+
+      if (live) {
+        for (const price of ticks) {
+          bars[12].prices = { open: price, high: price, low: price, close: price };
+          step();
+        }
+      }
+
+      bars[12].prices = { open: ticks[0], high: Math.max(...ticks), low: Math.min(...ticks), close: ticks.at(-1)! };
+      if (!live) step();
+
+      for (const price of [9, 11]) {
+        bars.push(createBar(bars.length, reflectPrice(price)));
+        step();
+      }
+
+      return [bars[2].chart!.trendLines!.filter(isLine).length, state.confirmedTrendLines!.filter(isLine).length, breakthroughCount];
+    };
+
+    expect(run(false)).toEqual([1, 0, 1]);
+    expect(run(true)).toEqual([1, 0, 1]);
+  });
 });
