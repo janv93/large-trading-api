@@ -10,7 +10,7 @@ import {
   TrendLinesFromPivotPointsStepState,
 } from '@shared';
 import PivotPointController from './pivot-point';
-import TrendLineController from './trend-line';
+import PivotTrendLineController from './trend-line/pivot-trend-line';
 
 function createBar(index: number, price: number): Bar {
   return {
@@ -104,14 +104,14 @@ describe.each([
 
   it('connects newly confirmed pivots without waiting for another bar', () => {
     const controller = new PivotPointController();
-    const trendLineController = new TrendLineController();
+    const trendLineController = new PivotTrendLineController();
     const state: TrendLinesFromPivotPointsStepState = {};
     const bars: Bar[] = [];
     const reflectPrice = (price: number): number => 10 + direction * (price - 10);
 
     const step = (): void => {
       controller.stepPivotPoints(bars, 1);
-      trendLineController.stepTrendLinesFromPivotPoints(bars, state, 1, 2, 2, false, false);
+      trendLineController.stepTrendLines(bars, state, 1, 2, 2, false, false);
     };
 
     for (const price of [8, 10, 9, 11, 10]) {
@@ -141,13 +141,13 @@ describe.each([
 
     const run = (live: boolean): TrendLine[] => {
       const controller = new PivotPointController();
-      const trendLineController = new TrendLineController();
+      const trendLineController = new PivotTrendLineController();
       const state: TrendLinesFromPivotPointsStepState = {};
       const bars: Bar[] = [];
 
       const step = (): void => {
         controller.stepPivotPoints(bars, 1);
-        trendLineController.stepTrendLinesFromPivotPoints(bars, state, 1, 8, 8, false, true);
+        trendLineController.stepTrendLines(bars, state, 1, 8, 8, false, true);
       };
 
       for (const price of [9, 9, 10, 9, 9, 9, 9, 9, 9, 9, 10, 9]) {
@@ -183,14 +183,14 @@ describe.each([
 
     const run = (live: boolean): number[] => {
       const controller = new PivotPointController();
-      const trendLineController = new TrendLineController();
+      const trendLineController = new PivotTrendLineController();
       const state: TrendLinesFromPivotPointsStepState = {};
       const bars: Bar[] = [];
       let breakthroughCount: number = 0;
 
       const step = (): void => {
         controller.stepPivotPoints(bars, 1);
-        trendLineController.stepTrendLinesFromPivotPoints(bars, state, 1, 8, 8, false, false);
+        trendLineController.stepTrendLines(bars, state, 1, 8, 8, false, false);
         breakthroughCount += trendLineController.stepTrendLineBreakthroughs(bars, state, false).filter(isLine).length;
       };
 

@@ -13,7 +13,7 @@ import {
   createSignal,
   roundToSignificantDigits,
 } from '@shared';
-import TrendLineController from '../../patterns/trend-line';
+import TrendLineController from '../../patterns/trend-line/trend-line';
 import MeanReversion from '../../strategies/mean-reversion';
 import RsiDivergence from '../../strategies/rsi-divergence';
 import Backtester from '../backtester/backtester';

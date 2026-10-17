@@ -1,15 +1,6 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
-import {
-  Bar,
-  Exchange,
-  LinearFunction,
-  Signal,
-  Slope,
-  Timeframe,
-  TrendLine,
-  TrendLinePosition
-} from '@shared';
-import TrendLineController from '../patterns/trend-line';
+import { Bar, Exchange, LinearFunction, Signal, Slope, Timeframe, TrendLine, TrendLinePosition } from '@shared';
+import TrendLineController from '../patterns/trend-line/trend-line';
 import TrendLineBreakthrough from './trend-line';
 
 function createBar(openTime: number, price: number): Bar {
@@ -20,7 +11,7 @@ function createBar(openTime: number, price: number): Bar {
     times: { open: openTime },
     prices: { open: price, high: price, low: price, close: price },
     volume: 0,
-    backtest: { signals: [] }
+    backtest: { signals: [] },
   };
 }
 
@@ -39,14 +30,12 @@ describe('trend-line breakthrough strategy', () => {
       breakThroughIndex: 1,
       length: 2,
       slope: Slope.Ascending,
-      position: TrendLinePosition.Above
+      position: TrendLinePosition.Above,
     };
 
     bars[1].chart = { trendLineBreakthroughs: [trendLine] };
     jest.spyOn(TrendLineController.prototype, 'stepTrendLines').mockImplementation(() => undefined);
-    jest.spyOn(TrendLineController.prototype, 'stepTrendLineBreakthroughs')
-      .mockReturnValueOnce([trendLine])
-      .mockReturnValueOnce([]);
+    jest.spyOn(TrendLineController.prototype, 'stepTrendLineBreakthroughs').mockReturnValueOnce([trendLine]).mockReturnValueOnce([]);
     const strategy = new TrendLineBreakthrough();
     const state = {};
 
@@ -55,9 +44,11 @@ describe('trend-line breakthrough strategy', () => {
 
     expect(bars[1].backtest.signals).toHaveLength(1);
 
-    expect(bars[1].backtest.signals[0]).toEqual(expect.objectContaining({
-      signal: Signal.Buy
-    }));
+    expect(bars[1].backtest.signals[0]).toEqual(
+      expect.objectContaining({
+        signal: Signal.Buy,
+      }),
+    );
 
     expect(bars[1].backtest.signals[0]).not.toHaveProperty('uniqueIdentifier');
   });

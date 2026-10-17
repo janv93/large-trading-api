@@ -1,7 +1,6 @@
-﻿import { BacktestSignal, Bar, Signal, TrendLine, TrendLinePosition } from '@shared';
+﻿import { BacktestSignal, Bar, calcAverageChangeInPercent, Signal, TrendLine, TrendLinePosition } from '@shared';
 import Base from '../base';
-import { calcAverageChangeInPercent } from '@shared';
-import TrendLineController from '../patterns/trend-line';
+import TrendLineController from '../patterns/trend-line/trend-line';
 
 export default class TrendLineBreakthrough extends Base {
   private trendLineController = new TrendLineController();
@@ -22,7 +21,7 @@ export default class TrendLineBreakthrough extends Base {
       const position: TrendLinePosition = trendLine.position;
       const score: number = length / 100;
       const breakthoughPrice: number = trendLine.function.getY(trendLine.breakThroughIndex!);
-      const trendLineCloses: number[] = bars.slice(trendLine.startIndex, trendLine.endIndex).map(b => b.prices.close);
+      const trendLineCloses: number[] = bars.slice(trendLine.startIndex, trendLine.endIndex).map((b) => b.prices.close);
       const averagePriceChange: number = calcAverageChangeInPercent(trendLineCloses);
       const tp: number = averagePriceChange * 5;
       const sl: number = averagePriceChange * 2;
@@ -35,45 +34,67 @@ export default class TrendLineBreakthrough extends Base {
     });
   }
 
-  private openBuyPosition(bar: Bar, trendLine: TrendLine, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+  private openBuyPosition(
+    bar: Bar,
+    trendLine: TrendLine,
+    score: number,
+    breakthoughPrice: number,
+    tp: number,
+    sl: number,
+    percentOfProfit: number,
+  ): void {
     const signals: BacktestSignal[] = bar.backtest.signals;
 
     signals.push({
       signal: Signal.Buy,
       size: score,
       price: breakthoughPrice,
-      positionCloseTrigger: this.strategy === 'tpSl' ? {
-        tpSl: {
-          stopLoss: sl,
-          takeProfit: tp
-        }
-      } : {
-        tSl: {
-          stopLoss: sl,
-          percentOfProfit
-        }
-      }
+      positionCloseTrigger:
+        this.strategy === 'tpSl'
+          ? {
+              tpSl: {
+                stopLoss: sl,
+                takeProfit: tp,
+              },
+            }
+          : {
+              tSl: {
+                stopLoss: sl,
+                percentOfProfit,
+              },
+            },
     });
   }
 
-  private openSellPosition(bar: Bar, trendLine: TrendLine, score: number, breakthoughPrice: number, tp: number, sl: number, percentOfProfit: number): void {
+  private openSellPosition(
+    bar: Bar,
+    trendLine: TrendLine,
+    score: number,
+    breakthoughPrice: number,
+    tp: number,
+    sl: number,
+    percentOfProfit: number,
+  ): void {
     const signals: BacktestSignal[] = bar.backtest.signals;
 
     signals.push({
       signal: Signal.Sell,
       size: score,
       price: breakthoughPrice,
-      positionCloseTrigger: this.strategy === 'tpSl' ? {
-        tpSl: {
-          stopLoss: sl,
-          takeProfit: tp
-        }
-      } : {
-        tSl: {
-          stopLoss: sl,
-          percentOfProfit
-        }
-      }
+      positionCloseTrigger:
+        this.strategy === 'tpSl'
+          ? {
+              tpSl: {
+                stopLoss: sl,
+                takeProfit: tp,
+              },
+            }
+          : {
+              tSl: {
+                stopLoss: sl,
+                percentOfProfit,
+              },
+            },
     });
   }
 }
