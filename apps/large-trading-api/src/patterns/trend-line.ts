@@ -31,7 +31,7 @@ export default class TrendLineController extends Base {
 
     const i: number = bars.length - 1;
 
-    this.processRightBufferPending(bars, state);
+    this.processRightBufferPending(bars, state, i);
     this.removeCrossedCurrentBarTrendLines(bars, state);
     this.updateCandidateTrendLines(bars, state, maxLength);
 
@@ -46,7 +46,7 @@ export default class TrendLineController extends Base {
     }
   }
 
-  /** Uses a pivot only after all bars in its right buffer have closed. */
+  /** Uses closed bars only, because a pivot is known only once the bars to its right have closed. */
   public stepTrendLinesFromPivotPoints(
     bars: Bar[],
     state: TrendLinesFromPivotPointsStepState,
@@ -63,10 +63,11 @@ export default class TrendLineController extends Base {
     const i: number = bars.length - 2 - space;
     if (i < 0) return;
 
+    const lastClosedIndex: number = bars.length - 2;
     const currentBar: Bar = bars[i];
     const currentPivotPoint: PivotPoint | undefined = currentBar.chart?.pivotPoint;
 
-    this.processRightBufferPending(bars, state);
+    this.processRightBufferPending(bars, state, lastClosedIndex);
     state.candidateTrendLines = state.candidateTrendLines.filter((entry) => i - entry.startIndex <= maxLength);
 
     for (const entry of state.candidateTrendLines) {
@@ -99,11 +100,10 @@ export default class TrendLineController extends Base {
               againstTrend: this.isTrendLineAgainstTrend(startPrice, endPrice, position),
             };
             if (rightBuffer && Math.round(dx * this.bufferPercentage) > 0) {
-              if (this.rightBufferCleared(bars, trendLine)) {
+              if (this.rightBufferCleared(bars, trendLine, lastClosedIndex)) {
                 const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
-                const live: number = bars.length - 1;
 
-                if (live > bufferEnd) {
+                if (lastClosedIndex >= bufferEnd) {
                   this.confirmTrendLine(bars, state, trendLine);
                 } else if (!this.hasPendingTrendLine(state, trendLine)) state.pendingTrendLines!.push(trendLine);
               }
@@ -254,10 +254,10 @@ export default class TrendLineController extends Base {
     state.confirmedTrendLines!.push(trendLine);
   }
 
-  private rightBufferCleared(bars: Bar[], trendLine: TrendLine): boolean {
+  private rightBufferCleared(bars: Bar[], trendLine: TrendLine, lastIndex: number): boolean {
     const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
 
-    for (let index = trendLine.endIndex + 1; index <= Math.min(bars.length - 1, bufferEnd); index++) {
+    for (let index = trendLine.endIndex + 1; index <= Math.min(lastIndex, bufferEnd); index++) {
       if (this.crossesTrendLine(bars, trendLine, index)) return false;
     }
 
@@ -270,19 +270,17 @@ export default class TrendLineController extends Base {
     chart.trendLines = chart.trendLines.filter((existing) => !this.isSameTrendLine(existing, trendLine));
   }
 
-  private processRightBufferPending(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState): void {
+  // lastIndex is the newest bar allowed to drop a line; a line is confirmed once all of its right buffer bars have closed
+  private processRightBufferPending(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, lastIndex: number): void {
     if (!state.pendingTrendLines?.length) return;
-    const i = bars.length - 1;
 
     state.pendingTrendLines = state.pendingTrendLines.filter((trendLine) => {
       const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
+      if (!this.rightBufferCleared(bars, trendLine, lastIndex)) return false;
+      if (bars.length - 2 < bufferEnd) return true;
 
-      if (i > bufferEnd) {
-        this.confirmTrendLine(bars, state, trendLine);
-        return false;
-      }
-
-      return this.rightBufferCleared(bars, trendLine);
+      this.confirmTrendLine(bars, state, trendLine);
+      return false;
     });
   }
 

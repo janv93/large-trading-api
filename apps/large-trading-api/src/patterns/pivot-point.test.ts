@@ -5,6 +5,7 @@ import {
   MarketStructureState,
   PivotPointSide,
   Timeframe,
+  TrendLine,
   TrendLinePosition,
   TrendLinesFromPivotPointsStepState,
 } from '@shared';
@@ -131,5 +132,47 @@ describe.each([
       position: side === PivotPointSide.High ? TrendLinePosition.Above : TrendLinePosition.Below,
     });
     expect(bars[1].chart?.trendLines).toContain(state.confirmedTrendLines![0]);
+  });
+
+  it.each([false, true])('confirms the same lines live as in a backtest, with a buffer tick crossing: %s', (crossed) => {
+    const reflectPrice = (price: number): number => 10 + direction * (price - 10);
+    const bufferTicks: number[] = (crossed ? [9, 10.5, 9] : [9, 9.5, 9]).map(reflectPrice);
+    const position: TrendLinePosition = side === PivotPointSide.High ? TrendLinePosition.Above : TrendLinePosition.Below;
+
+    const run = (live: boolean): TrendLine[] => {
+      const controller = new PivotPointController();
+      const trendLineController = new TrendLineController();
+      const state: TrendLinesFromPivotPointsStepState = {};
+      const bars: Bar[] = [];
+
+      const step = (): void => {
+        controller.stepPivotPoints(bars, 1);
+        trendLineController.stepTrendLinesFromPivotPoints(bars, state, 1, 8, 8, false, true);
+      };
+
+      for (const price of [9, 9, 10, 9, 9, 9, 9, 9, 9, 9, 10, 9]) {
+        bars.push(createBar(bars.length, reflectPrice(price)));
+        step();
+      }
+
+      bars.push(createBar(bars.length, bufferTicks[0]));
+
+      if (live) {
+        for (const price of bufferTicks) {
+          bars[12].prices = { open: price, high: price, low: price, close: price };
+          step();
+        }
+      }
+
+      bars[12].prices = { open: bufferTicks[0], high: Math.max(...bufferTicks), low: Math.min(...bufferTicks), close: bufferTicks.at(-1)! };
+      if (!live) step();
+      bars.push(createBar(bars.length, reflectPrice(9)));
+      step();
+
+      return state.confirmedTrendLines!.filter((line) => line.startIndex === 2 && line.endIndex === 10 && line.position === position);
+    };
+
+    expect(run(false)).toHaveLength(crossed ? 0 : 1);
+    expect(run(true)).toHaveLength(crossed ? 0 : 1);
   });
 });
