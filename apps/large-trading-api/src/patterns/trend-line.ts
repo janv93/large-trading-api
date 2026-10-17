@@ -223,13 +223,18 @@ export default class TrendLineController extends Base {
     endIndex: number,
     position: TrendLinePosition,
   ): void {
-    const existingTrendLine: TrendLine | undefined = state.confirmedTrendLines!.find(
-      (line) => line.startIndex === startIndex && line.endIndex === endIndex && line.position === position,
-    );
+    const isCrossedCurrentLine = (line: TrendLine): boolean =>
+      line.startIndex === startIndex &&
+      line.endIndex === endIndex &&
+      line.position === position &&
+      this.crossesTrendLine(bars, line, endIndex);
 
-    if (!existingTrendLine || !this.crossesTrendLine(bars, existingTrendLine, endIndex)) return;
-    state.confirmedTrendLines = state.confirmedTrendLines!.filter((line) => line !== existingTrendLine);
-    this.removeTrendLine(bars, existingTrendLine);
+    state.pendingTrendLines = state.pendingTrendLines!.filter((line) => !isCrossedCurrentLine(line));
+    const crossedTrendLine: TrendLine | undefined = state.confirmedTrendLines!.find(isCrossedCurrentLine);
+    if (!crossedTrendLine) return;
+
+    state.confirmedTrendLines = state.confirmedTrendLines!.filter((line) => line !== crossedTrendLine);
+    this.removeTrendLine(bars, crossedTrendLine);
   }
 
   private crossesTrendLine(bars: Bar[], trendLine: TrendLine, index: number): boolean {
@@ -311,17 +316,15 @@ export default class TrendLineController extends Base {
   ): boolean {
     const length: number = endIndex - startIndex;
     const buffer: number = Math.round(length * this.bufferPercentage);
+    if (startIndex < buffer) return false;
+
     const crosses = (k: Bar, x: number) =>
       position === TrendLinePosition.Above ? k.prices.high > linearFunction.getY(x) : k.prices.low < linearFunction.getY(x);
-    return bars.slice(Math.max(0, startIndex - buffer + 1), startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
+    return bars.slice(startIndex - buffer, startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
   }
 
   // if trend line is on opposite side of trend (e.g. trend is up, line is below price)
   private isTrendLineAgainstTrend(startPrice: number, endPrice: number, position: TrendLinePosition): boolean {
-    const slope: Slope = startPrice < endPrice ? Slope.Ascending : Slope.Descending;
-    return (
-      (slope === Slope.Ascending && position === TrendLinePosition.Below) ||
-      (slope === Slope.Descending && position === TrendLinePosition.Above)
-    );
+    return position === TrendLinePosition.Below ? endPrice > startPrice : endPrice < startPrice;
   }
 }

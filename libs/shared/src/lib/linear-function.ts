@@ -1,3 +1,8 @@
+// tiny floating-point errors break exact comparisons of computed values that are mathematically equal
+export function roundToSignificantDigits(value: number, digits: number): number {
+  return Number(value.toPrecision(digits));
+}
+
 export class LinearFunction {
   public m: number;
   public b: number;
@@ -15,7 +20,7 @@ export class LinearFunction {
   }
 
   public getY(x: number): number {
-    return this.m * x + this.b;
+    return roundToSignificantDigits(this.m * x + this.b, 10);
   }
 
   public isPointOnLine(x: number, y: number, tolerance?: number): boolean {

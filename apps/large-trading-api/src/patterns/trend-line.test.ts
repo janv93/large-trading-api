@@ -18,6 +18,25 @@ function setTickPrice(bars: Bar[], price: number): void {
   bars.at(-1)!.prices = { open: price, high: price, low: price, close: price };
 }
 
+it('keeps a confirmed line when its endpoint tick repeats despite floating-point error', () => {
+  const controller = new TrendLineController();
+  const state: TrendLineStepState = {};
+  const bars: Bar[] = [];
+
+  for (const price of [130, 123.36, 130, 130, 130, 130, 100]) {
+    bars.push(createBar(bars.length, price));
+    controller.stepTrendLines(bars, state, 5, 5, false, false);
+  }
+
+  const confirmed: TrendLine = state.confirmedTrendLines!.find(
+    (line) => line.startIndex === 1 && line.endIndex === 6 && line.position === TrendLinePosition.Below,
+  )!;
+
+  expect(confirmed.function.getY(6)).toBe(100);
+  controller.stepTrendLines(bars, state, 5, 5, false, false);
+  expect(state.confirmedTrendLines).toContain(confirmed);
+});
+
 describe.each([
   { position: TrendLinePosition.Below, direction: 1 },
   { position: TrendLinePosition.Above, direction: -1 },
@@ -103,6 +122,60 @@ describe.each([
     expect(original!.function.getY(12)).toBeCloseTo(reflectPrice(110));
   });
 
+  it.each([
+    { dipIndex: 15, accepted: true },
+    { dipIndex: 16, accepted: false },
+  ])('checks the full left buffer before the start bar, dip at $dipIndex', ({ dipIndex, accepted }) => {
+    const controller = new TrendLineController();
+    const state: TrendLineStepState = {};
+    const bars: Bar[] = [];
+    const prices: number[] = Array(41).fill(110);
+    prices[dipIndex] = 90;
+    prices[20] = 100;
+    prices[40] = 100;
+
+    for (const price of prices) {
+      bars.push(createBar(bars.length, reflectPrice(price)));
+      controller.stepTrendLines(bars, state, 20, 20, false, false);
+    }
+
+    const line: TrendLine | undefined = state.confirmedTrendLines!.find(
+      (line) => line.startIndex === 20 && line.endIndex === 40 && line.position === position,
+    );
+
+    expect(line !== undefined).toBe(accepted);
+  });
+
+  it('rejects a line whose left buffer reaches before the first bar', () => {
+    const controller = new TrendLineController();
+    const state: TrendLineStepState = {};
+    const bars: Bar[] = [];
+
+    for (const price of [120, 100, ...Array(39).fill(110), 102]) {
+      bars.push(createBar(bars.length, reflectPrice(price)));
+      controller.stepTrendLines(bars, state, 40, 40, false, false);
+    }
+
+    expect(state.confirmedTrendLines!.filter((line) => line.startIndex === 1 && line.position === position)).toEqual([]);
+  });
+
+  it.each([false, true])('treats a flat line as not against the trend, with the against-trend filter: %s', (againstTrend) => {
+    const controller = new TrendLineController();
+    const state: TrendLineStepState = {};
+    const bars: Bar[] = [];
+
+    for (const price of [...Array(3).fill(110), 100, ...Array(9).fill(110), 100]) {
+      bars.push(createBar(bars.length, reflectPrice(price)));
+      controller.stepTrendLines(bars, state, 10, 10, againstTrend, false);
+    }
+
+    const line: TrendLine | undefined = state.confirmedTrendLines!.find(
+      (line) => line.startIndex === 3 && line.endIndex === 13 && line.position === position,
+    );
+
+    expect(line !== undefined).toBe(!againstTrend);
+  });
+
   it('leaves completed lines fixed and reports their breakthrough only once', () => {
     const controller = new TrendLineController();
     const state: TrendLineStepState = {};
@@ -138,45 +211,57 @@ describe.each([
     }
   });
 
-  it('creates a buffered line only after its endpoint has closed', () => {
+  it('moves a pending line with the endpoint ticks and drops it once a buffer tick crosses it', () => {
     const controller = new TrendLineController();
     const state: TrendLineStepState = {};
     const bars: Bar[] = [];
-    const matchesLine = (line: TrendLine): boolean => line.startIndex === 1 && line.endIndex === 41 && line.position === position;
+    const matchesLine = (line: TrendLine): boolean => line.startIndex === 9 && line.endIndex === 49 && line.position === position;
     const step = (): void => controller.stepTrendLines(bars, state, 40, 40, false, true);
 
-    for (const price of [120, 100, ...Array(39).fill(110), 102]) {
+    for (const price of [...Array(9).fill(120), 100, ...Array(39).fill(110), 102]) {
       bars.push(createBar(bars.length, reflectPrice(price)));
       step();
     }
 
-    const ticks: number[] = [102, 99, 104, 95, 102].map(reflectPrice);
+    expect(state.pendingTrendLines!.filter(matchesLine).map((line) => line.function.getY(49))).toEqual([reflectPrice(102)]);
 
-    for (const price of ticks) {
-      setTickPrice(bars, price);
+    for (const [price, lowest] of [
+      [99, 99],
+      [104, 99],
+      [95, 95],
+      [102, 95],
+    ]) {
+      setTickPrice(bars, reflectPrice(price));
       step();
-      expect(state.pendingTrendLines!.filter(matchesLine)).toEqual([]);
+      const pending: TrendLine[] = state.pendingTrendLines!.filter(matchesLine);
+      expect(pending).toHaveLength(1);
+      expect(pending[0].function.getY(49)).toBeCloseTo(reflectPrice(lowest));
       expect(state.confirmedTrendLines!.filter(matchesLine)).toEqual([]);
     }
 
+    const ticks: number[] = [102, 99, 104, 95, 102].map(reflectPrice);
     bars.at(-1)!.prices = { open: ticks[0], high: Math.max(...ticks), low: Math.min(...ticks), close: ticks.at(-1)! };
     bars.push(createBar(bars.length, reflectPrice(104)));
     step();
 
     const pending: TrendLine = state.pendingTrendLines!.find(matchesLine)!;
-    expect(pending).toBeDefined();
-    expect(pending.function.getY(41)).toBeCloseTo(reflectPrice(95));
+    expect(pending.function.getY(49)).toBeCloseTo(reflectPrice(95));
 
-    for (const price of [90, 110, 95]) {
+    for (const price of [100, 96]) {
       setTickPrice(bars, reflectPrice(price));
       step();
       expect(state.pendingTrendLines!.filter(matchesLine)).toEqual([pending]);
-      expect(pending.function.getY(41)).toBeCloseTo(reflectPrice(95));
+    }
+
+    for (const price of [90, 96]) {
+      setTickPrice(bars, reflectPrice(price));
+      step();
+      expect(state.pendingTrendLines!.filter(matchesLine)).toEqual([]);
       expect(state.confirmedTrendLines!.filter(matchesLine)).toEqual([]);
     }
   });
 
-  it('waits for a closed endpoint even with a zero-length buffer and does not revive a broken line', () => {
+  it('confirms a zero-length-buffer line on the live endpoint and does not revive a broken line', () => {
     const controller = new TrendLineController();
     const state: TrendLineStepState = {};
     const bars: Bar[] = [];
@@ -188,13 +273,21 @@ describe.each([
       step();
     }
 
-    expect(state.confirmedTrendLines!.filter(matchesLine)).toEqual([]);
-    bars.push(createBar(bars.length, reflectPrice(99)));
-    step();
+    expect(state.confirmedTrendLines!.filter(matchesLine).map((line) => line.function.getY(3))).toEqual([reflectPrice(102)]);
+
+    for (const price of [104, 101]) {
+      setTickPrice(bars, reflectPrice(price));
+      step();
+    }
 
     const confirmed: TrendLine = state.confirmedTrendLines!.find(matchesLine)!;
-    expect(confirmed).toBeDefined();
+    expect(state.confirmedTrendLines!.filter(matchesLine)).toEqual([confirmed]);
+    expect(confirmed.function.getY(3)).toBeCloseTo(reflectPrice(101));
+    expect(bars[1].chart?.trendLines?.filter(matchesLine)).toEqual([confirmed]);
     expect(state.pendingTrendLines).toEqual([]);
+
+    bars.push(createBar(bars.length, reflectPrice(99)));
+    step();
     expect(controller.stepTrendLineBreakthroughs(bars, state, true)).toContain(confirmed);
 
     for (const price of [104, 99, 104, 99]) {
@@ -208,53 +301,59 @@ describe.each([
     }
   });
 
-  it.each([false, true])('decides only after the full right buffer closes, with crossing: %s', (lateCrossing) => {
-    const controller = new TrendLineController();
-    const state: TrendLineStepState = {};
-    const bars: Bar[] = [];
+  it.each([false, true])(
+    'confirms a pending line after its buffer closes unless a buffer tick crossed it, with crossing: %s',
+    (lateCrossing) => {
+      const controller = new TrendLineController();
+      const state: TrendLineStepState = {};
+      const bars: Bar[] = [];
 
-    const step = (): TrendLine[] => {
-      controller.stepTrendLines(bars, state, 40, 200, true, true);
-      return controller.stepTrendLineBreakthroughs(bars, state, true);
-    };
+      const step = (): TrendLine[] => {
+        controller.stepTrendLines(bars, state, 40, 200, true, true);
+        return controller.stepTrendLineBreakthroughs(bars, state, true);
+      };
 
-    for (const price of [120, 100, ...Array(39).fill(110), 102, 104]) {
-      bars.push(createBar(bars.length, reflectPrice(price)));
-      step();
-    }
+      for (const price of [...Array(9).fill(120), 100, ...Array(39).fill(110), 102, 104]) {
+        bars.push(createBar(bars.length, reflectPrice(price)));
+        step();
+      }
 
-    const pending: TrendLine = state.pendingTrendLines!.find(
-      (line) => line.startIndex === 1 && line.endIndex === 41 && line.position === position,
-    )!;
+      const pending: TrendLine = state.pendingTrendLines!.find(
+        (line) => line.startIndex === 9 && line.endIndex === 49 && line.position === position,
+      )!;
 
-    expect(pending).toBeDefined();
+      expect(pending).toBeDefined();
 
-    for (let bufferIndex = 0; bufferIndex < 7; bufferIndex++) {
-      bars.push(createBar(bars.length, reflectPrice(104)));
+      for (let bufferIndex = 0; bufferIndex < 7; bufferIndex++) {
+        bars.push(createBar(bars.length, reflectPrice(104)));
+        expect(step()).not.toContain(pending);
+        expect(state.pendingTrendLines).toContain(pending);
+        expect(state.confirmedTrendLines).not.toContain(pending);
+        expect(bars[9].chart?.trendLines ?? []).not.toContain(pending);
+      }
+
+      const ticks: number[] = (lateCrossing ? [104, 99, 104] : [104, 105, 104]).map(reflectPrice);
+
+      let crossed: boolean = false;
+
+      for (const price of ticks) {
+        setTickPrice(bars, price);
+        crossed ||= price === reflectPrice(99);
+        expect(step()).not.toContain(pending);
+        expect(state.pendingTrendLines!.includes(pending)).toBe(!crossed);
+        expect(state.confirmedTrendLines).not.toContain(pending);
+        expect(bars[9].chart?.trendLines ?? []).not.toContain(pending);
+      }
+
+      bars.at(-1)!.prices = { open: ticks[0], high: Math.max(...ticks), low: Math.min(...ticks), close: ticks.at(-1)! };
+      bars.push(createBar(bars.length, reflectPrice(99)));
+      const breakthroughs: TrendLine[] = step();
+      expect(breakthroughs.includes(pending)).toBe(!lateCrossing);
+      expect(pending.breakThroughIndex).toBe(lateCrossing ? undefined : 58);
+      expect(bars[9].chart?.trendLines?.includes(pending) ?? false).toBe(!lateCrossing);
+      expect(state.pendingTrendLines).not.toContain(pending);
       expect(step()).not.toContain(pending);
-      expect(state.pendingTrendLines).toContain(pending);
-      expect(state.confirmedTrendLines).not.toContain(pending);
-      expect(bars[1].chart?.trendLines ?? []).not.toContain(pending);
-    }
-
-    const ticks: number[] = (lateCrossing ? [104, 99, 104] : [104, 105, 104]).map(reflectPrice);
-
-    for (const price of ticks) {
-      setTickPrice(bars, price);
-      expect(step()).not.toContain(pending);
-      expect(state.pendingTrendLines).toContain(pending);
-      expect(state.confirmedTrendLines).not.toContain(pending);
-      expect(bars[1].chart?.trendLines ?? []).not.toContain(pending);
-    }
-
-    bars.at(-1)!.prices = { open: ticks[0], high: Math.max(...ticks), low: Math.min(...ticks), close: ticks.at(-1)! };
-    bars.push(createBar(bars.length, reflectPrice(99)));
-    const breakthroughs: TrendLine[] = step();
-    expect(breakthroughs.includes(pending)).toBe(!lateCrossing);
-    expect(pending.breakThroughIndex).toBe(lateCrossing ? undefined : 50);
-    expect(bars[1].chart?.trendLines?.includes(pending) ?? false).toBe(!lateCrossing);
-    expect(state.pendingTrendLines).not.toContain(pending);
-    expect(step()).not.toContain(pending);
-    expect(bars[50].chart?.trendLineBreakthroughs?.filter((line) => line === pending) ?? []).toHaveLength(lateCrossing ? 0 : 1);
-  });
+      expect(bars[58].chart?.trendLineBreakthroughs?.filter((line) => line === pending) ?? []).toHaveLength(lateCrossing ? 0 : 1);
+    },
+  );
 });
