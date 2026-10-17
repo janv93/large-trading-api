@@ -104,7 +104,7 @@ export default class Routes extends Base {
 
       if (entry.isDirectory()) {
         this.scanDir(fullPath);
-      } else if (entry.name.endsWith('.js')) {
+      } else if (entry.name.endsWith('.js') && !entry.name.endsWith('.test.js')) {
         try {
           const mod = require(fullPath);
           const ExportedClass = mod.default;
