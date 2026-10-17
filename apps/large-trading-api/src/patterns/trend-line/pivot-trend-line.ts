@@ -51,10 +51,13 @@ export default class PivotTrendLineController extends TrendLineBase {
 
   private updateSlope(bars: Bar[], candidate: TrendLinesFromPivotPointsStartEntry, endIndex: number, position: TrendLinePosition): boolean {
     const slope: number = this.calcSlope(bars, candidate.startIndex, endIndex, position);
-    const isSlopeUpdated: boolean =
-      position === TrendLinePosition.Above ? slope >= candidate.extremeSlope : slope <= candidate.extremeSlope;
-    if (isSlopeUpdated) candidate.extremeSlope = slope;
-    return isSlopeUpdated;
+
+    if (this.isSlopeAtLeastAsExtreme(slope, candidate.extremeSlope, position)) {
+      candidate.extremeSlope = slope;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private addTrendLine(bars: Bar[], state: TrendLinesFromPivotPointsStepState, trendLine: TrendLine, rightBuffer: boolean): void {

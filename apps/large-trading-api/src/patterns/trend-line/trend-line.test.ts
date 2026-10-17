@@ -32,7 +32,7 @@ it('keeps a confirmed line when its endpoint tick repeats despite floating-point
     (line) => line.startIndex === 1 && line.endIndex === 6 && line.position === TrendLinePosition.Below,
   )!;
 
-  expect(confirmed.function.getY(6)).toBe(100);
+  expect(confirmed.function.getY(6)).toBeCloseTo(100);
   controller.stepTrendLines(bars, state, 5, 5, false, false);
   expect(state.confirmedTrendLines).toContain(confirmed);
 });

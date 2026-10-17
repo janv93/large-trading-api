@@ -11,7 +11,6 @@ import {
   TrendLine,
   TrendLinePosition,
   createSignal,
-  roundToSignificantDigits,
 } from '@shared';
 import TrendLineController from '../../patterns/trend-line/trend-line';
 import MeanReversion from '../../strategies/mean-reversion';
@@ -668,13 +667,13 @@ describe('live worker lifecycle', () => {
   });
 
   it.each([
-    { prices: [11, 9], remaining: 0, incomingSlopes: [Infinity, roundToSignificantDigits(1 / 11, 10)] },
+    { prices: [11, 9], remaining: 0, incomingSlopes: [Infinity, expect.closeTo(1 / 11, 10)] },
     {
       prices: [9, 11, 9],
       remaining: 0,
-      incomingSlopes: [Infinity, roundToSignificantDigits(-1 / 11, 10), roundToSignificantDigits(-1 / 11, 10)],
+      incomingSlopes: [Infinity, expect.closeTo(-1 / 11, 10), expect.closeTo(-1 / 11, 10)],
     },
-    { prices: [9, 9], remaining: 1, incomingSlopes: [Infinity, roundToSignificantDigits(-1 / 11, 10)] },
+    { prices: [9, 9], remaining: 1, incomingSlopes: [Infinity, expect.closeTo(-1 / 11, 10)] },
   ])('carries the trend-line state across ticks $prices', async ({ prices, remaining, incomingSlopes }) => {
     const controller = new TrendLineController();
     const pendingCounts: number[] = [];

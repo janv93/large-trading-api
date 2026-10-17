@@ -34,7 +34,7 @@ export default class TrendLineController extends TrendLineBase {
   // a later live tick can cross a line that an earlier tick of the same bar created
   private removeCrossedCurrentBarTrendLines(bars: Bar[], state: TrendLineStepState): void {
     const i: number = bars.length - 1;
-    const isCrossed = (trendLine: TrendLine): boolean => trendLine.endIndex === i && this.crossesTrendLine(bars, trendLine, i);
+    const isCrossed = (trendLine: TrendLine): boolean => trendLine.endIndex === i && this.isPriceCrossingTrendLine(bars, trendLine, i);
     state.pendingTrendLines = state.pendingTrendLines!.filter((trendLine) => !isCrossed(trendLine));
 
     state.confirmedTrendLines = state.confirmedTrendLines!.filter((trendLine) => {
@@ -55,16 +55,12 @@ export default class TrendLineController extends TrendLineBase {
   }
 
   private updateSlope(bars: Bar[], candidate: TrendLineStartEntry, position: TrendLinePosition): boolean {
+    const extremeSlope: number = position === TrendLinePosition.Below ? candidate.minSlopeBelow : candidate.maxSlopeAbove;
     const slope: number = this.calcSlope(bars, candidate.startIndex, bars.length - 1, position);
+    if (!this.isSlopeAtLeastAsExtreme(slope, extremeSlope, position)) return false;
 
-    if (position === TrendLinePosition.Below) {
-      if (slope > candidate.minSlopeBelow) return false;
-      candidate.minSlopeBelow = slope;
-    } else {
-      if (slope < candidate.maxSlopeAbove) return false;
-      candidate.maxSlopeAbove = slope;
-    }
-
+    if (position === TrendLinePosition.Below) candidate.minSlopeBelow = slope;
+    else candidate.maxSlopeAbove = slope;
     return true;
   }
 

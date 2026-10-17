@@ -5,11 +5,6 @@ export function createSignal(signal: Omit<BacktestSignal, 'uniqueIdentifier'> & 
   return { ...signal, uniqueIdentifier: JSON.stringify(signal.uniqueIdentifier) };
 }
 
-// tiny floating-point errors break exact comparisons of computed values that are mathematically equal
-export function roundToSignificantDigits(value: number, digits: number): number {
-  return Number(value.toPrecision(digits));
-}
-
 export function timeframeToMilliseconds(timeframe: Timeframe): number {
   const unit = timeframe.slice(-1);
   const value = Number(timeframe.slice(0, timeframe.length - 1));

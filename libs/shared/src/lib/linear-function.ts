@@ -1,5 +1,3 @@
-import { roundToSignificantDigits } from './utils';
-
 export class LinearFunction {
   public m: number;
   public b: number;
@@ -17,7 +15,7 @@ export class LinearFunction {
   }
 
   public getY(x: number): number {
-    return roundToSignificantDigits(this.m * x + this.b, 10);
+    return this.m * x + this.b;
   }
 
   public isPointOnLine(x: number, y: number, tolerance?: number): boolean {

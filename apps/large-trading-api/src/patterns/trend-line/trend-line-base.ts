@@ -1,13 +1,4 @@
-import {
-  Bar,
-  LinearFunction,
-  roundToSignificantDigits,
-  Slope,
-  TrendLine,
-  TrendLinePosition,
-  TrendLinesFromPivotPointsStepState,
-  TrendLineStepState,
-} from '@shared';
+import { Bar, LinearFunction, Slope, TrendLine, TrendLinePosition, TrendLinesFromPivotPointsStepState, TrendLineStepState } from '@shared';
 import Base from '../../base';
 
 export default abstract class TrendLineBase extends Base {
@@ -36,7 +27,7 @@ export default abstract class TrendLineBase extends Base {
 
       if (i < rangeStart) continue;
 
-      if (this.crossesTrendLine(bars, trendLine, i)) {
+      if (this.isPriceCrossingTrendLine(bars, trendLine, i)) {
         bars[i].chart = bars[i].chart || {};
         bars[i].chart.trendLineBreakthroughs = bars[i].chart.trendLineBreakthroughs || [];
 
@@ -55,7 +46,13 @@ export default abstract class TrendLineBase extends Base {
   protected calcSlope(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition): number {
     const startPrice: number = this.getPrice(bars[startIndex], position);
     const endPrice: number = this.getPrice(bars[endIndex], position);
-    return roundToSignificantDigits((endPrice - startPrice) / (endIndex - startIndex), 10);
+    return (endPrice - startPrice) / (endIndex - startIndex);
+  }
+
+  // nearly equal slopes count as equal, so floating-point noise cannot reject a line
+  protected isSlopeAtLeastAsExtreme(slope: number, extremeSlope: number, position: TrendLinePosition): boolean {
+    const tolerance: number = 1e-9 * Math.abs(slope);
+    return position === TrendLinePosition.Below ? slope <= extremeSlope + tolerance : slope >= extremeSlope - tolerance;
   }
 
   protected createTrendLine(bars: Bar[], startIndex: number, endIndex: number, position: TrendLinePosition): TrendLine {
@@ -76,12 +73,16 @@ export default abstract class TrendLineBase extends Base {
 
   protected isTrendLineAccepted(bars: Bar[], trendLine: TrendLine, againstTrend: boolean): boolean {
     if (againstTrend && !trendLine.againstTrend) return false;
-    return this.isLeftBufferUninterrupted(bars, trendLine.startIndex, trendLine.endIndex, trendLine.position, trendLine.function);
+    return this.isLeftBufferUninterrupted(bars, trendLine);
   }
 
-  protected crossesTrendLine(bars: Bar[], trendLine: TrendLine, index: number): boolean {
+  // a price within floating-point noise of the line touches it rather than crossing it
+  protected isPriceCrossingTrendLine(bars: Bar[], trendLine: TrendLine, index: number): boolean {
     const linePrice: number = trendLine.function.getY(index);
-    return trendLine.position === TrendLinePosition.Above ? bars[index].prices.high > linePrice : bars[index].prices.low < linePrice;
+    const tolerance: number = 1e-9 * Math.abs(linePrice);
+    return trendLine.position === TrendLinePosition.Above
+      ? bars[index].prices.high > linePrice + tolerance
+      : bars[index].prices.low < linePrice - tolerance;
   }
 
   protected confirmTrendLine(bars: Bar[], state: TrendLineStepState | TrendLinesFromPivotPointsStepState, trendLine: TrendLine): void {
@@ -97,7 +98,7 @@ export default abstract class TrendLineBase extends Base {
     const bufferEnd: number = trendLine.endIndex + Math.round(trendLine.length * this.bufferPercentage);
 
     for (let index = trendLine.endIndex + 1; index <= Math.min(lastIndex, bufferEnd); index++) {
-      if (this.crossesTrendLine(bars, trendLine, index)) return false;
+      if (this.isPriceCrossingTrendLine(bars, trendLine, index)) return false;
     }
 
     return true;
@@ -146,20 +147,15 @@ export default abstract class TrendLineBase extends Base {
     return first.startIndex === second.startIndex && first.position === second.position;
   }
 
-  private isLeftBufferUninterrupted(
-    bars: Bar[],
-    startIndex: number,
-    endIndex: number,
-    position: TrendLinePosition,
-    linearFunction: LinearFunction,
-  ): boolean {
-    const length: number = endIndex - startIndex;
-    const buffer: number = Math.round(length * this.bufferPercentage);
-    if (startIndex < buffer) return false;
+  private isLeftBufferUninterrupted(bars: Bar[], trendLine: TrendLine): boolean {
+    const buffer: number = Math.round(trendLine.length * this.bufferPercentage);
+    if (trendLine.startIndex < buffer) return false;
 
-    const crosses = (k: Bar, x: number) =>
-      position === TrendLinePosition.Above ? k.prices.high > linearFunction.getY(x) : k.prices.low < linearFunction.getY(x);
-    return bars.slice(startIndex - buffer, startIndex).every((k, i, arr) => !crosses(k, startIndex - (arr.length - i)));
+    for (let index = trendLine.startIndex - buffer; index < trendLine.startIndex; index++) {
+      if (this.isPriceCrossingTrendLine(bars, trendLine, index)) return false;
+    }
+
+    return true;
   }
 
   private isTrendLineAgainstTrend(startPrice: number, endPrice: number, position: TrendLinePosition): boolean {
