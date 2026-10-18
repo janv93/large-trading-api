@@ -26,6 +26,7 @@
   ```
 
 - Use clear, concise variable names; avoid unclear abbreviations such as `ctor` for `constructor`.
+- Do not introduce new terminology in names unless it describes a genuinely new concept. Bad example: calling the price at which a trend reverses `protectiveLevel` because it "protects" the current trend until crossed. This adds a metaphor for a reversal price, not a new concept. Use `reversalPrice` instead.
 - Name every function that returns a boolean after what it returns, in a form such as `is...` or `has...`, for example `isRightBufferClosed`. Never return a boolean from a function named after an action, such as `settleRightBuffer`; separate the action from the check instead.
 - Never store a helper value used in only one place, such as a fixed array to iterate over, as a class field. Write it inline where it is used.
 - Never write code comments. Make the code explain itself through structure and names instead.
