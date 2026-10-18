@@ -7,6 +7,7 @@ export interface MarketStructureState {
   lastSwingLow?: MarketStructurePivot;
   direction?: Direction;
   streak?: number;
+  protectiveLevel?: MarketStructureProtectiveLevel;
   isReversed?: boolean;
 }
 
@@ -14,4 +15,10 @@ export interface MarketStructurePivot {
   bar: Bar;
   index: number;
   pivotPoint: PivotPoint;
+}
+
+export interface MarketStructureProtectiveLevel {
+  protectedDirection: Direction;
+  index: number;
+  price: number;
 }

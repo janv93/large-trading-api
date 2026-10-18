@@ -1,7 +1,4 @@
-import {
-  Strategy,
-  StrategyConfig,
-} from '../../../../libs/shared/src/lib/interfaces';
+import { Strategy, StrategyConfig } from '@shared';
 
 export const StrategyConfigs: Partial<Record<Strategy, StrategyConfig>> = {
   [Strategy.Macd]: {

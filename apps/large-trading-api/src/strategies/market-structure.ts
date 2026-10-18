@@ -14,10 +14,11 @@ export default class MarketStructure extends Base {
     const marketStructure: MarketStructureStats | undefined = bar.chart?.marketStructure;
     const previousMarketStructure: MarketStructureStats | undefined = bars.at(-2)?.chart?.marketStructure;
     if (!marketStructure || !previousMarketStructure) return;
-    if (marketStructure.streak !== 1 || previousMarketStructure.streak <= 4) return;
 
-    const signal: Signal = marketStructure.direction === Direction.Up ? Signal.Buy : Signal.Sell;
-    bar.backtest.signals.push({ signal, size: previousMarketStructure.streak, price: bar.prices.close });
-    state.barDone = true;
+    if (marketStructure.streak === 1 && previousMarketStructure.streak > 4) {
+      const signal: Signal = marketStructure.direction === Direction.Up ? Signal.Buy : Signal.Sell;
+      bar.backtest.signals.push({ signal, size: previousMarketStructure.streak, price: bar.prices.close });
+      state.barDone = true;
+    }
   }
 }

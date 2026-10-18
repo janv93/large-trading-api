@@ -257,6 +257,44 @@ describe('market structure reversal', () => {
         direction: reversed ? reversalDirection : trendDirection,
       });
     });
+
+    it('reverses a reversal before the swing that caused it is confirmed', () => {
+      const controller = new MarketStructureController();
+      const state: MarketStructureState = {};
+      const bars: Bar[] = [];
+
+      for (const price of [10, 12, 10, 13, 11, 14, 12, 10, 8, 15, 16]) {
+        bars.push(createBar(bars.length, 20 + priceDirection * price));
+        controller.stepMarketStructure(bars, state, 1);
+      }
+
+      const trendDirection: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
+      const reversalDirection: Direction = priceDirection === 1 ? Direction.Down : Direction.Up;
+      expect(bars.slice(7).map((bar) => bar.chart?.marketStructure)).toEqual([
+        { streak: 1, direction: reversalDirection },
+        { streak: 1, direction: reversalDirection },
+        { streak: 1, direction: trendDirection },
+        { streak: 1, direction: trendDirection },
+      ]);
+    });
+
+    it('reverses when the pullback before a new high is broken', () => {
+      const controller = new MarketStructureController();
+      const state: MarketStructureState = {};
+      const bars: Bar[] = [];
+
+      for (const price of [10, 12, 10, 13, 11, 14, 12, 15, 11.5]) {
+        bars.push(createBar(bars.length, 20 + priceDirection * price));
+        controller.stepMarketStructure(bars, state, 1);
+      }
+
+      const trendDirection: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
+      const reversalDirection: Direction = priceDirection === 1 ? Direction.Down : Direction.Up;
+      expect(bars.slice(7).map((bar) => bar.chart?.marketStructure)).toEqual([
+        { streak: 2, direction: trendDirection },
+        { streak: 1, direction: reversalDirection },
+      ]);
+    });
   });
 
   it('keeps a reversal seen on an earlier tick when a later tick recovers', () => {
