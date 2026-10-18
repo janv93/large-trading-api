@@ -1,24 +1,19 @@
-import { Bar, Direction, PivotPoint } from './shared.interfaces';
+import { MarketStructureStats, PivotPointSide } from './shared.interfaces';
 
 export interface MarketStructureState {
   lastProcessedIndex?: number;
-  swingCandidate?: MarketStructurePivot;
-  lastSwingHigh?: MarketStructurePivot;
-  lastSwingLow?: MarketStructurePivot;
-  direction?: Direction;
-  streak?: number;
-  protectiveLevel?: MarketStructureProtectiveLevel;
-  isReversed?: boolean;
+  swings?: MarketStructureSwing[];
+  trend?: MarketStructureStats;
+  protectiveLevel?: MarketStructureLevel;
 }
 
-export interface MarketStructurePivot {
-  bar: Bar;
-  index: number;
-  pivotPoint: PivotPoint;
+export interface MarketStructureSwing extends MarketStructureLevel {
+  space: number;
+  trend?: MarketStructureStats;
 }
 
-export interface MarketStructureProtectiveLevel {
-  protectedDirection: Direction;
+export interface MarketStructureLevel {
   index: number;
   price: number;
+  side: PivotPointSide;
 }

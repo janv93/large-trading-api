@@ -3,8 +3,8 @@ import {
   Bar,
   Direction,
   Exchange,
-  MarketStructurePivot,
   MarketStructureState,
+  MarketStructureSwing,
   PivotPointSide,
   Timeframe,
   TrendLine,
@@ -28,8 +28,8 @@ function createBar(index: number, price: number): Bar {
 }
 
 function getSwingIndexes(state: MarketStructureState): number[] {
-  const swings: MarketStructurePivot[] = [state.lastSwingHigh, state.lastSwingLow].filter((swing) => swing !== undefined);
-  return swings.map((swing) => swing.index).sort((first, second) => first - second);
+  const swings: MarketStructureSwing[] = state.swings?.slice(0, -1) ?? [];
+  return swings.map((swing) => swing.index);
 }
 
 describe('pivot window boundaries', () => {
@@ -77,7 +77,7 @@ describe.each([
       step();
     }
 
-    const candidateBefore = state.swingCandidate;
+    const candidateBefore = state.swings?.at(-1);
     expect(candidateBefore?.index).toBe(2);
     expect(getSwingIndexes(state)).toEqual([1]);
     expect(bars[3].chart?.pivotPoint).toBeUndefined();
@@ -87,7 +87,7 @@ describe.each([
       bars[4].prices = { open: price, high: price, low: price, close: price };
       step();
       expect(bars[3].chart?.pivotPoint).toBeUndefined();
-      expect(state.swingCandidate).toBe(candidateBefore);
+      expect(state.swings?.at(-1)).toBe(candidateBefore);
       expect(getSwingIndexes(state)).toEqual([1]);
     }
 
@@ -96,16 +96,16 @@ describe.each([
     step();
 
     expect(bars[3].chart?.pivotPoint).toEqual(crossed ? undefined : { space: 1, side });
-    expect(state.swingCandidate?.index).toBe(crossed ? 2 : 3);
+    expect(state.swings?.at(-1)?.index).toBe(crossed ? 2 : 3);
     expect(getSwingIndexes(state)).toEqual(crossed ? [1] : [1, 2]);
-    const candidateAfter = state.swingCandidate;
+    const candidateAfter = state.swings?.at(-1);
 
     for (const tick of [0, 15, 8]) {
       const price: number = reflectPrice(tick);
       bars[5].prices = { open: price, high: price, low: price, close: price };
       step();
       expect(bars[3].chart?.pivotPoint).toEqual(crossed ? undefined : { space: 1, side });
-      expect(state.swingCandidate).toBe(candidateAfter);
+      expect(state.swings?.at(-1)).toBe(candidateAfter);
       expect(getSwingIndexes(state)).toEqual(crossed ? [1] : [1, 2]);
     }
   });
@@ -234,6 +234,27 @@ describe.each([
 
 describe('market structure reversal', () => {
   describe.each([1, -1])('with price direction %s', (priceDirection) => {
+    it('does not protect against an unlabeled initial swing', () => {
+      const controller = new MarketStructureController();
+      const state: MarketStructureState = {};
+      const bars: Bar[] = [];
+
+      for (const price of [10, 12, 10, 13, 9, 12, 14]) {
+        bars.push(createBar(bars.length, 30 + priceDirection * price));
+        controller.stepMarketStructure(bars, state, 1);
+      }
+
+      const direction: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
+      expect(bars.at(-1)!.chart?.marketStructure).toEqual({ streak: 1, direction });
+      expect(state.protectiveLevel).toBeUndefined();
+      const price: number = 30 + priceDirection * 8;
+      bars.at(-1)!.prices = { open: price, high: price, low: price, close: price };
+      controller.stepMarketStructure(bars, state, 1);
+
+      expect(bars.at(-1)!.chart?.marketStructure).toEqual({ streak: 1, direction });
+      expect(state.protectiveLevel).toBeUndefined();
+    });
+
     it.each([
       { name: 'a break in the initial right buffer', prices: [10, 12, 10, 13, 11, 14, 9, 12, 13], reversed: true },
       { name: 'a break after the initial right buffer', prices: [10, 12, 10, 13, 11, 14, 13, 10, 12, 13], reversed: true },
@@ -250,8 +271,7 @@ describe('market structure reversal', () => {
 
       const trendDirection: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
       const reversalDirection: Direction = priceDirection === 1 ? Direction.Down : Direction.Up;
-      expect(state.direction).toBe(trendDirection);
-      expect(state.isReversed).toBe(reversed);
+      expect(state.swings?.at(-2)?.trend).toEqual({ streak: 3, direction: trendDirection });
       expect(bars.at(-1)!.chart?.marketStructure).toEqual({
         streak: reversed ? 1 : 3,
         direction: reversed ? reversalDirection : trendDirection,
@@ -295,6 +315,58 @@ describe('market structure reversal', () => {
         { streak: 1, direction: reversalDirection },
       ]);
     });
+
+    it('prioritizes protection when a full bar breaks both boundaries', () => {
+      const controller = new MarketStructureController();
+      const state: MarketStructureState = {};
+      const bars: Bar[] = [];
+
+      for (const price of [10, 12, 10, 13, 11, 14, 12, 12]) {
+        bars.push(createBar(bars.length, 30 + priceDirection * price));
+        controller.stepMarketStructure(bars, state, 1);
+      }
+
+      bars[7].prices = {
+        open: 30 + priceDirection * 12,
+        high: 30 + (priceDirection === 1 ? 15 : -10),
+        low: 30 + (priceDirection === 1 ? 10 : -15),
+        close: 30 + priceDirection * 12,
+      };
+      controller.stepMarketStructure(bars, state, 1);
+
+      expect(bars[7].chart?.marketStructure).toEqual({ streak: 1, direction: priceDirection === 1 ? Direction.Down : Direction.Up });
+      expect(state.protectiveLevel?.price).toBe(30 + priceDirection * 15);
+      expect(state.protectiveLevel?.index).toBe(7);
+    });
+
+    it.each([
+      { ticks: [10, 15], direction: 1, protection: 12, protectionIndex: 6 },
+      { ticks: [15, 10], direction: -1, protection: 12, protectionIndex: 6 },
+      { ticks: [10, 13], direction: -1, protection: 14, protectionIndex: 5 },
+    ])('preserves the order of live ticks $ticks', ({ ticks, direction, protection, protectionIndex }) => {
+      const controller = new MarketStructureController();
+      const state: MarketStructureState = {};
+      const bars: Bar[] = [];
+
+      for (const price of [10, 12, 10, 13, 11, 14, 12, 12]) {
+        bars.push(createBar(bars.length, 30 + priceDirection * price));
+        controller.stepMarketStructure(bars, state, 1);
+      }
+
+      for (const tick of ticks) {
+        const price: number = 30 + priceDirection * tick;
+        bars[7].prices = { open: price, high: price, low: price, close: price };
+        controller.stepMarketStructure(bars, state, 1);
+      }
+
+      expect(bars[7].chart?.marketStructure).toEqual({
+        streak: 1,
+        direction: priceDirection * direction === 1 ? Direction.Up : Direction.Down,
+      });
+      expect(state.swings?.at(-2)?.trend?.streak).toBe(2);
+      expect(state.protectiveLevel?.price).toBe(30 + priceDirection * protection);
+      expect(state.protectiveLevel?.index).toBe(protectionIndex);
+    });
   });
 
   it('keeps a reversal seen on an earlier tick when a later tick recovers', () => {
@@ -314,5 +386,34 @@ describe('market structure reversal', () => {
       controller.stepMarketStructure(bars, state, 1);
       expect(bars[7].chart?.marketStructure).toEqual({ streak: 1, direction: Direction.Down });
     }
+  });
+});
+
+describe('market structure swing selection', () => {
+  it.each([
+    { nextHigh: 11, expectedIndex: 2 },
+    { nextHigh: 12, expectedIndex: 2 },
+    { nextHigh: 13, expectedIndex: 5 },
+  ])('retains the first extreme unless the next high at $nextHigh is higher', ({ nextHigh, expectedIndex }) => {
+    const controller = new MarketStructureController();
+    const state: MarketStructureState = {};
+    const bars: Bar[] = [];
+
+    for (const price of [9, 7, 12, 10, 11, nextHigh, 9, 8, 9]) {
+      bars.push(createBar(bars.length, price));
+      controller.stepMarketStructure(bars, state, 2);
+    }
+
+    expect(state.swings).toHaveLength(1);
+    expect(state.swings?.at(-1)?.index).toBe(expectedIndex);
+    expect(bars[expectedIndex].chart?.pivotPoint).toBeUndefined();
+
+    for (const price of [10, 11]) {
+      bars.push(createBar(bars.length, price));
+      controller.stepMarketStructure(bars, state, 2);
+    }
+
+    expect(getSwingIndexes(state)).toEqual([expectedIndex]);
+    expect(bars[expectedIndex].chart?.pivotPoint).toEqual({ side: PivotPointSide.High, space: 2 });
   });
 });
