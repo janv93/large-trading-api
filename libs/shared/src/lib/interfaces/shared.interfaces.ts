@@ -94,11 +94,6 @@ export interface Run {
   commission: number;
 }
 
-export interface BarWithIndex {
-  bar: Bar;
-  index: number;
-}
-
 export interface Bar {
   symbol: string;
   timeframe: Timeframe;

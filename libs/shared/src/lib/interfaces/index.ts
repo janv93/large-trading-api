@@ -7,7 +7,7 @@ export * from './frontend/frontend.interfaces';
 export * from './indicators.interfaces';
 export * from './live.interfaces';
 export * from './logger.interfaces';
-export * from './pivot-point-state.interfaces';
+export * from './market-structure.interfaces';
 export * from './shared.interfaces';
 export * from './trend-line.interfaces';
 export * from './twitter.interfaces';

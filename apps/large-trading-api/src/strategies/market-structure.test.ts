@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { Bar, Direction, Exchange, MarketStructureStats, Signal, Timeframe } from '@shared';
-import PivotPointController from '../patterns/pivot-point';
+import MarketStructureController from '../patterns/pivot-point/market-structure';
 import MarketStructure from './market-structure';
 
 function createBar(openTime: number, price: number): Bar {
@@ -24,7 +24,7 @@ describe('market-structure strategy', () => {
     { direction: Direction.Up, previousDirection: Direction.Down },
     { direction: Direction.Down, previousDirection: Direction.Up },
   ])('does not qualify a $direction reversal using a streak from an earlier tick', ({ direction, previousDirection }) => {
-    jest.spyOn(PivotPointController.prototype, 'stepMarketStructure').mockImplementation(() => undefined);
+    jest.spyOn(MarketStructureController.prototype, 'stepMarketStructure').mockImplementation(() => undefined);
     const strategy = new MarketStructure();
     const state: any = {};
     const bars: Bar[] = [createBar(0, 100)];
@@ -47,7 +47,7 @@ describe('market-structure strategy', () => {
     { direction: Direction.Up, previousDirection: Direction.Down, signal: Signal.Buy },
     { direction: Direction.Down, previousDirection: Direction.Up, signal: Signal.Sell },
   ])('sizes a $signal from the completed bar instead of an earlier tick', ({ direction, previousDirection, signal }) => {
-    jest.spyOn(PivotPointController.prototype, 'stepMarketStructure').mockImplementation(() => undefined);
+    jest.spyOn(MarketStructureController.prototype, 'stepMarketStructure').mockImplementation(() => undefined);
     const strategy = new MarketStructure();
     const state: any = {};
     const bars: Bar[] = [createBar(0, 100)];

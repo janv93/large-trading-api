@@ -319,7 +319,6 @@ function createTickPaths(seed: number, barCount: number): number[][] {
     return randomState / 2147483647;
   };
 
-  // a coarse price grid creates ties between slopes and line touches
   const roundToGrid = (value: number): number => Math.round(value * 4) / 4;
 
   for (let barIndex = 0; barIndex < barCount; barIndex++) {

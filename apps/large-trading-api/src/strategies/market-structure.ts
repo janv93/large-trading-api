@@ -1,31 +1,23 @@
-﻿import { BacktestSignal, Bar, Direction, MarketStructureStats, Signal } from '@shared';
+﻿import { Bar, Direction, MarketStructureStats, Signal } from '@shared';
 import Base from '../base';
-import PivotPointController from '../patterns/pivot-point';
+import MarketStructureController from '../patterns/pivot-point/market-structure';
 
 export default class MarketStructure extends Base {
-  private pivotPointController = new PivotPointController();
+  private marketStructureController = new MarketStructureController();
 
   public stepSetSignals(bars: Bar[], state: any, params: any): void {
     const space: number = Number(params.space);
     state.marketStructure ??= {};
-    this.pivotPointController.stepMarketStructure(bars, state.marketStructure, space);
+    this.marketStructureController.stepMarketStructure(bars, state.marketStructure, space);
 
     const bar: Bar = bars[bars.length - 1];
-    const currentMarketStructureStats: MarketStructureStats | undefined = bar.chart?.marketStructure;
-    const marketStructureOneAgo: MarketStructureStats | undefined = bars.at(-2)?.chart?.marketStructure;
-    if (!currentMarketStructureStats || !marketStructureOneAgo) return;
+    const marketStructure: MarketStructureStats | undefined = bar.chart?.marketStructure;
+    const previousMarketStructure: MarketStructureStats | undefined = bars.at(-2)?.chart?.marketStructure;
+    if (!marketStructure || !previousMarketStructure) return;
+    if (marketStructure.streak !== 1 || previousMarketStructure.streak <= 4) return;
 
-    if (currentMarketStructureStats.streak === 1 && marketStructureOneAgo.streak > 4) {
-      const signals: BacktestSignal[] = bar.backtest.signals;
-      const closePrice: number = bar.prices.close;
-
-      if (currentMarketStructureStats.direction === Direction.Up) {
-        signals.push({ signal: Signal.Buy, size: marketStructureOneAgo.streak, price: closePrice });
-        state.barDone = true;
-      } else if (currentMarketStructureStats.direction === Direction.Down) {
-        signals.push({ signal: Signal.Sell, size: marketStructureOneAgo.streak, price: closePrice });
-        state.barDone = true;
-      }
-    }
+    const signal: Signal = marketStructure.direction === Direction.Up ? Signal.Buy : Signal.Sell;
+    bar.backtest.signals.push({ signal, size: previousMarketStructure.streak, price: bar.prices.close });
+    state.barDone = true;
   }
 }
