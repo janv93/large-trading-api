@@ -4,7 +4,7 @@ export interface MarketStructureState {
   lastProcessedIndex?: number;
   swings?: MarketStructureSwing[];
   trend?: MarketStructureStats;
-  protectiveLevel?: MarketStructureLevel;
+  reversalLevel?: MarketStructureLevel;
 }
 
 export interface MarketStructureSwing extends MarketStructureLevel {

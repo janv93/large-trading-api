@@ -67,7 +67,7 @@ export default class MarketStructureController extends PivotPointController {
 
     if (swing.trend) {
       state.trend = swing.trend;
-      state.protectiveLevel = this.getConfirmedProtectiveLevel(swing, previousSwing, swing.trend.direction);
+      state.reversalLevel = this.getConfirmedReversalLevel(swing, previousSwing, swing.trend.direction);
 
       for (let index = swing.index + 1; index < bars.length - 1; index++) this.updateTrend(bars, state, index);
     }
@@ -95,16 +95,16 @@ export default class MarketStructureController extends PivotPointController {
     }
   }
 
-  private getConfirmedProtectiveLevel(
+  private getConfirmedReversalLevel(
     swing: MarketStructureSwing,
     previousSwing: MarketStructureSwing | undefined,
     direction: Direction,
   ): MarketStructureLevel | undefined {
-    const protectionSide: PivotPointSide = this.getProtectionSide(direction);
-    const protectiveSwing: MarketStructureSwing | undefined = swing.side === protectionSide ? swing : previousSwing;
+    const reversalSide: PivotPointSide = this.getReversalSide(direction);
+    const reversalSwing: MarketStructureSwing | undefined = swing.side === reversalSide ? swing : previousSwing;
 
-    if (this.hasStructureLabel(protectiveSwing)) {
-      return protectiveSwing;
+    if (this.hasStructureLabel(reversalSwing)) {
+      return reversalSwing;
     }
   }
 
@@ -117,26 +117,22 @@ export default class MarketStructureController extends PivotPointController {
   }
 
   private updateTrend(bars: Bar[], state: MarketStructureState, index: number): void {
-    if (!state.protectiveLevel || !state.trend) return;
+    if (!state.reversalLevel || !state.trend) return;
 
-    const brokenLevel: MarketStructureLevel | undefined = this.getBrokenLevel(bars[index], state.protectiveLevel, state.swings!);
+    const brokenLevel: MarketStructureLevel | undefined = this.getBrokenLevel(bars[index], state.reversalLevel, state.swings!);
 
     if (brokenLevel) {
       const direction: Direction = this.getBreakDirection(brokenLevel.side);
       state.trend = { direction, streak: direction === state.trend.direction ? state.trend.streak : 1 };
-      state.protectiveLevel = this.getExtreme(bars, brokenLevel.index, index, this.getOppositeSide(brokenLevel.side));
+      state.reversalLevel = this.getExtreme(bars, brokenLevel.index, index, this.getOppositeSide(brokenLevel.side));
     }
   }
 
-  private getBrokenLevel(
-    bar: Bar,
-    protectiveLevel: MarketStructureLevel,
-    swings: MarketStructureSwing[],
-  ): MarketStructureLevel | undefined {
-    if (this.isBeyondLevel(bar, protectiveLevel)) return protectiveLevel;
+  private getBrokenLevel(bar: Bar, reversalLevel: MarketStructureLevel, swings: MarketStructureSwing[]): MarketStructureLevel | undefined {
+    if (this.isBeyondLevel(bar, reversalLevel)) return reversalLevel;
 
     const continuationSwing: MarketStructureSwing | undefined = swings.findLast(
-      (swing) => swing.side !== protectiveLevel.side && swing.index > protectiveLevel.index,
+      (swing) => swing.side !== reversalLevel.side && swing.index > reversalLevel.index,
     );
 
     if (continuationSwing && this.isBeyondLevel(bar, continuationSwing)) {
@@ -168,7 +164,7 @@ export default class MarketStructureController extends PivotPointController {
     return side === PivotPointSide.High ? Direction.Up : Direction.Down;
   }
 
-  private getProtectionSide(direction: Direction): PivotPointSide {
+  private getReversalSide(direction: Direction): PivotPointSide {
     return direction === Direction.Up ? PivotPointSide.Low : PivotPointSide.High;
   }
 

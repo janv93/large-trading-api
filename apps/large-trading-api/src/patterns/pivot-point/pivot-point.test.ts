@@ -234,7 +234,7 @@ describe.each([
 
 describe('market structure reversal', () => {
   describe.each([1, -1])('with price direction %s', (priceDirection) => {
-    it('does not protect against an unlabeled initial swing', () => {
+    it('does not use an unlabeled initial swing as a reversal level', () => {
       const controller = new MarketStructureController();
       const state: MarketStructureState = {};
       const bars: Bar[] = [];
@@ -246,13 +246,13 @@ describe('market structure reversal', () => {
 
       const direction: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
       expect(bars.at(-1)!.chart?.marketStructure).toEqual({ streak: 1, direction });
-      expect(state.protectiveLevel).toBeUndefined();
+      expect(state.reversalLevel).toBeUndefined();
       const price: number = 30 + priceDirection * 8;
       bars.at(-1)!.prices = { open: price, high: price, low: price, close: price };
       controller.stepMarketStructure(bars, state, 1);
 
       expect(bars.at(-1)!.chart?.marketStructure).toEqual({ streak: 1, direction });
-      expect(state.protectiveLevel).toBeUndefined();
+      expect(state.reversalLevel).toBeUndefined();
     });
 
     it.each([
@@ -316,7 +316,7 @@ describe('market structure reversal', () => {
       ]);
     });
 
-    it('prioritizes protection when a full bar breaks both boundaries', () => {
+    it('prioritizes reversal when a full bar breaks both boundaries', () => {
       const controller = new MarketStructureController();
       const state: MarketStructureState = {};
       const bars: Bar[] = [];
@@ -335,15 +335,15 @@ describe('market structure reversal', () => {
       controller.stepMarketStructure(bars, state, 1);
 
       expect(bars[7].chart?.marketStructure).toEqual({ streak: 1, direction: priceDirection === 1 ? Direction.Down : Direction.Up });
-      expect(state.protectiveLevel?.price).toBe(30 + priceDirection * 15);
-      expect(state.protectiveLevel?.index).toBe(7);
+      expect(state.reversalLevel?.price).toBe(30 + priceDirection * 15);
+      expect(state.reversalLevel?.index).toBe(7);
     });
 
     it.each([
-      { ticks: [10, 15], direction: 1, protection: 12, protectionIndex: 6 },
-      { ticks: [15, 10], direction: -1, protection: 12, protectionIndex: 6 },
-      { ticks: [10, 13], direction: -1, protection: 14, protectionIndex: 5 },
-    ])('preserves the order of live ticks $ticks', ({ ticks, direction, protection, protectionIndex }) => {
+      { ticks: [10, 15], direction: 1, reversalPrice: 12, reversalIndex: 6 },
+      { ticks: [15, 10], direction: -1, reversalPrice: 12, reversalIndex: 6 },
+      { ticks: [10, 13], direction: -1, reversalPrice: 14, reversalIndex: 5 },
+    ])('preserves the order of live ticks $ticks', ({ ticks, direction, reversalPrice, reversalIndex }) => {
       const controller = new MarketStructureController();
       const state: MarketStructureState = {};
       const bars: Bar[] = [];
@@ -364,8 +364,8 @@ describe('market structure reversal', () => {
         direction: priceDirection * direction === 1 ? Direction.Up : Direction.Down,
       });
       expect(state.swings?.at(-2)?.trend?.streak).toBe(2);
-      expect(state.protectiveLevel?.price).toBe(30 + priceDirection * protection);
-      expect(state.protectiveLevel?.index).toBe(protectionIndex);
+      expect(state.reversalLevel?.price).toBe(30 + priceDirection * reversalPrice);
+      expect(state.reversalLevel?.index).toBe(reversalIndex);
     });
   });
 
