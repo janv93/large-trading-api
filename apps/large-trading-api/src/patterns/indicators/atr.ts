@@ -1,23 +1,26 @@
-import { AtrState, Bar } from '@shared';
+import { Bar } from '@shared';
 
-export function stepAtr(bars: Bar[], state: AtrState, period: number): void {
-  const i: number = bars.length - 1;
-  if (i < period) return;
+export function stepAtr(bars: Bar[], period: number): void {
+  const closedIndex: number = bars.length - 2;
+  if (closedIndex < period) return;
 
-  const trueRange = (index: number): number => {
-    const high: number = bars[index].prices.high;
-    const low: number = bars[index].prices.low;
-    const previousClose: number = bars[index - 1].prices.close;
-    return Math.max(high - low, Math.abs(high - previousClose), Math.abs(low - previousClose));
-  };
+  const previousAtr: number | undefined = bars[closedIndex - 1].indicators?.atr;
+  let atr: number = 0;
 
-  if (state.currentAtr === undefined) {
-    state.currentAtr = 0;
-    for (let j = 1; j <= period; j++) state.currentAtr += trueRange(j);
-    state.currentAtr /= period;
+  if (previousAtr === undefined) {
+    for (let barIndex = 1; barIndex <= period; barIndex++) atr += calcTrueRange(bars, barIndex);
+    atr /= period;
   } else {
-    state.currentAtr = (state.currentAtr * (period - 1) + trueRange(i)) / period;
+    atr = (previousAtr * (period - 1) + calcTrueRange(bars, closedIndex)) / period;
   }
 
-  bars[i].indicators = { ...bars[i].indicators, atr: state.currentAtr };
+  const closedBar: Bar = bars[closedIndex];
+  closedBar.indicators = { ...closedBar.indicators, atr };
+}
+
+function calcTrueRange(bars: Bar[], index: number): number {
+  const high: number = bars[index].prices.high;
+  const low: number = bars[index].prices.low;
+  const previousClose: number = bars[index - 1].prices.close;
+  return Math.max(high - low, Math.abs(high - previousClose), Math.abs(low - previousClose));
 }

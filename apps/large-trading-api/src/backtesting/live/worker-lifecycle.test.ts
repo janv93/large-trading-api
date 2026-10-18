@@ -309,6 +309,60 @@ function createTrendLine(endIndex: number): TrendLine {
   };
 }
 
+function createTickPaths(seed: number, barCount: number): number[][] {
+  let randomState: number = seed;
+  let price: number = 100;
+  const tickPaths: number[][] = [];
+
+  const random = (): number => {
+    randomState = (randomState * 16807) % 2147483647;
+    return randomState / 2147483647;
+  };
+
+  // a coarse price grid creates ties between slopes and line touches
+  const roundToGrid = (value: number): number => Math.round(value * 4) / 4;
+
+  for (let barIndex = 0; barIndex < barCount; barIndex++) {
+    const ticks: number[] = [roundToGrid(price)];
+    const tickCount: number = 1 + Math.floor(random() * 5);
+
+    for (let tick = 0; tick < tickCount; tick++) {
+      price = Math.max(1, price + (random() - 0.5) * 3);
+      ticks.push(roundToGrid(price));
+    }
+
+    tickPaths.push(ticks);
+  }
+
+  return tickPaths;
+}
+
+function createBarFromTicks(ticks: number[], barIndex: number): Bar {
+  const bar: Bar = createBar(barIndex * 60_000, ticks[0]);
+  bar.prices = { open: ticks[0], high: Math.max(...ticks), low: Math.min(...ticks), close: ticks.at(-1)! };
+  return bar;
+}
+
+function getTrendLineKey(trendLine: TrendLine): string {
+  return `${trendLine.startIndex}:${trendLine.endIndex}:${trendLine.position}`;
+}
+
+function getOriginKeys(bar: Bar): string[] {
+  return (bar.indicators?.rsiDivergence?.originTrendLines ?? []).map(getTrendLineKey);
+}
+
+function getChartLineEndPrices(bars: Bar[]): Map<string, number> {
+  const endPrices = new Map<string, number>();
+
+  for (const bar of bars) {
+    for (const trendLine of bar.chart?.trendLines ?? []) {
+      endPrices.set(getTrendLineKey(trendLine), trendLine.function.getY(trendLine.endIndex));
+    }
+  }
+
+  return endPrices;
+}
+
 function createLifecycle(strategyInstance: any, backtesterInstance: any, strategyConfig: any = {}): LiveWorkerLifecycle {
   return new LiveWorkerLifecycle({
     strategyInstance,
@@ -425,6 +479,56 @@ describe('live worker lifecycle', () => {
       expect(replacement?.function.getY(6)).toBeCloseTo(90);
       expect(rebounded.backtest.signals.map((signal) => signal.signal)).toEqual([Signal.Buy, Signal.StopLoss]);
       expect(rebounded.backtest.openPositionSize).toBe(0);
+    },
+  );
+
+  it.each(Array.from({ length: 20 }, (_, index) => index + 1))(
+    'finds every backtested RSI divergence and its trend line live for seed %s',
+    async (seed) => {
+      const params = { minLength: 5, maxLength: 30, minStrength: 0.1, stopLoss: 0.1 };
+      const warmupBarCount: number = 40;
+      const tickPaths: number[][] = createTickPaths(seed, 300);
+      const backtestStrategy = new RsiDivergence();
+      const backtestState: LiveStrategyState = {};
+      const backtestBars: Bar[] = [];
+
+      tickPaths.forEach((ticks, barIndex) => {
+        backtestBars.push(createBarFromTicks(ticks, barIndex));
+        backtestStrategy.stepSetSignals(backtestBars, backtestState, params);
+      });
+
+      const liveBars: Bar[] = tickPaths.slice(0, warmupBarCount).map(createBarFromTicks);
+      const lifecycle: LiveWorkerLifecycle = createLifecycle(new RsiDivergence(), new RecordingBacktester(), params);
+      await lifecycle.initialize([...liveBars]);
+      const now = jest.spyOn(Date, 'now');
+
+      for (let barIndex = warmupBarCount; barIndex < tickPaths.length; barIndex++) {
+        for (const tick of tickPaths[barIndex]) await lifecycle.processTick(tick);
+        now.mockReturnValue((barIndex + 1) * 60_000);
+        liveBars.push(lifecycle.finalizeBar()!);
+      }
+
+      const liveLineEndPrices: Map<string, number> = getChartLineEndPrices(liveBars);
+      const backtestLineEndPrices: Map<string, number> = getChartLineEndPrices(backtestBars);
+      let backtestDivergenceCount: number = 0;
+
+      for (let barIndex = warmupBarCount; barIndex < tickPaths.length; barIndex++) {
+        expect(liveBars[barIndex].prices).toEqual(backtestBars[barIndex].prices);
+        expect(getOriginKeys(liveBars[barIndex])).toEqual(expect.arrayContaining(getOriginKeys(backtestBars[barIndex])));
+        backtestDivergenceCount += getOriginKeys(backtestBars[barIndex]).length;
+      }
+
+      expect(backtestDivergenceCount).toBeGreaterThan(0);
+
+      backtestLineEndPrices.forEach((endPrice, lineKey) => {
+        if (Number(lineKey.split(':')[0]) < warmupBarCount) return;
+        expect(liveLineEndPrices.get(lineKey)).toBeCloseTo(endPrice, 9);
+      });
+
+      liveLineEndPrices.forEach((_, lineKey) => {
+        const endIndex: number = Number(lineKey.split(':')[1]);
+        if (endIndex < liveBars.length - 1) expect(getOriginKeys(liveBars[endIndex])).toContain(lineKey);
+      });
     },
   );
 

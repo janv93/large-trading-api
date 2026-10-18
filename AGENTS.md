@@ -1,5 +1,8 @@
 # Repository Rules
 
+- Write the complete answer to the user as the very last message, after every tool call, including the call that marks the task as complete. The chat only shows text written after the last tool call, so anything written earlier is never seen.
+- Always clarify a change with the user before making it, unless it is clear that the user wants it implemented and a double check seems unnecessary.
+- Untracked files are always committed and pushed together with the other changes, so there is no need to remind the user to add new files.
 - Always read and follow [agent-docs/STYLE_GUIDE.md](agent-docs/STYLE_GUIDE.md) before writing or modifying code.
 - Use Markdown-first only for novel features needing brainstorming: develop the idea in the feature's `AGENTS.md` before implementation. Routine changes do not require documentation edits.
 - Use `AGENTS.md` only for durable structure, design ideas and rationale, constraints, rules, and style. Keep it concise and begin from the intention or core idea, then derive the architecture and design constraints from those first principles.

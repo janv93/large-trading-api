@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { Bar, Exchange, LinearFunction, Slope, Timeframe, TrendLine, TrendLinePosition, TrendLineStepState } from '@shared';
-import { stepRsiDivergence } from './rsi-divergence';
+import RsiDivergenceController from './rsi-divergence';
 
 function createBar(openTime: number, price: number): Bar {
   return {
@@ -26,6 +26,8 @@ function createTrendLine(startIndex: number, endIndex: number): TrendLine {
 }
 
 describe('stepRsiDivergence', () => {
+  const controller = new RsiDivergenceController();
+
   it('keeps unsuccessful lines throughout the current bar and removes them on the next bar', () => {
     const bars: Bar[] = Array.from({ length: 6 }, (_, index) => createBar(index * 60_000, 100));
     const firstLine: TrendLine = createTrendLine(0, 5);
@@ -35,7 +37,7 @@ describe('stepRsiDivergence', () => {
     const state: TrendLineStepState = { confirmedTrendLines: [firstLine, secondLine] };
 
     for (let tick = 0; tick < 3; tick++) {
-      expect(stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
+      expect(controller.stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
       expect(state.confirmedTrendLines).toEqual([firstLine, secondLine]);
       expect(bars[0].chart?.trendLines).toEqual([firstLine]);
       expect(bars[1].chart?.trendLines).toEqual([secondLine]);
@@ -47,7 +49,7 @@ describe('stepRsiDivergence', () => {
     bars[0].chart!.trendLines!.push(currentLine);
 
     for (let tick = 0; tick < 2; tick++) {
-      expect(stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
+      expect(controller.stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
       expect(state.confirmedTrendLines).toEqual([currentLine]);
       expect(bars[0].chart?.trendLines).toEqual([currentLine]);
       expect(bars[1].chart?.trendLines).toEqual([]);
@@ -63,11 +65,11 @@ describe('stepRsiDivergence', () => {
     bars[5].indicators = { rsiDivergence: { regular: 1, originTrendLines: [acceptedLine] } };
     const state: TrendLineStepState = { confirmedTrendLines: [acceptedLine, rejectedLine] };
 
-    expect(stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
+    expect(controller.stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
     expect(state.confirmedTrendLines).toEqual([acceptedLine, rejectedLine]);
 
     bars.push(createBar(360_000, 100));
-    expect(stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
+    expect(controller.stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
     expect(state.confirmedTrendLines).toEqual([acceptedLine]);
     expect(bars[0].chart?.trendLines).toEqual([acceptedLine]);
     expect(bars[1].chart?.trendLines).toEqual([]);
@@ -96,7 +98,7 @@ describe('stepRsiDivergence', () => {
 
     const state: TrendLineStepState = { confirmedTrendLines: [originTrendLine] };
 
-    expect(stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
+    expect(controller.stepRsiDivergence(bars, state, 0.5)).toBeUndefined();
     expect(state.confirmedTrendLines?.[0]).toBe(originTrendLine);
     expect(bars[0].chart?.trendLines?.[0]).toBe(originTrendLine);
   });

@@ -6,10 +6,6 @@ export enum BollingerBand {
   Upper = 'UPPER',
 }
 
-export interface AtrState {
-  currentAtr?: number;
-}
-
 export interface DetectedRsiDivergence extends RsiDivergenceStrengths {
   originTrendLine: TrendLine;
 }
