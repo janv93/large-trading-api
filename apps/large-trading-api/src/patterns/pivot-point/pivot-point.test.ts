@@ -340,8 +340,9 @@ describe('market structure reversal', () => {
     });
 
     it.each([
-      { ticks: [10, 15], direction: 1, reversalPrice: 12, reversalIndex: 6 },
-      { ticks: [15, 10], direction: -1, reversalPrice: 12, reversalIndex: 6 },
+      { ticks: [10, 15], direction: 1, reversalPrice: 10, reversalIndex: 7 },
+      { ticks: [15, 10], direction: -1, reversalPrice: 15, reversalIndex: 7 },
+      { ticks: [15, 10, 13], direction: -1, reversalPrice: 15, reversalIndex: 7 },
       { ticks: [10, 13], direction: -1, reversalPrice: 14, reversalIndex: 5 },
     ])('preserves the order of live ticks $ticks', ({ ticks, direction, reversalPrice, reversalIndex }) => {
       const controller = new MarketStructureController();

@@ -13,9 +13,21 @@ import PivotPointController from './pivot-point';
 
 export default class MarketStructureController extends PivotPointController {
   public stepMarketStructure(bars: Bar[], state: MarketStructureState, space: number): void {
+    this.updateObservedRange(bars, state);
     this.processClosedPivot(bars, state, space);
     this.updateTrend(bars, state, bars.length - 1);
     this.drawTrend(bars.at(-1)!, state.trend);
+  }
+
+  private updateObservedRange(bars: Bar[], state: MarketStructureState): void {
+    const index: number = bars.length - 1;
+
+    if (state.observedRange?.index === index) {
+      state.observedRange.high = Math.max(state.observedRange.high, bars[index].prices.high);
+      state.observedRange.low = Math.min(state.observedRange.low, bars[index].prices.low);
+    } else {
+      state.observedRange = { index, high: bars[index].prices.high, low: bars[index].prices.low };
+    }
   }
 
   private processClosedPivot(bars: Bar[], state: MarketStructureState, space: number): void {
@@ -124,7 +136,7 @@ export default class MarketStructureController extends PivotPointController {
     if (brokenLevel) {
       const direction: Direction = this.getBreakDirection(brokenLevel.side);
       state.trend = { direction, streak: direction === state.trend.direction ? state.trend.streak : 1 };
-      state.reversalLevel = this.getExtreme(bars, brokenLevel.index, index, this.getOppositeSide(brokenLevel.side));
+      state.reversalLevel = this.getExtreme(bars, state, brokenLevel.index, index, this.getOppositeSide(brokenLevel.side));
     }
   }
 
@@ -140,17 +152,33 @@ export default class MarketStructureController extends PivotPointController {
     }
   }
 
-  private getExtreme(bars: Bar[], startIndex: number, endIndex: number, side: PivotPointSide): MarketStructureLevel {
-    const extreme: MarketStructureLevel = { index: startIndex, price: this.getPrice(bars[startIndex], side), side };
+  private getExtreme(
+    bars: Bar[],
+    state: MarketStructureState,
+    startIndex: number,
+    endIndex: number,
+    side: PivotPointSide,
+  ): MarketStructureLevel {
+    const extreme: MarketStructureLevel = { index: startIndex, price: this.getObservedPrice(bars, state, startIndex, side), side };
 
     for (let index = startIndex + 1; index <= endIndex; index++) {
-      if (this.isBeyondLevel(bars[index], extreme)) {
+      const price: number = this.getObservedPrice(bars, state, index, side);
+
+      if (this.isBeyondPrice(price, extreme)) {
         extreme.index = index;
-        extreme.price = this.getPrice(bars[index], side);
+        extreme.price = price;
       }
     }
 
     return extreme;
+  }
+
+  private getObservedPrice(bars: Bar[], state: MarketStructureState, index: number, side: PivotPointSide): number {
+    if (index === state.observedRange!.index) {
+      return side === PivotPointSide.High ? state.observedRange!.high : state.observedRange!.low;
+    }
+
+    return this.getPrice(bars[index], side);
   }
 
   private drawTrend(bar: Bar, trend?: MarketStructureStats): void {
@@ -177,6 +205,10 @@ export default class MarketStructureController extends PivotPointController {
   }
 
   private isBeyondLevel(bar: Bar, level: MarketStructureLevel): boolean {
-    return level.side === PivotPointSide.High ? bar.prices.high > level.price : bar.prices.low < level.price;
+    return this.isBeyondPrice(this.getPrice(bar, level.side), level);
+  }
+
+  private isBeyondPrice(price: number, level: MarketStructureLevel): boolean {
+    return level.side === PivotPointSide.High ? price > level.price : price < level.price;
   }
 }
