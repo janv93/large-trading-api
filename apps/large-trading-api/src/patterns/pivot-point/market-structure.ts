@@ -103,7 +103,7 @@ export default class MarketStructureController extends PivotPointController {
     const reversalSide: PivotPointSide = this.getReversalSide(direction);
     const reversalSwing: MarketStructureSwing | undefined = swing.side === reversalSide ? swing : previousSwing;
 
-    if (this.hasStructureLabel(reversalSwing)) {
+    if (reversalSwing?.trend) {
       return reversalSwing;
     }
   }
@@ -178,9 +178,5 @@ export default class MarketStructureController extends PivotPointController {
 
   private isBeyondLevel(bar: Bar, level: MarketStructureLevel): boolean {
     return level.side === PivotPointSide.High ? bar.prices.high > level.price : bar.prices.low < level.price;
-  }
-
-  private hasStructureLabel(swing: MarketStructureSwing | undefined): boolean {
-    return Boolean(swing?.trend);
   }
 }
