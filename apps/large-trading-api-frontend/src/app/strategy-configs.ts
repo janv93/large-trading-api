@@ -91,9 +91,7 @@ export const StrategyConfigs: Partial<Record<Strategy, StrategyConfig>> = {
     },
   },
   [Strategy.MarketStructure]: {
-    default: {
-      space: 5,
-    },
+    default: { space: 5 },
     autoParams: {
       space: { min: 3, max: 10, step: 1 },
     },

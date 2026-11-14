@@ -1,16 +1,10 @@
-import { MarketStructureStats, PivotPointSide } from './shared.interfaces';
+import { MarketStructureStats } from './shared.interfaces';
 
 export interface MarketStructureState {
   lastClosedIndex?: number;
-  candidateSwing?: MarketStructureSwing;
-  swings?: MarketStructureSwing[];
+  highIndex?: number;
+  lowIndex?: number;
+  pivotTrend?: MarketStructureStats;
   trend?: MarketStructureStats;
-  reversalLevel?: MarketStructureSwing;
-}
-
-export interface MarketStructureSwing {
-  index: number;
-  price: number;
-  side: PivotPointSide;
-  trend?: MarketStructureStats;
+  reversalIndex?: number;
 }

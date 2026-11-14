@@ -192,8 +192,8 @@ export interface PivotPoint {
 }
 
 export interface MarketStructureStats {
-  streak: number; // # higher or lower in a row
   direction: Direction;
+  streak: number;
 }
 
 export interface BarIndicators {

@@ -4,7 +4,6 @@
   ChartCompactCircleMarker,
   ChartTrendLineSegment,
   LinearFunction,
-  MarketStructureType,
   PivotPoint,
   PivotPointSide,
   Signal,
@@ -337,8 +336,6 @@ export class MarkersChartingService {
 
   private getPivotPointTemplate(bar: Bar): SeriesMarker<Time> {
     const pivotPoint: PivotPoint = bar.chart!.pivotPoint!;
-    const marketStructure: MarketStructureType | undefined =
-      pivotPoint.marketStructure;
 
     return {
       time: (bar.times.open / 1000) as Time,
@@ -346,7 +343,7 @@ export class MarkersChartingService {
         pivotPoint.side === PivotPointSide.High ? 'aboveBar' : 'belowBar',
       color: 'white',
       shape: pivotPoint.side === PivotPointSide.High ? 'arrowDown' : 'arrowUp',
-      text: marketStructure ? marketStructure : 'PP',
+      text: pivotPoint.marketStructure ?? 'PP',
     };
   }
 

@@ -5,6 +5,7 @@ import {
   Exchange,
   LinearFunction,
   LiveStrategyState,
+  PivotPointSide,
   Signal,
   Slope,
   Timeframe,
@@ -204,7 +205,7 @@ class BarReferenceStrategy {
     }
 
     this.referencesMatched &&= state.reference === bars[0] && this.bars === bars && this.state === state;
-    state.reference.chart = { marketStructure: { streak: bars.length, direction: 'UP' } };
+    state.reference.chart = { pivotPoint: { space: bars.length, side: PivotPointSide.High } };
   }
 }
 
@@ -733,7 +734,7 @@ describe('live worker lifecycle', () => {
     expect(strategy.bars?.[2]).toBe(next);
     expect(finalized).toBe(active);
     expect(finalized?.times.open).toBe(60_000);
-    expect(initialBar.chart?.marketStructure?.streak).toBe(3);
+    expect(initialBar.chart?.pivotPoint?.space).toBe(3);
   });
 
   it('keeps a retained trend-line breakthrough retired after a later tick rebounds', async () => {
