@@ -5,6 +5,7 @@ import {
   Exchange,
   MarketStructureState,
   MarketStructureSwing,
+  MarketStructureType,
   PivotPointSide,
   Timeframe,
   TrendLine,
@@ -28,8 +29,7 @@ function createBar(index: number, price: number): Bar {
 }
 
 function getSwingIndexes(state: MarketStructureState): number[] {
-  const swings: MarketStructureSwing[] = state.swings?.slice(0, -1) ?? [];
-  return swings.map((swing) => swing.index);
+  return state.swings?.map((swing: MarketStructureSwing) => swing.index) ?? [];
 }
 
 describe('pivot window boundaries', () => {
@@ -77,7 +77,7 @@ describe.each([
       step();
     }
 
-    const candidateBefore = state.swings?.at(-1);
+    const candidateBefore = state.candidateSwing;
     expect(candidateBefore?.index).toBe(2);
     expect(getSwingIndexes(state)).toEqual([1]);
     expect(bars[3].chart?.pivotPoint).toBeUndefined();
@@ -87,7 +87,7 @@ describe.each([
       bars[4].prices = { open: price, high: price, low: price, close: price };
       step();
       expect(bars[3].chart?.pivotPoint).toBeUndefined();
-      expect(state.swings?.at(-1)).toBe(candidateBefore);
+      expect(state.candidateSwing).toBe(candidateBefore);
       expect(getSwingIndexes(state)).toEqual([1]);
     }
 
@@ -96,16 +96,16 @@ describe.each([
     step();
 
     expect(bars[3].chart?.pivotPoint).toEqual(crossed ? undefined : { space: 1, side });
-    expect(state.swings?.at(-1)?.index).toBe(crossed ? 2 : 3);
+    expect(state.candidateSwing?.index).toBe(crossed ? 2 : 3);
     expect(getSwingIndexes(state)).toEqual(crossed ? [1] : [1, 2]);
-    const candidateAfter = state.swings?.at(-1);
+    const candidateAfter = state.candidateSwing;
 
     for (const tick of [0, 15, 8]) {
       const price: number = reflectPrice(tick);
       bars[5].prices = { open: price, high: price, low: price, close: price };
       step();
       expect(bars[3].chart?.pivotPoint).toEqual(crossed ? undefined : { space: 1, side });
-      expect(state.swings?.at(-1)).toBe(candidateAfter);
+      expect(state.candidateSwing).toBe(candidateAfter);
       expect(getSwingIndexes(state)).toEqual(crossed ? [1] : [1, 2]);
     }
   });
@@ -232,161 +232,161 @@ describe.each([
   });
 });
 
-describe('market structure reversal', () => {
+describe('market structure', () => {
   describe.each([1, -1])('with price direction %s', (priceDirection) => {
-    it('does not use an unlabeled initial swing as a reversal level', () => {
+    const trendDirection: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
+    const reversalDirection: Direction = priceDirection === 1 ? Direction.Down : Direction.Up;
+    const toPrice = (price: number): number => 30 + priceDirection * price;
+    const trendPrices: number[] = [10, 12, 10, 13, 11, 14, 12, 15, 13, 14];
+
+    const setTicks = (bar: Bar, ticks: number[]): void => {
+      const prices: number[] = ticks.map(toPrice);
+      bar.prices = { open: prices[0], high: Math.max(...prices), low: Math.min(...prices), close: prices.at(-1)! };
+    };
+
+    const run = (prices: number[]) => {
       const controller = new MarketStructureController();
       const state: MarketStructureState = {};
       const bars: Bar[] = [];
+      const reversals: (Direction | undefined)[] = [];
 
-      for (const price of [10, 12, 10, 13, 9, 12, 14]) {
-        bars.push(createBar(bars.length, 30 + priceDirection * price));
-        controller.stepMarketStructure(bars, state, 1);
-      }
-
-      const direction: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
-      expect(bars.at(-1)!.chart?.marketStructure).toEqual({ streak: 1, direction });
-      expect(state.reversalLevel).toBeUndefined();
-      const price: number = 30 + priceDirection * 8;
-      bars.at(-1)!.prices = { open: price, high: price, low: price, close: price };
-      controller.stepMarketStructure(bars, state, 1);
-
-      expect(bars.at(-1)!.chart?.marketStructure).toEqual({ streak: 1, direction });
-      expect(state.reversalLevel).toBeUndefined();
-    });
-
-    it.each([
-      { name: 'a break in the initial right buffer', prices: [10, 12, 10, 13, 11, 14, 9, 12, 13], reversed: true },
-      { name: 'a break after the initial right buffer', prices: [10, 12, 10, 13, 11, 14, 13, 10, 12, 13], reversed: true },
-      { name: 'a touch without a break', prices: [10, 12, 10, 13, 11, 14, 13, 11, 12, 13], reversed: false },
-    ])('preserves $name when confirming the next swing', ({ prices, reversed }) => {
-      const controller = new MarketStructureController();
-      const state: MarketStructureState = {};
-      const bars: Bar[] = [];
+      const step = (): void => {
+        reversals.push(controller.stepMarketStructure(bars, state, 1));
+      };
 
       for (const price of prices) {
-        bars.push(createBar(bars.length, 20 + priceDirection * price));
-        controller.stepMarketStructure(bars, state, 1);
+        bars.push(createBar(bars.length, toPrice(price)));
+        step();
       }
 
-      const trendDirection: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
-      const reversalDirection: Direction = priceDirection === 1 ? Direction.Down : Direction.Up;
-      expect(state.swings?.at(-2)?.trend).toEqual({ streak: 3, direction: trendDirection });
-      expect(bars.at(-1)!.chart?.marketStructure).toEqual({
-        streak: reversed ? 1 : 3,
-        direction: reversed ? reversalDirection : trendDirection,
-      });
-    });
+      return { bars, reversals, step };
+    };
 
-    it('reverses a reversal before the swing that caused it is confirmed', () => {
-      const controller = new MarketStructureController();
-      const state: MarketStructureState = {};
-      const bars: Bar[] = [];
+    it('labels swings and draws the streak on closed bars only', () => {
+      const { bars, reversals } = run(trendPrices);
+      const labels: MarketStructureType[] =
+        priceDirection === 1
+          ? [MarketStructureType.HH, MarketStructureType.HL, MarketStructureType.HH, MarketStructureType.HL]
+          : [MarketStructureType.LL, MarketStructureType.LH, MarketStructureType.LL, MarketStructureType.LH];
 
-      for (const price of [10, 12, 10, 13, 11, 14, 12, 10, 8, 15, 16]) {
-        bars.push(createBar(bars.length, 20 + priceDirection * price));
-        controller.stepMarketStructure(bars, state, 1);
-      }
-
-      const trendDirection: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
-      const reversalDirection: Direction = priceDirection === 1 ? Direction.Down : Direction.Up;
-      expect(bars.slice(7).map((bar) => bar.chart?.marketStructure)).toEqual([
-        { streak: 1, direction: reversalDirection },
-        { streak: 1, direction: reversalDirection },
-        { streak: 1, direction: trendDirection },
-        { streak: 1, direction: trendDirection },
+      expect(bars.slice(3, 7).map((bar) => bar.chart?.pivotPoint?.marketStructure)).toEqual(labels);
+      expect(bars.map((bar) => bar.chart?.marketStructure?.streak)).toEqual([
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        1,
+        2,
+        3,
+        4,
+        undefined,
       ]);
+      expect(bars[8].chart?.marketStructure?.direction).toBe(trendDirection);
+      expect(reversals.every((reversal) => reversal === undefined)).toBe(true);
     });
 
-    it('reverses when the pullback before a new high is broken', () => {
-      const controller = new MarketStructureController();
-      const state: MarketStructureState = {};
-      const bars: Bar[] = [];
+    it('reports a break only on the tick that crosses the last swing against the trend', () => {
+      const { bars, reversals, step } = run(trendPrices);
+      const ticks: number[] = [13, 11.5, 13];
+      bars.push(createBar(bars.length, toPrice(ticks[0])));
+      step();
 
-      for (const price of [10, 12, 10, 13, 11, 14, 12, 15, 11.5]) {
-        bars.push(createBar(bars.length, 20 + priceDirection * price));
-        controller.stepMarketStructure(bars, state, 1);
+      for (const tick of ticks.slice(1)) {
+        setTicks(bars[10], [tick]);
+        step();
       }
 
-      const trendDirection: Direction = priceDirection === 1 ? Direction.Up : Direction.Down;
-      const reversalDirection: Direction = priceDirection === 1 ? Direction.Down : Direction.Up;
-      expect(bars.slice(7).map((bar) => bar.chart?.marketStructure)).toEqual([
-        { streak: 2, direction: trendDirection },
-        { streak: 1, direction: reversalDirection },
-      ]);
+      expect(reversals.slice(-3)).toEqual([undefined, reversalDirection, undefined]);
+      setTicks(bars[10], ticks);
+      bars.push(createBar(bars.length, toPrice(13)));
+      step();
+
+      expect(reversals.at(-1)).toBeUndefined();
+      expect(bars[10].chart?.marketStructure).toEqual({ streak: 1, direction: reversalDirection });
     });
 
-    it('prioritizes reversal when a full bar breaks both boundaries', () => {
-      const controller = new MarketStructureController();
-      const state: MarketStructureState = {};
-      const bars: Bar[] = [];
+    it('reports the same break when a backtest steps the completed bar', () => {
+      const { bars, reversals, step } = run(trendPrices);
+      bars.push(createBar(bars.length, toPrice(13)));
+      setTicks(bars[10], [13, 11.5, 13]);
+      step();
 
-      for (const price of [10, 12, 10, 13, 11, 14, 12, 12]) {
-        bars.push(createBar(bars.length, 30 + priceDirection * price));
-        controller.stepMarketStructure(bars, state, 1);
-      }
-
-      bars[7].prices = {
-        open: 30 + priceDirection * 12,
-        high: 30 + (priceDirection === 1 ? 15 : -10),
-        low: 30 + (priceDirection === 1 ? 10 : -15),
-        close: 30 + priceDirection * 12,
-      };
-      controller.stepMarketStructure(bars, state, 1);
-
-      expect(bars[7].chart?.marketStructure).toEqual({ streak: 1, direction: priceDirection === 1 ? Direction.Down : Direction.Up });
-      expect(state.reversalLevel?.price).toBe(30 + priceDirection * 15);
-      expect(state.reversalLevel?.index).toBe(7);
+      expect(reversals.at(-1)).toBe(reversalDirection);
     });
 
-    it.each([
-      { ticks: [10, 15], direction: 1, reversalPrice: 10, reversalIndex: 7 },
-      { ticks: [15, 10], direction: -1, reversalPrice: 15, reversalIndex: 7 },
-      { ticks: [15, 10, 13], direction: -1, reversalPrice: 15, reversalIndex: 7 },
-      { ticks: [10, 13], direction: -1, reversalPrice: 14, reversalIndex: 5 },
-    ])('preserves the order of live ticks $ticks', ({ ticks, direction, reversalPrice, reversalIndex }) => {
-      const controller = new MarketStructureController();
-      const state: MarketStructureState = {};
-      const bars: Bar[] = [];
+    it('flips the trend on a confirmed swing against it without reporting a reversal', () => {
+      const { bars, reversals } = run([10, 12, 10, 13, 11, 14, 12, 13.5, 12.5, 13, 12.8]);
 
-      for (const price of [10, 12, 10, 13, 11, 14, 12, 12]) {
-        bars.push(createBar(bars.length, 30 + priceDirection * price));
-        controller.stepMarketStructure(bars, state, 1);
-      }
-
-      for (const tick of ticks) {
-        const price: number = 30 + priceDirection * tick;
-        bars[7].prices = { open: price, high: price, low: price, close: price };
-        controller.stepMarketStructure(bars, state, 1);
-      }
-
-      expect(bars[7].chart?.marketStructure).toEqual({
-        streak: 1,
-        direction: priceDirection * direction === 1 ? Direction.Up : Direction.Down,
-      });
-      expect(state.swings?.at(-2)?.trend?.streak).toBe(2);
-      expect(state.reversalLevel?.price).toBe(30 + priceDirection * reversalPrice);
-      expect(state.reversalLevel?.index).toBe(reversalIndex);
+      expect(bars[7].chart?.pivotPoint?.marketStructure).toBe(priceDirection === 1 ? MarketStructureType.LH : MarketStructureType.HL);
+      expect(bars[9].chart?.marketStructure).toEqual({ streak: 1, direction: reversalDirection });
+      expect(reversals.every((reversal) => reversal === undefined)).toBe(true);
     });
   });
 
-  it('keeps a reversal seen on an earlier tick when a later tick recovers', () => {
-    const controller = new MarketStructureController();
-    const state: MarketStructureState = {};
-    const bars: Bar[] = [];
+  it.each([1, 2, 3])('reports the same reversals live as in a backtest with space %s', (space) => {
+    let seed: number = space;
 
-    for (const price of [10, 12, 10, 13, 11, 14, 12, 12]) {
-      bars.push(createBar(bars.length, price));
-      controller.stepMarketStructure(bars, state, 1);
+    const random = (): number => {
+      seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648;
+      return seed / 2_147_483_648;
+    };
+
+    const tickPaths: number[][] = [];
+    let price: number = 100;
+
+    for (let index = 0; index < 600; index++) {
+      const ticks: number[] = [];
+
+      for (let tick = 0; tick < 4; tick++) {
+        price = Math.round((price + (random() - 0.5) * 4) * 2) / 2;
+        ticks.push(price);
+      }
+
+      tickPaths.push(ticks);
     }
 
-    expect(bars[7].chart?.marketStructure).toEqual({ streak: 2, direction: Direction.Up });
+    const setTicks = (bar: Bar, ticks: number[]): void => {
+      bar.prices = { open: ticks[0], high: Math.max(...ticks), low: Math.min(...ticks), close: ticks.at(-1)! };
+    };
 
-    for (const price of [10, 13]) {
-      bars[7].prices = { open: price, high: price, low: price, close: price };
-      controller.stepMarketStructure(bars, state, 1);
-      expect(bars[7].chart?.marketStructure).toEqual({ streak: 1, direction: Direction.Down });
-    }
+    const replay = (live: boolean) => {
+      const controller = new MarketStructureController();
+      const state: MarketStructureState = {};
+      const bars: Bar[] = [];
+      const reversals: string[] = [];
+
+      for (const ticks of tickPaths) {
+        bars.push(createBar(bars.length, ticks[0]));
+        const steppedTicks: number[] = live ? ticks : [];
+
+        for (const tick of steppedTicks) {
+          setTicks(bars.at(-1)!, [tick]);
+          const reversal: Direction | undefined = controller.stepMarketStructure(bars, state, space);
+
+          if (reversal) {
+            reversals.push(`${bars.length - 1}:${reversal}`);
+            break;
+          }
+        }
+
+        setTicks(bars.at(-1)!, ticks);
+
+        if (!live) {
+          const reversal: Direction | undefined = controller.stepMarketStructure(bars, state, space);
+          if (reversal) reversals.push(`${bars.length - 1}:${reversal}`);
+        }
+      }
+
+      return { reversals, charts: JSON.stringify(bars.map((bar) => bar.chart)) };
+    };
+
+    const backtest = replay(false);
+    const live = replay(true);
+
+    expect(backtest.reversals.length).toBeGreaterThan(10);
+    expect(live.reversals).toEqual(backtest.reversals);
+    expect(live.charts).toEqual(backtest.charts);
   });
 });
 
@@ -405,8 +405,8 @@ describe('market structure swing selection', () => {
       controller.stepMarketStructure(bars, state, 2);
     }
 
-    expect(state.swings).toHaveLength(1);
-    expect(state.swings?.at(-1)?.index).toBe(expectedIndex);
+    expect(state.swings).toBeUndefined();
+    expect(state.candidateSwing?.index).toBe(expectedIndex);
     expect(bars[expectedIndex].chart?.pivotPoint).toBeUndefined();
 
     for (const price of [10, 11]) {

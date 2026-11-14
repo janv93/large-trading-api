@@ -1,7 +1,6 @@
 import {
   Bar,
   Direction,
-  MarketStructureLevel,
   MarketStructureState,
   MarketStructureStats,
   MarketStructureSwing,
@@ -12,76 +11,57 @@ import {
 import PivotPointController from './pivot-point';
 
 export default class MarketStructureController extends PivotPointController {
-  public stepMarketStructure(bars: Bar[], state: MarketStructureState, space: number): void {
-    this.updateObservedRange(bars, state);
-    this.processClosedPivot(bars, state, space);
-    this.updateTrend(bars, state, bars.length - 1);
-    this.drawTrend(bars.at(-1)!, state.trend);
+  public stepMarketStructure(bars: Bar[], state: MarketStructureState, space: number): Direction | undefined {
+    const closedIndex: number = bars.length - 2;
+    if (closedIndex >= 0 && closedIndex !== state.lastClosedIndex) this.processClosedBar(bars, state, closedIndex, space);
+
+    return this.getBreakDirection(bars.at(-1)!, state.reversalLevel);
   }
 
-  private updateObservedRange(bars: Bar[], state: MarketStructureState): void {
-    const index: number = bars.length - 1;
+  private processClosedBar(bars: Bar[], state: MarketStructureState, closedIndex: number, space: number): void {
+    state.lastClosedIndex = closedIndex;
+    this.updateTrend(bars[closedIndex], state);
 
-    if (state.observedRange?.index === index) {
-      state.observedRange.high = Math.max(state.observedRange.high, bars[index].prices.high);
-      state.observedRange.low = Math.min(state.observedRange.low, bars[index].prices.low);
-    } else {
-      state.observedRange = { index, high: bars[index].prices.high, low: bars[index].prices.low };
-    }
-  }
-
-  private processClosedPivot(bars: Bar[], state: MarketStructureState, space: number): void {
-    const pivotIndex: number = bars.length - 2 - space;
-    if (pivotIndex < 0 || pivotIndex === state.lastProcessedIndex) return;
-
-    state.lastProcessedIndex = pivotIndex;
+    const pivotIndex: number = closedIndex - space;
     const pivotPoint: PivotPoint | null = this.getPivotPoint(bars, pivotIndex, space);
 
     if (pivotPoint) {
-      this.updateSwings(bars, state, {
+      const pivot: MarketStructureSwing = {
         index: pivotIndex,
         price: this.getPrice(bars[pivotIndex], pivotPoint.side),
         side: pivotPoint.side,
-        space: pivotPoint.space,
-      });
+      };
+      this.updateSwings(bars, state, pivot, space);
+    }
+
+    this.drawTrend(bars[closedIndex], state.trend);
+  }
+
+  private updateSwings(bars: Bar[], state: MarketStructureState, pivot: MarketStructureSwing, space: number): void {
+    if (state.candidateSwing && pivot.side !== state.candidateSwing.side) {
+      this.confirmSwing(bars, state, state.candidateSwing, space);
+      state.candidateSwing = pivot;
+    } else if (!state.candidateSwing || this.isBeyondPrice(pivot.price, state.candidateSwing)) {
+      state.candidateSwing = pivot;
     }
   }
 
-  private updateSwings(bars: Bar[], state: MarketStructureState, pivot: MarketStructureSwing): void {
-    state.swings ??= [];
+  private confirmSwing(bars: Bar[], state: MarketStructureState, swing: MarketStructureSwing, space: number): void {
+    const previousSwing: MarketStructureSwing | undefined = state.swings?.at(-1);
+    const previousSameSideSwing: MarketStructureSwing | undefined = state.swings?.at(-2);
 
-    if (!state.swings.length) {
-      state.swings.push(pivot);
-    } else if (pivot.side === state.swings.at(-1)!.side) {
-      if (this.isBeyondLevel(bars[pivot.index], state.swings.at(-1)!)) {
-        state.swings[state.swings.length - 1] = pivot;
-      }
-    } else {
-      this.confirmSwing(bars, state, state.swings.at(-1)!, state.swings.at(-2), state.swings.at(-3));
-
-      state.swings.push(pivot);
-      if (state.swings.length > 3) state.swings.shift();
-    }
-  }
-
-  private confirmSwing(
-    bars: Bar[],
-    state: MarketStructureState,
-    swing: MarketStructureSwing,
-    previousSwing?: MarketStructureSwing,
-    previousSameSideSwing?: MarketStructureSwing,
-  ): void {
     if (previousSameSideSwing) {
       swing.trend = this.getSwingTrend(swing, previousSameSideSwing, previousSwing?.trend);
     }
 
-    this.drawSwing(bars[swing.index], swing);
+    this.drawSwing(bars[swing.index], swing, space);
+    state.swings = previousSwing ? [previousSwing, swing] : [swing];
 
     if (swing.trend) {
       state.trend = swing.trend;
-      state.reversalLevel = this.getConfirmedReversalLevel(swing, previousSwing, swing.trend.direction);
+      state.reversalLevel = this.getReversalLevel(state.swings, swing.trend.direction);
 
-      for (let index = swing.index + 1; index < bars.length - 1; index++) this.updateTrend(bars, state, index);
+      for (let index = swing.index + 1; index <= state.lastClosedIndex!; index++) this.updateTrend(bars[index], state);
     }
   }
 
@@ -98,25 +78,36 @@ export default class MarketStructureController extends PivotPointController {
     };
   }
 
-  private drawSwing(bar: Bar, swing: MarketStructureSwing): void {
-    bar.chart ??= {};
-    bar.chart.pivotPoint = { space: swing.space, side: swing.side };
-
-    if (swing.trend) {
-      bar.chart.pivotPoint.marketStructure = this.getMarketStructureType(swing.side, swing.trend.direction);
-    }
-  }
-
-  private getConfirmedReversalLevel(
-    swing: MarketStructureSwing,
-    previousSwing: MarketStructureSwing | undefined,
-    direction: Direction,
-  ): MarketStructureLevel | undefined {
-    const reversalSide: PivotPointSide = this.getReversalSide(direction);
-    const reversalSwing: MarketStructureSwing | undefined = swing.side === reversalSide ? swing : previousSwing;
+  private getReversalLevel(swings: MarketStructureSwing[], direction: Direction): MarketStructureSwing | undefined {
+    const reversalSide: PivotPointSide = direction === Direction.Up ? PivotPointSide.Low : PivotPointSide.High;
+    const reversalSwing: MarketStructureSwing | undefined = swings.find((swing) => swing.side === reversalSide);
 
     if (reversalSwing?.trend) {
       return reversalSwing;
+    }
+  }
+
+  private updateTrend(bar: Bar, state: MarketStructureState): void {
+    const breakDirection: Direction | undefined = this.getBreakDirection(bar, state.reversalLevel);
+
+    if (breakDirection) {
+      state.trend = { direction: breakDirection, streak: 1 };
+      state.reversalLevel = undefined;
+    }
+  }
+
+  private getBreakDirection(bar: Bar, reversalLevel?: MarketStructureSwing): Direction | undefined {
+    if (reversalLevel && this.isBeyondPrice(this.getPrice(bar, reversalLevel.side), reversalLevel)) {
+      return reversalLevel.side === PivotPointSide.High ? Direction.Up : Direction.Down;
+    }
+  }
+
+  private drawSwing(bar: Bar, swing: MarketStructureSwing, space: number): void {
+    bar.chart ??= {};
+    bar.chart.pivotPoint = { space, side: swing.side };
+
+    if (swing.trend) {
+      bar.chart.pivotPoint.marketStructure = this.getMarketStructureType(swing.side, swing.trend.direction);
     }
   }
 
@@ -128,59 +119,6 @@ export default class MarketStructureController extends PivotPointController {
     return direction === Direction.Up ? MarketStructureType.HL : MarketStructureType.LL;
   }
 
-  private updateTrend(bars: Bar[], state: MarketStructureState, index: number): void {
-    if (!state.reversalLevel || !state.trend) return;
-
-    const brokenLevel: MarketStructureLevel | undefined = this.getBrokenLevel(bars[index], state.reversalLevel, state.swings!);
-
-    if (brokenLevel) {
-      const direction: Direction = this.getBreakDirection(brokenLevel.side);
-      state.trend = { direction, streak: direction === state.trend.direction ? state.trend.streak : 1 };
-      state.reversalLevel = this.getExtreme(bars, state, brokenLevel.index, index, this.getOppositeSide(brokenLevel.side));
-    }
-  }
-
-  private getBrokenLevel(bar: Bar, reversalLevel: MarketStructureLevel, swings: MarketStructureSwing[]): MarketStructureLevel | undefined {
-    if (this.isBeyondLevel(bar, reversalLevel)) return reversalLevel;
-
-    const continuationSwing: MarketStructureSwing | undefined = swings.findLast(
-      (swing) => swing.side !== reversalLevel.side && swing.index > reversalLevel.index,
-    );
-
-    if (continuationSwing && this.isBeyondLevel(bar, continuationSwing)) {
-      return continuationSwing;
-    }
-  }
-
-  private getExtreme(
-    bars: Bar[],
-    state: MarketStructureState,
-    startIndex: number,
-    endIndex: number,
-    side: PivotPointSide,
-  ): MarketStructureLevel {
-    const extreme: MarketStructureLevel = { index: startIndex, price: this.getObservedPrice(bars, state, startIndex, side), side };
-
-    for (let index = startIndex + 1; index <= endIndex; index++) {
-      const price: number = this.getObservedPrice(bars, state, index, side);
-
-      if (this.isBeyondPrice(price, extreme)) {
-        extreme.index = index;
-        extreme.price = price;
-      }
-    }
-
-    return extreme;
-  }
-
-  private getObservedPrice(bars: Bar[], state: MarketStructureState, index: number, side: PivotPointSide): number {
-    if (index === state.observedRange!.index) {
-      return side === PivotPointSide.High ? state.observedRange!.high : state.observedRange!.low;
-    }
-
-    return this.getPrice(bars[index], side);
-  }
-
   private drawTrend(bar: Bar, trend?: MarketStructureStats): void {
     if (trend) {
       bar.chart ??= {};
@@ -188,27 +126,11 @@ export default class MarketStructureController extends PivotPointController {
     }
   }
 
-  private getBreakDirection(side: PivotPointSide): Direction {
-    return side === PivotPointSide.High ? Direction.Up : Direction.Down;
-  }
-
-  private getReversalSide(direction: Direction): PivotPointSide {
-    return direction === Direction.Up ? PivotPointSide.Low : PivotPointSide.High;
-  }
-
-  private getOppositeSide(side: PivotPointSide): PivotPointSide {
-    return side === PivotPointSide.High ? PivotPointSide.Low : PivotPointSide.High;
-  }
-
   private getPrice(bar: Bar, side: PivotPointSide): number {
     return side === PivotPointSide.High ? bar.prices.high : bar.prices.low;
   }
 
-  private isBeyondLevel(bar: Bar, level: MarketStructureLevel): boolean {
-    return this.isBeyondPrice(this.getPrice(bar, level.side), level);
-  }
-
-  private isBeyondPrice(price: number, level: MarketStructureLevel): boolean {
-    return level.side === PivotPointSide.High ? price > level.price : price < level.price;
+  private isBeyondPrice(price: number, swing: MarketStructureSwing): boolean {
+    return swing.side === PivotPointSide.High ? price > swing.price : price < swing.price;
   }
 }
