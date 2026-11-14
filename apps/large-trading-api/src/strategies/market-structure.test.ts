@@ -23,16 +23,30 @@ describe('market-structure strategy', () => {
   it.each([
     { reversal: Direction.Up, signal: Signal.Buy },
     { reversal: Direction.Down, signal: Signal.Sell },
-  ])('emits a $signal and finishes the bar on a $reversal reversal', ({ reversal, signal }) => {
+  ])('emits a $signal sized by the previous streak and finishes the bar on a $reversal reversal', ({ reversal, signal }) => {
     jest.spyOn(MarketStructureController.prototype, 'stepMarketStructure').mockReturnValue(reversal);
     const strategy = new MarketStructure();
     const state: any = {};
-    const bars: Bar[] = [createBar(0, 100)];
+    const bars: Bar[] = [createBar(0, 100), createBar(60_000, 101)];
+    bars[0].chart = { marketStructure: { streak: 5, direction: Direction.Up } };
 
     strategy.stepSetSignals(bars, state, { space: 2 });
 
-    expect(bars[0].backtest.signals).toEqual([{ signal, size: 1, price: 100 }]);
+    expect(bars[1].backtest.signals).toEqual([{ signal, size: 5, price: 101 }]);
     expect(state.barDone).toBe(true);
+  });
+
+  it('emits nothing when the previous streak is not above 4', () => {
+    jest.spyOn(MarketStructureController.prototype, 'stepMarketStructure').mockReturnValue(Direction.Down);
+    const strategy = new MarketStructure();
+    const state: any = {};
+    const bars: Bar[] = [createBar(0, 100), createBar(60_000, 101)];
+    bars[0].chart = { marketStructure: { streak: 4, direction: Direction.Up } };
+
+    strategy.stepSetSignals(bars, state, { space: 2 });
+
+    expect(bars[1].backtest.signals).toEqual([]);
+    expect(state.barDone).toBeUndefined();
   });
 
   it('emits nothing without a reversal', () => {

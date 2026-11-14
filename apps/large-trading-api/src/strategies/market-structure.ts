@@ -1,4 +1,4 @@
-﻿import { Bar, Direction, Signal } from '@shared';
+﻿import { Bar, Direction, MarketStructureStats, Signal } from '@shared';
 import Base from '../base';
 import MarketStructureController from '../patterns/pivot-point/market-structure';
 
@@ -12,11 +12,12 @@ export default class MarketStructure extends Base {
       state.marketStructure,
       Number(params.space),
     );
+    const previousMarketStructure: MarketStructureStats | undefined = bars.at(-2)?.chart?.marketStructure;
 
-    if (reversalDirection) {
+    if (reversalDirection && previousMarketStructure && previousMarketStructure.streak > 4) {
       const bar: Bar = bars[bars.length - 1];
       const signal: Signal = reversalDirection === Direction.Up ? Signal.Buy : Signal.Sell;
-      bar.backtest.signals.push({ signal, size: 1, price: bar.prices.close });
+      bar.backtest.signals.push({ signal, size: previousMarketStructure.streak, price: bar.prices.close });
       state.barDone = true;
     }
   }
